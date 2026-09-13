@@ -1,0 +1,125 @@
+/* ==================================================================
+   Aplikasi Pemantauan Anak Wali — SMP Negeri 1 Talaga Jaya
+   style.css — Tampilan Flat Modern (Biru/Emerald/Amber)
+   ================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary: #3b82f6;
+    --secondary: #10b981;
+    --accent: #f59e0b;
+    --background: #f8fafc;
+    --surface: #ffffff;
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+    background-color: var(--background) !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+    transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+/* Kontrol tampilan berbasis role (dipakai handler admin/guru/siswa) */
+[data-role-visible]:not(.view-section) {
+    display: none !important;
+}
+
+body[data-role="admin"] [data-role-visible*="admin"]:not(.view-section) {
+    display: flex !important;
+}
+
+body[data-role="guru"] [data-role-visible*="guru"]:not(.view-section) {
+    display: flex !important;
+}
+
+body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
+    display: flex !important;
+}
+
+/* Login */
+#view-login {
+    display: none !important;
+    background: var(--background);
+}
+
+#view-login.active {
+    display: flex !important;
+}
+
+.login-role-btn.selected {
+    border-color: var(--primary) !important;
+    background-color: #eff6ff !important;
+    color: var(--primary) !important;
+}
+
+/* Header & Bottom Nav */
+#bottom-nav {
+    box-shadow: 0 -8px 20px -12px rgba(15, 23, 42, 0.15);
+}
+
+.nav-item.active {
+    color: var(--primary) !important;
+}
+
+.nav-item.active i {
+    background: #eff6ff;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Modal & Loading */
+#modal-container {
+    background: rgba(15, 23, 42, 0.55) !important;
+}
+
+#loading-overlay {
+    background: rgba(15, 23, 42, 0.55) !important;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #94a3b8;
+    background: #fff;
+    border-radius: 1.5rem;
+    border: 1px dashed #e2e8f0;
+}
+
+/* Transisi antar view */
+.view-section {
+    display: none;
+}
+
+.view-section.active {
+    display: block;
+    animation: fadeIn .22s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
