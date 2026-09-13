@@ -1,10 +1,4 @@
-/**
- * TAHAP 6 (FINAL): FRONTEND ENGINE LENGKAP + FITUR NOTIFIKASI PINTAR & FORMAT WAKTU NORMAL
- * Profil Siswa Terintegrasi 360°, Ekspor CSV, & Cetak PDF / Rapor
- * System: Pemantauan Anak Wali - SMPN 1 Talaga Jaya
- */
-
-const API_URL = "";
+const API_URL = "https://script.google.com/macros/s/AKfycbwOc7B3pY_szTQf0yyLbwmUQpIBWrPqN-bUfHDAgj82FfDbpOknXuodwLHbxV7Dk44IDg/exec";
 
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
