@@ -265,6 +265,16 @@ async function setupAppSession() {
     }
 }
 
+async function loadInitialAppData() {
+    const res = await apiCall("getInitialData", {}, false);
+    if (res && res.status === "success") {
+        appState.kelas = res.data.kelas || [];
+        appState.guru = res.data.guru || [];
+        appState.siswa = res.data.siswa || [];
+        appState.myStudents = res.data.siswa || [];
+    }
+}
+
 function applyRoleUI(role) {
     document.body.setAttribute("data-role", role);
     const navContainer = document.getElementById("bottom-nav-items");
@@ -1338,6 +1348,22 @@ async function deletePembinaan(id) {
 // ==========================================
 // TAHAP 6: PROFIL SISWA 360° ENGINE
 // ==========================================
+
+function switchTabSiswa(tabName, btnEl) {
+    document.querySelectorAll('.prof-tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'border-b-2', 'border-blue-600', 'text-blue-600', 'font-bold');
+        btn.classList.add('text-slate-500');
+    });
+    document.querySelectorAll('.prof-tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    btnEl.classList.add('active', 'border-b-2', 'border-blue-600', 'text-blue-600', 'font-bold');
+    btnEl.classList.remove('text-slate-500');
+
+    const target = document.getElementById(`tab-siswa-${tabName}`);
+    if (target) target.classList.remove('hidden');
+}
 
 async function openProfilSiswa(siswaId) {
     showLoading("Memuat profil lengkap siswa...");
