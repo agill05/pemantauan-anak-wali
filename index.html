@@ -102,7 +102,7 @@
     <header id="main-header" class="bg-primary text-white shadow-md fixed top-0 w-full z-20 transition-all duration-300 hidden no-print">
         <div id="header-default" class="flex justify-between items-center px-4 py-3 h-16">
             <div class="flex items-center gap-3">
-                <button id="btn-toggle-sidebar" onclick="toggleSidebar()" class="touch-btn -ml-1 hover:bg-white/10 rounded-xl transition">
+                <button id="btn-toggle-sidebar" onclick="toggleSidebar(true)" class="touch-btn -ml-1 hover:bg-white/10 rounded-xl transition">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
                 <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden border border-white/30">
@@ -114,6 +114,11 @@
                 </div>
             </div>
             <div class="flex items-center gap-1">
+                <!-- Tombol Notifikasi Siswa Bermasalah -->
+                <button id="btn-notif-header" data-role-visible="admin,guru" class="p-2 relative hover:bg-white/10 rounded-xl transition hidden" onclick="openNotificationModal()">
+                    <i class="fas fa-bell text-lg"></i>
+                    <span id="notif-badge" class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
+                </button>
                 <button class="p-2 relative hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()">
                     <i class="fas fa-cog text-lg"></i>
                 </button>
