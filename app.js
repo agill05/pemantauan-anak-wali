@@ -4,7 +4,7 @@
  * System: Pemantauan Anak Wali - SMPN 1 Talaga Jaya
  */
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwJcd4p7DccV3oFEEBNAufWnJIdiaEtQDjVuPDzqbOR1H4_1qZcCoxJHxSLZo_A635j/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwOc7B3pY_szTQf0yyLbwmUQpIBWrPqN-bUfHDAgj82FfDbpOknXuodwLHbxV7Dk44IDg/exec";
 
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
@@ -182,7 +182,7 @@ async function apiCall(action, payload = {}, showFullLoader = false) {
                 icon: 'warning',
                 title: 'Sesi Berakhir',
                 text: json.message || 'Silakan login kembali.',
-                confirmButtonColor: '#16294a'
+                confirmButtonColor: '#3b82f6'
             }).then(() => {
                 handleLogout(true);
             });
@@ -190,13 +190,13 @@ async function apiCall(action, payload = {}, showFullLoader = false) {
         }
 
         if (json.status === "error") {
-            Swal.fire({ icon: 'error', title: 'Terjadi Kesalahan', text: json.message, confirmButtonColor: '#16294a' });
+            Swal.fire({ icon: 'error', title: 'Terjadi Kesalahan', text: json.message, confirmButtonColor: '#3b82f6' });
             return null;
         }
         return json;
     } catch (err) {
         if (showFullLoader) hideLoading();
-        Swal.fire({ icon: 'error', title: 'Koneksi Gagal', text: 'Tidak dapat terhubung ke Google Apps Script.', confirmButtonColor: '#16294a' });
+        Swal.fire({ icon: 'error', title: 'Koneksi Gagal', text: 'Tidak dapat terhubung ke Google Apps Script.', confirmButtonColor: '#3b82f6' });
         return null;
     }
 }
@@ -212,7 +212,7 @@ async function handleAppLogin(e) {
     const password = document.getElementById("login-password").value;
 
     if (!role) {
-        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih role pengguna terlebih dahulu.', confirmButtonColor: '#16294a' });
+        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih role pengguna terlebih dahulu.', confirmButtonColor: '#3b82f6' });
         return;
     }
 
@@ -1650,7 +1650,7 @@ async function loadLaporanRekap() {
 
 function exportRekapCSV() {
     if (!appState.laporanRekap || appState.laporanRekap.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data laporan untuk diekspor.', confirmButtonColor: '#16294a' });
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data laporan untuk diekspor.', confirmButtonColor: '#3b82f6' });
         return;
     }
 
@@ -2032,7 +2032,7 @@ async function deleteKelas(id) {
 function hubungiOrtu(siswaId) {
     const s = appState.siswa.find(x => String(x.id) === String(siswaId)) || appState.user;
     if (!s || !s.no_hp_ortu) {
-        Swal.fire({ icon: 'warning', title: 'Nomor Tidak Ada', text: 'Nomor WhatsApp Orang Tua/Wali belum terdaftar.', confirmButtonColor: '#16294a' });
+        Swal.fire({ icon: 'warning', title: 'Nomor Tidak Ada', text: 'Nomor WhatsApp Orang Tua/Wali belum terdaftar.', confirmButtonColor: '#3b82f6' });
         return;
     }
 
