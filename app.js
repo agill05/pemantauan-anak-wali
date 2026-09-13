@@ -545,8 +545,11 @@ function switchView(viewId) {
     const sidebarBtn = document.querySelector(`.sidebar-nav-item[data-target="${viewId}"]`);
     if (sidebarBtn) sidebarBtn.classList.add("active", "bg-slate-100", "text-primary");
 
+    // Render berdasarkan data lokal yang sudah disinkronkan di awal
     if (viewId === "dashboard") renderDashboard();
-    if (viewId === "absensi") loadAbsensiData();
+    if (viewId === "absensi" && appState.absensi.length === 0) loadAbsensiData();
+    else if (viewId === "absensi") loadAbsensiData(); // render ulang dari state
+    
     if (viewId === "kebiasaan") loadKebiasaanData();
     if (viewId === "karakter") loadKeagamaanData();
     if (viewId === "akademik") loadAkademikData();
@@ -959,10 +962,14 @@ async function deleteKeagamaan(id) {
 // AKADEMIK & PRESTASI ENGINE
 // ==========================================
 
+// ==========================================
+// AKADEMIK & PRESTASI ENGINE (Perbaikan Tab Aktif)
+// ==========================================
+
 function switchAkademikTab(tab) {
     document.querySelectorAll(".akd-tab-content").forEach(c => c.classList.add("hidden"));
     document.querySelectorAll(".akd-tab-btn").forEach(b => {
-        b.classList.remove("bg-white", "text-blue-600", "shadow-sm");
+        b.classList.remove("bg-white", "text-primary", "shadow-sm", "bg-surface");
         b.classList.add("text-slate-600");
     });
 
@@ -971,12 +978,40 @@ function switchAkademikTab(tab) {
 
     if (target) target.classList.remove("hidden");
     if (targetBtn) {
-        targetBtn.classList.add("bg-white", "text-blue-600", "shadow-sm");
+        targetBtn.classList.add("bg-white", "text-primary", "shadow-sm");
         targetBtn.classList.remove("text-slate-600");
     }
 
+    // Gunakan data yang sudah ada di appState agar tidak memicu fetch/loading ulang terus-menerus
     if (tab === "nilai") renderAkademikNilai();
     if (tab === "prestasi") renderAkademikPrestasi();
+}
+
+async function loadAkademikData(forceRefresh = false) {
+    const filterSelect = document.getElementById("akademik-siswa-filter");
+    if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
+        filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+    }
+
+    const selectedSiswaId = filterSelect ? filterSelect.value : null;
+
+    // Jika data sudah ada dan tidak dipaksa refresh, gunakan cache lokal
+    if (!forceRefresh && appState.akademik.length > 0 && appState.prestasi.length > 0) {
+        switchAkademikTab('nilai');
+        return;
+    }
+
+    showLoading("Memuat data akademik & prestasi...");
+    const [resAkd, resPrs] = await Promise.all([
+        apiCall("getAkademik", { siswa_id: selectedSiswaId }, false),
+        apiCall("getPrestasi", { siswa_id: selectedSiswaId }, false)
+    ]);
+    hideLoading();
+
+    if (resAkd && resAkd.data) appState.akademik = resAkd.data;
+    if (resPrs && resPrs.data) appState.prestasi = resPrs.data;
+
+    switchAkademikTab('nilai');
 }
 
 async function loadAkademikData() {
@@ -1716,10 +1751,14 @@ function renderSiswaView() {
 
 function renderAdminManage() { switchAdminTab("guru"); }
 
+// ==========================================
+// MASTER DATA MANAGEMENT (Perbaikan Tab Admin)
+// ==========================================
+
 function switchAdminTab(tab) {
     document.querySelectorAll(".admin-tab-content").forEach(c => c.classList.add("hidden"));
     document.querySelectorAll(".admin-tab-btn").forEach(b => {
-        b.classList.remove("bg-white", "text-blue-600", "shadow-sm");
+        b.classList.remove("bg-white", "text-primary", "shadow-sm", "bg-surface");
         b.classList.add("text-slate-600");
     });
 
@@ -1728,7 +1767,7 @@ function switchAdminTab(tab) {
 
     if (target) target.classList.remove("hidden");
     if (targetBtn) {
-        targetBtn.classList.add("bg-white", "text-blue-600", "shadow-sm");
+        targetBtn.classList.add("bg-white", "text-primary", "shadow-sm");
         targetBtn.classList.remove("text-slate-600");
     }
 
