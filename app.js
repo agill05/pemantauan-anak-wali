@@ -71,6 +71,43 @@ let appState = {
     currentNotifications: []
 };
 
+// Fungsi untuk sinkronisasi/fetchAllData sekaligus di awal login atau saat tombol Refresh ditekan
+async function fetchAllAppData(force = false) {
+    // Jika data sudah ada dan tidak dipaksa, jangan fetch ulang
+    if (!force && appState.siswa.length > 0 && appState.akademik.length > 0) {
+        return;
+    }
+
+    showLoading("Menyinkronkan seluruh data sistem...");
+    
+    // Anda bisa menggabungkan beberapa pemanggilan sekaligus jika backend mendukung,
+    // atau memanggil data utama secara paralel menggunakan Promise.all
+    const [resInit, resAkd, resPrs, resKag, resPbn] = await Promise.all([
+        apiCall("getInitialData", {}, false),
+        apiCall("getAkademik", {}, false),
+        apiCall("getPrestasi", {}, false),
+        apiCall("getKeagamaan", {}, false),
+        apiCall("getPembinaan", {}, false)
+    ]);
+
+    hideLoading();
+
+    // Simpan semua ke dalam appState lokal
+    if (resInit && resInit.status === "success") {
+        appState.kelas = resInit.data.kelas || [];
+        appState.guru = resInit.data.guru || [];
+        appState.siswa = resInit.data.siswa || [];
+        appState.myStudents = resInit.data.siswa || [];
+    }
+    if (resAkd && resAkd.data) appState.akademik = resAkd.data;
+    if (resPrs && resPrs.data) appState.prestasi = resPrs.data;
+    if (resKag && resKag.data) appState.keagamaan = resKag.data;
+    if (resPbn && resPbn.data) appState.pembinaan = resPbn.data;
+
+    // Simpan penanda bahwa data sudah disinkronkan
+    console.log("Sinkronisasi data berhasil disimpan ke state lokal.");
+}
+
 // ==========================================
 // UTILITY HELPERS & TIME FORMATTING
 // ==========================================
@@ -110,7 +147,6 @@ function getDateWITA() {
     return `${y}-${m}-${d}`;
 }
 
-// Perbaikan format waktu agar tidak menampilkan "1899-12-29T..."
 function formatDisplayTime(val) {
     if (!val || val === 'null' || val === 'undefined') return 'Belum Absen';
     const str = String(val).trim();
@@ -395,7 +431,6 @@ function renderSidebarMenu(role) {
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'siswa') return;
 
-    // Ambil data pendukung secara aman untuk evaluasi notifikasi
     const [resAbs, resAkd, resPbn] = await Promise.all([
         apiCall("getAbsensi", { tanggal: getDateWITA() }, false),
         apiCall("getAkademik", {}, false),
@@ -412,7 +447,6 @@ async function checkStudentNotifications() {
     appState.siswa.forEach(s => {
         const sId = String(s.id);
         
-        // 1. Indikator: Alpa hari ini atau sering alpa
         const totalAlpa = absensiData.filter(a => String(a.siswa_id) === sId && a.status === 'A').length;
         if (totalAlpa > 0) {
             issueCount++;
@@ -424,7 +458,6 @@ async function checkStudentNotifications() {
             });
         }
 
-        // 2. Indikator: Nilai Akademik di bawah KKTP >= 2 mapel
         const lowGrades = akademikData.filter(a => String(a.siswa_id) === sId && Number(a.nilai_akhir || 0) < Number(a.kktp || 75));
         if (lowGrades.length >= 2) {
             issueCount++;
@@ -436,7 +469,6 @@ async function checkStudentNotifications() {
             });
         }
 
-        // 3. Indikator: Pembinaan Aktif
         const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && p.status !== 'Selesai');
         if (activePem.length > 0) {
             issueCount++;
@@ -545,11 +577,9 @@ function switchView(viewId) {
     const sidebarBtn = document.querySelector(`.sidebar-nav-item[data-target="${viewId}"]`);
     if (sidebarBtn) sidebarBtn.classList.add("active", "bg-slate-100", "text-primary");
 
-    // Render berdasarkan data lokal yang sudah disinkronkan di awal
+    // Menggunakan cache state lokal untuk mencegah loading berulang saat berpindah menu
     if (viewId === "dashboard") renderDashboard();
-    if (viewId === "absensi" && appState.absensi.length === 0) loadAbsensiData();
-    else if (viewId === "absensi") loadAbsensiData(); // render ulang dari state
-    
+    if (viewId === "absensi") loadAbsensiData();
     if (viewId === "kebiasaan") loadKebiasaanData();
     if (viewId === "karakter") loadKeagamaanData();
     if (viewId === "akademik") loadAkademikData();
@@ -689,10 +719,15 @@ function renderAgendaSection(agendaList) {
 // PRESENSI ENGINE
 // ==========================================
 
-async function loadAbsensiData() {
+async function loadAbsensiData(forceRefresh = false) {
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
     if (inputDate) inputDate.value = tanggal;
+
+    if (!forceRefresh && appState.absensi.length > 0) {
+        renderAbsensiView();
+        return;
+    }
 
     showLoading("Memuat presensi...");
     const res = await apiCall("getAbsensi", { tanggal }, false);
@@ -701,7 +736,10 @@ async function loadAbsensiData() {
     if (res && res.data) {
         appState.absensi = res.data;
     }
+    renderAbsensiView();
+}
 
+function renderAbsensiView() {
     const container = document.getElementById("absensi-list-container");
     if (!container) return;
 
@@ -744,8 +782,8 @@ async function setSingleAbsensi(siswa_id, status) {
         appState.absensi.push({ siswa_id, tanggal, status, waktu_masuk: jamWITA });
     }
 
+    renderAbsensiView();
     await apiCall("saveAbsensi", { tanggal, items: [{ siswa_id, status, waktu_masuk: jamWITA }] }, false);
-    loadAbsensiData();
 }
 
 async function markAllPresent() {
@@ -754,14 +792,14 @@ async function markAllPresent() {
     const items = appState.siswa.map(s => ({ siswa_id: s.id, status: 'H', waktu_masuk: jamWITA }));
 
     await apiCall("saveAbsensi", { tanggal, items }, true);
-    loadAbsensiData();
+    loadAbsensiData(true);
 }
 
 // ==========================================
 // 7 KEBIASAAN HEBAT ENGINE
 // ==========================================
 
-async function loadKebiasaanData() {
+async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
     const tanggal = dateInput ? (dateInput.value || getDateWITA()) : getDateWITA();
     if (dateInput) dateInput.value = tanggal;
@@ -769,6 +807,11 @@ async function loadKebiasaanData() {
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
     if (selectSiswa && appState.siswa.length > 0 && selectSiswa.options.length === 0) {
         selectSiswa.innerHTML = appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+    }
+
+    if (!forceRefresh && appState.kebiasaan.length > 0) {
+        renderKebiasaanView();
+        return;
     }
 
     showLoading("Memuat 7 kebiasaan...");
@@ -834,13 +877,18 @@ async function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
 // KEAGAMAAN ENGINE
 // ==========================================
 
-async function loadKeagamaanData() {
+async function loadKeagamaanData(forceRefresh = false) {
     const filterSelect = document.getElementById("karakter-siswa-filter");
     if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
         filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
     }
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
+
+    if (!forceRefresh && appState.keagamaan.length > 0) {
+        renderKeagamaanView();
+        return;
+    }
 
     showLoading("Memuat data keagamaan...");
     const res = await apiCall("getKeagamaan", { siswa_id: selectedSiswaId }, false);
@@ -946,7 +994,7 @@ async function saveKeagamaanForm(e, id) {
     if (res && res.status === "success") {
         closeModal();
         Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
-        await loadKeagamaanData();
+        await loadKeagamaanData(true);
     }
 }
 
@@ -954,16 +1002,12 @@ async function deleteKeagamaan(id) {
     const confirm = await Swal.fire({ title: 'Hapus Catatan Hafalan?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
         const res = await apiCall("deleteKeagamaan", { id }, true);
-        if (res && res.status === "success") await loadKeagamaanData();
+        if (res && res.status === "success") await loadKeagamaanData(true);
     }
 }
 
 // ==========================================
 // AKADEMIK & PRESTASI ENGINE
-// ==========================================
-
-// ==========================================
-// AKADEMIK & PRESTASI ENGINE (Perbaikan Tab Aktif)
 // ==========================================
 
 function switchAkademikTab(tab) {
@@ -982,7 +1026,6 @@ function switchAkademikTab(tab) {
         targetBtn.classList.remove("text-slate-600");
     }
 
-    // Gunakan data yang sudah ada di appState agar tidak memicu fetch/loading ulang terus-menerus
     if (tab === "nilai") renderAkademikNilai();
     if (tab === "prestasi") renderAkademikPrestasi();
 }
@@ -995,32 +1038,10 @@ async function loadAkademikData(forceRefresh = false) {
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
 
-    // Jika data sudah ada dan tidak dipaksa refresh, gunakan cache lokal
     if (!forceRefresh && appState.akademik.length > 0 && appState.prestasi.length > 0) {
         switchAkademikTab('nilai');
         return;
     }
-
-    showLoading("Memuat data akademik & prestasi...");
-    const [resAkd, resPrs] = await Promise.all([
-        apiCall("getAkademik", { siswa_id: selectedSiswaId }, false),
-        apiCall("getPrestasi", { siswa_id: selectedSiswaId }, false)
-    ]);
-    hideLoading();
-
-    if (resAkd && resAkd.data) appState.akademik = resAkd.data;
-    if (resPrs && resPrs.data) appState.prestasi = resPrs.data;
-
-    switchAkademikTab('nilai');
-}
-
-async function loadAkademikData() {
-    const filterSelect = document.getElementById("akademik-siswa-filter");
-    if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
-        filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
-    }
-
-    const selectedSiswaId = filterSelect ? filterSelect.value : null;
 
     showLoading("Memuat data akademik & prestasi...");
     const [resAkd, resPrs] = await Promise.all([
@@ -1159,7 +1180,7 @@ async function saveAkademikForm(e, id) {
     if (res && res.status === "success") {
         closeModal();
         Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
-        await loadAkademikData();
+        await loadAkademikData(true);
     }
 }
 
@@ -1167,7 +1188,7 @@ async function deleteAkademik(id) {
     const confirm = await Swal.fire({ title: 'Hapus Nilai Mapel?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
         const res = await apiCall("deleteAkademik", { id }, true);
-        if (res && res.status === "success") await loadAkademikData();
+        if (res && res.status === "success") await loadAkademikData(true);
     }
 }
 
@@ -1224,7 +1245,7 @@ async function savePrestasiForm(e, id) {
     if (res && res.status === "success") {
         closeModal();
         Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
-        await loadAkademikData();
+        await loadAkademikData(true);
     }
 }
 
@@ -1232,7 +1253,7 @@ async function deletePrestasi(id) {
     const confirm = await Swal.fire({ title: 'Hapus Catatan Prestasi?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
         const res = await apiCall("deletePrestasi", { id }, true);
-        if (res && res.status === "success") await loadAkademikData();
+        if (res && res.status === "success") await loadAkademikData(true);
     }
 }
 
@@ -1240,13 +1261,18 @@ async function deletePrestasi(id) {
 // PEMBINAAN SISWA ENGINE
 // ==========================================
 
-async function loadPembinaanData() {
+async function loadPembinaanData(forceRefresh = false) {
     const filterSelect = document.getElementById("pembinaan-siswa-filter");
     if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
         filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
     }
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
+
+    if (!forceRefresh && appState.pembinaan.length > 0) {
+        renderPembinaanView();
+        return;
+    }
 
     showLoading("Memuat data pembinaan...");
     const res = await apiCall("getPembinaan", { siswa_id: selectedSiswaId }, false);
@@ -1362,7 +1388,7 @@ async function savePembinaanForm(e, id) {
     if (res && res.status === "success") {
         closeModal();
         Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
-        await loadPembinaanData();
+        await loadPembinaanData(true);
     }
 }
 
@@ -1370,7 +1396,7 @@ async function deletePembinaan(id) {
     const confirm = await Swal.fire({ title: 'Hapus Catatan Pembinaan?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
         const res = await apiCall("deletePembinaan", { id }, true);
-        if (res && res.status === "success") await loadPembinaanData();
+        if (res && res.status === "success") await loadPembinaanData(true);
     }
 }
 
@@ -1639,13 +1665,21 @@ function printProfilSiswa() {
 // TAHAP 6: MODUL LAPORAN & EKSPOR CSV
 // ==========================================
 
-async function loadLaporanRekap() {
+async function loadLaporanRekap(forceRefresh = false) {
+    if (!forceRefresh && appState.laporanRekap.length > 0) {
+        renderLaporanRekapView();
+        return;
+    }
+
     showLoading("Memuat rekapitulasi laporan...");
     const res = await apiCall("getLaporanRekap", {}, false);
     hideLoading();
 
     if (res && res.data) appState.laporanRekap = res.data;
+    renderLaporanRekapView();
+}
 
+function renderLaporanRekapView() {
     const container = document.getElementById("laporan-rekap-container");
     if (!container) return;
 
