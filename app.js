@@ -4,7 +4,7 @@
  * System: Pemantauan Anak Wali - SMPN 1 Talaga Jaya
  */
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwOc7B3pY_szTQf0yyLbwmUQpIBWrPqN-bUfHDAgj82FfDbpOknXuodwLHbxV7Dk44IDg/exec";
+const API_URL = "";
 
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
