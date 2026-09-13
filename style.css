@@ -102,6 +102,47 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     border: 1px dashed #e2e8f0;
 }
 
+/* Sidebar Drawer */
+#app-sidebar {
+    will-change: transform;
+}
+
+#sidebar-backdrop.hidden {
+    display: none;
+}
+
+/* Perbesar area sentuh tombol ikon (presensi, aksi kartu, dsb) */
+.touch-btn {
+    min-width: 38px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sembunyikan scrollbar pada tab yang bisa di-scroll horizontal */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Jarak aman header & bottom-nav agar tidak menutupi konten (termasuk notch HP) */
+#main-header {
+    padding-top: env(safe-area-inset-top);
+}
+
+#bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+#main-content {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* Transisi antar view */
 .view-section {
     display: none;

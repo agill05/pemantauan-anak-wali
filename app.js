@@ -227,6 +227,14 @@ async function setupAppSession() {
     if (headerTitle) headerTitle.innerText = appState.user.nama;
     if (headerSubtitle) headerSubtitle.innerText = `SMPN 1 Talaga Jaya • ${appState.user.role.toUpperCase()}`;
 
+    const sbAvatar = document.getElementById("sidebar-avatar");
+    const sbNama = document.getElementById("sidebar-nama");
+    const sbRole = document.getElementById("sidebar-role-badge");
+    if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
+    if (sbNama) sbNama.innerText = appState.user.nama;
+    if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
+    renderSidebarMenu(appState.user.role);
+
     await loadInitialAppData();
 
     // JIKA SISWA LOGIN: langsung buka profil siswa dan sembunyikan Bottom Nav
@@ -316,6 +324,66 @@ function applyRoleUI(role) {
     }
 }
 
+// ==========================================
+// SIDEBAR DRAWER NAVIGATION
+// ==========================================
+
+function toggleSidebar(forceOpen) {
+    const sidebar = document.getElementById("app-sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    if (!sidebar || !backdrop) return;
+
+    const willOpen = typeof forceOpen === "boolean" ? forceOpen : sidebar.classList.contains("-translate-x-full");
+
+    if (willOpen) {
+        sidebar.classList.remove("-translate-x-full");
+        backdrop.classList.remove("hidden");
+        requestAnimationFrame(() => backdrop.classList.remove("opacity-0"));
+        document.body.classList.add("overflow-hidden");
+    } else {
+        sidebar.classList.add("-translate-x-full");
+        backdrop.classList.add("opacity-0");
+        document.body.classList.remove("overflow-hidden");
+        setTimeout(() => backdrop.classList.add("hidden"), 300);
+    }
+}
+
+function handleSidebarNav(viewId) {
+    switchView(viewId);
+    toggleSidebar(false);
+}
+
+function renderSidebarMenu(role) {
+    const container = document.getElementById("sidebar-menu-items");
+    if (!container) return;
+
+    const item = (view, icon, label) => `
+        <button onclick="handleSidebarNav('${view}')" class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition" data-target="${view}">
+            <i class="fas ${icon} w-5 text-center text-primary"></i> ${label}
+        </button>`;
+
+    let html = item("dashboard", "fa-home", "Beranda");
+
+    if (role === "siswa") {
+        html += item("kebiasaan", "fa-star", "7 Kebiasaan Hebat");
+        html += item("karakter", "fa-quran", "Keagamaan");
+        html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
+    } else {
+        html += item("absensi", "fa-calendar-check", "Presensi Kehadiran");
+        html += item("kebiasaan", "fa-star", "7 Kebiasaan Hebat");
+        html += item("karakter", "fa-quran", "Keagamaan");
+        html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
+        html += item("pembinaan", "fa-user-edit", "Catatan Pembinaan");
+        html += item("siswa", "fa-users", "Data Siswa");
+        html += item("laporan", "fa-file-invoice", "Laporan");
+        if (role === "admin") {
+            html += item("admin-manage", "fa-user-cog", "Master Data");
+        }
+    }
+
+    container.innerHTML = html;
+}
+
 function handleLogout(force = false) {
     const executeLogout = () => {
         localStorage.removeItem("session_anak_wali");
@@ -347,12 +415,16 @@ function handleLogout(force = false) {
 function switchView(viewId) {
     document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".sidebar-nav-item").forEach(el => el.classList.remove("active", "bg-slate-100", "text-primary"));
 
     const targetView = document.getElementById(`view-${viewId}`);
     if (targetView) targetView.classList.add("active");
 
     const navBtn = document.querySelector(`.nav-item[data-target="${viewId}"]`);
     if (navBtn) navBtn.classList.add("active");
+
+    const sidebarBtn = document.querySelector(`.sidebar-nav-item[data-target="${viewId}"]`);
+    if (sidebarBtn) sidebarBtn.classList.add("active", "bg-slate-100", "text-primary");
 
     if (viewId === "dashboard") renderDashboard();
     if (viewId === "absensi") loadAbsensiData();
@@ -526,9 +598,9 @@ async function loadAbsensiData() {
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
                     <span class="text-[10px] text-slate-400"><i class="far fa-clock mr-1"></i>${rec.waktu_masuk ? rec.waktu_masuk + ' WITA' : 'Belum Absen'}</span>
                 </div>
-                <div class="flex gap-1" id="absen-group-${s.id}">
+                <div class="flex gap-1.5" id="absen-group-${s.id}">
                     ${['H','S','I','A','T'].map(st => `
-                        <button ${isEditable ? `onclick="setSingleAbsensi('${escapeHtml(s.id)}', '${st}')"` : 'disabled'} class="w-7 h-7 rounded-lg text-xs font-black ${rec.status===st?'bg-blue-600 text-white':'bg-slate-100 text-slate-500 hover:bg-slate-200'}">${st}</button>
+                        <button ${isEditable ? `onclick="setSingleAbsensi('${escapeHtml(s.id)}', '${st}')"` : 'disabled'} class="touch-btn w-9 h-9 rounded-lg text-xs font-black ${rec.status===st?'bg-blue-600 text-white':'bg-slate-100 text-slate-500 hover:bg-slate-200'}">${st}</button>
                     `).join('')}
                 </div>
             </div>
@@ -1182,11 +1254,11 @@ async function openProfilSiswa(siswaId) {
         </div>
 
         <!-- Tab Navigation (4 Tab: Ringkasan, Keagamaan, Akademik, Catatan) -->
-        <div class="flex border-b border-slate-200 bg-white px-2 rounded-t-2xl shadow-sm pt-2 overflow-x-auto">
-            <button class="prof-tab-btn active border-b-2 border-blue-600 text-blue-600 font-bold flex-1 py-2.5 text-xs text-center" onclick="switchTabSiswa('ringkasan', this)">Ringkasan</button>
-            <button class="prof-tab-btn text-slate-500 flex-1 py-2.5 text-xs text-center" onclick="switchTabSiswa('keagamaan', this)">Keagamaan</button>
-            <button class="prof-tab-btn text-slate-500 flex-1 py-2.5 text-xs text-center" onclick="switchTabSiswa('akademik', this)">Akademik</button>
-            <button class="prof-tab-btn text-slate-500 flex-1 py-2.5 text-xs text-center" onclick="switchTabSiswa('catatan', this)">Catatan</button>
+        <div class="flex flex-nowrap border-b border-slate-200 bg-white px-2 rounded-t-2xl shadow-sm pt-2 overflow-x-auto no-scrollbar">
+            <button class="prof-tab-btn active border-b-2 border-blue-600 text-blue-600 font-bold flex-none whitespace-nowrap px-4 py-2.5 text-xs text-center" onclick="switchTabSiswa('ringkasan', this)">Ringkasan</button>
+            <button class="prof-tab-btn text-slate-500 flex-none whitespace-nowrap px-4 py-2.5 text-xs text-center" onclick="switchTabSiswa('keagamaan', this)">Keagamaan</button>
+            <button class="prof-tab-btn text-slate-500 flex-none whitespace-nowrap px-4 py-2.5 text-xs text-center" onclick="switchTabSiswa('akademik', this)">Akademik</button>
+            <button class="prof-tab-btn text-slate-500 flex-none whitespace-nowrap px-4 py-2.5 text-xs text-center" onclick="switchTabSiswa('catatan', this)">Catatan</button>
         </div>
 
         <!-- Content Area -->
@@ -1489,17 +1561,17 @@ function renderSiswaView() {
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button onclick="openProfilSiswa('${escapeHtml(s.id)}')" class="p-2 bg-blue-50 text-blue-600 rounded-lg text-xs">
+                    <button onclick="openProfilSiswa('${escapeHtml(s.id)}')" class="touch-btn bg-blue-50 text-blue-600 rounded-lg text-xs">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-xs">
+                    <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" class="touch-btn bg-emerald-50 text-emerald-600 rounded-lg text-xs">
                         <i class="fab fa-whatsapp"></i>
                     </button>
                     ${isAdminOrGuru ? `
-                    <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs">
+                    <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="touch-btn bg-slate-100 text-slate-600 rounded-lg text-xs">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button onclick="deleteSiswa('${escapeHtml(s.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs">
+                    <button onclick="deleteSiswa('${escapeHtml(s.id)}')" class="touch-btn bg-rose-50 text-rose-600 rounded-lg text-xs">
                         <i class="fas fa-trash"></i>
                     </button>` : ''}
                 </div>
