@@ -1,7 +1,29 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbyKFFTWsOr9kHdJnjEjhBEFq9ewT62UocKpWVUIw5IbwdjAAREqPujQYzrBDQnGX254/exec";
 
+// ==================================================================
+// 1. STATE MANAGEMENT & MASTER DATA
+// ==================================================================
 let kebiasaanDebounceTimer = null;
 let pendingKebiasaanQueue = new Map();
+let silentTokenRefreshInterval = null;
+
+let appState = {
+    token: null,
+    user: null,
+    kelas: [],
+    guru: [],
+    siswa: [],
+    myStudents: [],
+    absensi: [],
+    kebiasaan: [],
+    keagamaan: [],
+    akademik: [],
+    prestasi: [],
+    pembinaan: [],
+    activeSiswaDetail: null,
+    laporanRekap: [],
+    currentNotifications: []
+};
 
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
@@ -56,25 +78,9 @@ const MASTER_KEBIASAAN = [
     { id: "K7", nama: "Tidur Cepat & Teratur", icon: "fa-moon", color: "text-slate-600 bg-slate-100" }
 ];
 
-let appState = {
-    token: null,
-    user: null,
-    kelas: [],
-    guru: [],
-    siswa: [],
-    myStudents: [],
-    absensi: [],
-    kebiasaan: [],
-    keagamaan: [],
-    akademik: [],
-    prestasi: [],
-    pembinaan: [],
-    activeSiswaDetail: null,
-    laporanRekap: [],
-    currentNotifications: []
-};
-
-// Helper Rendering Skeleton Loading UI
+// ==================================================================
+// 2. HELPER UTILITY & DRAFT ENGINE
+// ==================================================================
 function renderSkeleton(containerId, count = 3) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -92,39 +98,6 @@ function renderSkeleton(containerId, count = 3) {
     `).join('');
 }
 
-// Sinkronisasi ulang seluruh data dari server
-async function fetchAllAppData(force = true) {
-    if (!force && appState.siswa.length > 0 && appState.akademik.length > 0) return;
-
-    showLoading("Menyinkronkan seluruh data...");
-    const resBootstrap = await apiCall("getBootstrapData", {}, false);
-    hideLoading();
-
-    if (resBootstrap && resBootstrap.status === "success") {
-        appState.kelas = resBootstrap.data.initial.kelas || [];
-        appState.guru = resBootstrap.data.initial.guru || [];
-        appState.siswa = resBootstrap.data.initial.siswa || [];
-        appState.myStudents = resBootstrap.data.initial.siswa || [];
-    }
-}
-
-async function manualRefreshAll() {
-    const icon = document.querySelector("#btn-refresh-header i");
-    if (icon) icon.classList.add("fa-spin");
-
-    await fetchAllAppData(true);
-    await loadAbsensiData(true);
-    await checkStudentNotifications();
-
-    const activeView = document.querySelector(".view-section.active");
-    const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
-    switchView(viewId);
-
-    if (icon) icon.classList.remove("fa-spin");
-    Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data terbaru berhasil dimuat.', timer: 1200, showConfirmButton: false });
-}
-
-// Utility & Format Helper
 function selectLoginRole(role) {
     const roleInput = document.getElementById("login-role");
     if (roleInput) roleInput.value = role;
@@ -203,7 +176,56 @@ function hideLoading() {
     }
 }
 
-// API Bridge Centralized
+// Anti-Loss Draft Engine Helpers
+function saveFormDraft(draftKey, formData) {
+    localStorage.setItem(`draft_${draftKey}`, JSON.stringify(formData));
+}
+
+function getFormDraft(draftKey) {
+    const data = localStorage.getItem(`draft_${draftKey}`);
+    return data ? JSON.parse(data) : null;
+}
+
+function clearFormDraft(draftKey) {
+    localStorage.removeItem(`draft_${draftKey}`);
+}
+
+function attachAutoSaveDraft(draftKey, fieldIds) {
+    fieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                const draftData = {};
+                fieldIds.forEach(fId => {
+                    const input = document.getElementById(fId);
+                    if (input) draftData[fId] = input.value;
+                });
+                saveFormDraft(draftKey, draftData);
+                showDraftIndicator(true);
+            });
+        }
+    });
+}
+
+function showDraftIndicator(isSaved) {
+    let badge = document.getElementById("form-draft-indicator");
+    if (!badge) {
+        const box = document.getElementById("modal-content-box");
+        if (!box) return;
+        badge = document.createElement("div");
+        badge.id = "form-draft-indicator";
+        badge.className = "text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 mb-3 flex items-center gap-1.5";
+        box.insertBefore(badge, box.children[1] || box.firstChild);
+    }
+
+    if (isSaved) {
+        badge.innerHTML = `<i class="fas fa-save text-blue-500"></i> Draf otomatis tersimpan di perangkat`;
+    }
+}
+
+// ==================================================================
+// 3. API ENGINE & AUTHENTICATION
+// ==================================================================
 async function apiCall(action, payload = {}, showFullLoader = false, retries = 3) {
     if (showFullLoader) showLoading();
     
@@ -224,7 +246,7 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
                 Swal.fire({ 
                     icon: 'error', 
                     title: 'Koneksi Gagal', 
-                    text: 'Tidak dapat terhubung ke server. Pastikan Web App ter-deploy sebagai Anyone dan jaringan stabil.' 
+                    text: 'Tidak dapat terhubung ke server. Pastikan jaringan stabil.' 
                 });
                 return null;
             }
@@ -233,7 +255,25 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
     }
 }
 
-// Auth & Setup App Session
+function startSilentTokenRefresh() {
+    if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
+
+    // Perbarui token setiap 10 menit
+    silentTokenRefreshInterval = setInterval(async () => {
+        if (!appState.token) return;
+
+        const res = await apiCall("refreshToken", {}, false);
+        if (res && res.status === "success" && res.token) {
+            appState.token = res.token;
+            
+            const savedSession = JSON.parse(localStorage.getItem("session_anak_wali") || "{}");
+            savedSession.token = res.token;
+            localStorage.setItem("session_anak_wali", JSON.stringify(savedSession));
+            console.log("[Auth Engine] Token sesi diperbarui secara otomatis.");
+        }
+    }, 10 * 60 * 1000);
+}
+
 async function handleAppLogin(e) {
     e.preventDefault();
     const role = document.getElementById("login-role") ? document.getElementById("login-role").value : "";
@@ -256,6 +296,7 @@ async function handleAppLogin(e) {
 
 async function setupAppSession() {
     applyRoleUI(appState.user.role);
+    startSilentTokenRefresh();
 
     const loginView = document.getElementById("view-login");
     const mainHeader = document.getElementById("main-header");
@@ -304,6 +345,66 @@ async function setupAppSession() {
     }
 }
 
+function handleLogout(force = false) {
+    const executeLogout = () => {
+        if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
+        localStorage.removeItem("session_anak_wali");
+        appState = { token: null, user: null, kelas: [], guru: [], siswa: [], myStudents: [] };
+        location.reload();
+    };
+
+    if (force) {
+        executeLogout();
+    } else {
+        Swal.fire({
+            title: 'Konfirmasi Keluar',
+            text: "Apakah Anda yakin ingin keluar dari aplikasi?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Keluar',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) executeLogout();
+        });
+    }
+}
+
+async function fetchAllAppData(force = true) {
+    if (!force && appState.siswa.length > 0 && appState.akademik.length > 0) return;
+
+    showLoading("Menyinkronkan seluruh data...");
+    const resBootstrap = await apiCall("getBootstrapData", {}, false);
+    hideLoading();
+
+    if (resBootstrap && resBootstrap.status === "success") {
+        appState.kelas = resBootstrap.data.initial.kelas || [];
+        appState.guru = resBootstrap.data.initial.guru || [];
+        appState.siswa = resBootstrap.data.initial.siswa || [];
+        appState.myStudents = resBootstrap.data.initial.siswa || [];
+    }
+}
+
+async function manualRefreshAll() {
+    const icon = document.querySelector("#btn-refresh-header i");
+    if (icon) icon.classList.add("fa-spin");
+
+    await fetchAllAppData(true);
+    await loadAbsensiData(true);
+    await checkStudentNotifications();
+
+    const activeView = document.querySelector(".view-section.active");
+    const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
+    switchView(viewId);
+
+    if (icon) icon.classList.remove("fa-spin");
+    Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data terbaru berhasil dimuat.', timer: 1200, showConfirmButton: false });
+}
+
+// ==================================================================
+// 4. NAVIGATION & LAYOUT CONTROLLERS
+// ==================================================================
 function applyRoleUI(role) {
     document.body.setAttribute("data-role", role);
     const navContainer = document.getElementById("bottom-nav-items");
@@ -361,7 +462,34 @@ function applyRoleUI(role) {
     }
 }
 
-// Navigasi Drawer Sidebar
+function switchView(viewId) {
+    if (pendingKebiasaanQueue && pendingKebiasaanQueue.size > 0) {
+        flushKebiasaanQueue();
+    }
+    document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".sidebar-nav-item").forEach(el => el.classList.remove("active", "bg-slate-100", "text-primary"));
+
+    const targetView = document.getElementById(`view-${viewId}`);
+    if (targetView) targetView.classList.add("active");
+
+    const navBtn = document.querySelector(`.nav-item[data-target="${viewId}"]`);
+    if (navBtn) navBtn.classList.add("active");
+
+    const sidebarBtn = document.querySelector(`.sidebar-nav-item[data-target="${viewId}"]`);
+    if (sidebarBtn) sidebarBtn.classList.add("active", "bg-slate-100", "text-primary");
+
+    if (viewId === "dashboard") renderDashboard();
+    if (viewId === "absensi") loadAbsensiData();
+    if (viewId === "kebiasaan") loadKebiasaanData();
+    if (viewId === "karakter") loadKeagamaanData();
+    if (viewId === "akademik") loadAkademikData();
+    if (viewId === "pembinaan") loadPembinaanData();
+    if (viewId === "laporan") loadLaporanRekap();
+    if (viewId === "siswa") renderSiswaView();
+    if (viewId === "admin-manage") renderAdminManage();
+}
+
 function toggleSidebar(forceOpen) {
     const sidebar = document.getElementById("app-sidebar");
     const backdrop = document.getElementById("sidebar-backdrop");
@@ -418,187 +546,9 @@ function renderSidebarMenu(role) {
     container.innerHTML = html;
 }
 
-// Notifikasi Pintar (Presensi, Nilai Akademik, & Catatan Pembinaan)
-async function checkStudentNotifications() {
-    if (!appState.user) return;
-
-    const [resAbs, resAkd, resPbn] = await Promise.all([
-        apiCall("getAbsensi", { tanggal: getDateWITA() }, false),
-        apiCall("getAkademik", {}, false),
-        apiCall("getPembinaan", {}, false)
-    ]);
-
-    const absensiData = resAbs?.data || [];
-    const akademikData = resAkd?.data || [];
-    const pembinaanData = resPbn?.data || [];
-
-    let issueCount = 0;
-    const notificationList = [];
-
-    // Tentukan target siswa (jika role siswa, periksa data akunnya sendiri)
-    const targetStudents = (appState.user.role === 'siswa')
-        ? (appState.siswa.length > 0 ? appState.siswa : [appState.user])
-        : (appState.siswa || []);
-
-    targetStudents.forEach(s => {
-        const sId = String(s.id);
-        
-        // 1. Notifikasi Presensi (Alpa)
-        const totalAlpa = absensiData.filter(a => String(a.siswa_id) === sId && a.status === 'A').length;
-        if (totalAlpa > 0) {
-            issueCount++;
-            notificationList.push({
-                siswa: s,
-                type: 'danger',
-                title: 'Absensi (Alpa)',
-                desc: appState.user.role === 'siswa'
-                    ? `Anda tercatat Alpa pada hari ini.`
-                    : `${s.nama} tercatat Alpa pada hari ini.`
-            });
-        }
-
-        // 2. Notifikasi Nilai Akademik (Di bawah KKTP)
-        const lowGrades = akademikData.filter(a => String(a.siswa_id) === sId && Number(a.nilai_akhir || 0) < Number(a.kktp || 75));
-        if (lowGrades.length > 0) {
-            lowGrades.forEach(g => {
-                issueCount++;
-                notificationList.push({
-                    siswa: s,
-                    type: 'warning',
-                    title: 'Nilai Akademik Kurang',
-                    desc: appState.user.role === 'siswa'
-                        ? `Nilai mata pelajaran ${g.mapel} Anda (${g.nilai_akhir}) di bawah standar KKTP (${g.kktp}).`
-                        : `${s.nama}: Nilai ${g.mapel} (${g.nilai_akhir}) di bawah standar KKTP (${g.kktp}).`
-                });
-            });
-        }
-
-        // 3. Notifikasi Catatan Pembinaan Aktif
-        const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && String(p.status).toLowerCase() !== 'selesai');
-        if (activePem.length > 0) {
-            activePem.forEach(p => {
-                issueCount++;
-                notificationList.push({
-                    siswa: s,
-                    type: 'info',
-                    title: 'Catatan Pembinaan',
-                    desc: appState.user.role === 'siswa'
-                        ? `Catatan pembinaan (${p.jenis}): ${p.permasalahan}`
-                        : `${s.nama}: Catatan pembinaan (${p.jenis}): ${p.permasalahan}`
-                });
-            });
-        }
-    });
-
-    appState.currentNotifications = notificationList;
-
-    const badge = document.getElementById("notif-badge");
-    const btnNotif = document.getElementById("btn-notif-header");
-    if (badge && btnNotif) {
-        if (issueCount > 0) {
-            badge.innerText = issueCount;
-            badge.classList.remove("hidden");
-            btnNotif.classList.remove("hidden");
-        } else {
-            badge.classList.add("hidden");
-        }
-    }
-}
-
-function openNotificationModal() {
-    const box = document.getElementById("modal-content-box");
-    if (!box) return;
-
-    const list = appState.currentNotifications || [];
-
-    box.innerHTML = `
-        <div class="flex justify-between items-center mb-4 border-b pb-2">
-            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <i class="fas fa-bell text-amber-500"></i> Notifikasi Siswa Bermasalah (${list.length})
-            </h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <div class="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
-            ${list.length === 0 ? `
-                <div class="empty-state">
-                    <i class="fas fa-check-circle text-emerald-500 text-2xl mb-1"></i>
-                    <p class="text-xs text-slate-500">Tidak ada siswa yang memerlukan perhatian mendesak.</p>
-                </div>
-            ` : list.map(n => `
-                <div class="p-3 rounded-2xl border ${n.type === 'danger' ? 'bg-rose-50 border-rose-100' : (n.type === 'warning' ? 'bg-amber-50 border-amber-100' : 'bg-blue-50 border-blue-100')} flex justify-between items-center">
-                    <div>
-                        <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-[9px] font-bold px-2 py-0.5 rounded uppercase ${n.type === 'danger' ? 'bg-rose-200 text-rose-800' : (n.type === 'warning' ? 'bg-amber-200 text-amber-800' : 'bg-blue-200 text-blue-800')}">${n.title}</span>
-                            <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)}</h4>
-                        </div>
-                        <p class="text-[11px] text-slate-600">${escapeHtml(n.desc)}</p>
-                    </div>
-                    <button onclick="closeModal(); openProfilSiswa('${n.siswa.id}')" class="p-2 bg-white text-slate-700 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 shrink-0 ml-2">
-                        Profil <i class="fas fa-chevron-right text-[10px]"></i>
-                    </button>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    document.getElementById("modal-container")?.classList.remove("hidden");
-}
-
-function handleLogout(force = false) {
-    const executeLogout = () => {
-        localStorage.removeItem("session_anak_wali");
-        appState = { token: null, user: null, kelas: [], guru: [], siswa: [], myStudents: [] };
-        location.reload();
-    };
-
-    if (force) {
-        executeLogout();
-    } else {
-        Swal.fire({
-            title: 'Konfirmasi Keluar',
-            text: "Apakah Anda yakin ingin keluar dari aplikasi?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'Ya, Keluar',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) executeLogout();
-        });
-    }
-}
-
-// Control Navigation & Views
-function switchView(viewId) {
-    if (pendingKebiasaanQueue && pendingKebiasaanQueue.size > 0) {
-        flushKebiasaanQueue();
-    }
-    document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
-    document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-    document.querySelectorAll(".sidebar-nav-item").forEach(el => el.classList.remove("active", "bg-slate-100", "text-primary"));
-
-    const targetView = document.getElementById(`view-${viewId}`);
-    if (targetView) targetView.classList.add("active");
-
-    const navBtn = document.querySelector(`.nav-item[data-target="${viewId}"]`);
-    if (navBtn) navBtn.classList.add("active");
-
-    const sidebarBtn = document.querySelector(`.sidebar-nav-item[data-target="${viewId}"]`);
-    if (sidebarBtn) sidebarBtn.classList.add("active", "bg-slate-100", "text-primary");
-
-    if (viewId === "dashboard") renderDashboard();
-    if (viewId === "absensi") loadAbsensiData();
-    if (viewId === "kebiasaan") loadKebiasaanData();
-    if (viewId === "karakter") loadKeagamaanData();
-    if (viewId === "akademik") loadAkademikData();
-    if (viewId === "pembinaan") loadPembinaanData();
-    if (viewId === "laporan") loadLaporanRekap();
-    if (viewId === "siswa") renderSiswaView();
-    if (viewId === "admin-manage") renderAdminManage();
-}
-
-// Dashboard Engine
+// ==================================================================
+// 5. DASHBOARD MODULE
+// ==================================================================
 async function renderDashboard() {
     renderSkeleton("dash-stats-container", 3);
     const res = await apiCall("getDashboardData", {}, false);
@@ -732,7 +682,131 @@ function renderAgendaSection(agendaList) {
     `).join("");
 }
 
-// Presensi Engine (Batch Input via Dropdown per Siswa & Filter Kelas)
+// Notifikasi Engine
+async function checkStudentNotifications() {
+    if (!appState.user) return;
+
+    const [resAbs, resAkd, resPbn] = await Promise.all([
+        apiCall("getAbsensi", { tanggal: getDateWITA() }, false),
+        apiCall("getAkademik", {}, false),
+        apiCall("getPembinaan", {}, false)
+    ]);
+
+    const absensiData = resAbs?.data || [];
+    const akademikData = resAkd?.data || [];
+    const pembinaanData = resPbn?.data || [];
+
+    let issueCount = 0;
+    const notificationList = [];
+
+    const targetStudents = (appState.user.role === 'siswa')
+        ? (appState.siswa.length > 0 ? appState.siswa : [appState.user])
+        : (appState.siswa || []);
+
+    targetStudents.forEach(s => {
+        const sId = String(s.id);
+        
+        const totalAlpa = absensiData.filter(a => String(a.siswa_id) === sId && a.status === 'A').length;
+        if (totalAlpa > 0) {
+            issueCount++;
+            notificationList.push({
+                siswa: s,
+                type: 'danger',
+                title: 'Absensi (Alpa)',
+                desc: appState.user.role === 'siswa'
+                    ? `Anda tercatat Alpa pada hari ini.`
+                    : `${s.nama} tercatat Alpa pada hari ini.`
+            });
+        }
+
+        const lowGrades = akademikData.filter(a => String(a.siswa_id) === sId && Number(a.nilai_akhir || 0) < Number(a.kktp || 75));
+        if (lowGrades.length > 0) {
+            lowGrades.forEach(g => {
+                issueCount++;
+                notificationList.push({
+                    siswa: s,
+                    type: 'warning',
+                    title: 'Nilai Akademik Kurang',
+                    desc: appState.user.role === 'siswa'
+                        ? `Nilai mata pelajaran ${g.mapel} Anda (${g.nilai_akhir}) di bawah standar KKTP (${g.kktp}).`
+                        : `${s.nama}: Nilai ${g.mapel} (${g.nilai_akhir}) di bawah standar KKTP (${g.kktp}).`
+                });
+            });
+        }
+
+        const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && String(p.status).toLowerCase() !== 'selesai');
+        if (activePem.length > 0) {
+            activePem.forEach(p => {
+                issueCount++;
+                notificationList.push({
+                    siswa: s,
+                    type: 'info',
+                    title: 'Catatan Pembinaan',
+                    desc: appState.user.role === 'siswa'
+                        ? `Catatan pembinaan (${p.jenis}): ${p.permasalahan}`
+                        : `${s.nama}: Catatan pembinaan (${p.jenis}): ${p.permasalahan}`
+                });
+            });
+        }
+    });
+
+    appState.currentNotifications = notificationList;
+
+    const badge = document.getElementById("notif-badge");
+    const btnNotif = document.getElementById("btn-notif-header");
+    if (badge && btnNotif) {
+        if (issueCount > 0) {
+            badge.innerText = issueCount;
+            badge.classList.remove("hidden");
+            btnNotif.classList.remove("hidden");
+        } else {
+            badge.classList.add("hidden");
+        }
+    }
+}
+
+function openNotificationModal() {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+
+    const list = appState.currentNotifications || [];
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-bell text-amber-500"></i> Notifikasi Siswa Bermasalah (${list.length})
+            </h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
+            ${list.length === 0 ? `
+                <div class="empty-state">
+                    <i class="fas fa-check-circle text-emerald-500 text-2xl mb-1"></i>
+                    <p class="text-xs text-slate-500">Tidak ada siswa yang memerlukan perhatian mendesak.</p>
+                </div>
+            ` : list.map(n => `
+                <div class="p-3 rounded-2xl border ${n.type === 'danger' ? 'bg-rose-50 border-rose-100' : (n.type === 'warning' ? 'bg-amber-50 border-amber-100' : 'bg-blue-50 border-blue-100')} flex justify-between items-center">
+                    <div>
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-[9px] font-bold px-2 py-0.5 rounded uppercase ${n.type === 'danger' ? 'bg-rose-200 text-rose-800' : (n.type === 'warning' ? 'bg-amber-200 text-amber-800' : 'bg-blue-200 text-blue-800')}">${n.title}</span>
+                            <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)}</h4>
+                        </div>
+                        <p class="text-[11px] text-slate-600">${escapeHtml(n.desc)}</p>
+                    </div>
+                    <button onclick="closeModal(); openProfilSiswa('${n.siswa.id}')" class="p-2 bg-white text-slate-700 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 shrink-0 ml-2">
+                        Profil <i class="fas fa-chevron-right text-[10px]"></i>
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+// ==================================================================
+// 6. PRESENSI MODULE
+// ==================================================================
 async function loadAbsensiData(forceRefresh = false) {
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
@@ -866,7 +940,9 @@ async function saveBatchAbsensiForm(e) {
     }
 }
 
-// 7 Kebiasaan Engine
+// ==================================================================
+// 7. KEBIASAAN MODULE (DEBOUNCE ENGINE)
+// ==================================================================
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
     const tanggal = dateInput ? (dateInput.value || getDateWITA()) : getDateWITA();
@@ -930,15 +1006,10 @@ function renderKebiasaanView() {
     }).join("");
 }
 
-/**
- * Engine Debounce Simpan 7 Kebiasaan
- * Memperbarui UI secara instan dan menunda pengiriman API hingga pengguna selesai memilih.
- */
 function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? tanggalInput.value : getDateWITA();
 
-    // 1. Update State Lokal secara Instan (Zero-Latency UI Feedback)
     const existingIndex = appState.kebiasaan.findIndex(k => 
         String(k.siswa_id) === String(siswa_id) && 
         String(k.tanggal) === String(tanggal) && 
@@ -951,17 +1022,13 @@ function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
         appState.kebiasaan.push({ siswa_id, tanggal, kebiasaan_id, status });
     }
 
-    // 2. Re-render Tampilan Tombol secara Cepat
     renderKebiasaanView();
 
-    // 3. Masukkan Perubahan ke Antrean (Queue Map)
     const queueKey = `${siswa_id}_${kebiasaan_id}_${tanggal}`;
     pendingKebiasaanQueue.set(queueKey, { tanggal, siswa_id, kebiasaan_id, status });
 
-    // 4. Tampilkan Indikator Visual "Menyimpan..."
     updateKebiasaanSaveStatus('saving');
 
-    // 5. Timer Debounce: Tunggu 1,5 detik setelah interaksi terakhir sebelum mengirim ke server
     if (kebiasaanDebounceTimer) clearTimeout(kebiasaanDebounceTimer);
 
     kebiasaanDebounceTimer = setTimeout(async () => {
@@ -969,28 +1036,19 @@ function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     }, 1500);
 }
 
-/**
- * Memproses dan Mengirimkan Antrean Perubahan ke Server
- */
 async function flushKebiasaanQueue() {
     if (pendingKebiasaanQueue.size === 0) return;
 
-    // Ambil data antrean saat ini dan kosongkan map
     const itemsToSave = Array.from(pendingKebiasaanQueue.values());
     pendingKebiasaanQueue.clear();
 
-    // Kirim data perubahan ke server
     for (const item of itemsToSave) {
         await apiCall("saveKebiasaan", item, false);
     }
 
-    // Perbarui indikator visual menjadi "Tersimpan"
     updateKebiasaanSaveStatus('saved');
 }
 
-/**
- * Pembaruan Tampilan Badge Status Simpan Realtime
- */
 function updateKebiasaanSaveStatus(state) {
     const badge = document.getElementById("kebiasaan-save-status");
     if (!badge) return;
@@ -1002,7 +1060,6 @@ function updateKebiasaanSaveStatus(state) {
         badge.className = "text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1.5 shadow-sm";
         badge.innerHTML = `<i class="fas fa-check-circle text-emerald-600"></i> Tersimpan`;
 
-        // Sembunyikan badge secara otomatis setelah 3 detik
         setTimeout(() => {
             if (pendingKebiasaanQueue.size === 0) {
                 badge.classList.add("hidden");
@@ -1011,7 +1068,9 @@ function updateKebiasaanSaveStatus(state) {
     }
 }
 
-// Keagamaan Engine
+// ==================================================================
+// 8. KEAGAMAAN / HAFALAN MODULE
+// ==================================================================
 async function loadKeagamaanData(forceRefresh = false) {
     const filterSelect = document.getElementById("karakter-siswa-filter");
     if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
@@ -1143,7 +1202,9 @@ async function deleteKeagamaan(id) {
     }
 }
 
-// Akademik & Prestasi Engine
+// ==================================================================
+// 9. AKADEMIK & PRESTASI MODULE
+// ==================================================================
 function switchAkademikTab(tab) {
     document.querySelectorAll(".akd-tab-content").forEach(c => c.classList.add("hidden"));
     document.querySelectorAll(".akd-tab-btn").forEach(b => {
@@ -1392,7 +1453,9 @@ async function deletePrestasi(id) {
     }
 }
 
-// Pembinaan Siswa Engine
+// ==================================================================
+// 10. PEMBINAAN SISWA MODULE (AUTO-DRAFT SUPPORT)
+// ==================================================================
 function getPembinaanStatusBadge(status) {
     const s = String(status || '').trim().toLowerCase();
     if (s === 'pemantauan') return 'bg-sky-50 text-sky-700 border-sky-200';
@@ -1466,7 +1529,13 @@ function openModalPembinaan(id = null) {
     if (!box) return;
 
     const rec = id ? appState.pembinaan.find(x => String(x.id) === String(id)) : null;
-    const siswaOpts = appState.siswa.map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+
+    // Cek apakah ada draf tersimpan untuk input baru
+    const draft = !id ? getFormDraft("pembinaan") : null;
+
+    const siswaOpts = appState.siswa.map(s => 
+        `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
+    ).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -1482,34 +1551,41 @@ function openModalPembinaan(id = null) {
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1">JENIS</label>
                     <select id="m-pbn-jenis" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                        ${['Sikap', 'Akademik', 'Kehadiran', 'Sosial'].map(j => `<option value="${j}" ${rec && rec.jenis === j ? 'selected' : ''}>${j}</option>`).join('')}
+                        ${['Sikap', 'Akademik', 'Kehadiran', 'Sosial'].map(j => `<option value="${j}" ${(draft?.['m-pbn-jenis'] || rec?.jenis) === j ? 'selected' : ''}>${j}</option>`).join('')}
                     </select>
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1">STATUS</label>
                     <select id="m-pbn-status" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                        ${['Pemantauan', 'Dalam Pembinaan', 'Perlu Tindak Lanjut', 'Selesai'].map(st => `<option value="${st}" ${rec && String(rec.status).toLowerCase() === st.toLowerCase() ? 'selected' : ''}>${st}</option>`).join('')}
+                        ${['Pemantauan', 'Dalam Pembinaan', 'Perlu Tindak Lanjut', 'Selesai'].map(st => `<option value="${st}" ${String(draft?.['m-pbn-status'] || rec?.status).toLowerCase() === st.toLowerCase() ? 'selected' : ''}>${st}</option>`).join('')}
                     </select>
                 </div>
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1">DESKRIPSI PERMASALAHAN / CATATAN</label>
-                <textarea id="m-pbn-masalah" rows="3" placeholder="Jelaskan kasus..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${rec ? escapeHtml(rec.permasalahan || '') : ''}</textarea>
+                <textarea id="m-pbn-masalah" rows="3" placeholder="Jelaskan kasus..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${escapeHtml(draft?.['m-pbn-masalah'] || rec?.permasalahan || '')}</textarea>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1">TANGGAL</label>
-                    <input type="date" id="m-pbn-tanggal" value="${rec ? rec.tanggal : getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                    <input type="date" id="m-pbn-tanggal" value="${draft?.['m-pbn-tanggal'] || rec?.tanggal || getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
-                    <input type="date" id="m-pbn-pantau" value="${rec ? rec.jadwal_pantau : ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                    <input type="date" id="m-pbn-pantau" value="${draft?.['m-pbn-pantau'] || rec?.jadwal_pantau || ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
             <button type="submit" class="w-full bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Catatan Pembinaan</button>
         </form>
     `;
+
     document.getElementById("modal-container")?.classList.remove("hidden");
+
+    if (!id) {
+        const fields = ['m-pbn-siswa', 'm-pbn-jenis', 'm-pbn-status', 'm-pbn-masalah', 'm-pbn-tanggal', 'm-pbn-pantau'];
+        attachAutoSaveDraft("pembinaan", fields);
+        if (draft) showDraftIndicator(true);
+    }
 }
 
 async function savePembinaanForm(e, id) {
@@ -1526,6 +1602,7 @@ async function savePembinaanForm(e, id) {
 
     const res = await apiCall("savePembinaan", payload, true);
     if (res && res.status === "success") {
+        clearFormDraft("pembinaan");
         closeModal();
         Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
         await loadPembinaanData(true);
@@ -1540,7 +1617,9 @@ async function deletePembinaan(id) {
     }
 }
 
-// Profil Siswa Terintegrasi 360°
+// ==================================================================
+// 11. PROFIL SISWA 360° & PRINT MODULE
+// ==================================================================
 function switchTabSiswa(tabName, btnEl) {
     document.querySelectorAll('.prof-tab-btn').forEach(btn => {
         btn.classList.remove('active', 'border-b-2', 'border-blue-600', 'text-blue-600', 'font-bold');
@@ -1789,7 +1868,23 @@ function printProfilSiswa() {
     window.print();
 }
 
-// Modul Rekap Laporan & Ekspor CSV
+function hubungiOrtu(siswaId) {
+    const s = appState.siswa.find(x => String(x.id) === String(siswaId)) || appState.user;
+    if (!s || !s.no_hp_ortu) {
+        Swal.fire({ icon: 'warning', title: 'Nomor Tidak Ada', text: 'Nomor WhatsApp Orang Tua/Wali belum terdaftar.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    let phone = safeStr(s.no_hp_ortu).replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+
+    const message = encodeURIComponent(`Assalamu'alaikum Bapak/Ibu Wali dari ${s.nama}. Kami dari pihak SMP Negeri 1 Talaga Jaya ingin menyampaikan informasi perkembangan anak wali.`);
+    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${message}`, '_blank');
+}
+
+// ==================================================================
+// 12. LAPORAN REKAP & EXPORT MODULE (PDF ENGINE)
+// ==================================================================
 async function loadLaporanRekap(forceRefresh = false) {
     if (!forceRefresh && appState.laporanRekap.length > 0) {
         renderLaporanRekapView();
@@ -1835,12 +1930,7 @@ function renderLaporanRekapView() {
     }).join("");
 }
 
-/**
- * Engine Cetak Rekap Laporan Kelas ke PDF / Printer
- * Menyusun Kop Surat, Tabel Rekapitulasi Presensi & Akademik, serta Kolom Pengesahan.
- */
 function printLaporanRekap() {
-    // 1. Validasi ketersediaan data rekapitulasi
     if (!appState.laporanRekap || appState.laporanRekap.length === 0) {
         Swal.fire({
             icon: 'warning',
@@ -1854,18 +1944,14 @@ function printLaporanRekap() {
     const printArea = document.getElementById("printable-area");
     if (!printArea) return;
 
-    // 2. Format Tanggal WITA untuk dokumen
     const formattedDate = new Date().toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
     });
 
-    // 3. Generasi Baris Tabel Rekapitulasi Siswa
     const rowsHtml = appState.laporanRekap.map((item, index) => {
         const kls = appState.kelas.find(k => String(k.id) === String(item.kelas_id));
-        
-        // Indikator Evaluasi Ringkas
         const isPerhatian = (item.presensi.alpa >= 3 || item.dibawah_kktp >= 2);
         const statusText = isPerhatian ? 'Perlu Perhatian' : 'Tuntas / Baik';
         const statusColor = isPerhatian ? '#dc2626' : '#16a34a';
@@ -1886,10 +1972,8 @@ function printLaporanRekap() {
         `;
     }).join('');
 
-    // 4. Injeksi Tata Letak Cetak Resmi ke #printable-area
     printArea.innerHTML = `
         <div style="font-family: 'Times New Roman', Times, serif; color: #0f172a; padding: 10px;">
-            <!-- Kop Surat Resmi Sekolah -->
             <div style="text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 16px;">
                 <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase; letter-spacing: 1px;">Pemerintah Kabupaten Gorontalo</h4>
                 <h3 style="margin: 2px 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Dinas Pendidikan dan Kebudayaan</h3>
@@ -1897,13 +1981,11 @@ function printLaporanRekap() {
                 <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Jl. Pelabuhan II, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
             </div>
 
-            <!-- Judul Laporan & Informasi Metadata -->
             <div style="text-align: center; margin-bottom: 16px;">
                 <h3 style="margin: 0 0 4px 0; font-size: 14px; text-transform: uppercase; text-decoration: underline; font-weight: bold;">LAPORAN REKAPITULASI PEMANTAUAN ANAK WALI</h3>
                 <p style="margin: 0; font-size: 11px; color: #475569;">Tanggal Cetak: ${formattedDate} | Dicetak Oleh: <b>${escapeHtml(appState.user.nama)}</b> (${escapeHtml(appState.user.role.toUpperCase())})</p>
             </div>
 
-            <!-- Tabel Data Rekapitulasi -->
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;" border="1" borderColor="#94a3b8">
                 <thead>
                     <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
@@ -1924,7 +2006,6 @@ function printLaporanRekap() {
                 </tbody>
             </table>
 
-            <!-- Kolom Tanda Tangan & Pengesahan Dokumen -->
             <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; page-break-inside: avoid;">
                 <div style="text-align: center; width: 220px;">
                     <p style="margin-bottom: 60px;">Mengetahui,<br>Kepala SMPN 1 Talaga Jaya</p>
@@ -1940,7 +2021,6 @@ function printLaporanRekap() {
         </div>
     `;
 
-    // 5. Panggil dialog cetak peramban
     window.print();
 }
 
@@ -1966,7 +2046,9 @@ function exportRekapCSV() {
     document.body.removeChild(link);
 }
 
-// Master Data Management (Guru, Siswa, Kelas)
+// ==================================================================
+// 13. MASTER DATA MANAGEMENT (ADMIN & GURU)
+// ==================================================================
 function renderSiswaView() {
     const container = document.getElementById("siswa-card-container");
     if (!container) return;
@@ -2114,7 +2196,6 @@ function renderAdminKelas() {
     }).join("");
 }
 
-// Modal Form Master Data Handlers
 function openModalGuru(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
@@ -2322,21 +2403,9 @@ async function deleteKelas(id) {
     }
 }
 
-function hubungiOrtu(siswaId) {
-    const s = appState.siswa.find(x => String(x.id) === String(siswaId)) || appState.user;
-    if (!s || !s.no_hp_ortu) {
-        Swal.fire({ icon: 'warning', title: 'Nomor Tidak Ada', text: 'Nomor WhatsApp Orang Tua/Wali belum terdaftar.', confirmButtonColor: '#2563eb' });
-        return;
-    }
-
-    let phone = safeStr(s.no_hp_ortu).replace(/[^0-9]/g, '');
-    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-
-    const message = encodeURIComponent(`Assalamu'alaikum Bapak/Ibu Wali dari ${s.nama}. Kami dari pihak SMP Negeri 1 Talaga Jaya ingin menyampaikan informasi perkembangan anak wali.`);
-    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${message}`, '_blank');
-}
-
-// Settings & Modal Control
+// ==================================================================
+// 14. SETTINGS & APP INITIALIZATION
+// ==================================================================
 function openUserSettingsModal() {
     const container = document.getElementById("modal-content-box");
     if (!container) return;
@@ -2386,7 +2455,6 @@ function closeModal() {
     if (modal) modal.classList.add("hidden");
 }
 
-// Auto Restore Session
 window.addEventListener("DOMContentLoaded", async () => {
     const savedSession = localStorage.getItem("session_anak_wali");
     if (savedSession) {
