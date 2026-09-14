@@ -81,6 +81,19 @@ const MASTER_KEBIASAAN = [
 // ==================================================================
 // 2. HELPER UTILITY & DRAFT ENGINE
 // ==================================================================
+function sortSiswa(listSiswa) {
+    return [...listSiswa].sort((a, b) => {
+        const noA = (a.no_absen !== undefined && a.no_absen !== null && String(a.no_absen).trim() !== "") ? Number(a.no_absen) : null;
+        const noB = (b.no_absen !== undefined && b.no_absen !== null && String(b.no_absen).trim() !== "") ? Number(b.no_absen) : null;
+
+        if (noA !== null && noB !== null) return noA - noB;
+        if (noA !== null) return -1;
+        if (noB !== null) return 1;
+
+        return String(a.nama || "").localeCompare(String(b.nama || ""), "id");
+    });
+}
+
 function renderSkeleton(containerId, count = 3) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -295,6 +308,7 @@ async function handleAppLogin(e) {
 }
 
 async function setupAppSession() {
+    startRealtimeNotificationPolling();
     applyRoleUI(appState.user.role);
     startSilentTokenRefresh();
 
@@ -343,6 +357,33 @@ async function setupAppSession() {
     switchView("dashboard");
 }
 
+let notificationPollingInterval = null;
+
+function startRealtimeNotificationPolling() {
+    if (notificationPollingInterval) clearInterval(notificationPollingInterval);
+    
+    notificationPollingInterval = setInterval(async () => {
+        if (!appState.token || !appState.user) return;
+        
+        const prevCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
+        await checkStudentNotifications();
+        const currentCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
+
+        // Tampilkan toast ringan jika ada notifikasi baru masuk
+        if (currentCount > prevCount) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'warning',
+                title: 'Perhatian Notifikasi!',
+                text: `${currentCount - prevCount} catatan siswa bermasalah baru ditemukan.`,
+                showConfirmButton: false,
+                timer: 4000
+            });
+        }
+    }, 30000); // 30 detik
+}
+
 function handleLogout(force = false) {
     const executeLogout = () => {
         if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
@@ -367,6 +408,7 @@ function handleLogout(force = false) {
             if (result.isConfirmed) executeLogout();
         });
     }
+    if (notificationPollingInterval) clearInterval(notificationPollingInterval);
 }
 
 async function fetchAllAppData(force = true) {
@@ -840,9 +882,12 @@ function renderAbsensiView() {
     const isEditable = appState.user.role === 'admin' || appState.user.role === 'guru';
     const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
 
-    const filteredSiswa = selectedKelas 
+    const rawFiltered = selectedKelas 
         ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
         : appState.siswa;
+
+    // Urutkan siswa berdasarkan Nomor Absen -> Nama
+    const filteredSiswa = sortSiswa(rawFiltered);
 
     // --- Kalkulasi Statistik Presensi Kelas ---
     const totalSiswa = filteredSiswa.length;
@@ -858,7 +903,6 @@ function renderAbsensiView() {
     });
 
     const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
-    // ----------------------------------------
 
     const kelasOptions = appState.kelas.map(k => 
         `<option value="${k.id}" ${String(selectedKelas) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`
@@ -888,12 +932,10 @@ function renderAbsensiView() {
                     </div>
                 </div>
 
-                <!-- Progress Bar -->
                 <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
                     <div class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: ${persenHadir}%"></div>
                 </div>
 
-                <!-- Mini Breakdown Stats -->
                 <div class="grid grid-cols-4 gap-2 pt-1 border-t border-slate-700/60 text-center">
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                         <span class="block text-[9px] text-slate-400 font-bold">Hadir</span>
@@ -915,27 +957,6 @@ function renderAbsensiView() {
             </div>
             ` : ''}
 
-            ${isEditable && filteredSiswa.length > 0 ? `
-            <!-- Panel Tombol Presensi Massal Cepat -->
-            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Presensi Massal Cepat:</span>
-                <div class="grid grid-cols-4 gap-1.5">
-                    <button type="button" onclick="setAllAbsensiStatus('H')" class="py-2 px-1 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[10px] font-bold transition flex flex-col items-center gap-1 border border-emerald-100">
-                        <i class="fas fa-check-circle text-xs"></i> Hadir Semua
-                    </button>
-                    <button type="button" onclick="setAllAbsensiStatus('S')" class="py-2 px-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-[10px] font-bold transition flex flex-col items-center gap-1 border border-blue-100">
-                        <i class="fas fa-notes-medical text-xs"></i> Sakit Semua
-                    </button>
-                    <button type="button" onclick="setAllAbsensiStatus('I')" class="py-2 px-1 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 text-[10px] font-bold transition flex flex-col items-center gap-1 border border-amber-100">
-                        <i class="fas fa-envelope text-xs"></i> Izin Semua
-                    </button>
-                    <button type="button" onclick="setAllAbsensiStatus('A')" class="py-2 px-1 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-[10px] font-bold transition flex flex-col items-center gap-1 border border-rose-100">
-                        <i class="fas fa-times-circle text-xs"></i> Alpa Semua
-                    </button>
-                </div>
-            </div>
-            ` : ''}
-
             ${filteredSiswa.length === 0 ? `
                 <div class="empty-state"><i class="fas fa-user-slash text-xl mb-1"></i><p class="text-xs">Tidak ada siswa di kelas ini.</p></div>
             ` : `
@@ -943,10 +964,12 @@ function renderAbsensiView() {
                     ${filteredSiswa.map(s => {
                         const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
                         const currentStatus = rec.status || 'H';
+                        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-black mr-1">${s.no_absen}</span>` : '';
+
                         return `
                             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                                 <div>
-                                    <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
+                                    <h4 class="font-bold text-xs text-slate-800 flex items-center">${noAbsenBadge}${escapeHtml(s.nama)}</h4>
                                     <span class="text-[10px] text-slate-400">
                                         <i class="far fa-clock mr-1"></i>${rec.waktu_masuk ? formatDisplayTime(rec.waktu_masuk) : 'Belum Absen'}
                                     </span>
@@ -2213,7 +2236,9 @@ function renderSiswaView() {
 
     const searchInput = document.getElementById("search-siswa-input");
     const query = (searchInput ? searchInput.value : "").toLowerCase();
-    const filtered = appState.siswa.filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
+
+    const rawFiltered = appState.siswa.filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
+    const filtered = sortSiswa(rawFiltered);
 
     if (filtered.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-search text-xl mb-1"></i><p class="text-xs">Siswa tidak ditemukan.</p></div>`;
@@ -2224,13 +2249,15 @@ function renderSiswaView() {
 
     container.innerHTML = filtered.map(s => {
         const kls = appState.kelas.find(k => String(k.id) === String(s.kelas_id));
+        const noAbsenLabel = s.no_absen ? `No. Absen: ${s.no_absen} | ` : '';
+
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
                     <img src="${escapeHtml(s.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                     <div>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
-                        <p class="text-[10px] text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
+                        <p class="text-[10px] text-slate-400">${noAbsenLabel}NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5">
@@ -2302,12 +2329,14 @@ function renderAdminGuru() {
     `).join("");
 }
 
-function renderAdminSiswa() {
+ffunction renderAdminSiswa() {
     const list = document.getElementById("admin-siswa-list");
     if (!list) return;
 
     const query = (document.getElementById("search-admin-siswa-input")?.value || "").toLowerCase();
-    const filtered = appState.siswa.filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
+
+    const rawFiltered = appState.siswa.filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
+    const filtered = sortSiswa(rawFiltered);
 
     if (filtered.length === 0) {
         list.innerHTML = `<div class="empty-state"><i class="fas fa-user-graduate text-xl mb-1"></i><p class="text-xs">Belum ada Siswa.</p></div>`;
@@ -2317,7 +2346,7 @@ function renderAdminSiswa() {
     list.innerHTML = filtered.map(s => `
         <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
             <div>
-                <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
+                <h4 class="font-bold text-xs text-slate-800">${s.no_absen ? `[${s.no_absen}] ` : ''}${escapeHtml(s.nama)}</h4>
                 <p class="text-[10px] text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
             </div>
             <div class="flex gap-1">
@@ -2440,6 +2469,16 @@ function openModalSiswa(id = null) {
                 <label class="block text-[10px] font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
                 <input type="text" id="m-ssw-nama" value="${escapeHtml(s?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">NOMOR ABSEN (OPSIONAL)</label>
+                    <input type="number" id="m-ssw-absen" value="${s?.no_absen !== undefined && s?.no_absen !== null ? s.no_absen : ''}" placeholder="Contoh: 1" min="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">NISN</label>
+                    <input type="text" id="m-ssw-nisn" value="${escapeHtml(s?.nisn || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                </div>
+            </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1">USERNAME</label>
                 <input type="text" id="m-ssw-user" value="${escapeHtml(s?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
@@ -2447,10 +2486,6 @@ function openModalSiswa(id = null) {
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1">PASSWORD ${s ? '(Kosongkan jika tidak diganti)' : ''}</label>
                 <input type="password" id="m-ssw-pwd" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" ${s ? '' : 'required'}>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">NISN</label>
-                <input type="text" id="m-ssw-nisn" value="${escapeHtml(s?.nisn || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 mb-1">KELAS</label>
@@ -2474,6 +2509,7 @@ async function saveSiswaForm(e, id) {
     const payload = {
         id: id || null,
         nama: document.getElementById("m-ssw-nama").value,
+        no_absen: document.getElementById("m-ssw-absen").value,
         username: document.getElementById("m-ssw-user").value,
         password: document.getElementById("m-ssw-pwd").value,
         nisn: document.getElementById("m-ssw-nisn").value,
