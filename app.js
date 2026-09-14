@@ -844,12 +844,29 @@ function renderAbsensiView() {
         ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
         : appState.siswa;
 
+    // --- Kalkulasi Statistik Presensi Kelas ---
+    const totalSiswa = filteredSiswa.length;
+    let countH = 0, countS = 0, countI = 0, countA = 0;
+
+    filteredSiswa.forEach(s => {
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id));
+        const st = rec ? rec.status : 'H';
+        if (st === 'H') countH++;
+        else if (st === 'S') countS++;
+        else if (st === 'I') countI++;
+        else countA++;
+    });
+
+    const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
+    // ----------------------------------------
+
     const kelasOptions = appState.kelas.map(k => 
         `<option value="${k.id}" ${String(selectedKelas) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`
     ).join("");
 
     container.innerHTML = `
         <div class="space-y-3">
+            <!-- Filter Kelas -->
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
                 <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
                 <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
@@ -857,6 +874,67 @@ function renderAbsensiView() {
                     ${kelasOptions}
                 </select>
             </div>
+
+            <!-- Card Indikator Persentase Kehadiran -->
+            ${totalSiswa > 0 ? `
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-md space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tingkat Kehadiran</span>
+                        <h3 class="text-xl font-extrabold text-emerald-400">${persenHadir}% <span class="text-xs font-normal text-slate-300">Hadir</span></h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-500/30">
+                        ${countH}/${totalSiswa}
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: ${persenHadir}%"></div>
+                </div>
+
+                <!-- Mini Breakdown Stats -->
+                <div class="grid grid-cols-4 gap-2 pt-1 border-t border-slate-700/60 text-center">
+                    <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
+                        <span class="block text-[9px] text-slate-400 font-bold">Hadir</span>
+                        <span class="text-xs font-extrabold text-emerald-400">${countH}</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
+                        <span class="block text-[9px] text-slate-400 font-bold">Sakit</span>
+                        <span class="text-xs font-extrabold text-blue-400">${countS}</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
+                        <span class="block text-[9px] text-slate-400 font-bold">Izin</span>
+                        <span class="text-xs font-extrabold text-amber-400">${countI}</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
+                        <span class="block text-[9px] text-slate-400 font-bold">Alpa</span>
+                        <span class="text-xs font-extrabold text-rose-400">${countA}</span>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+            ${isEditable && filteredSiswa.length > 0 ? `
+            <!-- Panel Tombol Presensi Massal Cepat -->
+            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Presensi Massal Cepat:</span>
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button type="button" onclick="setAllAbsensiStatus('H')" class="py-2 px-1 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[10px] font-bold transition flex flex-col items-center gap-1 border border-emerald-100">
+                        <i class="fas fa-check-circle text-xs"></i> Hadir Semua
+                    </button>
+                    <button type="button" onclick="setAllAbsensiStatus('S')" class="py-2 px-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-[10px] font-bold transition flex flex-col items-center gap-1 border border-blue-100">
+                        <i class="fas fa-notes-medical text-xs"></i> Sakit Semua
+                    </button>
+                    <button type="button" onclick="setAllAbsensiStatus('I')" class="py-2 px-1 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 text-[10px] font-bold transition flex flex-col items-center gap-1 border border-amber-100">
+                        <i class="fas fa-envelope text-xs"></i> Izin Semua
+                    </button>
+                    <button type="button" onclick="setAllAbsensiStatus('A')" class="py-2 px-1 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-[10px] font-bold transition flex flex-col items-center gap-1 border border-rose-100">
+                        <i class="fas fa-times-circle text-xs"></i> Alpa Semua
+                    </button>
+                </div>
+            </div>
+            ` : ''}
 
             ${filteredSiswa.length === 0 ? `
                 <div class="empty-state"><i class="fas fa-user-slash text-xl mb-1"></i><p class="text-xs">Tidak ada siswa di kelas ini.</p></div>
@@ -940,6 +1018,39 @@ async function saveBatchAbsensiForm(e) {
     if (res && res.status === "success") {
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Semua data presensi berhasil disimpan.', timer: 1500, showConfirmButton: false });
     }
+}
+
+/**
+ * Mengubah seluruh pilihan status presensi siswa secara massal di layar
+ * @param {string} status - Kode status ('H', 'S', 'I', 'A', 'T')
+ */
+function setAllAbsensiStatus(status) {
+    const selects = document.querySelectorAll(".absensi-select-item");
+    if (selects.length === 0) return;
+
+    selects.forEach(select => {
+        select.value = status;
+    });
+
+    const statusMap = {
+        'H': 'Hadir',
+        'S': 'Sakit',
+        'I': 'Izin',
+        'A': 'Alpa',
+        'T': 'Tanpa Keterangan'
+    };
+
+    const label = statusMap[status] || status;
+
+    // Toast notifikasi ringan saat aksi massal diterapkan
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: `Status seluruh siswa (${selects.length}) diubah ke: ${label}`,
+        showConfirmButton: false,
+        timer: 1500
+    });
 }
 
 // ==================================================================
