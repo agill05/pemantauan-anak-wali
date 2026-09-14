@@ -710,7 +710,7 @@ function renderAgendaSection(agendaList) {
     `).join("");
 }
 
-// Presensi Engine
+// Presensi Engine (Batch Input via Dropdown per Siswa & Filter Kelas)
 async function loadAbsensiData(forceRefresh = false) {
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
@@ -740,88 +740,93 @@ function renderAbsensiView() {
     }
 
     const isEditable = appState.user.role === 'admin' || appState.user.role === 'guru';
-    const statusOptions = [
-        { code: 'H', label: 'Hadir' },
-        { code: 'I', label: 'Izin' },
-        { code: 'S', label: 'Sakit' },
-        { code: 'A', label: 'Alpa' },
-        { code: 'T', label: 'Terlambat' }
-    ];
+    const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
 
-    container.innerHTML = appState.siswa.map(s => {
-        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: '', waktu_masuk: '' };
-        return `
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
-                <div>
-                    <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
-                    <span class="text-[10px] text-slate-400">
-                        <i class="far fa-clock mr-1"></i>${rec.waktu_masuk ? formatDisplayTime(rec.waktu_masuk) : 'Belum Absen'}
-                    </span>
+    const filteredSiswa = selectedKelas 
+        ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
+        : appState.siswa;
+
+    const kelasOptions = appState.kelas.map(k => 
+        `<option value="${k.id}" ${String(selectedKelas) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`
+    ).join("");
+
+    container.innerHTML = `
+        <div class="space-y-3">
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3">
+                <div class="flex-1">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
+                    <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
+                        <option value="">Semua Kelas</option>
+                        ${kelasOptions}
+                    </select>
                 </div>
-                <div class="flex gap-1.5" id="absen-group-${s.id}">
-                    ${statusOptions.map(st => `
-                        <button ${isEditable ? `onclick="setSingleAbsensi('${escapeHtml(s.id)}', '${st.code}')"` : 'disabled'}
-                                title="${st.label}"
-                                class="touch-btn w-9 h-9 rounded-lg text-xs font-black ${rec.status === st.code ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
-                            ${st.code}
-                        </button>
-                    `).join('')}
-                </div>
+                ${isEditable ? `
+                <div class="self-end">
+                    <button type="button" onclick="setAllAbsensiSelects('H')" class="px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition">
+                        <i class="fas fa-check-double mr-1"></i> Set Semua Hadir
+                    </button>
+                </div>` : ''}
             </div>
-        `;
-    }).join("");
+
+            ${filteredSiswa.length === 0 ? `
+                <div class="empty-state"><i class="fas fa-user-slash text-xl mb-1"></i><p class="text-xs">Tidak ada siswa di kelas ini.</p></div>
+            ` : `
+                <form onsubmit="saveBatchAbsensiForm(event)" class="space-y-2">
+                    ${filteredSiswa.map(s => {
+                        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
+                        const currentStatus = rec.status || 'H';
+                        return `
+                            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
+                                <div>
+                                    <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
+                                    <span class="text-[10px] text-slate-400">
+                                        <i class="far fa-clock mr-1"></i>${rec.waktu_masuk ? formatDisplayTime(rec.waktu_masuk) : 'Belum Absen'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <select data-siswa-id="${s.id}" class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700" ${!isEditable ? 'disabled' : ''}>
+                                        <option value="H" ${currentStatus === 'H' ? 'selected' : ''}>🟢 Hadir (H)</option>
+                                        <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>🔵 Izin (I)</option>
+                                        <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>🟡 Sakit (S)</option>
+                                        <option value="A" ${currentStatus === 'A' ? 'selected' : ''}>🔴 Alpa (A)</option>
+                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>🟠 Terlambat (T)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+
+                    ${isEditable ? `
+                    <div class="pt-2">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl text-xs shadow-md transition flex items-center justify-center gap-2">
+                            <i class="fas fa-save"></i> Simpan Semua Presensi (${filteredSiswa.length} Siswa)
+                        </button>
+                    </div>` : ''}
+                </form>
+            `}
+        </div>
+    `;
 }
 
-async function setSingleAbsensi(siswa_id, status) {
-    const s = appState.siswa.find(x => String(x.id) === String(siswa_id));
-    const namaSiswa = s ? s.nama : 'Siswa';
-    const tanggal = document.getElementById("absensi-date").value;
-    const existingIndex = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswa_id) && String(a.tanggal) === String(tanggal));
-    const existingRec = existingIndex !== -1 ? appState.absensi[existingIndex] : null;
+function setAllAbsensiSelects(status) {
+    document.querySelectorAll(".absensi-select-item").forEach(select => {
+        select.value = status;
+    });
+}
 
-    const statusMap = { 'H': 'Hadir', 'I': 'Izin', 'S': 'Sakit', 'A': 'Alpa', 'T': 'Terlambat' };
-    const labelBaru = statusMap[status] || status;
-    const labelLama = existingRec && existingRec.status ? (statusMap[existingRec.status] || existingRec.status) : null;
-
-    let pesanKonfirmasi = `Apakah Anda yakin ingin mencatat status <b>${labelBaru} (${status})</b> untuk <b>${escapeHtml(namaSiswa)}</b>?`;
-    if (labelLama && existingRec.status !== status) {
-        pesanKonfirmasi = `Ubah status presensi <b>${escapeHtml(namaSiswa)}</b> dari <b>${labelLama} (${existingRec.status})</b> menjadi <b>${labelBaru} (${status})</b>?`;
-    }
+async function saveBatchAbsensiForm(e) {
+    e.preventDefault();
+    const selectItems = document.querySelectorAll(".absensi-select-item");
+    if (selectItems.length === 0) return;
 
     const confirm = await Swal.fire({
         title: 'Konfirmasi Presensi',
-        html: pesanKonfirmasi,
+        html: `Apakah Anda yakin ingin menyimpan presensi untuk <b>${selectItems.length} siswa</b>?`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#2563eb',
         cancelButtonColor: '#64748b',
-        confirmButtonText: 'Ya, Simpan',
-        cancelButtonText: 'Batal'
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    const jamWITA = getTimeWITA24();
-    if (existingIndex !== -1) {
-        appState.absensi[existingIndex].status = status;
-        appState.absensi[existingIndex].waktu_masuk = jamWITA;
-    } else {
-        appState.absensi.push({ siswa_id, tanggal, status, waktu_masuk: jamWITA });
-    }
-
-    renderAbsensiView();
-    await apiCall("saveAbsensi", { tanggal, items: [{ siswa_id, status, waktu_masuk: jamWITA }] }, false);
-}
-
-async function markAllPresent() {
-    const confirm = await Swal.fire({
-        title: 'Konfirmasi Presensi Massal',
-        html: 'Apakah Anda yakin ingin menandai <b>semua siswa</b> sebagai <b>Hadir (H)</b>?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#059669',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Ya, Tandai Semua',
+        confirmButtonText: 'Ya, Simpan Semua',
         cancelButtonText: 'Batal'
     });
 
@@ -829,10 +834,28 @@ async function markAllPresent() {
 
     const tanggal = document.getElementById("absensi-date").value;
     const jamWITA = getTimeWITA24();
-    const items = appState.siswa.map(s => ({ siswa_id: s.id, status: 'H', waktu_masuk: jamWITA }));
+    const items = [];
 
-    await apiCall("saveAbsensi", { tanggal, items }, true);
-    loadAbsensiData(true);
+    selectItems.forEach(select => {
+        const siswa_id = select.getAttribute("data-siswa-id");
+        const status = select.value;
+
+        items.push({ siswa_id, status, waktu_masuk: jamWITA });
+
+        const existingIndex = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswa_id) && String(a.tanggal) === String(tanggal));
+        if (existingIndex !== -1) {
+            appState.absensi[existingIndex].status = status;
+            appState.absensi[existingIndex].waktu_masuk = jamWITA;
+        } else {
+            appState.absensi.push({ siswa_id, tanggal, status, waktu_masuk: jamWITA });
+        }
+    });
+
+    renderAbsensiView();
+    const res = await apiCall("saveAbsensi", { tanggal, items }, true);
+    if (res && res.status === "success") {
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Semua data presensi berhasil disimpan.', timer: 1500, showConfirmButton: false });
+    }
 }
 
 // 7 Kebiasaan Engine
