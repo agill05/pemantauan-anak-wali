@@ -1,5 +1,8 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbyKFFTWsOr9kHdJnjEjhBEFq9ewT62UocKpWVUIw5IbwdjAAREqPujQYzrBDQnGX254/exec";
 
+let kebiasaanDebounceTimer = null;
+let pendingKebiasaanQueue = new Map();
+
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
     { no: 1, nama: "Al-Fatihah", juz: 1 }, { no: 2, nama: "Al-Baqarah", juz: 1 }, { no: 3, nama: "Ali 'Imran", juz: 3 },
@@ -568,6 +571,9 @@ function handleLogout(force = false) {
 
 // Control Navigation & Views
 function switchView(viewId) {
+    if (pendingKebiasaanQueue && pendingKebiasaanQueue.size > 0) {
+        flushKebiasaanQueue();
+    }
     document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".sidebar-nav-item").forEach(el => el.classList.remove("active", "bg-slate-100", "text-primary"));
@@ -924,14 +930,85 @@ function renderKebiasaanView() {
     }).join("");
 }
 
-async function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
-    const tanggal = document.getElementById("kebiasaan-date").value;
-    const existingIndex = appState.kebiasaan.findIndex(k => String(k.siswa_id) === String(siswa_id) && String(k.tanggal) === String(tanggal) && String(k.kebiasaan_id) === String(kebiasaan_id));
-    if (existingIndex !== -1) appState.kebiasaan[existingIndex].status = status;
-    else appState.kebiasaan.push({ siswa_id, tanggal, kebiasaan_id, status });
+/**
+ * Engine Debounce Simpan 7 Kebiasaan
+ * Memperbarui UI secara instan dan menunda pengiriman API hingga pengguna selesai memilih.
+ */
+function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
+    const tanggalInput = document.getElementById("kebiasaan-date");
+    const tanggal = tanggalInput ? tanggalInput.value : getDateWITA();
 
+    // 1. Update State Lokal secara Instan (Zero-Latency UI Feedback)
+    const existingIndex = appState.kebiasaan.findIndex(k => 
+        String(k.siswa_id) === String(siswa_id) && 
+        String(k.tanggal) === String(tanggal) && 
+        String(k.kebiasaan_id) === String(kebiasaan_id)
+    );
+
+    if (existingIndex !== -1) {
+        appState.kebiasaan[existingIndex].status = status;
+    } else {
+        appState.kebiasaan.push({ siswa_id, tanggal, kebiasaan_id, status });
+    }
+
+    // 2. Re-render Tampilan Tombol secara Cepat
     renderKebiasaanView();
-    await apiCall("saveKebiasaan", { tanggal, siswa_id, kebiasaan_id, status }, false);
+
+    // 3. Masukkan Perubahan ke Antrean (Queue Map)
+    const queueKey = `${siswa_id}_${kebiasaan_id}_${tanggal}`;
+    pendingKebiasaanQueue.set(queueKey, { tanggal, siswa_id, kebiasaan_id, status });
+
+    // 4. Tampilkan Indikator Visual "Menyimpan..."
+    updateKebiasaanSaveStatus('saving');
+
+    // 5. Timer Debounce: Tunggu 1,5 detik setelah interaksi terakhir sebelum mengirim ke server
+    if (kebiasaanDebounceTimer) clearTimeout(kebiasaanDebounceTimer);
+
+    kebiasaanDebounceTimer = setTimeout(async () => {
+        await flushKebiasaanQueue();
+    }, 1500);
+}
+
+/**
+ * Memproses dan Mengirimkan Antrean Perubahan ke Server
+ */
+async function flushKebiasaanQueue() {
+    if (pendingKebiasaanQueue.size === 0) return;
+
+    // Ambil data antrean saat ini dan kosongkan map
+    const itemsToSave = Array.from(pendingKebiasaanQueue.values());
+    pendingKebiasaanQueue.clear();
+
+    // Kirim data perubahan ke server
+    for (const item of itemsToSave) {
+        await apiCall("saveKebiasaan", item, false);
+    }
+
+    // Perbarui indikator visual menjadi "Tersimpan"
+    updateKebiasaanSaveStatus('saved');
+}
+
+/**
+ * Pembaruan Tampilan Badge Status Simpan Realtime
+ */
+function updateKebiasaanSaveStatus(state) {
+    const badge = document.getElementById("kebiasaan-save-status");
+    if (!badge) return;
+
+    if (state === 'saving') {
+        badge.className = "text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 flex items-center gap-1.5 shadow-sm";
+        badge.innerHTML = `<i class="fas fa-spinner fa-spin text-amber-600"></i> Menyimpan...`;
+    } else if (state === 'saved') {
+        badge.className = "text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1.5 shadow-sm";
+        badge.innerHTML = `<i class="fas fa-check-circle text-emerald-600"></i> Tersimpan`;
+
+        // Sembunyikan badge secara otomatis setelah 3 detik
+        setTimeout(() => {
+            if (pendingKebiasaanQueue.size === 0) {
+                badge.classList.add("hidden");
+            }
+        }, 3000);
+    }
 }
 
 // Keagamaan Engine
