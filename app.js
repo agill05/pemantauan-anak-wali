@@ -976,47 +976,67 @@ function renderAbsensiView() {
     `;
 }
 
-async function saveBatchAbsensiForm(e) {
-    e.preventDefault();
-    const selectItems = document.querySelectorAll(".absensi-select-item");
-    if (selectItems.length === 0) return;
+async function saveBatchAbsensiForm(event) {
+    event.preventDefault();
+    showLoading("Menyimpan data presensi...");
 
-    const confirm = await Swal.fire({
-        title: 'Konfirmasi Presensi',
-        html: `Apakah Anda yakin ingin menyimpan presensi untuk <b>${selectItems.length} siswa</b>?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Ya, Simpan Semua',
-        cancelButtonText: 'Batal'
-    });
+    // Mengambil jam saat ini dalam format "HH:mm"
+    const now = new Date();
+    const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const JAM_BATAS_SEKOLAH = "07:15"; // Ubah sesuai aturan jam masuk SMPN 1 Talaga Jaya
 
-    if (!confirm.isConfirmed) return;
+    const selectElements = document.querySelectorAll(".absensi-select-item");
+    const payloadAbsensi = [];
 
-    const tanggal = document.getElementById("absensi-date").value;
-    const jamWITA = getTimeWITA24();
-    const items = [];
+    selectElements.forEach(select => {
+        const siswaId = select.getAttribute("data-siswa-id");
+        let selectedStatus = select.value;
 
-    selectItems.forEach(select => {
-        const siswa_id = select.getAttribute("data-siswa-id");
-        const status = select.value;
+        // Ambil data presensi lama jika sudah ada stempel waktunya
+        const existingRec = appState.absensi.find(a => String(a.siswa_id) === String(siswaId));
+        let waktuMasuk = existingRec?.waktu_masuk || currentTimeStr;
 
-        items.push({ siswa_id, status, waktu_masuk: jamWITA });
-
-        const existingIndex = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswa_id) && String(a.tanggal) === String(tanggal));
-        if (existingIndex !== -1) {
-            appState.absensi[existingIndex].status = status;
-            appState.absensi[existingIndex].waktu_masuk = jamWITA;
-        } else {
-            appState.absensi.push({ siswa_id, tanggal, status, waktu_masuk: jamWITA });
+        // Logika Otomatis: Jika status dipilih 'H' (Hadir) tetapi melewati jam batas, konversi otomatis ke 'T' (Terlambat)
+        if (selectedStatus === 'H') {
+            const analisisWaktu = hitungStatusKeterlambatan(waktuMasuk, JAM_BATAS_SEKOLAH);
+            if (analisisWaktu.status === 'T') {
+                selectedStatus = 'T';
+            }
         }
+
+        payloadAbsensi.push({
+            siswa_id: siswaId,
+            status: selectedStatus,
+            waktu_masuk: (selectedStatus === 'H' || selectedStatus === 'T') ? waktuMasuk : '',
+            tanggal: new Date().toISOString().split('T')[0]
+        });
     });
 
-    renderAbsensiView();
-    const res = await apiCall("saveAbsensi", { tanggal, items }, true);
+    const res = await apiCall("saveBatchAbsensi", { data: payloadAbsensi });
+    hideLoading();
+
     if (res && res.status === "success") {
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Semua data presensi berhasil disimpan.', timer: 1500, showConfirmButton: false });
+        // Sinkronkan ke appState lokal
+        payloadAbsensi.forEach(item => {
+            const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(item.siswa_id));
+            if (idx !== -1) {
+                appState.absensi[idx] = item;
+            } else {
+                appState.absensi.push(item);
+            }
+        });
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Presensi Disimpan!',
+            text: 'Stempel waktu dan status keterlambatan telah diproses.',
+            timer: 1500,
+            showConfirmButton: false
+        });
+
+        renderAbsensiView();
+    } else {
+        Swal.fire('Gagal', res?.message || 'Gagal menyimpan data presensi.', 'error');
     }
 }
 
@@ -1051,6 +1071,31 @@ function setAllAbsensiStatus(status) {
         showConfirmButton: false,
         timer: 1500
     });
+}
+
+/**
+ * Memeriksa status keterlambatan berdasarkan waktu masuk dan jam batas
+ * @param {string} waktuStr - Format "HH:mm" (contoh: "07:25")
+ * @param {string} jamBatas - Batas jam masuk tepat waktu (default "07:15")
+ */
+function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
+    if (!waktuStr) return { status: 'H', label: 'Hadir', menitTerlambat: 0 };
+
+    const [h, m] = waktuStr.split(":").map(Number);
+    const [bH, bM] = jamBatas.split(":").map(Number);
+
+    const menitMasuk = h * 60 + m;
+    const menitBatas = bH * 60 + bM;
+
+    if (menitMasuk > menitBatas) {
+        return {
+            status: 'T',
+            label: 'Terlambat',
+            menitTerlambat: menitMasuk - menitBatas
+        };
+    }
+
+    return { status: 'H', label: 'Tepat Waktu', menitTerlambat: 0 };
 }
 
 // ==================================================================
