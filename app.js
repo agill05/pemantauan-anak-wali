@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwOc7B3pY_szTQf0yyLbwmUQpIBWrPqN-bUfHDAgj82FfDbpOknXuodwLHbxV7Dk44IDg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyz1uciekk-os4x3rgAmQAPHfhmc_gkBhd3EVYWn_4WDu0Q1cXlQOCNTaVxBJkjbKmQ/exec";
 
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
@@ -71,17 +71,14 @@ let appState = {
     currentNotifications: []
 };
 
-// Fungsi untuk sinkronisasi/fetchAllData sekaligus di awal login atau saat tombol Refresh ditekan
-async function fetchAllAppData(force = false) {
-    // Jika data sudah ada dan tidak dipaksa, jangan fetch ulang
+// Sinkronisasi ulang seluruh data inti dari server (dipicu tombol refresh manual)
+async function fetchAllAppData(force = true) {
     if (!force && appState.siswa.length > 0 && appState.akademik.length > 0) {
         return;
     }
 
     showLoading("Menyinkronkan seluruh data sistem...");
-    
-    // Anda bisa menggabungkan beberapa pemanggilan sekaligus jika backend mendukung,
-    // atau memanggil data utama secara paralel menggunakan Promise.all
+
     const [resInit, resAkd, resPrs, resKag, resPbn] = await Promise.all([
         apiCall("getInitialData", {}, false),
         apiCall("getAkademik", {}, false),
@@ -92,7 +89,6 @@ async function fetchAllAppData(force = false) {
 
     hideLoading();
 
-    // Simpan semua ke dalam appState lokal
     if (resInit && resInit.status === "success") {
         appState.kelas = resInit.data.kelas || [];
         appState.guru = resInit.data.guru || [];
@@ -103,9 +99,23 @@ async function fetchAllAppData(force = false) {
     if (resPrs && resPrs.data) appState.prestasi = resPrs.data;
     if (resKag && resKag.data) appState.keagamaan = resKag.data;
     if (resPbn && resPbn.data) appState.pembinaan = resPbn.data;
+}
 
-    // Simpan penanda bahwa data sudah disinkronkan
-    console.log("Sinkronisasi data berhasil disimpan ke state lokal.");
+// Dipanggil dari tombol refresh manual di header: sinkronkan ulang + render ulang view aktif
+async function manualRefreshAll() {
+    const icon = document.querySelector("#btn-refresh-header i");
+    if (icon) icon.classList.add("fa-spin");
+
+    await fetchAllAppData(true);
+    await loadAbsensiData(true);
+    await checkStudentNotifications();
+
+    const activeView = document.querySelector(".view-section.active");
+    const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
+    switchView(viewId);
+
+    if (icon) icon.classList.remove("fa-spin");
+    Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data terbaru berhasil dimuat.', timer: 1200, showConfirmButton: false });
 }
 
 // ==========================================
@@ -611,15 +621,24 @@ async function renderDashboard() {
         if (role === "admin" || role === "guru") {
             statsContainer.innerHTML = `
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</span>
+                        <span class="w-7 h-7 rounded-lg bg-blue-50 text-primary flex items-center justify-center text-xs"><i class="fas fa-users"></i></span>
+                    </div>
                     <p class="text-2xl font-black text-slate-800 mt-1">${total_siswa}</p>
                 </div>
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Hadir Hari Ini</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Hadir Hari Ini</span>
+                        <span class="w-7 h-7 rounded-lg bg-emerald-50 text-secondary flex items-center justify-center text-xs"><i class="fas fa-calendar-check"></i></span>
+                    </div>
                     <p class="text-2xl font-black text-emerald-600 mt-1">${hadir_today}</p>
                 </div>
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
+                        <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs"><i class="fas fa-triangle-exclamation"></i></span>
+                    </div>
                     <p class="text-2xl font-black text-rose-600 mt-1">${priority_list.length}</p>
                 </div>
             `;

@@ -116,12 +116,16 @@
                 </div>
             </div>
             <div class="flex items-center gap-1">
+                <!-- Tombol Refresh Manual -->
+                <button id="btn-refresh-header" onclick="manualRefreshAll()" class="touch-btn hover:bg-white/10 rounded-xl transition" title="Segarkan data">
+                    <i class="fas fa-rotate text-base"></i>
+                </button>
                 <!-- Tombol Notifikasi Siswa Bermasalah -->
                 <button id="btn-notif-header" data-role-visible="admin,guru" class="p-2 relative hover:bg-white/10 rounded-xl transition hidden" onclick="openNotificationModal()">
                     <i class="fas fa-bell text-lg"></i>
                     <span id="notif-badge" class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
                 </button>
-                <button class="p-2 relative hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()">
+                <button class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()">
                     <i class="fas fa-cog text-lg"></i>
                 </button>
             </div>
@@ -222,7 +226,7 @@
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
                 <div class="flex justify-between items-center">
                     <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-calendar-check text-primary mr-2"></i>Presensi Kehadiran</h2>
-                    <input type="date" id="absensi-date" onchange="loadAbsensiData()" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary">
+                    <input type="date" id="absensi-date" onchange="loadAbsensiData(true)" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary">
                 </div>
                 <button data-role-visible="admin,guru" onclick="markAllPresent()" class="w-full bg-secondary hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition">
                     <i class="fas fa-check-double"></i> Tandai Semua Hadir
@@ -236,7 +240,7 @@
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
                 <div class="flex justify-between items-center">
                     <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-star text-accent mr-2"></i>7 Kebiasaan Hebat</h2>
-                    <input type="date" id="kebiasaan-date" onchange="loadKebiasaanData()" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-accent">
+                    <input type="date" id="kebiasaan-date" onchange="loadKebiasaanData(true)" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-accent">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Pilih Siswa</label>
@@ -259,7 +263,7 @@
             </div>
 
             <div class="bg-surface p-3 rounded-2xl border border-slate-100 shadow-sm">
-                <select id="karakter-siswa-filter" onchange="loadKeagamaanData()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
+                <select id="karakter-siswa-filter" onchange="loadKeagamaanData(true)" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
             </div>
@@ -275,7 +279,7 @@
             </div>
 
             <div class="bg-surface p-3.5 rounded-2xl border border-slate-100 shadow-sm">
-                <select id="akademik-siswa-filter" onchange="loadAkademikData()" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700">
+                <select id="akademik-siswa-filter" onchange="loadAkademikData(true)" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
             </div>
@@ -310,7 +314,7 @@
             </div>
 
             <div class="bg-surface p-3 rounded-2xl border border-slate-100 shadow-sm">
-                <select id="pembinaan-siswa-filter" onchange="loadPembinaanData()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
+                <select id="pembinaan-siswa-filter" onchange="loadPembinaanData(true)" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
             </div>
