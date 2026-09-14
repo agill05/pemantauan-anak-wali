@@ -89,6 +89,7 @@ function doPost(e) {
       getInitialData: () => handleGetInitialData(authUser),
       getDashboardData: () => handleGetDashboardData(authUser),
       changePassword: () => withLock(() => handleChangePassword(authUser, payload)),
+      refreshToken: () => handleRefreshToken(authUser),
       
       // Master Data & Operasi
       getAbsensi: () => handleGetAbsensi(authUser, payload),
@@ -255,6 +256,12 @@ function validateToken(token) {
   } catch (e) {
     return null;
   }
+}
+
+function handleRefreshToken(authUser) {
+  const newToken = generateToken(authUser.id, authUser.role);
+  logActivity(authUser.id, authUser.role, "REFRESH_TOKEN", { user_id: authUser.id });
+  return { status: "success", token: newToken, user: authUser };
 }
 
 // Logika Otentikasi & Bootstrap
