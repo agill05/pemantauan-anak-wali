@@ -752,20 +752,12 @@ function renderAbsensiView() {
 
     container.innerHTML = `
         <div class="space-y-3">
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3">
-                <div class="flex-1">
-                    <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
-                    <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
-                        <option value="">Semua Kelas</option>
-                        ${kelasOptions}
-                    </select>
-                </div>
-                ${isEditable ? `
-                <div class="self-end">
-                    <button type="button" onclick="setAllAbsensiSelects('H')" class="px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition">
-                        <i class="fas fa-check-double mr-1"></i> Set Semua Hadir
-                    </button>
-                </div>` : ''}
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
+                <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
+                    <option value="">Semua Kelas</option>
+                    ${kelasOptions}
+                </select>
             </div>
 
             ${filteredSiswa.length === 0 ? `
@@ -785,11 +777,11 @@ function renderAbsensiView() {
                                 </div>
                                 <div>
                                     <select data-siswa-id="${s.id}" class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700" ${!isEditable ? 'disabled' : ''}>
-                                        <option value="H" ${currentStatus === 'H' ? 'selected' : ''}>🟢 Hadir (H)</option>
-                                        <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>🔵 Izin (I)</option>
-                                        <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>🟡 Sakit (S)</option>
-                                        <option value="A" ${currentStatus === 'A' ? 'selected' : ''}>🔴 Alpa (A)</option>
-                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>🟠 Terlambat (T)</option>
+                                        <option value="H" ${currentStatus === 'H' ? 'selected' : ''}>Hadir (H)</option>
+                                        <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>Izin (I)</option>
+                                        <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>Sakit (S)</option>
+                                        <option value="A" ${currentStatus === 'A' ? 'selected' : ''}>Alpa (A)</option>
+                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>Tanpa Keterangan (T)</option>
                                     </select>
                                 </div>
                             </div>
@@ -806,12 +798,6 @@ function renderAbsensiView() {
             `}
         </div>
     `;
-}
-
-function setAllAbsensiSelects(status) {
-    document.querySelectorAll(".absensi-select-item").forEach(select => {
-        select.value = status;
-    });
 }
 
 async function saveBatchAbsensiForm(e) {
