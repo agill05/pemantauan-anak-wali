@@ -1,7 +1,7 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzFiNlUtM0PIxAo8fk6q-CWT8nT-jG5HZxCiHvC2X7rWP8NzBEBE2wghZe4p61CuzS7/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxRnBQXRzB0FrzzRgOZaOI9zXuC6vBaYDqgo_fa9c5Qkd5AX9u0rNgtaXgpsMe0Bx8_/exec";
 
 // ==================================================================
-// 1. STATE MANAGEMENT & MASTER DATA
+// 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD)
 // ==================================================================
 let kebiasaanDebounceTimer = null;
 let pendingKebiasaanQueue = new Map();
@@ -24,6 +24,36 @@ let appState = {
     laporanRekap: [],
     currentNotifications: []
 };
+
+function saveAppStateToLocal() {
+    try {
+        localStorage.setItem("cache_appState_full", JSON.stringify({
+            kelas: appState.kelas,
+            guru: appState.guru,
+            siswa: appState.siswa,
+            myStudents: appState.myStudents,
+            absensi: appState.absensi,
+            kebiasaan: appState.kebiasaan,
+            keagamaan: appState.keagamaan,
+            akademik: appState.akademik,
+            prestasi: appState.prestasi,
+            pembinaan: appState.pembinaan,
+            laporanRekap: appState.laporanRekap
+        }));
+    } catch(e) {}
+}
+
+function loadAppStateFromLocal() {
+    const cached = localStorage.getItem("cache_appState_full");
+    if (cached) {
+        try {
+            const data = JSON.parse(cached);
+            appState = { ...appState, ...data };
+            return true;
+        } catch(e) {}
+    }
+    return false;
+}
 
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
@@ -263,7 +293,7 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
                 });
                 return null;
             }
-            await new Promise(res => setTimeout(res, 1500));
+            await new Promise(res => setTimeout(res, 1200));
         }
     }
 }
@@ -271,7 +301,6 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
 function startSilentTokenRefresh() {
     if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
 
-    // Perbarui token setiap 10 menit
     silentTokenRefreshInterval = setInterval(async () => {
         if (!appState.token) return;
 
@@ -282,7 +311,6 @@ function startSilentTokenRefresh() {
             const savedSession = JSON.parse(localStorage.getItem("session_anak_wali") || "{}");
             savedSession.token = res.token;
             localStorage.setItem("session_anak_wali", JSON.stringify(savedSession));
-            console.log("[Auth Engine] Token sesi diperbarui secara otomatis.");
         }
     }, 10 * 60 * 1000);
 }
@@ -320,8 +348,6 @@ async function setupAppSession() {
     if (loginView) { loginView.classList.remove("active"); loginView.classList.add("hidden"); }
     if (mainHeader) mainHeader.classList.remove("hidden");
     if (mainContent) mainContent.classList.remove("hidden");
-
-    // Pastikan Navigasi Bawah selalu tampil untuk semua peran
     if (bottomNav) bottomNav.classList.remove("hidden");
 
     const userAvatar = document.getElementById("user-avatar");
@@ -340,21 +366,24 @@ async function setupAppSession() {
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
     renderSidebarMenu(appState.user.role);
 
-    showLoading("Menyinkronkan data...");
+    // 1. STALE-WHILE-REVALIDATE: Load Cache Lokal Seketika
+    const hasLocal = loadAppStateFromLocal();
+    switchView("dashboard");
+
+    // 2. Fetch data backend di latar belakang (Non-Blocking UI)
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
-    hideLoading();
 
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
         appState.guru = resBootstrap.data.initial.guru || [];
         appState.siswa = resBootstrap.data.initial.siswa || [];
         appState.myStudents = resBootstrap.data.initial.siswa || [];
+        
+        saveAppStateToLocal();
+        renderDashboard(); // Update tampilan silently
     }
 
-    await checkStudentNotifications();
-
-    // Arahkan ke Beranda/Dashboard saat awal masuk
-    switchView("dashboard");
+    checkStudentNotifications();
 }
 
 let notificationPollingInterval = null;
@@ -369,7 +398,6 @@ function startRealtimeNotificationPolling() {
         await checkStudentNotifications();
         const currentCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
 
-        // Tampilkan toast ringan jika ada notifikasi baru masuk
         if (currentCount > prevCount) {
             Swal.fire({
                 toast: true,
@@ -381,13 +409,14 @@ function startRealtimeNotificationPolling() {
                 timer: 4000
             });
         }
-    }, 30000); // 30 detik
+    }, 30000);
 }
 
 function handleLogout(force = false) {
     const executeLogout = () => {
         if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
         localStorage.removeItem("session_anak_wali");
+        localStorage.removeItem("cache_appState_full");
         appState = { token: null, user: null, kelas: [], guru: [], siswa: [], myStudents: [] };
         location.reload();
     };
@@ -412,17 +441,15 @@ function handleLogout(force = false) {
 }
 
 async function fetchAllAppData(force = true) {
-    if (!force && appState.siswa.length > 0 && appState.akademik.length > 0) return;
+    if (!force && appState.siswa.length > 0) return;
 
-    showLoading("Menyinkronkan seluruh data...");
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
-    hideLoading();
-
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
         appState.guru = resBootstrap.data.initial.guru || [];
         appState.siswa = resBootstrap.data.initial.siswa || [];
         appState.myStudents = resBootstrap.data.initial.siswa || [];
+        saveAppStateToLocal();
     }
 }
 
@@ -439,7 +466,7 @@ async function manualRefreshAll() {
     switchView(viewId);
 
     if (icon) icon.classList.remove("fa-spin");
-    Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data terbaru berhasil dimuat.', timer: 1200, showConfirmButton: false });
+    Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data terbaru berhasil disinkronkan.', timer: 1200, showConfirmButton: false });
 }
 
 // ==================================================================
@@ -594,12 +621,6 @@ function renderSidebarMenu(role) {
 // 5. DASHBOARD MODULE
 // ==================================================================
 async function renderDashboard() {
-    renderSkeleton("dash-stats-container", 3);
-    const res = await apiCall("getDashboardData", {}, false);
-
-    if (!res || res.status !== "success") return;
-
-    const { total_siswa, hadir_today, priority_list, agenda_list } = res.data;
     const role = appState.user.role;
 
     const adminBanner = document.getElementById("dash-admin-banner");
@@ -610,6 +631,7 @@ async function renderDashboard() {
 
     const statsContainer = document.getElementById("dash-stats-container");
     if (statsContainer) {
+        const totalSiswaCount = appState.siswa.length;
         if (role === "admin" || role === "guru") {
             statsContainer.innerHTML = `
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
@@ -617,21 +639,21 @@ async function renderDashboard() {
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</span>
                         <span class="w-7 h-7 rounded-lg bg-blue-50 text-primary flex items-center justify-center text-xs"><i class="fas fa-users"></i></span>
                     </div>
-                    <p class="text-2xl font-black text-slate-800 mt-1">${total_siswa}</p>
+                    <p class="text-2xl font-black text-slate-800 mt-1">${totalSiswaCount}</p>
                 </div>
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Hadir Hari Ini</span>
                         <span class="w-7 h-7 rounded-lg bg-emerald-50 text-secondary flex items-center justify-center text-xs"><i class="fas fa-calendar-check"></i></span>
                     </div>
-                    <p class="text-2xl font-black text-emerald-600 mt-1">${hadir_today}</p>
+                    <p class="text-2xl font-black text-emerald-600 mt-1">${appState.absensi.filter(a => a.status === 'H').length}</p>
                 </div>
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
                         <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs"><i class="fas fa-triangle-exclamation"></i></span>
                     </div>
-                    <p class="text-2xl font-black text-rose-600 mt-1">${priority_list.length}</p>
+                    <p class="text-2xl font-black text-rose-600 mt-1">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
                 </div>
             `;
         } else {
@@ -639,15 +661,20 @@ async function renderDashboard() {
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between col-span-3">
                     <span class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Status Pemantauan Saya</span>
                     <p class="text-sm font-bold text-slate-700 mt-1">
-                      ${priority_list.length > 0 ? '⚠️ Memerlukan Tindak Lanjut' : '✅ Perkembangan Baik'}
+                      ${(appState.currentNotifications && appState.currentNotifications.length > 0) ? '⚠️ Memerlukan Tindak Lanjut' : '✅ Perkembangan Baik'}
                     </p>
                 </div>
             `;
         }
     }
 
-    renderPrioritySection(priority_list);
-    renderAgendaSection(agenda_list);
+    // Silent background fetch dashboard data dari GAS
+    apiCall("getDashboardData", {}, false).then(res => {
+        if (res && res.status === "success") {
+            renderPrioritySection(res.data.priority_list);
+            renderAgendaSection(res.data.agenda_list);
+        }
+    });
 }
 
 function renderPrioritySection(priorityList) {
@@ -856,18 +883,19 @@ async function loadAbsensiData(forceRefresh = false) {
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
     if (inputDate) inputDate.value = tanggal;
 
-    if (!forceRefresh && appState.absensi.length > 0) {
+    // Render instan jika cache data ada
+    if (appState.absensi.length > 0 && !forceRefresh) {
         renderAbsensiView();
-        return;
+    } else {
+        renderSkeleton("absensi-list-container", 4);
     }
 
-    renderSkeleton("absensi-list-container", 4);
     const res = await apiCall("getAbsensi", { tanggal }, false);
-
     if (res && res.data) {
         appState.absensi = res.data;
+        saveAppStateToLocal();
+        renderAbsensiView();
     }
-    renderAbsensiView();
 }
 
 function renderAbsensiView() {
@@ -886,10 +914,7 @@ function renderAbsensiView() {
         ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
         : appState.siswa;
 
-    // Urutkan siswa berdasarkan Nomor Absen -> Nama
     const filteredSiswa = sortSiswa(rawFiltered);
-
-    // --- Kalkulasi Statistik Presensi Kelas ---
     const totalSiswa = filteredSiswa.length;
     let countH = 0, countS = 0, countI = 0, countA = 0;
 
@@ -903,14 +928,12 @@ function renderAbsensiView() {
     });
 
     const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
-
     const kelasOptions = appState.kelas.map(k => 
         `<option value="${k.id}" ${String(selectedKelas) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`
     ).join("");
 
     container.innerHTML = `
         <div class="space-y-3">
-            <!-- Filter Kelas -->
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
                 <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
                 <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
@@ -919,7 +942,6 @@ function renderAbsensiView() {
                 </select>
             </div>
 
-            <!-- Card Indikator Persentase Kehadiran -->
             ${totalSiswa > 0 ? `
             <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-md space-y-3">
                 <div class="flex items-center justify-between">
@@ -1001,12 +1023,11 @@ function renderAbsensiView() {
 
 async function saveBatchAbsensiForm(event) {
     event.preventDefault();
-    showLoading("Menyimpan data presensi...");
+    showLoading("Menyimpan presensi...");
 
-    // Mengambil jam saat ini dalam format "HH:mm"
     const now = new Date();
     const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const JAM_BATAS_SEKOLAH = "07:15"; // Ubah sesuai aturan jam masuk SMPN 1 Talaga Jaya
+    const JAM_BATAS_SEKOLAH = "07:15";
 
     const selectElements = document.querySelectorAll(".absensi-select-item");
     const payloadAbsensi = [];
@@ -1015,16 +1036,12 @@ async function saveBatchAbsensiForm(event) {
         const siswaId = select.getAttribute("data-siswa-id");
         let selectedStatus = select.value;
 
-        // Ambil data presensi lama jika sudah ada stempel waktunya
         const existingRec = appState.absensi.find(a => String(a.siswa_id) === String(siswaId));
         let waktuMasuk = existingRec?.waktu_masuk || currentTimeStr;
 
-        // Logika Otomatis: Jika status dipilih 'H' (Hadir) tetapi melewati jam batas, konversi otomatis ke 'T' (Terlambat)
         if (selectedStatus === 'H') {
             const analisisWaktu = hitungStatusKeterlambatan(waktuMasuk, JAM_BATAS_SEKOLAH);
-            if (analisisWaktu.status === 'T') {
-                selectedStatus = 'T';
-            }
+            if (analisisWaktu.status === 'T') selectedStatus = 'T';
         }
 
         payloadAbsensi.push({
@@ -1035,90 +1052,29 @@ async function saveBatchAbsensiForm(event) {
         });
     });
 
-    const res = await apiCall("saveBatchAbsensi", { data: payloadAbsensi });
+    const res = await apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: getDateWITA() }, true);
     hideLoading();
 
     if (res && res.status === "success") {
-        // Sinkronkan ke appState lokal
         payloadAbsensi.forEach(item => {
             const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(item.siswa_id));
-            if (idx !== -1) {
-                appState.absensi[idx] = item;
-            } else {
-                appState.absensi.push(item);
-            }
+            if (idx !== -1) appState.absensi[idx] = item;
+            else appState.absensi.push(item);
         });
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Presensi Disimpan!',
-            text: 'Stempel waktu dan status keterlambatan telah diproses.',
-            timer: 1500,
-            showConfirmButton: false
-        });
-
+        saveAppStateToLocal();
+        Swal.fire({ icon: 'success', title: 'Presensi Disimpan!', timer: 1200, showConfirmButton: false });
         renderAbsensiView();
-    } else {
-        Swal.fire('Gagal', res?.message || 'Gagal menyimpan data presensi.', 'error');
     }
 }
 
-/**
- * Mengubah seluruh pilihan status presensi siswa secara massal di layar
- * @param {string} status - Kode status ('H', 'S', 'I', 'A', 'T')
- */
-function setAllAbsensiStatus(status) {
-    const selects = document.querySelectorAll(".absensi-select-item");
-    if (selects.length === 0) return;
-
-    selects.forEach(select => {
-        select.value = status;
-    });
-
-    const statusMap = {
-        'H': 'Hadir',
-        'S': 'Sakit',
-        'I': 'Izin',
-        'A': 'Alpa',
-        'T': 'Tanpa Keterangan'
-    };
-
-    const label = statusMap[status] || status;
-
-    // Toast notifikasi ringan saat aksi massal diterapkan
-    Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'info',
-        title: `Status seluruh siswa (${selects.length}) diubah ke: ${label}`,
-        showConfirmButton: false,
-        timer: 1500
-    });
-}
-
-/**
- * Memeriksa status keterlambatan berdasarkan waktu masuk dan jam batas
- * @param {string} waktuStr - Format "HH:mm" (contoh: "07:25")
- * @param {string} jamBatas - Batas jam masuk tepat waktu (default "07:15")
- */
 function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
     if (!waktuStr) return { status: 'H', label: 'Hadir', menitTerlambat: 0 };
-
     const [h, m] = waktuStr.split(":").map(Number);
     const [bH, bM] = jamBatas.split(":").map(Number);
-
     const menitMasuk = h * 60 + m;
     const menitBatas = bH * 60 + bM;
-
-    if (menitMasuk > menitBatas) {
-        return {
-            status: 'T',
-            label: 'Terlambat',
-            menitTerlambat: menitMasuk - menitBatas
-        };
-    }
-
-    return { status: 'H', label: 'Tepat Waktu', menitTerlambat: 0 };
+    return menitMasuk > menitBatas ? { status: 'T', label: 'Terlambat', menitTerlambat: menitMasuk - menitBatas } : { status: 'H', label: 'Tepat Waktu', menitTerlambat: 0 };
 }
 
 // ==================================================================
@@ -1134,16 +1090,18 @@ async function loadKebiasaanData(forceRefresh = false) {
         selectSiswa.innerHTML = appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
     }
 
-    if (!forceRefresh && appState.kebiasaan.length > 0) {
+    if (appState.kebiasaan.length > 0 && !forceRefresh) {
         renderKebiasaanView();
-        return;
+    } else {
+        renderSkeleton("kebiasaan-list-container", 4);
     }
 
-    renderSkeleton("kebiasaan-list-container", 4);
     const res = await apiCall("getKebiasaan", { tanggal }, false);
-
-    if (res && res.data) appState.kebiasaan = res.data;
-    renderKebiasaanView();
+    if (res && res.data) {
+        appState.kebiasaan = res.data;
+        saveAppStateToLocal();
+        renderKebiasaanView();
+    }
 }
 
 function renderKebiasaanView() {
@@ -1203,6 +1161,7 @@ function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
         appState.kebiasaan.push({ siswa_id, tanggal, kebiasaan_id, status });
     }
 
+    saveAppStateToLocal();
     renderKebiasaanView();
 
     const queueKey = `${siswa_id}_${kebiasaan_id}_${tanggal}`;
@@ -1211,7 +1170,6 @@ function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     updateKebiasaanSaveStatus('saving');
 
     if (kebiasaanDebounceTimer) clearTimeout(kebiasaanDebounceTimer);
-
     kebiasaanDebounceTimer = setTimeout(async () => {
         await flushKebiasaanQueue();
     }, 1500);
@@ -1242,9 +1200,7 @@ function updateKebiasaanSaveStatus(state) {
         badge.innerHTML = `<i class="fas fa-check-circle text-emerald-600"></i> Tersimpan`;
 
         setTimeout(() => {
-            if (pendingKebiasaanQueue.size === 0) {
-                badge.classList.add("hidden");
-            }
+            if (pendingKebiasaanQueue.size === 0) badge.classList.add("hidden");
         }, 3000);
     }
 }
@@ -1260,16 +1216,18 @@ async function loadKeagamaanData(forceRefresh = false) {
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
 
-    if (!forceRefresh && appState.keagamaan.length > 0) {
+    if (appState.keagamaan.length > 0 && !forceRefresh) {
         renderKeagamaanView();
-        return;
+    } else {
+        renderSkeleton("keagamaan-container", 3);
     }
 
-    renderSkeleton("keagamaan-container", 3);
     const res = await apiCall("getKeagamaan", { siswa_id: selectedSiswaId }, false);
-
-    if (res && res.data) appState.keagamaan = res.data;
-    renderKeagamaanView();
+    if (res && res.data) {
+        appState.keagamaan = res.data;
+        saveAppStateToLocal();
+        renderKeagamaanView();
+    }
 }
 
 function renderKeagamaanView() {
@@ -1370,7 +1328,7 @@ async function saveKeagamaanForm(e, id) {
     const res = await apiCall("saveKeagamaan", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
         await loadKeagamaanData(true);
     }
 }
@@ -1414,13 +1372,12 @@ async function loadAkademikData(forceRefresh = false) {
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
 
-    if (!forceRefresh && appState.akademik.length > 0 && appState.prestasi.length > 0) {
+    if (appState.akademik.length > 0 && !forceRefresh) {
         switchAkademikTab('nilai');
-        return;
+    } else {
+        renderSkeleton("akademik-list-container", 3);
+        renderSkeleton("prestasi-list-container", 3);
     }
-
-    renderSkeleton("akademik-list-container", 3);
-    renderSkeleton("prestasi-list-container", 3);
 
     const [resAkd, resPrs] = await Promise.all([
         apiCall("getAkademik", { siswa_id: selectedSiswaId }, false),
@@ -1430,6 +1387,7 @@ async function loadAkademikData(forceRefresh = false) {
     if (resAkd && resAkd.data) appState.akademik = resAkd.data;
     if (resPrs && resPrs.data) appState.prestasi = resPrs.data;
 
+    saveAppStateToLocal();
     switchAkademikTab('nilai');
 }
 
@@ -1556,7 +1514,7 @@ async function saveAkademikForm(e, id) {
     const res = await apiCall("saveAkademik", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
         await loadAkademikData(true);
     }
 }
@@ -1621,7 +1579,7 @@ async function savePrestasiForm(e, id) {
     const res = await apiCall("savePrestasi", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
         await loadAkademikData(true);
     }
 }
@@ -1635,7 +1593,7 @@ async function deletePrestasi(id) {
 }
 
 // ==================================================================
-// 10. PEMBINAAN SISWA MODULE (AUTO-DRAFT SUPPORT)
+// 10. PEMBINAAN SISWA MODULE
 // ==================================================================
 function getPembinaanStatusBadge(status) {
     const s = String(status || '').trim().toLowerCase();
@@ -1654,16 +1612,18 @@ async function loadPembinaanData(forceRefresh = false) {
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
 
-    if (!forceRefresh && appState.pembinaan.length > 0) {
+    if (appState.pembinaan.length > 0 && !forceRefresh) {
         renderPembinaanView();
-        return;
+    } else {
+        renderSkeleton("pembinaan-list-container", 3);
     }
 
-    renderSkeleton("pembinaan-list-container", 3);
     const res = await apiCall("getPembinaan", { siswa_id: selectedSiswaId }, false);
-
-    if (res && res.data) appState.pembinaan = res.data;
-    renderPembinaanView();
+    if (res && res.data) {
+        appState.pembinaan = res.data;
+        saveAppStateToLocal();
+        renderPembinaanView();
+    }
 }
 
 function renderPembinaanView() {
@@ -1710,8 +1670,6 @@ function openModalPembinaan(id = null) {
     if (!box) return;
 
     const rec = id ? appState.pembinaan.find(x => String(x.id) === String(id)) : null;
-
-    // Cek apakah ada draf tersimpan untuk input baru
     const draft = !id ? getFormDraft("pembinaan") : null;
 
     const siswaOpts = appState.siswa.map(s => 
@@ -1785,7 +1743,7 @@ async function savePembinaanForm(e, id) {
     if (res && res.status === "success") {
         clearFormDraft("pembinaan");
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
         await loadPembinaanData(true);
     }
 }
@@ -1816,7 +1774,7 @@ function switchTabSiswa(tabName, btnEl) {
 }
 
 async function openProfilSiswa(siswaId) {
-    showLoading("Memuat profil lengkap...");
+    showLoading("Memuat profil...");
     const res = await apiCall("getDetailSiswa", { siswa_id: siswaId }, false);
     hideLoading();
 
@@ -2064,19 +2022,21 @@ function hubungiOrtu(siswaId) {
 }
 
 // ==================================================================
-// 12. LAPORAN REKAP & EXPORT MODULE (PDF ENGINE)
+// 12. LAPORAN REKAP & EXPORT MODULE
 // ==================================================================
 async function loadLaporanRekap(forceRefresh = false) {
-    if (!forceRefresh && appState.laporanRekap.length > 0) {
+    if (appState.laporanRekap.length > 0 && !forceRefresh) {
         renderLaporanRekapView();
-        return;
+    } else {
+        renderSkeleton("laporan-rekap-container", 4);
     }
 
-    renderSkeleton("laporan-rekap-container", 4);
     const res = await apiCall("getLaporanRekap", {}, false);
-
-    if (res && res.data) appState.laporanRekap = res.data;
-    renderLaporanRekapView();
+    if (res && res.data) {
+        appState.laporanRekap = res.data;
+        saveAppStateToLocal();
+        renderLaporanRekapView();
+    }
 }
 
 function renderLaporanRekapView() {
@@ -2113,23 +2073,14 @@ function renderLaporanRekapView() {
 
 function printLaporanRekap() {
     if (!appState.laporanRekap || appState.laporanRekap.length === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Data Kosong',
-            text: 'Tidak ada data rekapitulasi untuk dicetak.',
-            confirmButtonColor: '#2563eb'
-        });
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk dicetak.', confirmButtonColor: '#2563eb' });
         return;
     }
 
     const printArea = document.getElementById("printable-area");
     if (!printArea) return;
 
-    const formattedDate = new Date().toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
+    const formattedDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const rowsHtml = appState.laporanRekap.map((item, index) => {
         const kls = appState.kelas.find(k => String(k.id) === String(item.kelas_id));
@@ -2156,7 +2107,7 @@ function printLaporanRekap() {
     printArea.innerHTML = `
         <div style="font-family: 'Times New Roman', Times, serif; color: #0f172a; padding: 10px;">
             <div style="text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 16px;">
-                <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase; letter-spacing: 1px;">Pemerintah Kabupaten Gorontalo</h4>
+                <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase;">Pemerintah Kabupaten Gorontalo</h4>
                 <h3 style="margin: 2px 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Dinas Pendidikan dan Kebudayaan</h3>
                 <h2 style="margin: 2px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">SMP NEGERI 1 TALAGA JAYA</h2>
                 <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Jl. Pelabuhan II, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
@@ -2334,7 +2285,6 @@ function renderAdminSiswa() {
     if (!list) return;
 
     const query = (document.getElementById("search-admin-siswa-input")?.value || "").toLowerCase();
-
     const rawFiltered = appState.siswa.filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
     const filtered = sortSiswa(rawFiltered);
 
@@ -2435,7 +2385,7 @@ async function saveGuruForm(e, id) {
     const res = await apiCall("saveGuru", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
         await fetchAllAppData(true);
         renderAdminGuru();
     }
@@ -2520,7 +2470,7 @@ async function saveSiswaForm(e, id) {
     const res = await apiCall("saveSiswa", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
         await fetchAllAppData(true);
         renderSiswaView();
         renderAdminSiswa();
@@ -2580,7 +2530,7 @@ async function saveKelasForm(e, id) {
     const res = await apiCall("saveKelas", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
         await fetchAllAppData(true);
         renderAdminKelas();
     }
@@ -2640,7 +2590,7 @@ async function changePasswordForm(e) {
     const res = await apiCall("changePassword", { oldPassword, newPassword }, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Kata sandi diperbarui!', timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Kata sandi diperbarui!', timer: 1200, showConfirmButton: false });
     }
 }
 
