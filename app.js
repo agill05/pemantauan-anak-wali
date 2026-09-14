@@ -2329,7 +2329,7 @@ function renderAdminGuru() {
     `).join("");
 }
 
-ffunction renderAdminSiswa() {
+function renderAdminSiswa() {
     const list = document.getElementById("admin-siswa-list");
     if (!list) return;
 
