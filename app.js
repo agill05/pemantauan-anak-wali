@@ -307,6 +307,9 @@ async function setupAppSession() {
     if (mainHeader) mainHeader.classList.remove("hidden");
     if (mainContent) mainContent.classList.remove("hidden");
 
+    // Pastikan Navigasi Bawah selalu tampil untuk semua peran
+    if (bottomNav) bottomNav.classList.remove("hidden");
+
     const userAvatar = document.getElementById("user-avatar");
     const headerTitle = document.getElementById("header-title");
     const headerSubtitle = document.getElementById("header-subtitle");
@@ -336,13 +339,8 @@ async function setupAppSession() {
 
     await checkStudentNotifications();
 
-    if (appState.user.role === "siswa") {
-        if (bottomNav) bottomNav.classList.add("hidden");
-        openProfilSiswa(appState.user.id);
-    } else {
-        if (bottomNav) bottomNav.classList.remove("hidden");
-        switchView("dashboard");
-    }
+    // Arahkan ke Beranda/Dashboard saat awal masuk
+    switchView("dashboard");
 }
 
 function handleLogout(force = false) {
@@ -433,6 +431,10 @@ function applyRoleUI(role) {
             <button onclick="switchView('akademik')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="akademik">
                 <i class="fas fa-graduation-cap text-lg"></i>
                 <span class="text-[10px] font-bold">Akademik</span>
+            </button>
+            <button onclick="openProfilSiswa('${appState.user ? appState.user.id : ''}')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="profil-siswa">
+                <i class="fas fa-user-circle text-lg"></i>
+                <span class="text-[10px] font-bold">Profil</span>
             </button>
         `;
     } else {
