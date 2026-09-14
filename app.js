@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyvE6mBK24pXEmG6Jo7dCAKRZxZpJnDjSeIEawm_GS0TBOvjt-wf48dR-5A_KWOc9ajJw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx1I31wku9aVvAOMPbB1z8uqzGd_JZlrZe2CqSrDzVR1FdKFo6M6xBU3czjAtHgowcKXg/exec";
 
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
