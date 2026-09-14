@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx1I31wku9aVvAOMPbB1z8uqzGd_JZlrZe2CqSrDzVR1FdKFo6M6xBU3czjAtHgowcKXg/exec";
+const API_URL = "";
 
 // Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
@@ -201,38 +201,33 @@ function hideLoading() {
 }
 
 // API Bridge Centralized
-async function apiCall(action, payload = {}, showFullLoader = false) {
+async function apiCall(action, payload = {}, showFullLoader = false, retries = 3) {
     if (showFullLoader) showLoading();
-    try {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: action, token: appState.token, payload: payload })
-        });
-        const json = await response.json();
-        if (showFullLoader) hideLoading();
-
-        if (json.status === "session_expired" || json.status === "unauthorized") {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Sesi Berakhir',
-                text: json.message || 'Silakan login kembali.',
-                confirmButtonColor: '#2563eb'
-            }).then(() => {
-                handleLogout(true);
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ action: action, token: appState.token, payload: payload })
             });
-            return null;
+            const json = await response.json();
+            if (showFullLoader) hideLoading();
+            return json;
+        } catch (err) {
+            console.error(`Attempt ${attempt} failed:`, err);
+            if (attempt === retries) {
+                if (showFullLoader) hideLoading();
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Koneksi Gagal', 
+                    text: 'Tidak dapat terhubung ke server. Pastikan Web App ter-deploy sebagai Anyone dan jaringan stabil.' 
+                });
+                return null;
+            }
+            // Tunggu 1,5 detik sebelum mencoba lagi
+            await new Promise(res => setTimeout(res, 1500));
         }
-
-        if (json.status === "error") {
-            Swal.fire({ icon: 'error', title: 'Terjadi Kesalahan', text: json.message, confirmButtonColor: '#2563eb' });
-            return null;
-        }
-        return json;
-    } catch (err) {
-        if (showFullLoader) hideLoading();
-        Swal.fire({ icon: 'error', title: 'Koneksi Gagal', text: 'Tidak dapat terhubung ke server.', confirmButtonColor: '#2563eb' });
-        return null;
     }
 }
 
