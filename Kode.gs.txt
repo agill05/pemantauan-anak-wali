@@ -442,7 +442,7 @@ function initDatabaseSheets() {
   const headersMap = {
     "Admin": ["id", "username", "password", "nama", "foto"],
     "Guru": ["id", "username", "password", "nama", "nip", "no_hp", "foto"],
-    "Siswa": ["id", "username", "password", "nama", "nisn", "kelas_id", "no_hp_ortu", "foto"],
+    "Siswa": ["id", "username", "password", "nama", "no_absen", "nisn", "kelas_id", "no_hp_ortu", "foto"],
     "Kelas": ["id", "nama_kelas", "guru_id"],
     "Kehadiran": ["id", "siswa_id", "tanggal", "status", "waktu_masuk"],
     "Kebiasaan": ["id", "siswa_id", "tanggal", "kebiasaan_id", "status"],
@@ -505,25 +505,31 @@ function handleDeleteGuru(authUser, payload) {
 
 function handleSaveSiswa(authUser, payload) {
   if (authUser.role !== "admin" && authUser.role !== "guru") return { status: "error", message: "Akses ditolak." };
-  const { id, username, password, nama, nisn, kelas_id, no_hp_ortu, foto } = payload;
+  
+  // Destrukturisasi payload (termasuk no_absen)
+  const { id, username, password, nama, no_absen, nisn, kelas_id, no_hp_ortu, foto } = payload;
   if (!username || !nama) return { status: "error", message: "Username dan Nama Siswa wajib diisi." };
 
   const sheet = getSheet("Siswa");
   const data = getSheetData("Siswa");
 
   if (id) {
-    const updatedObj = { username, nama, nisn, kelas_id, no_hp_ortu, foto };
+    // Update data siswa lama
+    const updatedObj = { username, nama, no_absen, nisn, kelas_id, no_hp_ortu, foto };
     if (password && password.trim() !== "") updatedObj.password = hashPassword(password);
     updateSheetRow("Siswa", id, updatedObj);
     logActivity(authUser.id, authUser.role, "SAVE_SISWA_UPDATE", { target_id: id });
     return { status: "success", message: "Data Siswa berhasil diperbarui." };
   } else {
+    // Tambah data siswa baru
     const existing = data.find(s => String(s.username).toLowerCase() === String(username).toLowerCase());
     if (existing) return { status: "error", message: "Username Siswa sudah digunakan." };
 
     const newId = "SSW-" + Date.now();
     const finalPwd = password ? hashPassword(password) : hashPassword("siswa123");
-    sheet.appendRow([newId, username, finalPwd, nama, nisn || "", kelas_id || "", no_hp_ortu || "", foto || ""]);
+    
+    // Sesuaikan urutan kolom dengan initDatabaseSheets
+    sheet.appendRow([newId, username, finalPwd, nama, no_absen || "", nisn || "", kelas_id || "", no_hp_ortu || "", foto || ""]);
     logActivity(authUser.id, authUser.role, "SAVE_SISWA_CREATE", { target_id: newId });
     return { status: "success", message: "Siswa baru berhasil ditambahkan." };
   }
