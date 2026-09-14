@@ -306,10 +306,8 @@ function applyRoleUI(role) {
     const navContainer = document.getElementById("bottom-nav-items");
     const notifBtnHeader = document.getElementById("btn-notif-header");
 
-    if (role === 'admin' || role === 'guru') {
-        if (notifBtnHeader) notifBtnHeader.classList.remove("hidden");
-    } else {
-        if (notifBtnHeader) notifBtnHeader.classList.add("hidden");
+    if (notifBtnHeader) {
+        notifBtnHeader.classList.remove("hidden");
     }
 
     if (!navContainer) return;
