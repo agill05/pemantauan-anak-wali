@@ -255,3 +255,11 @@ a:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
+
+.view-section {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 24px)) !important;
+}
+
+#bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
