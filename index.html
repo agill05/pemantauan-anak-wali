@@ -3,32 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#3b82f6">
+    <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" href="https://ui-avatars.com/api/?name=AW&background=3b82f6&color=fff&size=64">
-    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=AW&background=3b82f6&color=fff&size=192">
+    <link rel="icon" href="https://ui-avatars.com/api/?name=AW&background=2563eb&color=fff&size=64">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=AW&background=2563eb&color=fff&size=192">
     <title>Aplikasi Pemantauan Anak Wali - SMPN 1 Talaga Jaya</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                fontFamily: {
-                    sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                },
-                colors: {
-                    primary: '#2563eb',
-                    secondary: '#059669',
-                    accent: '#d97706',
-                    background: '#f8fafc',
-                    surface: '#ffffff'
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#059669',
+                        accent: '#d97706',
+                        background: '#f8fafc',
+                        surface: '#ffffff'
+                    }
                 }
             }
         }
-    }
-</script>
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -43,10 +44,9 @@
 </head>
 <body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden bg-background" data-role="">
 
-    <!-- LOGIN SECTION -->
+    <!-- TAMPILAN LOGIN -->
     <div id="view-login" class="view-section active fixed inset-0 bg-background flex flex-col justify-center items-center p-4 z-50">
         <div class="w-full max-w-sm">
-
             <div class="text-center mb-8">
                 <div class="w-20 h-20 bg-primary text-white rounded-2xl flex items-center justify-center text-4xl mx-auto shadow-lg shadow-blue-500/20 mb-4">
                     <i class="fas fa-shield-alt"></i>
@@ -98,12 +98,11 @@
                     </button>
                 </form>
             </div>
-
             <p class="text-center text-[11px] text-slate-400 mt-6">© 2026 SMP Negeri 1 Talaga Jaya. All rights reserved.</p>
         </div>
     </div>
 
-    <!-- HEADER -->
+    <!-- HEADER UTAMA -->
     <header id="main-header" class="bg-primary text-white shadow-md fixed top-0 w-full z-20 transition-all duration-300 hidden no-print">
         <div id="header-default" class="flex justify-between items-center px-4 py-3 h-16">
             <div class="flex items-center gap-3">
@@ -119,11 +118,9 @@
                 </div>
             </div>
             <div class="flex items-center gap-1">
-                <!-- Tombol Refresh Manual -->
                 <button id="btn-refresh-header" onclick="manualRefreshAll()" class="touch-btn hover:bg-white/10 rounded-xl transition" title="Segarkan data">
                     <i class="fas fa-rotate text-base"></i>
                 </button>
-                <!-- Tombol Notifikasi Siswa Bermasalah -->
                 <button id="btn-notif-header" data-role-visible="admin,guru" class="p-2 relative hover:bg-white/10 rounded-xl transition hidden" onclick="openNotificationModal()">
                     <i class="fas fa-bell text-lg"></i>
                     <span id="notif-badge" class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
@@ -135,12 +132,10 @@
         </div>
     </header>
 
-    <!-- SIDEBAR BACKDROP -->
+    <!-- SIDEBAR BACKDROP & DRAWER -->
     <div id="sidebar-backdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden opacity-0 transition-opacity duration-300 no-print"></div>
 
-    <!-- SIDEBAR DRAWER -->
     <aside id="app-sidebar" class="fixed top-0 left-0 h-full w-72 max-w-[80%] bg-surface z-40 shadow-xl -translate-x-full transition-transform duration-300 ease-in-out flex flex-col no-print">
-        <!-- Sidebar Header -->
         <div class="flex items-center justify-between px-4 py-4 border-b border-slate-100">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center text-sm"><i class="fas fa-shield-alt"></i></div>
@@ -151,7 +146,6 @@
             </button>
         </div>
 
-        <!-- Ringkasan Profil -->
         <div class="flex items-center gap-3 px-4 py-4 border-b border-slate-100">
             <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
                 <img id="sidebar-avatar" src="" alt="Avatar" class="w-full h-full object-cover">
@@ -162,10 +156,8 @@
             </div>
         </div>
 
-        <!-- Menu Navigasi Dinamis -->
         <nav id="sidebar-menu-items" class="flex-1 overflow-y-auto py-2 px-2 space-y-1"></nav>
 
-        <!-- Logout -->
         <div class="p-3 border-t border-slate-100">
             <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-rose-600 hover:bg-rose-50 transition">
                 <i class="fas fa-sign-out-alt w-5 text-center"></i> Keluar
@@ -173,7 +165,7 @@
         </div>
     </aside>
 
-    <!-- MAIN APP CONTENT -->
+    <!-- KONTEN UTAMA APLIKASI -->
     <main id="main-content" class="flex-1 overflow-y-auto mt-16 mb-16 relative bg-background hidden">
 
         <!-- DASHBOARD VIEW -->
@@ -264,13 +256,11 @@
                     <i class="fas fa-plus"></i> Catat Hafalan
                 </button>
             </div>
-
             <div class="bg-surface p-3 rounded-2xl border border-slate-100 shadow-sm">
                 <select id="karakter-siswa-filter" onchange="loadKeagamaanData(true)" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
             </div>
-
             <div id="keagamaan-container" class="space-y-3"></div>
         </div>
 
@@ -315,13 +305,11 @@
                     <i class="fas fa-plus"></i> Tambah Catatan
                 </button>
             </div>
-
             <div class="bg-surface p-3 rounded-2xl border border-slate-100 shadow-sm">
                 <select id="pembinaan-siswa-filter" onchange="loadPembinaanData(true)" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
             </div>
-
             <div id="pembinaan-list-container" class="space-y-3"></div>
         </div>
 
@@ -338,7 +326,7 @@
             <div id="profil-siswa-details" class="space-y-4"></div>
         </div>
 
-        <!-- MODUL LAPORAN VIEW -->
+        <!-- LAPORAN REKAP VIEW -->
         <div id="view-laporan" class="view-section p-4 space-y-4">
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
                 <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-file-invoice text-purple-600 mr-2"></i>Rekap Laporan Pemantauan</h2>
@@ -368,7 +356,7 @@
             <div id="siswa-card-container" class="space-y-2.5"></div>
         </div>
 
-        <!-- MANAJEMEN MASTER ADMIN VIEW -->
+        <!-- MASTER ADMIN VIEW -->
         <div id="view-admin-manage" class="view-section p-4 space-y-4">
             <div class="flex bg-slate-200/70 p-1 rounded-xl gap-2">
                 <button onclick="switchAdminTab('guru')" id="btn-admin-tab-guru" class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-surface text-primary shadow-sm">Guru</button>
@@ -403,7 +391,7 @@
 
     </main>
 
-    <!-- PRINTABLE CONTAINER FOR PDF GENERATION -->
+    <!-- AREA CETAK LAPORAN -->
     <div id="printable-area" class="hidden"></div>
 
     <!-- BOTTOM NAV BAR -->

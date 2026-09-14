@@ -34,7 +34,6 @@ body {
     letter-spacing: -0.01em;
 }
 
-/* Kontrol Tombol & Form */
 button,
 input,
 select,
@@ -47,7 +46,7 @@ button:active {
     transform: scale(0.97);
 }
 
-/* Aksesibilitas Area Sentuh (Min 44px untuk HP) */
+/* Area Sentuh Minimal 44px (Mobile First UX) */
 .touch-btn {
     min-width: 44px;
     min-height: 44px;
@@ -57,7 +56,7 @@ button:active {
     border-radius: 0.75rem;
 }
 
-/* Kontrol Tampilan Berbasis Role */
+/* Visibilitas Berbasis Role */
 [data-role-visible]:not(.view-section) {
     display: none !important;
 }
@@ -109,7 +108,7 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-/* Header Header Transparan (Glassmorphism) */
+/* Glassmorphism Header & Bottom Nav */
 #main-header {
     background: rgba(37, 99, 235, 0.95) !important;
     backdrop-filter: blur(12px);
@@ -118,7 +117,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     padding-top: env(safe-area-inset-top);
 }
 
-/* Navigasi Bawah (Bottom Nav Bar) */
 #bottom-nav {
     background: rgba(255, 255, 255, 0.92) !important;
     backdrop-filter: blur(16px);
@@ -144,7 +142,7 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
 }
 
-/* Kartu & Container Surface */
+/* Kartu & Elevasi Surface */
 .bg-surface,
 .bg-white {
     background-color: #ffffff;
@@ -180,7 +178,7 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     }
 }
 
-/* Transisi Antar Halaman/View */
+/* Transisi Halaman/View Smooth */
 .view-section {
     display: none;
 }
@@ -201,7 +199,20 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     }
 }
 
-/* Empty State Tampilan Kosong */
+/* Skeleton Shimmer Loading */
+.skeleton {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+    background-size: 400% 100%;
+    animation: skeletonShimmer 1.4s ease infinite;
+    border-radius: 0.75rem;
+}
+
+@keyframes skeletonShimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+/* Empty State Styling */
 .empty-state {
     text-align: center;
     padding: 3rem 1.5rem;
@@ -235,7 +246,7 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     scrollbar-width: none;
 }
 
-/* State Fokus Keyboard / Aksesibilitas */
+/* Accessiblity Focus Ring */
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
