@@ -1758,6 +1758,115 @@ function renderLaporanRekapView() {
     }).join("");
 }
 
+/**
+ * Engine Cetak Rekap Laporan Kelas ke PDF / Printer
+ * Menyusun Kop Surat, Tabel Rekapitulasi Presensi & Akademik, serta Kolom Pengesahan.
+ */
+function printLaporanRekap() {
+    // 1. Validasi ketersediaan data rekapitulasi
+    if (!appState.laporanRekap || appState.laporanRekap.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Data Kosong',
+            text: 'Tidak ada data rekapitulasi untuk dicetak.',
+            confirmButtonColor: '#2563eb'
+        });
+        return;
+    }
+
+    const printArea = document.getElementById("printable-area");
+    if (!printArea) return;
+
+    // 2. Format Tanggal WITA untuk dokumen
+    const formattedDate = new Date().toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+
+    // 3. Generasi Baris Tabel Rekapitulasi Siswa
+    const rowsHtml = appState.laporanRekap.map((item, index) => {
+        const kls = appState.kelas.find(k => String(k.id) === String(item.kelas_id));
+        
+        // Indikator Evaluasi Ringkas
+        const isPerhatian = (item.presensi.alpa >= 3 || item.dibawah_kktp >= 2);
+        const statusText = isPerhatian ? 'Perlu Perhatian' : 'Tuntas / Baik';
+        const statusColor = isPerhatian ? '#dc2626' : '#16a34a';
+
+        return `
+            <tr>
+                <td style="padding: 6px 4px; text-align: center;">${index + 1}</td>
+                <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.nisn || '-')}</td>
+                <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.nama)}</td>
+                <td style="padding: 6px 4px; text-align: center;">${kls ? escapeHtml(kls.nama_kelas) : '-'}</td>
+                <td style="padding: 6px 4px; text-align: center; color: #16a34a; font-weight: bold;">${item.presensi.hadir}</td>
+                <td style="padding: 6px 4px; text-align: center;">${item.presensi.sakit}</td>
+                <td style="padding: 6px 4px; text-align: center;">${item.presensi.izin}</td>
+                <td style="padding: 6px 4px; text-align: center; font-weight: bold; color: ${item.presensi.alpa > 0 ? '#dc2626' : 'inherit'};">${item.presensi.alpa}</td>
+                <td style="padding: 6px 6px; text-align: center; font-weight: bold; color: ${item.dibawah_kktp > 0 ? '#dc2626' : 'inherit'};">${item.dibawah_kktp} Mapel</td>
+                <td style="padding: 6px 6px; text-align: center; font-weight: bold; color: ${statusColor};">${statusText}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // 4. Injeksi Tata Letak Cetak Resmi ke #printable-area
+    printArea.innerHTML = `
+        <div style="font-family: 'Times New Roman', Times, serif; color: #0f172a; padding: 10px;">
+            <!-- Kop Surat Resmi Sekolah -->
+            <div style="text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 16px;">
+                <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase; letter-spacing: 1px;">Pemerintah Kabupaten Gorontalo</h4>
+                <h3 style="margin: 2px 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Dinas Pendidikan dan Kebudayaan</h3>
+                <h2 style="margin: 2px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">SMP NEGERI 1 TALAGA JAYA</h2>
+                <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Jl. Pelabuhan II, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
+            </div>
+
+            <!-- Judul Laporan & Informasi Metadata -->
+            <div style="text-align: center; margin-bottom: 16px;">
+                <h3 style="margin: 0 0 4px 0; font-size: 14px; text-transform: uppercase; text-decoration: underline; font-weight: bold;">LAPORAN REKAPITULASI PEMANTAUAN ANAK WALI</h3>
+                <p style="margin: 0; font-size: 11px; color: #475569;">Tanggal Cetak: ${formattedDate} | Dicetak Oleh: <b>${escapeHtml(appState.user.nama)}</b> (${escapeHtml(appState.user.role.toUpperCase())})</p>
+            </div>
+
+            <!-- Tabel Data Rekapitulasi -->
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;" border="1" borderColor="#94a3b8">
+                <thead>
+                    <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                        <th style="padding: 8px 4px; width: 30px;">No</th>
+                        <th style="padding: 8px 6px; width: 90px;">NISN</th>
+                        <th style="padding: 8px 6px; text-align: left;">Nama Siswa</th>
+                        <th style="padding: 8px 4px; width: 55px;">Kelas</th>
+                        <th style="padding: 8px 4px; width: 45px;">Hadir</th>
+                        <th style="padding: 8px 4px; width: 45px;">Sakit</th>
+                        <th style="padding: 8px 4px; width: 45px;">Izin</th>
+                        <th style="padding: 8px 4px; width: 45px;">Alpa</th>
+                        <th style="padding: 8px 6px; width: 80px;">< KKTP</th>
+                        <th style="padding: 8px 6px; width: 105px;">Evaluasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+
+            <!-- Kolom Tanda Tangan & Pengesahan Dokumen -->
+            <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; page-break-inside: avoid;">
+                <div style="text-align: center; width: 220px;">
+                    <p style="margin-bottom: 60px;">Mengetahui,<br>Kepala SMPN 1 Talaga Jaya</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">( ............................................ )</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ........................................</p>
+                </div>
+                <div style="text-align: center; width: 220px;">
+                    <p style="margin-bottom: 60px;">Talaga Jaya, ${formattedDate}<br>Guru Pemantau / Wali Kelas</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user.nama)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP/ID: ${escapeHtml(appState.user.id)}</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 5. Panggil dialog cetak peramban
+    window.print();
+}
+
 function exportRekapCSV() {
     if (!appState.laporanRekap || appState.laporanRekap.length === 0) {
         Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data laporan untuk diekspor.', confirmButtonColor: '#2563eb' });
