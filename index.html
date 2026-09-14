@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,7 +11,7 @@
     <link rel="icon" href="https://ui-avatars.com/api/?name=AW&background=2563eb&color=fff&size=64">
     <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=AW&background=2563eb&color=fff&size=192">
     <title>Aplikasi Pemantauan Anak Wali - SMPN 1 Talaga Jaya</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -35,20 +36,46 @@
     <link rel="stylesheet" href="style.css">
     <style>
         @media print {
-            body * { visibility: hidden; }
-            #printable-area, #printable-area * { visibility: visible; }
-            #printable-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
-            .no-print { display: none !important; }
+
+            /* Sembunyikan seluruh tampilan aplikasi */
+            body>*:not(#printable-area) {
+                display: none !important;
+            }
+
+            /* Paksa area cetak tampil penuh dan mengabaikan class hidden */
+            #printable-area,
+            #printable-area * {
+                display: block !important;
+                visibility: visible !important;
+            }
+
+            #printable-area {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10px !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
         }
     </style>
 </head>
+
 <body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden bg-background" data-role="">
 
     <!-- TAMPILAN LOGIN -->
-    <div id="view-login" class="view-section active fixed inset-0 bg-background flex flex-col justify-center items-center p-4 z-50">
+    <div id="view-login"
+        class="view-section active fixed inset-0 bg-background flex flex-col justify-center items-center p-4 z-50">
         <div class="w-full max-w-sm">
             <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-primary text-white rounded-2xl flex items-center justify-center text-4xl mx-auto shadow-lg shadow-blue-500/20 mb-4">
+                <div
+                    class="w-20 h-20 bg-primary text-white rounded-2xl flex items-center justify-center text-4xl mx-auto shadow-lg shadow-blue-500/20 mb-4">
                     <i class="fas fa-shield-alt"></i>
                 </div>
                 <h1 class="text-2xl font-black text-slate-800 mb-1">Anak Wali</h1>
@@ -58,15 +85,19 @@
             <div class="login-card bg-surface p-6 rounded-3xl border border-slate-100 shadow-sm">
                 <form id="form-login" onsubmit="handleAppLogin(event)" class="space-y-4">
                     <div>
-                        <label class="field-label block mb-2 text-xs font-bold text-slate-600 uppercase">Masuk sebagai</label>
+                        <label class="field-label block mb-2 text-xs font-bold text-slate-600 uppercase">Masuk
+                            sebagai</label>
                         <div class="grid grid-cols-3 gap-2">
-                            <button type="button" onclick="selectLoginRole('siswa')" id="role-btn-siswa" class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
+                            <button type="button" onclick="selectLoginRole('siswa')" id="role-btn-siswa"
+                                class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
                                 <i class="fas fa-user-graduate block text-base mb-1"></i> Siswa
                             </button>
-                            <button type="button" onclick="selectLoginRole('guru')" id="role-btn-guru" class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
+                            <button type="button" onclick="selectLoginRole('guru')" id="role-btn-guru"
+                                class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
                                 <i class="fas fa-chalkboard-teacher block text-base mb-1"></i> Guru
                             </button>
-                            <button type="button" onclick="selectLoginRole('admin')" id="role-btn-admin" class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
+                            <button type="button" onclick="selectLoginRole('admin')" id="role-btn-admin"
+                                class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
                                 <i class="fas fa-user-shield block text-base mb-1"></i> Admin
                             </button>
                         </div>
@@ -74,42 +105,54 @@
                     </div>
 
                     <div>
-                        <label class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">ID / Username</label>
+                        <label class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">ID /
+                            Username</label>
                         <div class="relative flex items-center">
                             <i class="fas fa-id-card absolute left-3.5 text-slate-400"></i>
-                            <input type="text" id="login-username" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="Masukkan Username" required>
+                            <input type="text" id="login-username"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                                placeholder="Masukkan Username" required>
                         </div>
                     </div>
 
                     <div>
-                        <label class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">Kata Sandi</label>
+                        <label class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">Kata
+                            Sandi</label>
                         <div class="relative flex items-center">
                             <i class="fas fa-lock absolute left-3.5 text-slate-400"></i>
-                            <input type="password" id="login-password" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="••••••••" required>
-                            <button type="button" class="absolute right-3.5 text-slate-400" onclick="togglePasswordVisibility('login-password')">
+                            <input type="password" id="login-password"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                                placeholder="••••••••" required>
+                            <button type="button" class="absolute right-3.5 text-slate-400"
+                                onclick="togglePasswordVisibility('login-password')">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button type="submit" id="btn-submit-login" class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-xl mt-2 active:scale-[0.98] transition shadow-md shadow-blue-500/30 flex justify-center items-center gap-2">
+                    <button type="submit" id="btn-submit-login"
+                        class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-xl mt-2 active:scale-[0.98] transition shadow-md shadow-blue-500/30 flex justify-center items-center gap-2">
                         <span>Masuk Aplikasi</span>
                         <i class="fas fa-arrow-right text-xs"></i>
                     </button>
                 </form>
             </div>
-            <p class="text-center text-[11px] text-slate-400 mt-6">© 2026 SMP Negeri 1 Talaga Jaya. All rights reserved.</p>
+            <p class="text-center text-[11px] text-slate-400 mt-6">© 2026 SMP Negeri 1 Talaga Jaya. All rights reserved.
+            </p>
         </div>
     </div>
 
     <!-- HEADER UTAMA -->
-    <header id="main-header" class="bg-primary text-white shadow-md fixed top-0 w-full z-20 transition-all duration-300 hidden no-print">
+    <header id="main-header"
+        class="bg-primary text-white shadow-md fixed top-0 w-full z-20 transition-all duration-300 hidden no-print">
         <div id="header-default" class="flex justify-between items-center px-4 py-3 h-16">
             <div class="flex items-center gap-3">
-                <button id="btn-toggle-sidebar" onclick="toggleSidebar(true)" class="touch-btn -ml-1 hover:bg-white/10 rounded-xl transition">
+                <button id="btn-toggle-sidebar" onclick="toggleSidebar(true)"
+                    class="touch-btn -ml-1 hover:bg-white/10 rounded-xl transition">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
-                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden border border-white/30">
+                <div
+                    class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden border border-white/30">
                     <img id="user-avatar" src="" alt="Avatar" class="w-full h-full object-cover">
                 </div>
                 <div>
@@ -118,12 +161,16 @@
                 </div>
             </div>
             <div class="flex items-center gap-1">
-                <button id="btn-refresh-header" onclick="manualRefreshAll()" class="touch-btn hover:bg-white/10 rounded-xl transition" title="Segarkan data">
+                <button id="btn-refresh-header" onclick="manualRefreshAll()"
+                    class="touch-btn hover:bg-white/10 rounded-xl transition" title="Segarkan data">
                     <i class="fas fa-rotate text-base"></i>
                 </button>
-                <button id="btn-notif-header" data-role-visible="admin,guru,siswa" class="p-2 relative hover:bg-white/10 rounded-xl transition hidden" onclick="openNotificationModal()">
+                <button id="btn-notif-header" data-role-visible="admin,guru,siswa"
+                    class="p-2 relative hover:bg-white/10 rounded-xl transition hidden"
+                    onclick="openNotificationModal()">
                     <i class="fas fa-bell text-lg"></i>
-                    <span id="notif-badge" class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
+                    <span id="notif-badge"
+                        class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
                 </button>
                 <button class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()">
                     <i class="fas fa-cog text-lg"></i>
@@ -133,12 +180,16 @@
     </header>
 
     <!-- SIDEBAR BACKDROP & DRAWER -->
-    <div id="sidebar-backdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden opacity-0 transition-opacity duration-300 no-print"></div>
+    <div id="sidebar-backdrop" onclick="toggleSidebar(false)"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden opacity-0 transition-opacity duration-300 no-print">
+    </div>
 
-    <aside id="app-sidebar" class="fixed top-0 left-0 h-full w-72 max-w-[80%] bg-surface z-40 shadow-xl -translate-x-full transition-transform duration-300 ease-in-out flex flex-col no-print">
+    <aside id="app-sidebar"
+        class="fixed top-0 left-0 h-full w-72 max-w-[80%] bg-surface z-40 shadow-xl -translate-x-full transition-transform duration-300 ease-in-out flex flex-col no-print">
         <div class="flex items-center justify-between px-4 py-4 border-b border-slate-100">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center text-sm"><i class="fas fa-shield-alt"></i></div>
+                <div class="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center text-sm"><i
+                        class="fas fa-shield-alt"></i></div>
                 <span class="font-black text-slate-800 text-sm">Anak Wali</span>
             </div>
             <button onclick="toggleSidebar(false)" class="touch-btn text-slate-400 hover:bg-slate-100 rounded-lg">
@@ -147,19 +198,22 @@
         </div>
 
         <div class="flex items-center gap-3 px-4 py-4 border-b border-slate-100">
-            <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
+            <div
+                class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
                 <img id="sidebar-avatar" src="" alt="Avatar" class="w-full h-full object-cover">
             </div>
             <div class="min-w-0">
                 <p id="sidebar-nama" class="font-bold text-sm text-slate-800 truncate">Memuat...</p>
-                <span id="sidebar-role-badge" class="inline-block text-[10px] font-bold text-primary bg-blue-50 px-2 py-0.5 rounded-full mt-0.5">-</span>
+                <span id="sidebar-role-badge"
+                    class="inline-block text-[10px] font-bold text-primary bg-blue-50 px-2 py-0.5 rounded-full mt-0.5">-</span>
             </div>
         </div>
 
         <nav id="sidebar-menu-items" class="flex-1 overflow-y-auto py-2 px-2 space-y-1"></nav>
 
         <div class="p-3 border-t border-slate-100">
-            <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-rose-600 hover:bg-rose-50 transition">
+            <button onclick="handleLogout()"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-rose-600 hover:bg-rose-50 transition">
                 <i class="fas fa-sign-out-alt w-5 text-center"></i> Keluar
             </button>
         </div>
@@ -170,9 +224,11 @@
 
         <!-- DASHBOARD VIEW -->
         <div id="view-dashboard" class="view-section p-4 space-y-5 pb-8">
-            <div id="dash-admin-banner" data-role-visible="admin" class="hidden bg-slate-800 text-white p-3.5 rounded-2xl shadow-sm border border-slate-700">
+            <div id="dash-admin-banner" data-role-visible="admin"
+                class="hidden bg-slate-800 text-white p-3.5 rounded-2xl shadow-sm border border-slate-700">
                 <div class="flex items-center justify-between mb-1">
-                    <span class="text-xs font-bold text-accent uppercase tracking-wider"><i class="fas fa-user-shield mr-1"></i> Mode Administrator </span>
+                    <span class="text-xs font-bold text-accent uppercase tracking-wider"><i
+                            class="fas fa-user-shield mr-1"></i> Mode Administrator </span>
                 </div>
                 <p class="text-xs text-slate-300">, Anda dapat memantau seluruh kelas & anak wali sekolah.</p>
             </div>
@@ -181,21 +237,34 @@
 
             <div data-role-visible="admin,guru">
                 <h2 class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider px-1">Menu Pemantauan</h2>
-                <div class="grid grid-cols-4 gap-2 bg-surface p-3.5 rounded-2xl shadow-sm border border-slate-100 text-center">
-                    <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl" onclick="switchView('absensi')">
-                        <div class="w-10 h-10 rounded-2xl bg-blue-50 text-primary flex items-center justify-center text-base shadow-sm"><i class="fas fa-calendar-check"></i></div>
+                <div
+                    class="grid grid-cols-4 gap-2 bg-surface p-3.5 rounded-2xl shadow-sm border border-slate-100 text-center">
+                    <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl"
+                        onclick="switchView('absensi')">
+                        <div
+                            class="w-10 h-10 rounded-2xl bg-blue-50 text-primary flex items-center justify-center text-base shadow-sm">
+                            <i class="fas fa-calendar-check"></i></div>
                         <span class="text-[10px] font-bold text-slate-700">Presensi</span>
                     </button>
-                    <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl" onclick="switchView('kebiasaan')">
-                        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-accent flex items-center justify-center text-base shadow-sm"><i class="fas fa-star"></i></div>
+                    <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl"
+                        onclick="switchView('kebiasaan')">
+                        <div
+                            class="w-10 h-10 rounded-2xl bg-amber-50 text-accent flex items-center justify-center text-base shadow-sm">
+                            <i class="fas fa-star"></i></div>
                         <span class="text-[10px] font-bold text-slate-700">Kebiasaan</span>
                     </button>
-                    <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl" onclick="switchView('karakter')">
-                        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-secondary flex items-center justify-center text-base shadow-sm"><i class="fas fa-quran"></i></div>
+                    <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl"
+                        onclick="switchView('karakter')">
+                        <div
+                            class="w-10 h-10 rounded-2xl bg-emerald-50 text-secondary flex items-center justify-center text-base shadow-sm">
+                            <i class="fas fa-quran"></i></div>
                         <span class="text-[10px] font-bold text-slate-700">Keagamaan</span>
                     </button>
-                    <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl" onclick="switchView('laporan')">
-                        <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-base shadow-sm"><i class="fas fa-file-invoice"></i></div>
+                    <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl"
+                        onclick="switchView('laporan')">
+                        <div
+                            class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-base shadow-sm">
+                            <i class="fas fa-file-invoice"></i></div>
                         <span class="text-[10px] font-bold text-slate-700">Laporan</span>
                     </button>
                 </div>
@@ -203,14 +272,16 @@
 
             <div id="dash-section-bottom">
                 <div class="flex justify-between items-center mb-2 px-1">
-                    <h2 id="dash-bottom-title" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Perlu Perhatian Khusus</h2>
+                    <h2 id="dash-bottom-title" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Perlu
+                        Perhatian Khusus</h2>
                 </div>
                 <div id="dash-priority-container" class="space-y-2"></div>
             </div>
 
             <div id="dash-section-agenda">
                 <div class="flex justify-between items-center mb-2 px-1">
-                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Agenda Pembinaan Mendatang</h2>
+                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Agenda Pembinaan Mendatang
+                    </h2>
                 </div>
                 <div id="dash-agenda-list" class="space-y-2"></div>
             </div>
@@ -220,8 +291,10 @@
         <div id="view-absensi" class="view-section p-4 space-y-4">
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-calendar-check text-primary mr-2"></i>Presensi Kehadiran</h2>
-                    <input type="date" id="absensi-date" onchange="loadAbsensiData(true)" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary">
+                    <h2 class="text-sm font-bold text-slate-800"><i
+                            class="fas fa-calendar-check text-primary mr-2"></i>Presensi Kehadiran</h2>
+                    <input type="date" id="absensi-date" onchange="loadAbsensiData(true)"
+                        class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary">
                 </div>
             </div>
             <div id="absensi-list-container" class="space-y-2"></div>
@@ -231,16 +304,20 @@
         <div id="view-kebiasaan" class="view-section p-4 space-y-4">
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-star text-accent mr-2"></i>7 Kebiasaan Hebat</h2>
+                    <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-star text-accent mr-2"></i>7 Kebiasaan
+                        Hebat</h2>
                     <div class="flex items-center gap-2">
                         <!-- Badge Status Debounce Realtime -->
-                        <span id="kebiasaan-save-status" class="hidden text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all duration-200"></span>
-                        <input type="date" id="kebiasaan-date" onchange="loadKebiasaanData(true)" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-accent">
+                        <span id="kebiasaan-save-status"
+                            class="hidden text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all duration-200"></span>
+                        <input type="date" id="kebiasaan-date" onchange="loadKebiasaanData(true)"
+                            class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-accent">
                     </div>
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Pilih Siswa</label>
-                    <select id="kebiasaan-siswa-select" onchange="renderKebiasaanView()" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700"></select>
+                    <select id="kebiasaan-siswa-select" onchange="renderKebiasaanView()"
+                        class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700"></select>
                 </div>
             </div>
             <div id="kebiasaan-list-container" class="space-y-2.5"></div>
@@ -250,15 +327,18 @@
         <div id="view-karakter" class="view-section p-4 space-y-4">
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
                 <div>
-                    <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-quran text-secondary mr-2"></i>Catatan Keagamaan</h2>
+                    <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-quran text-secondary mr-2"></i>Catatan
+                        Keagamaan</h2>
                     <p class="text-[10px] text-slate-400">Monitoring 114 Surah Al-Qur'an</p>
                 </div>
-                <button data-role-visible="admin,guru" onclick="openModalKeagamaan()" class="bg-secondary hover:bg-emerald-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
+                <button data-role-visible="admin,guru" onclick="openModalKeagamaan()"
+                    class="bg-secondary hover:bg-emerald-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
                     <i class="fas fa-plus"></i> Catat Hafalan
                 </button>
             </div>
             <div class="bg-surface p-3 rounded-2xl border border-slate-100 shadow-sm">
-                <select id="karakter-siswa-filter" onchange="loadKeagamaanData(true)" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
+                <select id="karakter-siswa-filter" onchange="loadKeagamaanData(true)"
+                    class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
             </div>
@@ -268,12 +348,17 @@
         <!-- AKADEMIK & PRESTASI VIEW -->
         <div id="view-akademik" class="view-section p-4 space-y-4">
             <div class="flex bg-slate-200/70 p-1 rounded-xl gap-2">
-                <button onclick="switchAkademikTab('nilai')" id="btn-akd-tab-nilai" class="akd-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-surface text-primary shadow-sm text-center">Nilai Mapel</button>
-                <button onclick="switchAkademikTab('prestasi')" id="btn-akd-tab-prestasi" class="akd-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600 text-center">Prestasi Siswa</button>
+                <button onclick="switchAkademikTab('nilai')" id="btn-akd-tab-nilai"
+                    class="akd-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-surface text-primary shadow-sm text-center">Nilai
+                    Mapel</button>
+                <button onclick="switchAkademikTab('prestasi')" id="btn-akd-tab-prestasi"
+                    class="akd-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600 text-center">Prestasi
+                    Siswa</button>
             </div>
 
             <div class="bg-surface p-3.5 rounded-2xl border border-slate-100 shadow-sm">
-                <select id="akademik-siswa-filter" onchange="loadAkademikData(true)" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700">
+                <select id="akademik-siswa-filter" onchange="loadAkademikData(true)"
+                    class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
             </div>
@@ -281,7 +366,9 @@
             <div id="akd-tab-nilai" class="akd-tab-content space-y-3">
                 <div class="flex justify-between items-center px-1">
                     <span class="text-xs font-bold text-slate-500 uppercase">Rekap KKTP & Nilai</span>
-                    <button data-role-visible="admin,guru" onclick="openModalAkademik()" class="bg-primary text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm"><i class="fas fa-plus mr-1"></i> Nilai Mapel</button>
+                    <button data-role-visible="admin,guru" onclick="openModalAkademik()"
+                        class="bg-primary text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm"><i
+                            class="fas fa-plus mr-1"></i> Nilai Mapel</button>
                 </div>
                 <div id="akademik-list-container" class="space-y-2.5"></div>
             </div>
@@ -289,7 +376,9 @@
             <div id="akd-tab-prestasi" class="akd-tab-content space-y-3 hidden">
                 <div class="flex justify-between items-center px-1">
                     <span class="text-xs font-bold text-slate-500 uppercase">Daftar Prestasi Non-Akademik</span>
-                    <button data-role-visible="admin,guru" onclick="openModalPrestasi()" class="bg-accent text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm"><i class="fas fa-trophy mr-1"></i> Catat Prestasi</button>
+                    <button data-role-visible="admin,guru" onclick="openModalPrestasi()"
+                        class="bg-accent text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm"><i
+                            class="fas fa-trophy mr-1"></i> Catat Prestasi</button>
                 </div>
                 <div id="prestasi-list-container" class="space-y-2.5"></div>
             </div>
@@ -299,15 +388,18 @@
         <div id="view-pembinaan" class="view-section p-4 space-y-4">
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
                 <div>
-                    <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-user-edit text-rose-500 mr-2"></i>Catatan Pembinaan</h2>
+                    <h2 class="text-sm font-bold text-slate-800"><i
+                            class="fas fa-user-edit text-rose-500 mr-2"></i>Catatan Pembinaan</h2>
                     <p class="text-[10px] text-slate-400">Monitoring Masalah & Tindak Lanjut</p>
                 </div>
-                <button data-role-visible="admin,guru" onclick="openModalPembinaan()" class="bg-rose-500 hover:bg-rose-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
+                <button data-role-visible="admin,guru" onclick="openModalPembinaan()"
+                    class="bg-rose-500 hover:bg-rose-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
                     <i class="fas fa-plus"></i> Tambah Catatan
                 </button>
             </div>
             <div class="bg-surface p-3 rounded-2xl border border-slate-100 shadow-sm">
-                <select id="pembinaan-siswa-filter" onchange="loadPembinaanData(true)" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
+                <select id="pembinaan-siswa-filter" onchange="loadPembinaanData(true)"
+                    class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none font-medium text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
             </div>
@@ -317,10 +409,12 @@
         <!-- PROFIL SISWA TERINTEGRASI VIEW -->
         <div id="view-profil-siswa" class="view-section p-4 space-y-4">
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-                <button onclick="switchView('siswa')" class="text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                <button onclick="switchView('siswa')"
+                    class="text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1">
                     <i class="fas fa-arrow-left"></i> Kembali
                 </button>
-                <button onclick="printProfilSiswa()" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5">
+                <button onclick="printProfilSiswa()"
+                    class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5">
                     <i class="fas fa-print"></i> Cetak Rapor Anak Wali
                 </button>
             </div>
@@ -330,12 +424,15 @@
         <!-- LAPORAN REKAP VIEW -->
         <div id="view-laporan" class="view-section p-4 space-y-4">
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
-                <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-file-invoice text-purple-600 mr-2"></i>Rekap Laporan Pemantauan</h2>
+                <h2 class="text-sm font-bold text-slate-800"><i
+                        class="fas fa-file-invoice text-purple-600 mr-2"></i>Rekap Laporan Pemantauan</h2>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="exportRekapCSV()" class="bg-secondary hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                    <button onclick="exportRekapCSV()"
+                        class="bg-secondary hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm">
                         <i class="fas fa-file-csv"></i> Ekspor CSV
                     </button>
-                    <button onclick="printLaporanRekap()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                    <button onclick="printLaporanRekap()"
+                        class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm">
                         <i class="fas fa-print"></i> Cetak PDF / Print
                     </button>
                 </div>
@@ -348,9 +445,12 @@
             <div class="flex gap-2">
                 <div class="relative flex-1">
                     <i class="fas fa-search absolute left-3.5 top-3 text-slate-400"></i>
-                    <input type="text" id="search-siswa-input" oninput="renderSiswaView()" placeholder="Cari nama / NISN siswa..." class="w-full bg-surface border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs outline-none focus:border-primary">
+                    <input type="text" id="search-siswa-input" oninput="renderSiswaView()"
+                        placeholder="Cari nama / NISN siswa..."
+                        class="w-full bg-surface border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs outline-none focus:border-primary">
                 </div>
-                <button data-role-visible="admin,guru" onclick="openModalSiswa()" class="bg-primary text-white px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
+                <button data-role-visible="admin,guru" onclick="openModalSiswa()"
+                    class="bg-primary text-white px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
                     <i class="fas fa-plus"></i> Tambah
                 </button>
             </div>
@@ -360,23 +460,33 @@
         <!-- MASTER ADMIN VIEW -->
         <div id="view-admin-manage" class="view-section p-4 space-y-4">
             <div class="flex bg-slate-200/70 p-1 rounded-xl gap-2">
-                <button onclick="switchAdminTab('guru')" id="btn-admin-tab-guru" class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-surface text-primary shadow-sm">Guru</button>
-                <button onclick="switchAdminTab('siswa')" id="btn-admin-tab-siswa" class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Siswa</button>
-                <button onclick="switchAdminTab('kelas')" id="btn-admin-tab-kelas" class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Kelas</button>
+                <button onclick="switchAdminTab('guru')" id="btn-admin-tab-guru"
+                    class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-surface text-primary shadow-sm">Guru</button>
+                <button onclick="switchAdminTab('siswa')" id="btn-admin-tab-siswa"
+                    class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Siswa</button>
+                <button onclick="switchAdminTab('kelas')" id="btn-admin-tab-kelas"
+                    class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Kelas</button>
             </div>
 
             <div id="admin-tab-guru" class="admin-tab-content space-y-3">
                 <div class="flex justify-between items-center gap-2">
-                    <input type="text" id="search-guru-input" oninput="renderAdminGuru()" placeholder="Cari guru..." class="flex-1 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
-                    <button onclick="openModalGuru()" class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-plus mr-1"></i> Guru</button>
+                    <input type="text" id="search-guru-input" oninput="renderAdminGuru()" placeholder="Cari guru..."
+                        class="flex-1 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                    <button onclick="openModalGuru()"
+                        class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i
+                            class="fas fa-plus mr-1"></i> Guru</button>
                 </div>
                 <div id="admin-guru-list" class="space-y-2"></div>
             </div>
 
             <div id="admin-tab-siswa" class="admin-tab-content space-y-3 hidden">
                 <div class="flex justify-between items-center gap-2">
-                    <input type="text" id="search-admin-siswa-input" oninput="renderAdminSiswa()" placeholder="Cari siswa..." class="flex-1 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
-                    <button onclick="openModalSiswa()" class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-plus mr-1"></i> Siswa</button>
+                    <input type="text" id="search-admin-siswa-input" oninput="renderAdminSiswa()"
+                        placeholder="Cari siswa..."
+                        class="flex-1 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                    <button onclick="openModalSiswa()"
+                        class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i
+                            class="fas fa-plus mr-1"></i> Siswa</button>
                 </div>
                 <div id="admin-siswa-list" class="space-y-2"></div>
             </div>
@@ -384,7 +494,9 @@
             <div id="admin-tab-kelas" class="admin-tab-content space-y-3 hidden">
                 <div class="flex justify-between items-center">
                     <h3 class="text-xs font-bold text-slate-600 uppercase">Daftar Kelas</h3>
-                    <button onclick="openModalKelas()" class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-plus mr-1"></i> Kelas</button>
+                    <button onclick="openModalKelas()"
+                        class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i
+                            class="fas fa-plus mr-1"></i> Kelas</button>
                 </div>
                 <div id="admin-kelas-list" class="space-y-2"></div>
             </div>
@@ -401,16 +513,19 @@
     </nav>
 
     <!-- LOADING OVERLAY -->
-    <div id="loading-overlay" class="fixed inset-0 z-[100] hidden flex-col items-center justify-center text-white no-print">
+    <div id="loading-overlay"
+        class="fixed inset-0 z-[100] hidden flex-col items-center justify-center text-white no-print">
         <div class="w-12 h-12 border-4 border-white/25 border-t-primary rounded-full animate-spin mb-3"></div>
         <p id="loading-text" class="text-xs font-semibold tracking-wide">Memproses...</p>
     </div>
 
     <!-- MODAL CONTAINER -->
     <div id="modal-container" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 no-print">
-        <div class="bg-surface w-full max-w-md rounded-3xl p-6 shadow-xl max-h-[90vh] overflow-y-auto" id="modal-content-box"></div>
+        <div class="bg-surface w-full max-w-md rounded-3xl p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+            id="modal-content-box"></div>
     </div>
 
     <script src="app.js"></script>
 </body>
+
 </html>

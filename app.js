@@ -40,7 +40,7 @@ function saveAppStateToLocal() {
             pembinaan: appState.pembinaan,
             laporanRekap: appState.laporanRekap
         }));
-    } catch(e) {}
+    } catch (e) { }
 }
 
 function loadAppStateFromLocal() {
@@ -50,7 +50,7 @@ function loadAppStateFromLocal() {
             const data = JSON.parse(cached);
             appState = { ...appState, ...data };
             return true;
-        } catch(e) {}
+        } catch (e) { }
     }
     return false;
 }
@@ -182,7 +182,7 @@ function formatDisplayTime(val) {
                 const minutes = String(d.getMinutes()).padStart(2, '0');
                 return `${hours}:${minutes} WITA`;
             }
-        } catch (e) {}
+        } catch (e) { }
     }
     return str.includes('WITA') ? str : `${str} WITA`;
 }
@@ -271,7 +271,7 @@ function showDraftIndicator(isSaved) {
 // ==================================================================
 async function apiCall(action, payload = {}, showFullLoader = false, retries = 3) {
     if (showFullLoader) showLoading();
-    
+
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             const response = await fetch(API_URL, {
@@ -286,10 +286,10 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
             console.error(`Attempt ${attempt} failed:`, err);
             if (attempt === retries) {
                 if (showFullLoader) hideLoading();
-                Swal.fire({ 
-                    icon: 'error', 
-                    title: 'Koneksi Gagal', 
-                    text: 'Tidak dapat terhubung ke server. Pastikan jaringan stabil.' 
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Koneksi Gagal',
+                    text: 'Tidak dapat terhubung ke server. Pastikan jaringan stabil.'
                 });
                 return null;
             }
@@ -307,7 +307,7 @@ function startSilentTokenRefresh() {
         const res = await apiCall("refreshToken", {}, false);
         if (res && res.status === "success" && res.token) {
             appState.token = res.token;
-            
+
             const savedSession = JSON.parse(localStorage.getItem("session_anak_wali") || "{}");
             savedSession.token = res.token;
             localStorage.setItem("session_anak_wali", JSON.stringify(savedSession));
@@ -378,7 +378,7 @@ async function setupAppSession() {
         appState.guru = resBootstrap.data.initial.guru || [];
         appState.siswa = resBootstrap.data.initial.siswa || [];
         appState.myStudents = resBootstrap.data.initial.siswa || [];
-        
+
         saveAppStateToLocal();
         renderDashboard(); // Update tampilan silently
     }
@@ -390,10 +390,10 @@ let notificationPollingInterval = null;
 
 function startRealtimeNotificationPolling() {
     if (notificationPollingInterval) clearInterval(notificationPollingInterval);
-    
+
     notificationPollingInterval = setInterval(async () => {
         if (!appState.token || !appState.user) return;
-        
+
         const prevCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
         await checkStudentNotifications();
         const currentCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
@@ -776,7 +776,7 @@ async function checkStudentNotifications() {
 
     targetStudents.forEach(s => {
         const sId = String(s.id);
-        
+
         const totalAlpa = absensiData.filter(a => String(a.siswa_id) === sId && a.status === 'A').length;
         if (totalAlpa > 0) {
             issueCount++;
@@ -910,7 +910,7 @@ function renderAbsensiView() {
     const isEditable = appState.user.role === 'admin' || appState.user.role === 'guru';
     const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
 
-    const rawFiltered = selectedKelas 
+    const rawFiltered = selectedKelas
         ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
         : appState.siswa;
 
@@ -928,7 +928,7 @@ function renderAbsensiView() {
     });
 
     const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
-    const kelasOptions = appState.kelas.map(k => 
+    const kelasOptions = appState.kelas.map(k =>
         `<option value="${k.id}" ${String(selectedKelas) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`
     ).join("");
 
@@ -984,11 +984,11 @@ function renderAbsensiView() {
             ` : `
                 <form onsubmit="saveBatchAbsensiForm(event)" class="space-y-2">
                     ${filteredSiswa.map(s => {
-                        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
-                        const currentStatus = rec.status || 'H';
-                        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-black mr-1">${s.no_absen}</span>` : '';
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
+        const currentStatus = rec.status || 'H';
+        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-black mr-1">${s.no_absen}</span>` : '';
 
-                        return `
+        return `
                             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                                 <div>
                                     <h4 class="font-bold text-xs text-slate-800 flex items-center">${noAbsenBadge}${escapeHtml(s.nama)}</h4>
@@ -1007,7 +1007,7 @@ function renderAbsensiView() {
                                 </div>
                             </div>
                         `;
-                    }).join('')}
+    }).join('')}
 
                     ${isEditable ? `
                     <div class="pt-2">
@@ -1116,7 +1116,7 @@ function renderKebiasaanView() {
 
     container.innerHTML = MASTER_KEBIASAAN.map(k => {
         const rec = appState.kebiasaan.find(item => String(item.siswa_id) === String(selectedSiswaId) && String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
-        
+
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
@@ -1130,10 +1130,10 @@ function renderKebiasaanView() {
                 </div>
                 <div class="flex gap-1">
                     ${[
-                        { val: 'Sudah', label: 'Sudah', cls: 'bg-emerald-600 text-white' },
-                        { val: 'Kadang', label: 'Kadang', cls: 'bg-amber-500 text-white' },
-                        { val: 'Belum', label: 'Belum', cls: 'bg-slate-700 text-white' }
-                    ].map(st => `
+                { val: 'Sudah', label: 'Sudah', cls: 'bg-emerald-600 text-white' },
+                { val: 'Kadang', label: 'Kadang', cls: 'bg-amber-500 text-white' },
+                { val: 'Belum', label: 'Belum', cls: 'bg-slate-700 text-white' }
+            ].map(st => `
                         <button ${isEditable ? `onclick="saveKebiasaanItem('${escapeHtml(selectedSiswaId)}', '${k.id}', '${st.val}')"` : 'disabled'}
                                 class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${rec.status === st.val ? st.cls : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} transition">
                             ${st.label}
@@ -1149,9 +1149,9 @@ function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? tanggalInput.value : getDateWITA();
 
-    const existingIndex = appState.kebiasaan.findIndex(k => 
-        String(k.siswa_id) === String(siswa_id) && 
-        String(k.tanggal) === String(tanggal) && 
+    const existingIndex = appState.kebiasaan.findIndex(k =>
+        String(k.siswa_id) === String(siswa_id) &&
+        String(k.tanggal) === String(tanggal) &&
         String(k.kebiasaan_id) === String(kebiasaan_id)
     );
 
@@ -1672,7 +1672,7 @@ function openModalPembinaan(id = null) {
     const rec = id ? appState.pembinaan.find(x => String(x.id) === String(id)) : null;
     const draft = !id ? getFormDraft("pembinaan") : null;
 
-    const siswaOpts = appState.siswa.map(s => 
+    const siswaOpts = appState.siswa.map(s =>
         `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
     ).join("");
 
@@ -1837,14 +1837,14 @@ async function openProfilSiswa(siswaId) {
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat</h4>
                     <div class="divide-y divide-slate-100">
                         ${MASTER_KEBIASAAN.map(k => {
-                            const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
-                            return `
+        const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
+        return `
                                 <div class="py-2 flex justify-between items-center text-xs">
                                     <span class="font-medium text-slate-700 flex items-center gap-2"><i class="fas ${k.icon} text-slate-400"></i> ${escapeHtml(k.nama)}</span>
                                     <span class="font-bold ${rec.status === 'Sudah' ? 'text-emerald-600' : (rec.status === 'Kadang' ? 'text-amber-600' : 'text-slate-400')}">${rec.status}</span>
                                 </div>
                             `;
-                        }).join('')}
+    }).join('')}
                     </div>
                 </div>
             </div>
@@ -2153,7 +2153,12 @@ function printLaporanRekap() {
         </div>
     `;
 
-    window.print();
+    // Lepas class hidden sebelum print dan pasang lagi sesudahnya
+    printArea.classList.remove("hidden");
+    setTimeout(() => {
+        window.print();
+        printArea.classList.add("hidden");
+    }, 150);
 }
 
 function exportRekapCSV() {
