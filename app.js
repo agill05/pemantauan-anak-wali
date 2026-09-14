@@ -225,7 +225,6 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
                 });
                 return null;
             }
-            // Tunggu 1,5 detik sebelum mencoba lagi
             await new Promise(res => setTimeout(res, 1500));
         }
     }
@@ -460,7 +459,7 @@ async function checkStudentNotifications() {
             });
         }
 
-        const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && p.status !== 'Selesai');
+        const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && String(p.status).toLowerCase() !== 'selesai');
         if (activePem.length > 0) {
             issueCount++;
             notificationList.push({
@@ -543,7 +542,8 @@ function handleLogout(force = false) {
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#64748b',
-            confirmButtonText: 'Ya, Keluar'
+            confirmButtonText: 'Ya, Keluar',
+            cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) executeLogout();
         });
@@ -740,6 +740,13 @@ function renderAbsensiView() {
     }
 
     const isEditable = appState.user.role === 'admin' || appState.user.role === 'guru';
+    const statusOptions = [
+        { code: 'H', label: 'Hadir' },
+        { code: 'I', label: 'Izin' },
+        { code: 'S', label: 'Sakit' },
+        { code: 'A', label: 'Alpa' },
+        { code: 'T', label: 'Terlambat' }
+    ];
 
     container.innerHTML = appState.siswa.map(s => {
         const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: '', waktu_masuk: '' };
@@ -752,8 +759,12 @@ function renderAbsensiView() {
                     </span>
                 </div>
                 <div class="flex gap-1.5" id="absen-group-${s.id}">
-                    ${['H','S','I','A','T'].map(st => `
-                        <button ${isEditable ? `onclick="setSingleAbsensi('${escapeHtml(s.id)}', '${st}')"` : 'disabled'} class="touch-btn w-9 h-9 rounded-lg text-xs font-black ${rec.status===st?'bg-blue-600 text-white':'bg-slate-100 text-slate-500 hover:bg-slate-200'}">${st}</button>
+                    ${statusOptions.map(st => `
+                        <button ${isEditable ? `onclick="setSingleAbsensi('${escapeHtml(s.id)}', '${st.code}')"` : 'disabled'}
+                                title="${st.label}"
+                                class="touch-btn w-9 h-9 rounded-lg text-xs font-black ${rec.status === st.code ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+                            ${st.code}
+                        </button>
                     `).join('')}
                 </div>
             </div>
@@ -762,10 +773,35 @@ function renderAbsensiView() {
 }
 
 async function setSingleAbsensi(siswa_id, status) {
+    const s = appState.siswa.find(x => String(x.id) === String(siswa_id));
+    const namaSiswa = s ? s.nama : 'Siswa';
     const tanggal = document.getElementById("absensi-date").value;
-    const jamWITA = getTimeWITA24();
-
     const existingIndex = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswa_id) && String(a.tanggal) === String(tanggal));
+    const existingRec = existingIndex !== -1 ? appState.absensi[existingIndex] : null;
+
+    const statusMap = { 'H': 'Hadir', 'I': 'Izin', 'S': 'Sakit', 'A': 'Alpa', 'T': 'Terlambat' };
+    const labelBaru = statusMap[status] || status;
+    const labelLama = existingRec && existingRec.status ? (statusMap[existingRec.status] || existingRec.status) : null;
+
+    let pesanKonfirmasi = `Apakah Anda yakin ingin mencatat status <b>${labelBaru} (${status})</b> untuk <b>${escapeHtml(namaSiswa)}</b>?`;
+    if (labelLama && existingRec.status !== status) {
+        pesanKonfirmasi = `Ubah status presensi <b>${escapeHtml(namaSiswa)}</b> dari <b>${labelLama} (${existingRec.status})</b> menjadi <b>${labelBaru} (${status})</b>?`;
+    }
+
+    const confirm = await Swal.fire({
+        title: 'Konfirmasi Presensi',
+        html: pesanKonfirmasi,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Simpan',
+        cancelButtonText: 'Batal'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    const jamWITA = getTimeWITA24();
     if (existingIndex !== -1) {
         appState.absensi[existingIndex].status = status;
         appState.absensi[existingIndex].waktu_masuk = jamWITA;
@@ -778,6 +814,19 @@ async function setSingleAbsensi(siswa_id, status) {
 }
 
 async function markAllPresent() {
+    const confirm = await Swal.fire({
+        title: 'Konfirmasi Presensi Massal',
+        html: 'Apakah Anda yakin ingin menandai <b>semua siswa</b> sebagai <b>Hadir (H)</b>?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Tandai Semua',
+        cancelButtonText: 'Batal'
+    });
+
+    if (!confirm.isConfirmed) return;
+
     const tanggal = document.getElementById("absensi-date").value;
     const jamWITA = getTimeWITA24();
     const items = appState.siswa.map(s => ({ siswa_id: s.id, status: 'H', waktu_masuk: jamWITA }));
@@ -1242,6 +1291,15 @@ async function deletePrestasi(id) {
 }
 
 // Pembinaan Siswa Engine
+function getPembinaanStatusBadge(status) {
+    const s = String(status || '').trim().toLowerCase();
+    if (s === 'pemantauan') return 'bg-sky-50 text-sky-700 border-sky-200';
+    if (s === 'dalam pembinaan') return 'bg-amber-50 text-amber-700 border-amber-200';
+    if (s === 'perlu tindak lanjut') return 'bg-rose-50 text-rose-700 border-rose-200';
+    if (s === 'selesai') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    return 'bg-slate-50 text-slate-600 border-slate-200';
+}
+
 async function loadPembinaanData(forceRefresh = false) {
     const filterSelect = document.getElementById("pembinaan-siswa-filter");
     if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
@@ -1275,7 +1333,7 @@ function renderPembinaanView() {
 
     container.innerHTML = appState.pembinaan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
-        const statusBadge = item.status === 'Selesai' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (item.status === 'Perlu tindak lanjut' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-amber-50 text-amber-700 border-amber-200');
+        const statusBadge = getPembinaanStatusBadge(item.status);
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
@@ -1328,7 +1386,7 @@ function openModalPembinaan(id = null) {
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1">STATUS</label>
                     <select id="m-pbn-status" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                        ${['Pemantauan', 'Dalam pembinaan', 'Perlu tindak lanjut', 'Selesai'].map(st => `<option value="${st}" ${rec && rec.status === st ? 'selected' : ''}>${st}</option>`).join('')}
+                        ${['Pemantauan', 'Dalam Pembinaan', 'Perlu Tindak Lanjut', 'Selesai'].map(st => `<option value="${st}" ${rec && String(rec.status).toLowerCase() === st.toLowerCase() ? 'selected' : ''}>${st}</option>`).join('')}
                     </select>
                 </div>
             </div>
@@ -1531,7 +1589,7 @@ async function openProfilSiswa(siswaId) {
                                 <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
                                     <div class="flex justify-between font-bold text-slate-800">
                                         <span>${escapeHtml(p.permasalahan)}</span>
-                                        <span class="text-rose-600 text-[10px] bg-rose-50 px-2 py-0.5 rounded border border-rose-100">${escapeHtml(p.status)}</span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${getPembinaanStatusBadge(p.status)}">${escapeHtml(p.status)}</span>
                                     </div>
                                     <p class="text-[10px] text-slate-400">Tanggal: ${escapeHtml(p.tanggal)}</p>
                                 </div>
