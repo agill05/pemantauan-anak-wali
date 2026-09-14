@@ -415,9 +415,9 @@ function renderSidebarMenu(role) {
     container.innerHTML = html;
 }
 
-// Notifikasi Pintar Siswa Bermasalah
+// Notifikasi Pintar (Presensi, Nilai Akademik, & Catatan Pembinaan)
 async function checkStudentNotifications() {
-    if (!appState.user || appState.user.role === 'siswa') return;
+    if (!appState.user) return;
 
     const [resAbs, resAkd, resPbn] = await Promise.all([
         apiCall("getAbsensi", { tanggal: getDateWITA() }, false),
@@ -432,9 +432,15 @@ async function checkStudentNotifications() {
     let issueCount = 0;
     const notificationList = [];
 
-    appState.siswa.forEach(s => {
+    // Tentukan target siswa (jika role siswa, periksa data akunnya sendiri)
+    const targetStudents = (appState.user.role === 'siswa')
+        ? (appState.siswa.length > 0 ? appState.siswa : [appState.user])
+        : (appState.siswa || []);
+
+    targetStudents.forEach(s => {
         const sId = String(s.id);
         
+        // 1. Notifikasi Presensi (Alpa)
         const totalAlpa = absensiData.filter(a => String(a.siswa_id) === sId && a.status === 'A').length;
         if (totalAlpa > 0) {
             issueCount++;
@@ -442,29 +448,41 @@ async function checkStudentNotifications() {
                 siswa: s,
                 type: 'danger',
                 title: 'Absensi (Alpa)',
-                desc: `${s.nama} tercatat berstatus Alpa pada hari ini.`
+                desc: appState.user.role === 'siswa'
+                    ? `Anda tercatat Alpa pada hari ini.`
+                    : `${s.nama} tercatat Alpa pada hari ini.`
             });
         }
 
+        // 2. Notifikasi Nilai Akademik (Di bawah KKTP)
         const lowGrades = akademikData.filter(a => String(a.siswa_id) === sId && Number(a.nilai_akhir || 0) < Number(a.kktp || 75));
-        if (lowGrades.length >= 2) {
-            issueCount++;
-            notificationList.push({
-                siswa: s,
-                type: 'warning',
-                title: 'Akademik Kurang',
-                desc: `${s.nama} memiliki ${lowGrades.length} mata pelajaran di bawah standar KKTP.`
+        if (lowGrades.length > 0) {
+            lowGrades.forEach(g => {
+                issueCount++;
+                notificationList.push({
+                    siswa: s,
+                    type: 'warning',
+                    title: 'Nilai Akademik Kurang',
+                    desc: appState.user.role === 'siswa'
+                        ? `Nilai mata pelajaran ${g.mapel} Anda (${g.nilai_akhir}) di bawah standar KKTP (${g.kktp}).`
+                        : `${s.nama}: Nilai ${g.mapel} (${g.nilai_akhir}) di bawah standar KKTP (${g.kktp}).`
+                });
             });
         }
 
+        // 3. Notifikasi Catatan Pembinaan Aktif
         const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && String(p.status).toLowerCase() !== 'selesai');
         if (activePem.length > 0) {
-            issueCount++;
-            notificationList.push({
-                siswa: s,
-                type: 'info',
-                title: 'Pembinaan Aktif',
-                desc: `${s.nama} memiliki ${activePem.length} catatan kasus yang perlu ditindaklanjuti.`
+            activePem.forEach(p => {
+                issueCount++;
+                notificationList.push({
+                    siswa: s,
+                    type: 'info',
+                    title: 'Catatan Pembinaan',
+                    desc: appState.user.role === 'siswa'
+                        ? `Catatan pembinaan (${p.jenis}): ${p.permasalahan}`
+                        : `${s.nama}: Catatan pembinaan (${p.jenis}): ${p.permasalahan}`
+                });
             });
         }
     });
