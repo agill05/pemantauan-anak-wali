@@ -1020,8 +1020,12 @@ function sendWebPushNotification(title, body) {
 
 // Evaluasi Multi-Kriteria & Level Keparahan Notifikasi
 // Evaluasi Multi-Kriteria & Level Keparahan Notifikasi (UPDATED WITH HANDLED LIST)
+// Evaluasi Multi-Kriteria & Level Keparahan Notifikasi (Multi-Kategori & Isolasi Siswa)
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'ortu') return;
+
+    const isSiswa = appState.user.role === 'siswa';
+    const currentUserId = String(appState.user.id);
 
     const resRekap = await apiCall("getLaporanRekap", {}, false);
     const rekapData = resRekap?.data || [];
@@ -1032,6 +1036,11 @@ async function checkStudentNotifications() {
 
     // Helper untuk memilah notifikasi ke daftar Aktif atau Sudah Ditangani
     const processNotifItem = (item) => {
+        // Filter Isolasi Data: Jika role Siswa, abaikan notifikasi milik siswa lain
+        if (isSiswa && String(item.siswa.id) !== currentUserId) {
+            return;
+        }
+
         const dismissedAt = getDismissedTimestamp(item.id);
         if (dismissedAt) {
             handledList.push({ ...item, dismissedAt });
@@ -1040,10 +1049,15 @@ async function checkStudentNotifications() {
         }
     };
 
-    rekapData.forEach(item => {
+    // --- KRITERIA 1 & 2: PRESENSI DAN AKADEMIK ---
+    const filteredRekap = isSiswa 
+        ? rekapData.filter(item => String(item.id) === currentUserId)
+        : rekapData;
+
+    filteredRekap.forEach(item => {
         const sId = String(item.id);
         
-        // --- KRITERIA 1: PRESENSI (Kedisiplinan) ---
+        // PRESENSI (Kedisiplinan)
         if (item.presensi.alpa >= 3) {
             processNotifItem({
                 id: `${sId}_alpa_kritis`,
@@ -1051,7 +1065,7 @@ async function checkStudentNotifications() {
                 level: 'kritis',
                 category: 'Kedisiplinan',
                 title: 'Akumulasi Alpa Tinggi',
-                desc: `${item.nama} memiliki akumulasi Alpa sebanyak ${item.presensi.alpa} kali (Batas maksimal 3).`,
+                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki akumulasi Alpa sebanyak ${item.presensi.alpa} kali (Batas maksimal 3).`,
                 defaultPembinaan: `Tindak lanjut presensi: Akumulasi Alpa mencapai ${item.presensi.alpa} hari.`
             });
         } else if (item.presensi.alpa >= 1 && item.presensi.alpa < 3) {
@@ -1061,12 +1075,12 @@ async function checkStudentNotifications() {
                 level: 'sedang',
                 category: 'Kedisiplinan',
                 title: 'Perhatian Absensi',
-                desc: `${item.nama} tercatat Alpa ${item.presensi.alpa} kali. Perlu pengawasan awal.`,
+                desc: `${isSiswa ? 'Kamu' : item.nama} tercatat Alpa ${item.presensi.alpa} kali. Perlu pengawasan awal.`,
                 defaultPembinaan: `Pemantauan presensi awal: Catatan Alpa ${item.presensi.alpa} hari.`
             });
         }
 
-        // --- KRITERIA 2: AKADEMIK (Nilai KKTP) ---
+        // AKADEMIK (Nilai KKTP)
         if (item.dibawah_kktp >= 2) {
             processNotifItem({
                 id: `${sId}_akademik_kritis`,
@@ -1074,7 +1088,7 @@ async function checkStudentNotifications() {
                 level: 'kritis',
                 category: 'Akademik',
                 title: 'Nilai di Bawah KKTP',
-                desc: `${item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah standar KKTP.`,
+                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah standar KKTP.`,
                 defaultPembinaan: `Bimbingan belajar khusus: ${item.dibawah_kktp} mata pelajaran belum tuntas KKTP.`
             });
         } else if (item.dibawah_kktp === 1) {
@@ -1084,7 +1098,7 @@ async function checkStudentNotifications() {
                 level: 'sedang',
                 category: 'Akademik',
                 title: 'Peringatan KKTP',
-                desc: `${item.nama} memiliki 1 mata pelajaran yang belum memenuhi KKTP.`,
+                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki 1 mata pelajaran yang belum memenuhi KKTP.`,
                 defaultPembinaan: `Bimbingan akademik untuk 1 mapel yang belum tuntas KKTP.`
             });
         }
@@ -1092,7 +1106,11 @@ async function checkStudentNotifications() {
 
     // --- KRITERIA 3: KEBIASAAN HEBAT (Ibadah/K2) ---
     if (appState.kebiasaan && appState.kebiasaan.length > 0) {
-        appState.siswa.forEach(s => {
+        const targetSiswa = isSiswa 
+            ? appState.siswa.filter(s => String(s.id) === currentUserId)
+            : appState.siswa;
+
+        targetSiswa.forEach(s => {
             const sId = String(s.id);
             const k2Rec = appState.kebiasaan.find(k => String(k.siswa_id) === sId && String(k.kebiasaan_id) === 'K2' && k.tanggal === todayStr);
             if (k2Rec && k2Rec.status === 'Belum') {
@@ -1102,32 +1120,72 @@ async function checkStudentNotifications() {
                     level: 'rendah',
                     category: 'Kebiasaan',
                     title: 'Belum Beribadah/Shalat',
-                    desc: `${s.nama} tercatat belum melaksanakan ibadah pada pantauan hari ini.`,
+                    desc: `${isSiswa ? 'Kamu' : s.nama} tercatat belum melaksanakan ibadah pada pantauan hari ini.`,
                     defaultPembinaan: `Pembinaan karakter: Pembiasaan ibadah harian.`
                 });
             }
         });
     }
 
-    // --- KRITERIA 4: AGENDA PEMBINAAN & JADWAL PANTAU ---
-    if (appState.pembinaan && appState.pembinaan.length > 0) {
-        appState.pembinaan.forEach(p => {
-            const s = appState.siswa.find(x => String(x.id) === String(p.siswa_id));
-            if (s && p.jadwal_pantau && p.jadwal_pantau <= todayStr && p.status !== 'Selesai') {
-                processNotifItem({
-                    id: `pbn_${p.id}`,
-                    siswa: { id: s.id, nama: s.nama },
-                    level: p.status === 'Perlu Tindak Lanjut' ? 'kritis' : 'sedang',
-                    category: 'Pembinaan',
-                    title: 'Jadwal Evaluasi Pantau',
-                    desc: `Waktunya mengevaluasi tindak lanjut kasus: "${p.permasalahan}" untuk ${s.nama}.`,
-                    defaultPembinaan: `Evaluasi ulang kasus pembinaan: ${p.permasalahan}`
-                });
+    // --- KRITERIA 4: KEAGAMAAN (Hafalan Surat Status Mengulang) ---
+    if (appState.keagamaan && appState.keagamaan.length > 0) {
+        const targetHafalan = isSiswa
+            ? appState.keagamaan.filter(h => String(h.siswa_id) === currentUserId)
+            : appState.keagamaan;
+
+        targetHafalan.forEach(h => {
+            if (h.status === 'Mengulang') {
+                const s = appState.siswa.find(x => String(x.id) === String(h.siswa_id)) || (isSiswa ? appState.user : null);
+                if (s) {
+                    processNotifItem({
+                        id: `hfl_${h.id}_mengulang`,
+                        siswa: { id: s.id, nama: s.nama },
+                        level: 'sedang',
+                        category: 'Keagamaan',
+                        title: 'Hafalan Perlu Perbaikan',
+                        desc: `Surah ${h.nama_surat} untuk ${isSiswa ? 'kamu' : s.nama} perlu diulang kembali (${h.catatan || 'Perhatikan kelancaran'}).`,
+                        defaultPembinaan: `Bimbingan hafalan Al-Qur'an: Surah ${h.nama_surat}`
+                    });
+                }
             }
         });
     }
 
-    // Urutkan Prioritas
+    // --- KRITERIA 5: AGENDA PEMBINAAN & JADWAL PANTAU ---
+    if (appState.pembinaan && appState.pembinaan.length > 0) {
+        const targetPembinaan = isSiswa
+            ? appState.pembinaan.filter(p => String(p.siswa_id) === currentUserId)
+            : appState.pembinaan;
+
+        targetPembinaan.forEach(p => {
+            const s = appState.siswa.find(x => String(x.id) === String(p.siswa_id)) || (isSiswa ? appState.user : null);
+            if (s && p.status !== 'Selesai') {
+                if (p.jadwal_pantau && p.jadwal_pantau <= todayStr) {
+                    processNotifItem({
+                        id: `pbn_${p.id}_eval`,
+                        siswa: { id: s.id, nama: s.nama },
+                        level: p.status === 'Perlu Tindak Lanjut' ? 'kritis' : 'sedang',
+                        category: 'Pembinaan',
+                        title: 'Jadwal Evaluasi Pantau',
+                        desc: `Evaluasi pantau kasus "${p.permasalahan}" ${isSiswa ? 'kamu' : 'untuk ' + s.nama}.`,
+                        defaultPembinaan: `Evaluasi ulang kasus pembinaan: ${p.permasalahan}`
+                    });
+                } else if (p.status === 'Perlu Tindak Lanjut') {
+                    processNotifItem({
+                        id: `pbn_${p.id}_tindaklanjut`,
+                        siswa: { id: s.id, nama: s.nama },
+                        level: 'kritis',
+                        category: 'Pembinaan',
+                        title: 'Catatan Pembinaan Aktif',
+                        desc: `Status pembinaan "${p.permasalahan}" memerlukan perhatian & tindak lanjut.`,
+                        defaultPembinaan: `Tindak lanjut pembinaan: ${p.permasalahan}`
+                    });
+                }
+            }
+        });
+    }
+
+    // Urutkan Prioritas Tingkat Keparahan
     const levelOrder = { 'kritis': 3, 'sedang': 2, 'rendah': 1 };
     activeList.sort((a, b) => levelOrder[b.level] - levelOrder[a.level]);
     handledList.sort((a, b) => b.dismissedAt - a.dismissedAt);
@@ -1136,7 +1194,7 @@ async function checkStudentNotifications() {
     appState.currentNotifications = activeList;
     appState.handledNotifications = handledList;
 
-    // Update Badge UI Header (Hanya menghitung notifikasi aktif/perlu tindakan)
+    // Update Badge UI Header
     const badge = document.getElementById("notif-badge");
     if (badge) {
         if (activeList.length > 0) {
@@ -1147,8 +1205,8 @@ async function checkStudentNotifications() {
         }
     }
 
-    // Kirim Web Push jika ada notifikasi level KRITIS baru
-    if (activeList.length > prevCount) {
+    // Kirim Web Push Notification jika ada notifikasi KRITIS baru (hanya untuk Admin/Guru)
+    if (!isSiswa && activeList.length > prevCount) {
         const kritisCount = activeList.filter(n => n.level === 'kritis').length;
         if (kritisCount > 0) {
             sendWebPushNotification(
@@ -1173,6 +1231,9 @@ function openQuickPembinaan(siswaId, defaultMasalah) {
 function openNotificationModal(activeTab = 'active') {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
+
+    // Cek Hak Akses Pengeditan Notifikasi
+    const isCanManageNotif = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     const activeList = appState.currentNotifications || [];
     const handledList = appState.handledNotifications || [];
@@ -1199,14 +1260,16 @@ function openNotificationModal(activeTab = 'active') {
                 </h3>
             </div>
             <div class="flex items-center gap-2">
+                ${isCanManageNotif ? `
                 <button onclick="requestNotificationPermission()" title="Aktifkan Notifikasi Perangkat" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-100 font-bold flex items-center gap-1">
                     <i class="fas fa-mobile-alt"></i> Push
-                </button>
+                </button>` : ''}
                 <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fas fa-times"></i></button>
             </div>
         </div>
 
-        <!-- TAB SWITCHER NOTIFIKASI -->
+        ${isCanManageNotif ? `
+        <!-- TAB SWITCHER NOTIFIKASI (KHUSUS GURU & ADMIN) -->
         <div class="flex bg-slate-100 p-1 rounded-xl mb-3 gap-1">
             <button onclick="openNotificationModal('active')" 
                 class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
@@ -1217,16 +1280,17 @@ function openNotificationModal(activeTab = 'active') {
                 Sudah Ditangani (${handledList.length})
             </button>
         </div>
+        ` : ''}
         
         <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
             ${currentList.length === 0 ? `
                 <div class="empty-state">
                     <i class="fas ${activeTab === 'active' ? 'fa-check-circle text-emerald-500' : 'fa-inbox text-slate-300'} text-3xl mb-2"></i>
                     <p class="text-xs font-bold text-slate-700">
-                        ${activeTab === 'active' ? 'Semua Siswa Terpantau Baik' : 'Belum Ada Notifikasi Ditandai'}
+                        ${activeTab === 'active' ? 'Tidak Ada Notifikasi Baru' : 'Belum Ada Notifikasi Ditandai'}
                     </p>
                     <p class="text-[11px] text-slate-400 mt-0.5">
-                        ${activeTab === 'active' ? 'Tidak ada peringatan kedisiplinan atau akademik aktif.' : 'Notifikasi yang Anda centang akan tersimpan di sini sebelum di-reset 24 jam.'}
+                        ${activeTab === 'active' ? 'Semua indikator pemantauan terpantau baik.' : 'Notifikasi yang ditandai akan tersimpan di sini.'}
                     </p>
                 </div>
             ` : currentList.map(n => `
@@ -1240,30 +1304,37 @@ function openNotificationModal(activeTab = 'active') {
                             </div>
                             <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)} — <span class="text-slate-700 font-semibold">${escapeHtml(n.title)}</span></h4>
                         </div>
-                        ${activeTab === 'active' ? `
-                            <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (Snooze 24 Jam)" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
-                                <i class="fas fa-check-circle text-lg"></i>
-                            </button>
-                        ` : `
-                            <button onclick="restoreNotification('${n.id}')" title="Kembalikan ke Daftar Perlu Tindakan" class="text-slate-400 hover:text-blue-600 p-1 shrink-0 flex items-center gap-1 text-xs font-bold">
-                                <i class="fas fa-undo text-sm"></i> Buka Lagi
-                            </button>
-                        `}
+
+                        <!-- HANYA GURU & ADMIN YANG BISA CENTANG / UNDO -->
+                        ${isCanManageNotif ? (
+                            activeTab === 'active' ? `
+                                <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (Snooze 24 Jam)" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
+                                    <i class="fas fa-check-circle text-lg"></i>
+                                </button>
+                            ` : `
+                                <button onclick="restoreNotification('${n.id}')" title="Kembalikan ke Daftar Perlu Tindakan" class="text-slate-400 hover:text-blue-600 p-1 shrink-0 flex items-center gap-1 text-xs font-bold">
+                                    <i class="fas fa-undo text-sm"></i> Buka Lagi
+                                </button>
+                            `
+                        ) : ''}
                     </div>
 
                     <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(n.desc)}</p>
 
-                    <!-- ACTIONABLE QUICK BUTTONS -->
+                    <!-- TOMBOL AKSI BERDASARKAN HAK AKSES ROLE -->
                     <div class="flex items-center gap-1.5 pt-2 border-t border-slate-200/60 flex-wrap">
                         <button onclick="closeModal(); openProfilSiswa('${n.siswa.id}')" class="px-2.5 py-1.5 bg-white text-slate-700 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 flex items-center gap-1">
-                            <i class="fas fa-user text-blue-500"></i> Profil
+                            <i class="fas fa-user text-blue-500"></i> Profil ${appState.user.role === 'siswa' ? 'Saya' : ''}
                         </button>
+
+                        ${isCanManageNotif ? `
                         <button onclick="hubungiOrtu('${n.siswa.id}')" class="px-2.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-emerald-700 flex items-center gap-1">
                             <i class="fab fa-whatsapp"></i> WA Ortu
                         </button>
                         <button onclick="openQuickPembinaan('${n.siswa.id}', '${escapeHtml(n.defaultPembinaan)}')" class="px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 flex items-center gap-1">
                             <i class="fas fa-edit"></i> Buat Catatan Pembinaan
                         </button>
+                        ` : ''}
                     </div>
                 </div>
             `).join('')}
