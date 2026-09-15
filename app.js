@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxRnBQXRzB0FrzzRgOZaOI9zXuC6vBaYDqgo_fa9c5Qkd5AX9u0rNgtaXgpsMe0Bx8_/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwvLasSKuU_hw1_kVM8EnTqDnC3s9fPUbJJjCWsR31BrqdmKKu_U_Sw_z7nxKnG6k2y/exec";
 
 // ==================================================================
 // 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD)
@@ -257,7 +257,7 @@ function showDraftIndicator(isSaved) {
         if (!box) return;
         badge = document.createElement("div");
         badge.id = "form-draft-indicator";
-        badge.className = "text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 mb-3 flex items-center gap-1.5";
+        badge.className = "text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 mb-3 flex items-center gap-1.5";
         box.insertBefore(badge, box.children[1] || box.firstChild);
     }
 
@@ -336,6 +336,69 @@ async function handleAppLogin(e) {
 }
 
 async function setupAppSession() {
+    // Gerbang keamanan: bila akun masih memakai password default, paksa ganti
+    // password terlebih dahulu sebelum masuk ke aplikasi utama.
+    if (appState.user && appState.user.mustChangePassword) {
+        showForcePasswordChangeModal();
+        return;
+    }
+    await continueSessionSetup();
+}
+
+function showForcePasswordChangeModal() {
+    const box = document.getElementById("modal-content-box");
+    const container = document.getElementById("modal-container");
+    if (!box || !container) return;
+
+    box.innerHTML = `
+        <div class="mb-4">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-shield-halved text-amber-500"></i> Wajib Ganti Password
+            </h3>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Akun Anda masih menggunakan <b>password default</b>. Demi keamanan data siswa, Anda wajib menggantinya terlebih dahulu sebelum melanjutkan.</p>
+        </div>
+        <form onsubmit="submitForcePasswordChange(event)" class="space-y-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD DEFAULT SAAT INI</label>
+                <input type="password" id="force-pwd-old" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD BARU (MIN. 6 KARAKTER)</label>
+                <input type="password" id="force-pwd-new" minlength="6" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan & Lanjutkan</button>
+        </form>
+    `;
+    container.classList.remove("hidden");
+    // Kunci modal ini agar tidak bisa ditutup sebelum password berhasil diganti.
+    container.dataset.forceLock = "true";
+}
+
+async function submitForcePasswordChange(e) {
+    e.preventDefault();
+    const oldPassword = document.getElementById("force-pwd-old").value;
+    const newPassword = document.getElementById("force-pwd-new").value;
+
+    const res = await apiCall("changePassword", { oldPassword, newPassword }, true);
+    if (res && res.status === "success") {
+        appState.user.mustChangePassword = false;
+
+        const savedSession = JSON.parse(localStorage.getItem("session_anak_wali") || "{}");
+        if (savedSession.user) savedSession.user.mustChangePassword = false;
+        localStorage.setItem("session_anak_wali", JSON.stringify(savedSession));
+
+        const modal = document.getElementById("modal-container");
+        if (modal) {
+            modal.dataset.forceLock = "";
+            modal.classList.add("hidden");
+        }
+
+        Swal.fire({ icon: 'success', title: 'Password Diperbarui', text: 'Password berhasil diganti. Selamat datang!', timer: 1400, showConfirmButton: false });
+        await continueSessionSetup();
+    }
+}
+
+async function continueSessionSetup() {
     startRealtimeNotificationPolling();
     applyRoleUI(appState.user.role);
     startSilentTokenRefresh();
@@ -487,47 +550,47 @@ function applyRoleUI(role) {
         navContainer.innerHTML = `
             <button onclick="switchView('dashboard')" class="nav-item flex flex-col items-center gap-1 text-slate-400 active" data-target="dashboard">
                 <i class="fas fa-home text-lg"></i>
-                <span class="text-[10px] font-bold">Beranda</span>
+                <span class="text-xs font-bold">Beranda</span>
             </button>
             <button onclick="switchView('kebiasaan')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="kebiasaan">
                 <i class="fas fa-star text-lg"></i>
-                <span class="text-[10px] font-bold">Kebiasaan</span>
+                <span class="text-xs font-bold">Kebiasaan</span>
             </button>
             <button onclick="switchView('karakter')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="karakter">
                 <i class="fas fa-quran text-lg"></i>
-                <span class="text-[10px] font-bold">Keagamaan</span>
+                <span class="text-xs font-bold">Keagamaan</span>
             </button>
             <button onclick="switchView('akademik')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="akademik">
                 <i class="fas fa-graduation-cap text-lg"></i>
-                <span class="text-[10px] font-bold">Akademik</span>
+                <span class="text-xs font-bold">Akademik</span>
             </button>
             <button onclick="openProfilSiswa('${appState.user ? appState.user.id : ''}')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="profil-siswa">
                 <i class="fas fa-user-circle text-lg"></i>
-                <span class="text-[10px] font-bold">Profil</span>
+                <span class="text-xs font-bold">Profil</span>
             </button>
         `;
     } else {
         navContainer.innerHTML = `
             <button onclick="switchView('dashboard')" class="nav-item flex flex-col items-center gap-1 text-slate-400 active" data-target="dashboard">
                 <i class="fas fa-home text-lg"></i>
-                <span class="text-[10px] font-bold">Beranda</span>
+                <span class="text-xs font-bold">Beranda</span>
             </button>
             <button onclick="switchView('absensi')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="absensi">
                 <i class="fas fa-calendar-check text-lg"></i>
-                <span class="text-[10px] font-bold">Presensi</span>
+                <span class="text-xs font-bold">Presensi</span>
             </button>
             <button onclick="switchView('akademik')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="akademik">
                 <i class="fas fa-graduation-cap text-lg"></i>
-                <span class="text-[10px] font-bold">Akademik</span>
+                <span class="text-xs font-bold">Akademik</span>
             </button>
             <button onclick="switchView('laporan')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="laporan">
                 <i class="fas fa-file-invoice text-lg"></i>
-                <span class="text-[10px] font-bold">Laporan</span>
+                <span class="text-xs font-bold">Laporan</span>
             </button>
             ${role === 'admin' ? `
             <button onclick="switchView('admin-manage')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="admin-manage">
                 <i class="fas fa-user-cog text-lg"></i>
-                <span class="text-[10px] font-bold">Master</span>
+                <span class="text-xs font-bold">Master</span>
             </button>` : ''}
         `;
     }
@@ -636,21 +699,21 @@ async function renderDashboard() {
             statsContainer.innerHTML = `
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</span>
                         <span class="w-7 h-7 rounded-lg bg-blue-50 text-primary flex items-center justify-center text-xs"><i class="fas fa-users"></i></span>
                     </div>
                     <p class="text-2xl font-black text-slate-800 mt-1">${totalSiswaCount}</p>
                 </div>
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Hadir Hari Ini</span>
+                        <span class="text-xs font-bold text-emerald-500 uppercase tracking-wider">Hadir Hari Ini</span>
                         <span class="w-7 h-7 rounded-lg bg-emerald-50 text-secondary flex items-center justify-center text-xs"><i class="fas fa-calendar-check"></i></span>
                     </div>
                     <p class="text-2xl font-black text-emerald-600 mt-1">${appState.absensi.filter(a => a.status === 'H').length}</p>
                 </div>
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
+                        <span class="text-xs font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
                         <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs"><i class="fas fa-triangle-exclamation"></i></span>
                     </div>
                     <p class="text-2xl font-black text-rose-600 mt-1">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
@@ -659,7 +722,7 @@ async function renderDashboard() {
         } else {
             statsContainer.innerHTML = `
                 <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between col-span-3">
-                    <span class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Status Pemantauan Saya</span>
+                    <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Status Pemantauan Saya</span>
                     <p class="text-sm font-bold text-slate-700 mt-1">
                       ${(appState.currentNotifications && appState.currentNotifications.length > 0) ? '⚠️ Memerlukan Tindak Lanjut' : '✅ Perkembangan Baik'}
                     </p>
@@ -694,8 +757,8 @@ function renderPrioritySection(priorityList) {
     container.innerHTML = priorityList.map(item => {
         const s = item.siswa;
         const indicatorsHtml = item.indicators.map(ind => `
-          <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-md border border-rose-100">
-            <i class="fas fa-exclamation-triangle text-[9px]"></i> ${escapeHtml(ind.pesan)}
+          <span class="inline-flex items-center gap-1 text-xs font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-md border border-rose-100">
+            <i class="fas fa-exclamation-triangle text-xs"></i> ${escapeHtml(ind.pesan)}
           </span>
         `).join(" ");
 
@@ -706,14 +769,14 @@ function renderPrioritySection(priorityList) {
                 <img src="${escapeHtml(s.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                 <div>
                   <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
-                  <p class="text-[10px] text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Ortu: ${escapeHtml(s.no_hp_ortu || '-')}</p>
+                  <p class="text-xs text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Ortu: ${escapeHtml(s.no_hp_ortu || '-')}</p>
                 </div>
               </div>
               <div class="flex items-center gap-1">
-                <button onclick="openProfilSiswa('${escapeHtml(s.id)}')" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 text-xs">
+                <button onclick="openProfilSiswa('${escapeHtml(s.id)}')" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 text-xs" aria-label="Lihat profil siswa">
                     <i class="fas fa-eye"></i>
                 </button>
-                <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" class="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 text-xs">
+                <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" class="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 text-xs" aria-label="Hubungi orang tua via WhatsApp">
                     <i class="fab fa-whatsapp"></i>
                 </button>
               </div>
@@ -743,10 +806,10 @@ function renderAgendaSection(agendaList) {
             </div>
             <div>
               <h4 class="font-bold text-xs text-slate-800">${escapeHtml(ag.nama_siswa)}</h4>
-              <p class="text-[10px] text-slate-500">${escapeHtml(ag.jenis)} • ${escapeHtml(ag.permasalahan || '-')}</p>
+              <p class="text-xs text-slate-500">${escapeHtml(ag.jenis)} • ${escapeHtml(ag.permasalahan || '-')}</p>
             </div>
           </div>
-          <span class="text-[9px] font-bold bg-amber-50 text-amber-700 px-2 py-1 rounded-lg border border-amber-100">
+          <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-1 rounded-lg border border-amber-100">
             ${escapeHtml(ag.jadwal_pantau)}
           </span>
         </div>
@@ -847,7 +910,7 @@ function openNotificationModal() {
             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <i class="fas fa-bell text-amber-500"></i> Notifikasi Siswa Bermasalah (${list.length})
             </h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         
         <div class="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
@@ -860,13 +923,13 @@ function openNotificationModal() {
                 <div class="p-3 rounded-2xl border ${n.type === 'danger' ? 'bg-rose-50 border-rose-100' : (n.type === 'warning' ? 'bg-amber-50 border-amber-100' : 'bg-blue-50 border-blue-100')} flex justify-between items-center">
                     <div>
                         <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-[9px] font-bold px-2 py-0.5 rounded uppercase ${n.type === 'danger' ? 'bg-rose-200 text-rose-800' : (n.type === 'warning' ? 'bg-amber-200 text-amber-800' : 'bg-blue-200 text-blue-800')}">${n.title}</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded uppercase ${n.type === 'danger' ? 'bg-rose-200 text-rose-800' : (n.type === 'warning' ? 'bg-amber-200 text-amber-800' : 'bg-blue-200 text-blue-800')}">${n.title}</span>
                             <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)}</h4>
                         </div>
-                        <p class="text-[11px] text-slate-600">${escapeHtml(n.desc)}</p>
+                        <p class="text-xs text-slate-600">${escapeHtml(n.desc)}</p>
                     </div>
                     <button onclick="closeModal(); openProfilSiswa('${n.siswa.id}')" class="p-2 bg-white text-slate-700 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 shrink-0 ml-2">
-                        Profil <i class="fas fa-chevron-right text-[10px]"></i>
+                        Profil <i class="fas fa-chevron-right text-xs"></i>
                     </button>
                 </div>
             `).join('')}
@@ -935,7 +998,7 @@ function renderAbsensiView() {
     container.innerHTML = `
         <div class="space-y-3">
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
-                <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
                 <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
                     <option value="">Semua Kelas</option>
                     ${kelasOptions}
@@ -946,7 +1009,7 @@ function renderAbsensiView() {
             <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-md space-y-3">
                 <div class="flex items-center justify-between">
                     <div>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tingkat Kehadiran</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Tingkat Kehadiran</span>
                         <h3 class="text-xl font-extrabold text-emerald-400">${persenHadir}% <span class="text-xs font-normal text-slate-300">Hadir</span></h3>
                     </div>
                     <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-500/30">
@@ -960,19 +1023,19 @@ function renderAbsensiView() {
 
                 <div class="grid grid-cols-4 gap-2 pt-1 border-t border-slate-700/60 text-center">
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[9px] text-slate-400 font-bold">Hadir</span>
+                        <span class="block text-xs text-slate-400 font-bold">Hadir</span>
                         <span class="text-xs font-extrabold text-emerald-400">${countH}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[9px] text-slate-400 font-bold">Sakit</span>
+                        <span class="block text-xs text-slate-400 font-bold">Sakit</span>
                         <span class="text-xs font-extrabold text-blue-400">${countS}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[9px] text-slate-400 font-bold">Izin</span>
+                        <span class="block text-xs text-slate-400 font-bold">Izin</span>
                         <span class="text-xs font-extrabold text-amber-400">${countI}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[9px] text-slate-400 font-bold">Alpa</span>
+                        <span class="block text-xs text-slate-400 font-bold">Alpa</span>
                         <span class="text-xs font-extrabold text-rose-400">${countA}</span>
                     </div>
                 </div>
@@ -986,13 +1049,13 @@ function renderAbsensiView() {
                     ${filteredSiswa.map(s => {
         const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
         const currentStatus = rec.status || 'H';
-        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-black mr-1">${s.no_absen}</span>` : '';
+        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
 
         return `
                             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                                 <div>
                                     <h4 class="font-bold text-xs text-slate-800 flex items-center">${noAbsenBadge}${escapeHtml(s.nama)}</h4>
-                                    <span class="text-[10px] text-slate-400">
+                                    <span class="text-xs text-slate-400">
                                         <i class="far fa-clock mr-1"></i>${rec.waktu_masuk ? formatDisplayTime(rec.waktu_masuk) : 'Belum Absen'}
                                     </span>
                                 </div>
@@ -1110,7 +1173,10 @@ function renderKebiasaanView() {
     if (!container || !selectSiswa) return;
 
     const selectedSiswaId = selectSiswa.value || (appState.siswa[0] ? appState.siswa[0].id : null);
-    if (!selectedSiswaId) return;
+    if (!selectedSiswaId) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-user-slash text-2xl mb-2"></i><p class="text-xs text-slate-500">Belum ada data siswa untuk dipantau kebiasaannya.</p></div>`;
+        return;
+    }
 
     const isEditable = appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId));
 
@@ -1125,7 +1191,7 @@ function renderKebiasaanView() {
                     </div>
                     <div>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(k.nama)}</h4>
-                        <span class="text-[9px] font-bold uppercase ${rec.status === 'Sudah' ? 'text-emerald-600' : (rec.status === 'Kadang' ? 'text-amber-600' : 'text-slate-400')}">${rec.status}</span>
+                        <span class="text-xs font-bold uppercase ${rec.status === 'Sudah' ? 'text-emerald-600' : (rec.status === 'Kadang' ? 'text-amber-600' : 'text-slate-400')}">${rec.status}</span>
                     </div>
                 </div>
                 <div class="flex gap-1">
@@ -1135,7 +1201,7 @@ function renderKebiasaanView() {
                 { val: 'Belum', label: 'Belum', cls: 'bg-slate-700 text-white' }
             ].map(st => `
                         <button ${isEditable ? `onclick="saveKebiasaanItem('${escapeHtml(selectedSiswaId)}', '${k.id}', '${st.val}')"` : 'disabled'}
-                                class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${rec.status === st.val ? st.cls : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} transition">
+                                class="px-2.5 py-1 rounded-lg text-xs font-bold ${rec.status === st.val ? st.cls : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} transition">
                             ${st.label}
                         </button>
                     `).join('')}
@@ -1193,10 +1259,10 @@ function updateKebiasaanSaveStatus(state) {
     if (!badge) return;
 
     if (state === 'saving') {
-        badge.className = "text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 flex items-center gap-1.5 shadow-sm";
+        badge.className = "text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 flex items-center gap-1.5 shadow-sm";
         badge.innerHTML = `<i class="fas fa-spinner fa-spin text-amber-600"></i> Menyimpan...`;
     } else if (state === 'saved') {
-        badge.className = "text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1.5 shadow-sm";
+        badge.className = "text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1.5 shadow-sm";
         badge.innerHTML = `<i class="fas fa-check-circle text-emerald-600"></i> Tersimpan`;
 
         setTimeout(() => {
@@ -1252,16 +1318,16 @@ function renderKeagamaanView() {
                         <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs"><i class="fas fa-book-open"></i></div>
                         <div>
                             <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama_surat)}</h4>
-                            <p class="text-[10px] text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • ${escapeHtml(item.tanggal)}</p>
+                            <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • ${escapeHtml(item.tanggal)}</p>
                         </div>
                     </div>
-                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(item.status)}</span>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(item.status)}</span>
                 </div>
                 ${item.catatan ? `<p class="text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-slate-600 italic">"${escapeHtml(item.catatan)}"</p>` : ''}
                 ${isAdminOrGuru ? `
                 <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
-                    <button onclick="openModalKeagamaan('${escapeHtml(item.id)}')" class="text-[10px] font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
-                    <button onclick="deleteKeagamaan('${escapeHtml(item.id)}')" class="text-[10px] font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
+                    <button onclick="openModalKeagamaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
+                    <button onclick="deleteKeagamaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
                 </div>` : ''}
             </div>
         `;
@@ -1279,24 +1345,24 @@ function openModalKeagamaan(id = null) {
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-quran text-emerald-600 mr-1.5"></i>${record ? 'Edit Catatan Hafalan' : 'Catat Hafalan Surah'}</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <form onsubmit="saveKeagamaanForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">SISWA</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
                 <select id="m-kag-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOptions}</select>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">SURAH AL-QUR'AN</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">SURAH AL-QUR'AN</label>
                 <select id="m-kag-surah" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${surahOptions}</select>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">TANGGAL</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
                     <input type="date" id="m-kag-tanggal" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" value="${record ? record.tanggal : getDateWITA()}" required>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">STATUS</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
                     <select id="m-kag-status" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                         <option value="Lancar" ${record && record.status === 'Lancar' ? 'selected' : ''}>Lancar</option>
                         <option value="Mengulang" ${record && record.status === 'Mengulang' ? 'selected' : ''}>Mengulang</option>
@@ -1305,7 +1371,7 @@ function openModalKeagamaan(id = null) {
                 </div>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">CATATAN GURU</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">CATATAN GURU</label>
                 <textarea id="m-kag-catatan" rows="2" placeholder="Catatan kelancaran / tajwid..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">${record ? escapeHtml(record.catatan || '') : ''}</textarea>
             </div>
             <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Hafalan</button>
@@ -1411,7 +1477,7 @@ function renderAkademikNilai() {
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
                 <div>
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.mapel)}</h4>
-                    <p class="text-[10px] text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} | KKTP: ${item.kktp}</p>
+                    <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} | KKTP: ${item.kktp}</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="text-xs font-black px-2.5 py-1 rounded-xl border ${badgeColor}">
@@ -1419,8 +1485,8 @@ function renderAkademikNilai() {
                     </span>
                     ${isAdminOrGuru ? `
                     <div class="flex gap-1">
-                        <button onclick="openModalAkademik('${escapeHtml(item.id)}')" class="p-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteAkademik('${escapeHtml(item.id)}')" class="p-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs"><i class="fas fa-trash"></i></button>
+                        <button onclick="openModalAkademik('${escapeHtml(item.id)}')" class="p-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit nilai akademik"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteAkademik('${escapeHtml(item.id)}')" class="p-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus nilai akademik"><i class="fas fa-trash"></i></button>
                     </div>` : ''}
                 </div>
             </div>
@@ -1449,15 +1515,15 @@ function renderAkademikPrestasi() {
                         <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-award"></i></div>
                         <div>
                             <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama_prestasi)}</h4>
-                            <p class="text-[10px] text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • ${escapeHtml(item.tanggal)}</p>
+                            <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • ${escapeHtml(item.tanggal)}</p>
                         </div>
                     </div>
-                    <span class="text-[9px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">${escapeHtml(item.tingkat)}</span>
+                    <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">${escapeHtml(item.tingkat)}</span>
                 </div>
                 ${isAdminOrGuru ? `
                 <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
-                    <button onclick="openModalPrestasi('${escapeHtml(item.id)}')" class="text-[10px] font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
-                    <button onclick="deletePrestasi('${escapeHtml(item.id)}')" class="text-[10px] font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
+                    <button onclick="openModalPrestasi('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
+                    <button onclick="deletePrestasi('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
                 </div>` : ''}
             </div>
         `;
@@ -1474,24 +1540,24 @@ function openModalAkademik(id = null) {
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800">${rec ? 'Edit Nilai Akademik' : 'Input Nilai Mata Pelajaran'}</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <form onsubmit="saveAkademikForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">SISWA</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
                 <select id="m-akd-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
                 <input type="text" id="m-akd-mapel" value="${escapeHtml(rec?.mapel || '')}" placeholder="Contoh: Matematika" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">NILAI AKHIR</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">NILAI AKHIR</label>
                     <input type="number" id="m-akd-nilai" value="${rec?.nilai_akhir || ''}" placeholder="0 - 100" min="0" max="100" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">KKTP (STANDAR)</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">KKTP (STANDAR)</label>
                     <input type="number" id="m-akd-kktp" value="${rec?.kktp || '75'}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
             </div>
@@ -1537,26 +1603,26 @@ function openModalPrestasi(id = null) {
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800">${rec ? 'Edit Prestasi Siswa' : 'Catat Prestasi Baru'}</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <form onsubmit="savePrestasiForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">SISWA</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
                 <select id="m-prs-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">NAMA PRESTASI / JUARA</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA PRESTASI / JUARA</label>
                 <input type="text" id="m-prs-nama" value="${escapeHtml(rec?.nama_prestasi || '')}" placeholder="Contoh: Juara 1 OSN IPA" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">TINGKAT</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">TINGKAT</label>
                     <select id="m-prs-tingkat" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                         ${['Sekolah', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Nasional'].map(t => `<option value="${t}" ${rec && rec.tingkat === t ? 'selected' : ''}>${t}</option>`).join('')}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">TANGGAL</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
                     <input type="date" id="m-prs-tanggal" value="${rec ? rec.tanggal : getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
             </div>
@@ -1645,20 +1711,20 @@ function renderPembinaanView() {
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
                 <div class="flex justify-between items-start">
                     <div>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">${escapeHtml(item.jenis || 'Pembinaan')}</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${escapeHtml(item.jenis || 'Pembinaan')}</span>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.permasalahan)}</h4>
-                        <p class="text-[10px] text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • Tanggal: ${escapeHtml(item.tanggal)}</p>
+                        <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • Tanggal: ${escapeHtml(item.tanggal)}</p>
                     </div>
-                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(item.status)}</span>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(item.status)}</span>
                 </div>
                 ${item.jadwal_pantau ? `
-                <div class="text-[10px] bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-1.5 text-slate-600 font-medium">
+                <div class="text-xs bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-1.5 text-slate-600 font-medium">
                     <i class="fas fa-clock text-amber-500"></i> Jadwal Pantau: <span class="font-bold text-amber-700">${escapeHtml(item.jadwal_pantau)}</span>
                 </div>` : ''}
                 ${isAdminOrGuru ? `
                 <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
-                    <button onclick="openModalPembinaan('${escapeHtml(item.id)}')" class="text-[10px] font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
-                    <button onclick="deletePembinaan('${escapeHtml(item.id)}')" class="text-[10px] font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
+                    <button onclick="openModalPembinaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
+                    <button onclick="deletePembinaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
                 </div>` : ''}
             </div>
         `;
@@ -1679,38 +1745,38 @@ function openModalPembinaan(id = null) {
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800">${rec ? 'Edit Catatan Pembinaan' : 'Tambah Catatan Pembinaan'}</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <form onsubmit="savePembinaanForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">SISWA</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
                 <select id="m-pbn-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">JENIS</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">JENIS</label>
                     <select id="m-pbn-jenis" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                         ${['Sikap', 'Akademik', 'Kehadiran', 'Sosial'].map(j => `<option value="${j}" ${(draft?.['m-pbn-jenis'] || rec?.jenis) === j ? 'selected' : ''}>${j}</option>`).join('')}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">STATUS</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
                     <select id="m-pbn-status" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                         ${['Pemantauan', 'Dalam Pembinaan', 'Perlu Tindak Lanjut', 'Selesai'].map(st => `<option value="${st}" ${String(draft?.['m-pbn-status'] || rec?.status).toLowerCase() === st.toLowerCase() ? 'selected' : ''}>${st}</option>`).join('')}
                     </select>
                 </div>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">DESKRIPSI PERMASALAHAN / CATATAN</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">DESKRIPSI PERMASALAHAN / CATATAN</label>
                 <textarea id="m-pbn-masalah" rows="3" placeholder="Jelaskan kasus..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${escapeHtml(draft?.['m-pbn-masalah'] || rec?.permasalahan || '')}</textarea>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">TANGGAL</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
                     <input type="date" id="m-pbn-tanggal" value="${draft?.['m-pbn-tanggal'] || rec?.tanggal || getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
                     <input type="date" id="m-pbn-pantau" value="${draft?.['m-pbn-pantau'] || rec?.jadwal_pantau || ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
@@ -1815,19 +1881,19 @@ async function openProfilSiswa(siswaId) {
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-calendar-alt text-blue-500 mr-1.5"></i>Rekapitulasi Kehadiran</h4>
                     <div class="grid grid-cols-4 gap-2 text-center">
                         <div class="bg-emerald-50 p-2.5 rounded-2xl border border-emerald-100">
-                            <span class="text-[9px] font-bold text-emerald-600 block">HADIR</span>
+                            <span class="text-xs font-bold text-emerald-600 block">HADIR</span>
                             <span class="text-base font-black text-emerald-700">${totalHadir}</span>
                         </div>
                         <div class="bg-blue-50 p-2.5 rounded-2xl border border-blue-100">
-                            <span class="text-[9px] font-bold text-blue-600 block">SAKIT</span>
+                            <span class="text-xs font-bold text-blue-600 block">SAKIT</span>
                             <span class="text-base font-black text-blue-700">${totalSakit}</span>
                         </div>
                         <div class="bg-amber-50 p-2.5 rounded-2xl border border-amber-100">
-                            <span class="text-[9px] font-bold text-amber-600 block">IZIN</span>
+                            <span class="text-xs font-bold text-amber-600 block">IZIN</span>
                             <span class="text-base font-black text-amber-700">${totalIzin}</span>
                         </div>
                         <div class="bg-rose-50 p-2.5 rounded-2xl border border-rose-100">
-                            <span class="text-[9px] font-bold text-rose-600 block">ALPA</span>
+                            <span class="text-xs font-bold text-rose-600 block">ALPA</span>
                             <span class="text-base font-black text-rose-700">${totalAlpa}</span>
                         </div>
                     </div>
@@ -1860,7 +1926,7 @@ async function openProfilSiswa(siswaId) {
                                         <span>Surah ${escapeHtml(h.nama_surat)}</span>
                                         <span class="text-emerald-600">${escapeHtml(h.status)}</span>
                                     </div>
-                                    ${h.catatan ? `<p class="text-[10px] text-slate-500 italic font-medium">"${escapeHtml(h.catatan)}"</p>` : ''}
+                                    ${h.catatan ? `<p class="text-xs text-slate-500 italic font-medium">"${escapeHtml(h.catatan)}"</p>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -1891,7 +1957,7 @@ async function openProfilSiswa(siswaId) {
                                 <div class="p-2.5 bg-slate-50 rounded-xl text-xs flex justify-between items-center">
                                     <div>
                                         <h5 class="font-bold text-slate-800">${escapeHtml(p.nama_prestasi)}</h5>
-                                        <p class="text-[10px] text-slate-400">${escapeHtml(p.tingkat)} • ${escapeHtml(p.tanggal)}</p>
+                                        <p class="text-xs text-slate-400">${escapeHtml(p.tingkat)} • ${escapeHtml(p.tanggal)}</p>
                                     </div>
                                 </div>
                             `).join('')}
@@ -1909,9 +1975,9 @@ async function openProfilSiswa(siswaId) {
                                 <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
                                     <div class="flex justify-between font-bold text-slate-800">
                                         <span>${escapeHtml(p.permasalahan)}</span>
-                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${getPembinaanStatusBadge(p.status)}">${escapeHtml(p.status)}</span>
+                                        <span class="text-xs font-bold px-2 py-0.5 rounded border ${getPembinaanStatusBadge(p.status)}">${escapeHtml(p.status)}</span>
                                     </div>
-                                    <p class="text-[10px] text-slate-400">Tanggal: ${escapeHtml(p.tanggal)}</p>
+                                    <p class="text-xs text-slate-400">Tanggal: ${escapeHtml(p.tanggal)}</p>
                                 </div>
                             `).join('')}
                         </div>
@@ -2055,8 +2121,8 @@ function renderLaporanRekapView() {
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
                 <div>
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama)}</h4>
-                    <p class="text-[10px] text-slate-400">NISN: ${escapeHtml(item.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
-                    <div class="flex gap-2 text-[10px] text-slate-600 mt-1">
+                    <p class="text-xs text-slate-400">NISN: ${escapeHtml(item.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
+                    <div class="flex gap-2 text-xs text-slate-600 mt-1">
                         <span>Hadir: <b>${item.presensi.hadir}</b></span>
                         <span>Sakit: <b>${item.presensi.sakit}</b></span>
                         <span>Izin: <b>${item.presensi.izin}</b></span>
@@ -2213,7 +2279,7 @@ function renderSiswaView() {
                     <img src="${escapeHtml(s.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                     <div>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
-                        <p class="text-[10px] text-slate-400">${noAbsenLabel}NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
+                        <p class="text-xs text-slate-400">${noAbsenLabel}NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5">
@@ -2275,11 +2341,11 @@ function renderAdminGuru() {
         <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
             <div>
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(g.nama)}</h4>
-                <p class="text-[10px] text-slate-400">Username: ${escapeHtml(g.username)} | NIP: ${escapeHtml(g.nip || '-')}</p>
+                <p class="text-xs text-slate-400">Username: ${escapeHtml(g.username)} | NIP: ${escapeHtml(g.nip || '-')}</p>
             </div>
             <div class="flex gap-1">
-                <button onclick="openModalGuru('${escapeHtml(g.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteGuru('${escapeHtml(g.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs"><i class="fas fa-trash"></i></button>
+                <button onclick="openModalGuru('${escapeHtml(g.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data guru"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteGuru('${escapeHtml(g.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus data guru"><i class="fas fa-trash"></i></button>
             </div>
         </div>
     `).join("");
@@ -2302,11 +2368,11 @@ function renderAdminSiswa() {
         <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
             <div>
                 <h4 class="font-bold text-xs text-slate-800">${s.no_absen ? `[${s.no_absen}] ` : ''}${escapeHtml(s.nama)}</h4>
-                <p class="text-[10px] text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
+                <p class="text-xs text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
             </div>
             <div class="flex gap-1">
-                <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteSiswa('${escapeHtml(s.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs"><i class="fas fa-trash"></i></button>
+                <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data siswa"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteSiswa('${escapeHtml(s.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus data siswa"><i class="fas fa-trash"></i></button>
             </div>
         </div>
     `).join("");
@@ -2327,11 +2393,11 @@ function renderAdminKelas() {
             <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
                 <div>
                     <h4 class="font-bold text-xs text-slate-800">Kelas ${escapeHtml(k.nama_kelas)}</h4>
-                    <p class="text-[10px] text-slate-400">Wali Kelas: ${wali ? escapeHtml(wali.nama) : 'Belum ditentukan'}</p>
+                    <p class="text-xs text-slate-400">Wali Kelas: ${wali ? escapeHtml(wali.nama) : 'Belum ditentukan'}</p>
                 </div>
                 <div class="flex gap-1">
-                    <button onclick="openModalKelas('${escapeHtml(k.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs"><i class="fas fa-edit"></i></button>
-                    <button onclick="deleteKelas('${escapeHtml(k.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs"><i class="fas fa-trash"></i></button>
+                    <button onclick="openModalKelas('${escapeHtml(k.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data kelas"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteKelas('${escapeHtml(k.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus data kelas"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `;
@@ -2347,27 +2413,31 @@ function openModalGuru(id = null) {
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800">${g ? 'Edit Data Guru' : 'Tambah Guru Baru'}</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <form onsubmit="saveGuruForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
                 <input type="text" id="m-guru-nama" value="${escapeHtml(g?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">USERNAME</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
                 <input type="text" id="m-guru-user" value="${escapeHtml(g?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">PASSWORD ${g ? '(Kosongkan jika tidak diganti)' : ''}</label>
-                <input type="password" id="m-guru-pwd" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" ${g ? '' : 'required'}>
+                <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD ${g ? '(Kosongkan jika tidak diganti)' : '(Opsional)'}</label>
+                <input type="password" id="m-guru-pwd" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="${g ? '' : 'Kosongkan untuk pakai password default'}">
+                <p class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-1.5 flex items-start gap-1.5">
+                    <i class="fas fa-triangle-exclamation mt-0.5"></i>
+                    <span>Jika dikosongkan, password akan diset otomatis ke <b>guru123</b>. Sarankan pengguna segera menggantinya — sistem akan memaksa ganti password saat login pertama.</span>
+                </p>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">NIP</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NIP</label>
                 <input type="text" id="m-guru-nip" value="${escapeHtml(g?.nip || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">NO. TELEPON / WA</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NO. TELEPON / WA</label>
                 <input type="text" id="m-guru-hp" value="${escapeHtml(g?.no_hp || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
             </div>
             <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Guru</button>
@@ -2390,7 +2460,11 @@ async function saveGuruForm(e, id) {
     const res = await apiCall("saveGuru", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
+        if (res.usedDefaultPassword) {
+            Swal.fire({ icon: 'warning', title: 'Berhasil, Password Default Dipakai', text: res.message, confirmButtonColor: '#2563eb', confirmButtonText: 'Mengerti' });
+        } else {
+            Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
+        }
         await fetchAllAppData(true);
         renderAdminGuru();
     }
@@ -2417,40 +2491,44 @@ function openModalSiswa(id = null) {
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800">${s ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <form onsubmit="saveSiswaForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
                 <input type="text" id="m-ssw-nama" value="${escapeHtml(s?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">NOMOR ABSEN (OPSIONAL)</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">NOMOR ABSEN (OPSIONAL)</label>
                     <input type="number" id="m-ssw-absen" value="${s?.no_absen !== undefined && s?.no_absen !== null ? s.no_absen : ''}" placeholder="Contoh: 1" min="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1">NISN</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">NISN</label>
                     <input type="text" id="m-ssw-nisn" value="${escapeHtml(s?.nisn || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">USERNAME</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
                 <input type="text" id="m-ssw-user" value="${escapeHtml(s?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">PASSWORD ${s ? '(Kosongkan jika tidak diganti)' : ''}</label>
-                <input type="password" id="m-ssw-pwd" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" ${s ? '' : 'required'}>
+                <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD ${s ? '(Kosongkan jika tidak diganti)' : '(Opsional)'}</label>
+                <input type="password" id="m-ssw-pwd" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="${s ? '' : 'Kosongkan untuk pakai password default'}">
+                <p class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-1.5 flex items-start gap-1.5">
+                    <i class="fas fa-triangle-exclamation mt-0.5"></i>
+                    <span>Jika dikosongkan, password akan diset otomatis ke <b>siswa123</b>. Sarankan pengguna segera menggantinya — sistem akan memaksa ganti password saat login pertama.</span>
+                </p>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">KELAS</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
                 <select id="m-ssw-kelas" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                     <option value="">Pilih Kelas</option>
                     ${kelasOpts}
                 </select>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">NO. WA ORANG TUA / WALI</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NO. WA ORANG TUA / WALI</label>
                 <input type="text" id="m-ssw-ortu" value="${escapeHtml(s?.no_hp_ortu || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="08xxxxxxxxxx">
             </div>
             <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Siswa</button>
@@ -2475,7 +2553,11 @@ async function saveSiswaForm(e, id) {
     const res = await apiCall("saveSiswa", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
+        if (res.usedDefaultPassword) {
+            Swal.fire({ icon: 'warning', title: 'Berhasil, Password Default Dipakai', text: res.message, confirmButtonColor: '#2563eb', confirmButtonText: 'Mengerti' });
+        } else {
+            Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
+        }
         await fetchAllAppData(true);
         renderSiswaView();
         renderAdminSiswa();
@@ -2504,15 +2586,15 @@ function openModalKelas(id = null) {
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800">${k ? 'Edit Kelas' : 'Tambah Kelas Baru'}</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <form onsubmit="saveKelasForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">NAMA KELAS (Contoh: 7A, 8B)</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA KELAS (Contoh: 7A, 8B)</label>
                 <input type="text" id="m-kls-nama" value="${escapeHtml(k?.nama_kelas || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 mb-1">WALI KELAS</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">WALI KELAS</label>
                 <select id="m-kls-guru" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                     <option value="">Pilih Wali Kelas</option>
                     ${guruOpts}
@@ -2564,14 +2646,14 @@ function openUserSettingsModal() {
     container.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-cog text-blue-600 mr-1.5"></i>Pengaturan Akun</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <div class="space-y-4">
             <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <img src="${user.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nama)}" class="w-12 h-12 rounded-full object-cover border border-slate-200">
                 <div>
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(user.nama)}</h4>
-                    <span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">${escapeHtml(user.role)}</span>
+                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">${escapeHtml(user.role)}</span>
                 </div>
             </div>
             <form onsubmit="changePasswordForm(event)" class="space-y-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
@@ -2601,7 +2683,10 @@ async function changePasswordForm(e) {
 
 function closeModal() {
     const modal = document.getElementById("modal-container");
-    if (modal) modal.classList.add("hidden");
+    if (!modal) return;
+    // Modal wajib ganti password tidak boleh ditutup sebelum selesai.
+    if (modal.dataset.forceLock === "true") return;
+    modal.classList.add("hidden");
 }
 
 window.addEventListener("DOMContentLoaded", async () => {

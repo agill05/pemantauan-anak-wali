@@ -124,7 +124,7 @@
                                 class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                                 placeholder="••••••••" required>
                             <button type="button" class="absolute right-3.5 text-slate-400"
-                                onclick="togglePasswordVisibility('login-password')">
+                                onclick="togglePasswordVisibility('login-password')" aria-label="Tampilkan/sembunyikan kata sandi">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
@@ -137,7 +137,7 @@
                     </button>
                 </form>
             </div>
-            <p class="text-center text-[11px] text-slate-400 mt-6">© 2026 SMP Negeri 1 Talaga Jaya. All rights reserved.
+            <p class="text-center text-xs text-slate-400 mt-6">© 2026 SMP Negeri 1 Talaga Jaya. All rights reserved.
             </p>
         </div>
     </div>
@@ -148,7 +148,7 @@
         <div id="header-default" class="flex justify-between items-center px-4 py-3 h-16">
             <div class="flex items-center gap-3">
                 <button id="btn-toggle-sidebar" onclick="toggleSidebar(true)"
-                    class="touch-btn -ml-1 hover:bg-white/10 rounded-xl transition">
+                    class="touch-btn -ml-1 hover:bg-white/10 rounded-xl transition" aria-label="Buka menu navigasi">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
                 <div
@@ -162,17 +162,17 @@
             </div>
             <div class="flex items-center gap-1">
                 <button id="btn-refresh-header" onclick="manualRefreshAll()"
-                    class="touch-btn hover:bg-white/10 rounded-xl transition" title="Segarkan data">
+                    class="touch-btn hover:bg-white/10 rounded-xl transition" title="Segarkan data" aria-label="Segarkan data">
                     <i class="fas fa-rotate text-base"></i>
                 </button>
                 <button id="btn-notif-header" data-role-visible="admin,guru,siswa"
                     class="p-2 relative hover:bg-white/10 rounded-xl transition hidden"
-                    onclick="openNotificationModal()">
+                    onclick="openNotificationModal()" aria-label="Buka notifikasi">
                     <i class="fas fa-bell text-lg"></i>
                     <span id="notif-badge"
-                        class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
+                        class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
                 </button>
-                <button class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()">
+                <button class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()" aria-label="Buka pengaturan akun">
                     <i class="fas fa-cog text-lg"></i>
                 </button>
             </div>
@@ -192,7 +192,7 @@
                         class="fas fa-shield-alt"></i></div>
                 <span class="font-black text-slate-800 text-sm">Anak Wali</span>
             </div>
-            <button onclick="toggleSidebar(false)" class="touch-btn text-slate-400 hover:bg-slate-100 rounded-lg">
+            <button onclick="toggleSidebar(false)" class="touch-btn text-slate-400 hover:bg-slate-100 rounded-lg" aria-label="Tutup menu navigasi">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
@@ -205,7 +205,7 @@
             <div class="min-w-0">
                 <p id="sidebar-nama" class="font-bold text-sm text-slate-800 truncate">Memuat...</p>
                 <span id="sidebar-role-badge"
-                    class="inline-block text-[10px] font-bold text-primary bg-blue-50 px-2 py-0.5 rounded-full mt-0.5">-</span>
+                    class="inline-block text-xs font-bold text-primary bg-blue-50 px-2 py-0.5 rounded-full mt-0.5">-</span>
             </div>
         </div>
 
@@ -244,28 +244,28 @@
                         <div
                             class="w-10 h-10 rounded-2xl bg-blue-50 text-primary flex items-center justify-center text-base shadow-sm">
                             <i class="fas fa-calendar-check"></i></div>
-                        <span class="text-[10px] font-bold text-slate-700">Presensi</span>
+                        <span class="text-xs font-bold text-slate-700">Presensi</span>
                     </button>
                     <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl"
                         onclick="switchView('kebiasaan')">
                         <div
                             class="w-10 h-10 rounded-2xl bg-amber-50 text-accent flex items-center justify-center text-base shadow-sm">
                             <i class="fas fa-star"></i></div>
-                        <span class="text-[10px] font-bold text-slate-700">Kebiasaan</span>
+                        <span class="text-xs font-bold text-slate-700">Kebiasaan</span>
                     </button>
                     <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl"
                         onclick="switchView('karakter')">
                         <div
                             class="w-10 h-10 rounded-2xl bg-emerald-50 text-secondary flex items-center justify-center text-base shadow-sm">
                             <i class="fas fa-quran"></i></div>
-                        <span class="text-[10px] font-bold text-slate-700">Keagamaan</span>
+                        <span class="text-xs font-bold text-slate-700">Keagamaan</span>
                     </button>
                     <button class="flex flex-col items-center gap-1 p-1 hover:bg-slate-50 rounded-xl"
                         onclick="switchView('laporan')">
                         <div
                             class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-base shadow-sm">
                             <i class="fas fa-file-invoice"></i></div>
-                        <span class="text-[10px] font-bold text-slate-700">Laporan</span>
+                        <span class="text-xs font-bold text-slate-700">Laporan</span>
                     </button>
                 </div>
             </div>
@@ -309,13 +309,13 @@
                     <div class="flex items-center gap-2">
                         <!-- Badge Status Debounce Realtime -->
                         <span id="kebiasaan-save-status"
-                            class="hidden text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all duration-200"></span>
+                            class="hidden text-xs font-bold px-2.5 py-1 rounded-lg transition-all duration-200"></span>
                         <input type="date" id="kebiasaan-date" onchange="loadKebiasaanData(true)"
                             class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-accent">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Pilih Siswa</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Pilih Siswa</label>
                     <select id="kebiasaan-siswa-select" onchange="renderKebiasaanView()"
                         class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700"></select>
                 </div>
@@ -329,7 +329,7 @@
                 <div>
                     <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-quran text-secondary mr-2"></i>Catatan
                         Keagamaan</h2>
-                    <p class="text-[10px] text-slate-400">Monitoring 114 Surah Al-Qur'an</p>
+                    <p class="text-xs text-slate-400">Monitoring 114 Surah Al-Qur'an</p>
                 </div>
                 <button data-role-visible="admin,guru" onclick="openModalKeagamaan()"
                     class="bg-secondary hover:bg-emerald-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
@@ -390,7 +390,7 @@
                 <div>
                     <h2 class="text-sm font-bold text-slate-800"><i
                             class="fas fa-user-edit text-rose-500 mr-2"></i>Catatan Pembinaan</h2>
-                    <p class="text-[10px] text-slate-400">Monitoring Masalah & Tindak Lanjut</p>
+                    <p class="text-xs text-slate-400">Monitoring Masalah & Tindak Lanjut</p>
                 </div>
                 <button data-role-visible="admin,guru" onclick="openModalPembinaan()"
                     class="bg-rose-500 hover:bg-rose-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">

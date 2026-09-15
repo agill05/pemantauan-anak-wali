@@ -230,6 +230,16 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     border: 1.5px dashed #cbd5e1;
 }
 
+/* Aksesibilitas: batas bawah keterbacaan teks.
+   Jaring pengaman jika ada kelas ukuran teks kecil (mis. text-[9px]/[10px]/[11px])
+   yang lolos dari refactor ke text-xs — jangan biarkan teks di bawah 12px. */
+.text-\[8px\],
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+    font-size: 12px !important;
+}
+
 /* Scrollbar Minimalis */
 ::-webkit-scrollbar {
     width: 5px;
