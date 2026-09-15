@@ -1018,14 +1018,17 @@ function sendWebPushNotification(title, body) {
     }
 }
 
-// Evaluasi Multi-Kriteria & Level Keparahan Notifikasi
-// Evaluasi Multi-Kriteria & Level Keparahan Notifikasi (UPDATED WITH HANDLED LIST)
-// Evaluasi Multi-Kriteria & Level Keparahan Notifikasi (Multi-Kategori & Isolasi Siswa)
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'ortu') return;
 
     const isSiswa = appState.user.role === 'siswa';
     const currentUserId = String(appState.user.id);
+
+    // 1. Pastikan data pembinaan terambil dari backend jika lokal masih kosong
+    if (!appState.pembinaan || appState.pembinaan.length === 0) {
+        const resPbn = await apiCall("getPembinaan", {}, false);
+        if (resPbn && resPbn.data) appState.pembinaan = resPbn.data;
+    }
 
     const resRekap = await apiCall("getLaporanRekap", {}, false);
     const rekapData = resRekap?.data || [];
@@ -1036,7 +1039,6 @@ async function checkStudentNotifications() {
 
     // Helper untuk memilah notifikasi ke daftar Aktif atau Sudah Ditangani
     const processNotifItem = (item) => {
-        // Filter Isolasi Data: Jika role Siswa, abaikan notifikasi milik siswa lain
         if (isSiswa && String(item.siswa.id) !== currentUserId) {
             return;
         }
@@ -1151,7 +1153,7 @@ async function checkStudentNotifications() {
         });
     }
 
-    // --- KRITERIA 5: AGENDA PEMBINAAN & JADWAL PANTAU ---
+    // --- KRITERIA 5: CATATAN PEMBINAAN AKTIF (SEMUA STATUS BELUM SELESAI) ---
     if (appState.pembinaan && appState.pembinaan.length > 0) {
         const targetPembinaan = isSiswa
             ? appState.pembinaan.filter(p => String(p.siswa_id) === currentUserId)
@@ -1159,28 +1161,20 @@ async function checkStudentNotifications() {
 
         targetPembinaan.forEach(p => {
             const s = appState.siswa.find(x => String(x.id) === String(p.siswa_id)) || (isSiswa ? appState.user : null);
-            if (s && p.status !== 'Selesai') {
-                if (p.jadwal_pantau && p.jadwal_pantau <= todayStr) {
-                    processNotifItem({
-                        id: `pbn_${p.id}_eval`,
-                        siswa: { id: s.id, nama: s.nama },
-                        level: p.status === 'Perlu Tindak Lanjut' ? 'kritis' : 'sedang',
-                        category: 'Pembinaan',
-                        title: 'Jadwal Evaluasi Pantau',
-                        desc: `Evaluasi pantau kasus "${p.permasalahan}" ${isSiswa ? 'kamu' : 'untuk ' + s.nama}.`,
-                        defaultPembinaan: `Evaluasi ulang kasus pembinaan: ${p.permasalahan}`
-                    });
-                } else if (p.status === 'Perlu Tindak Lanjut') {
-                    processNotifItem({
-                        id: `pbn_${p.id}_tindaklanjut`,
-                        siswa: { id: s.id, nama: s.nama },
-                        level: 'kritis',
-                        category: 'Pembinaan',
-                        title: 'Catatan Pembinaan Aktif',
-                        desc: `Status pembinaan "${p.permasalahan}" memerlukan perhatian & tindak lanjut.`,
-                        defaultPembinaan: `Tindak lanjut pembinaan: ${p.permasalahan}`
-                    });
-                }
+            if (s && String(p.status).toLowerCase() !== 'selesai') {
+                const stLower = String(p.status).toLowerCase();
+                let lvl = 'sedang';
+                if (stLower === 'perlu tindak lanjut') lvl = 'kritis';
+
+                processNotifItem({
+                    id: `pbn_${p.id}_aktif`,
+                    siswa: { id: s.id, nama: s.nama },
+                    level: lvl,
+                    category: 'Pembinaan',
+                    title: `Catatan Pembinaan (${p.status})`,
+                    desc: `Kasus "${p.permasalahan}" ${isSiswa ? 'kamu' : 'untuk ' + s.nama} masih dalam status ${p.status}.`,
+                    defaultPembinaan: `Tindak lanjut pembinaan: ${p.permasalahan}`
+                });
             }
         });
     }
@@ -1203,6 +1197,12 @@ async function checkStudentNotifications() {
         } else {
             badge.classList.add("hidden");
         }
+    }
+
+    // 2. SINKRONKAN ANGKA KARTU STATISTIK DASHBOARD DENGAN HASIL TERBARU
+    const statCount = document.getElementById("dash-stat-perhatian-count");
+    if (statCount) {
+        statCount.innerText = activeList.length;
     }
 
     // Kirim Web Push Notification jika ada notifikasi KRITIS baru (hanya untuk Admin/Guru)
