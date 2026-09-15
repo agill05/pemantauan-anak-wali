@@ -2629,18 +2629,15 @@ async function openProfilSiswa(siswaTarget) {
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-quran text-emerald-500 mr-1.5"></i>Capaian Hafalan Al-Qur'an</h4>
                     ${hafalan.length === 0 ? '<p class="text-xs text-slate-400 italic">Belum ada data hafalan.</p>' : `
                         <div class="space-y-2">
-                            ${hafalan.map(h => {
-                                const statusBadge = h.status === 'Lancar' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (h.status === 'Mengulang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200');
-                                return `
-                                    <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
-                                        <div class="flex justify-between font-bold text-slate-800 items-center">
-                                            <span>Surah ${escapeHtml(h.nama_surat)}</span>
-                                            <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(h.status)}</span>
-                                        </div>
-                                        ${h.catatan ? `<p class="text-xs text-slate-500 italic font-medium">"${escapeHtml(h.catatan)}"</p>` : ''}
+                            ${hafalan.map(h => `
+                                <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
+                                    <div class="flex justify-between font-bold text-slate-800">
+                                        <span>Surah ${escapeHtml(h.nama_surat)}</span>
+                                        <span class="text-emerald-600">${escapeHtml(h.status)}</span>
                                     </div>
-                                `;
-                            }).join('')}
+                                    ${h.catatan ? `<p class="text-xs text-slate-500 italic font-medium">"${escapeHtml(h.catatan)}"</p>` : ''}
+                                </div>
+                            `).join('')}
                         </div>
                     `}
                 </div>
