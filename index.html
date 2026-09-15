@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html lang="id">
 
 <head>
     <meta charset="UTF-8">
@@ -12,6 +11,11 @@
     <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=AW&background=2563eb&color=fff&size=192">
     <title>Aplikasi Pemantauan Anak Wali - SMPN 1 Talaga Jaya</title>
 
+    <!-- CDN html2pdf.js untuk Vector PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- CDN Chart.js untuk Analisis Grafis Radar Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -68,6 +72,11 @@
 </head>
 
 <body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden bg-background" data-role="">
+    
+    <html lang="id">
+        <div id="offline-banner" class="hidden fixed top-0 inset-x-0 z-[100] bg-rose-600 text-white text-xs font-bold py-2 px-4 text-center shadow-md transition-all">
+        <i class="fas fa-wifi-slash mr-1.5"></i> Koneksi internet terputus. Menggunakan Mode Offline (Data tersimpan di perangkat).
+    </div>
 
     <!-- TAMPILAN LOGIN -->
     <div id="view-login"
