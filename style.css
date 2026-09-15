@@ -73,10 +73,10 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     display: flex !important;
 }
 
-/* Login Screen UI */
 #view-login {
     display: none !important;
     background: radial-gradient(100% 100% at 50% 0%, #eff6ff 0%, #eef2f9 100%);
+    max-width: 100% !important;
 }
 
 #view-login.active {
