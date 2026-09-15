@@ -759,7 +759,7 @@ async function renderDashboard() {
                         <span class="text-xs font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
                         <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs"><i class="fas fa-triangle-exclamation"></i></span>
                     </div>
-                    <p class="text-2xl font-black text-rose-600 mt-1">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
+                    <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 mt-1">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
                 </div>
             `;
         } else {
@@ -774,11 +774,12 @@ async function renderDashboard() {
         }
     }
 
-    // Silent background fetch dashboard data dari GAS
+    // Ambil data dashboard backend & Sinkronkan notifikasi setelahnya
     apiCall("getDashboardData", {}, false).then(res => {
         if (res && res.status === "success") {
             renderPrioritySection(res.data.priority_list);
             renderAgendaSection(res.data.agenda_list);
+            checkStudentNotifications(); // Panggil pengecekan ulang setelah data siap
         }
     });
 }
@@ -863,8 +864,9 @@ function renderAgendaSection(agendaList) {
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'ortu') return;
 
+    // Fetch seluruh absensi (tanpa filter tanggal) agar akumulasi alpa terbaca
     const [resAbs, resAkd, resPbn] = await Promise.all([
-        apiCall("getAbsensi", { tanggal: getDateWITA() }, false),
+        apiCall("getAbsensi", {}, false),
         apiCall("getAkademik", {}, false),
         apiCall("getPembinaan", {}, false)
     ]);
@@ -873,9 +875,7 @@ async function checkStudentNotifications() {
     const akademikData = resAkd?.data || [];
     const pembinaanData = resPbn?.data || [];
 
-    let issueCount = 0;
-    const notificationList = [];
-
+    let notificationList = [];
     const targetStudents = (appState.user.role === 'siswa')
         ? (appState.siswa.length > 0 ? appState.siswa : [appState.user])
         : (appState.siswa || []);
@@ -883,45 +883,43 @@ async function checkStudentNotifications() {
     targetStudents.forEach(s => {
         const sId = String(s.id);
 
+        // Deteksi 1: Akumulasi Alpa (Siswa bermasalah jika Alpa >= 3 kali)
         const totalAlpa = absensiData.filter(a => String(a.siswa_id) === sId && a.status === 'A').length;
-        if (totalAlpa > 0) {
-            issueCount++;
+        if (totalAlpa >= 3) {
             notificationList.push({
                 siswa: s,
                 type: 'danger',
-                title: 'Absensi (Alpa)',
+                title: 'Absensi Bermasalah',
                 desc: appState.user.role === 'siswa'
-                    ? `Anda tercatat Alpa pada hari ini.`
-                    : `${s.nama} tercatat Alpa pada hari ini.`
+                    ? `Anda memiliki akumulasi Alpa sebanyak ${totalAlpa} kali.`
+                    : `${s.nama} memiliki akumulasi Alpa sebanyak ${totalAlpa} kali.`
             });
         }
 
+        // Deteksi 2: Nilai di Bawah KKTP
         const lowGrades = akademikData.filter(a => String(a.siswa_id) === sId && Number(a.nilai_akhir || 0) < Number(a.kktp || 75));
         if (lowGrades.length > 0) {
             lowGrades.forEach(g => {
-                issueCount++;
                 notificationList.push({
                     siswa: s,
                     type: 'warning',
                     title: 'Nilai Akademik Kurang',
                     desc: appState.user.role === 'siswa'
-                        ? `Nilai mata pelajaran ${g.mapel} Anda (${g.nilai_akhir}) di bawah standar KKTP (${g.kktp}).`
-                        : `${s.nama}: Nilai ${g.mapel} (${g.nilai_akhir}) di bawah standar KKTP (${g.kktp}).`
+                        ? `Nilai ${g.mapel} Anda (${g.nilai_akhir}) di bawah KKTP (${g.kktp}).`
+                        : `${s.nama}: Nilai ${g.mapel} (${g.nilai_akhir}) di bawah KKTP (${g.kktp}).`
                 });
             });
         }
 
+        // Deteksi 3: Pembinaan Aktif
         const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && String(p.status).toLowerCase() !== 'selesai');
         if (activePem.length > 0) {
             activePem.forEach(p => {
-                issueCount++;
                 notificationList.push({
                     siswa: s,
                     type: 'info',
-                    title: 'Catatan Pembinaan',
-                    desc: appState.user.role === 'siswa'
-                        ? `Catatan pembinaan (${p.jenis}): ${p.permasalahan}`
-                        : `${s.nama}: Catatan pembinaan (${p.jenis}): ${p.permasalahan}`
+                    title: 'Pembinaan Aktif',
+                    desc: `${s.nama}: Catatan (${p.jenis}) - ${p.permasalahan}`
                 });
             });
         }
@@ -929,16 +927,23 @@ async function checkStudentNotifications() {
 
     appState.currentNotifications = notificationList;
 
+    // Update Badge Notifikasi di Header
     const badge = document.getElementById("notif-badge");
     const btnNotif = document.getElementById("btn-notif-header");
     if (badge && btnNotif) {
-        if (issueCount > 0) {
-            badge.innerText = issueCount;
+        if (notificationList.length > 0) {
+            badge.innerText = notificationList.length;
             badge.classList.remove("hidden");
             btnNotif.classList.remove("hidden");
         } else {
             badge.classList.add("hidden");
         }
+    }
+
+    // Update Angka di Kartu Statistik Dashboard secara Realtime
+    const statCountEl = document.getElementById("dash-stat-perhatian-count");
+    if (statCountEl) {
+        statCountEl.innerText = notificationList.length;
     }
 }
 
