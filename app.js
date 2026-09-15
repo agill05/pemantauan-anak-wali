@@ -1,10 +1,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbwexDqnGSgtpr1ajoFsn9Wg0umdUR4cJ1tVLSiUvoDXqnUzyXKgM7QUbfcI6xg7w5Kd/exec";
 
-// ==================================================================
-// 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD & TTL)
-// ==================================================================
-const CACHE_TTL = 5 * 60 * 1000; // Batas waktu cache: 5 Menit (300.000 ms)
-const SNOOZE_24H_MS = 24 * 60 * 60 * 1000; // 24 Jam dalam milidetik
+const CACHE_TTL = 5 * 60 * 1000;
+const SNOOZE_24H_MS = 24 * 60 * 60 * 1000;
 
 let lastFetchTimes = {
     bootstrap: 0,
@@ -74,7 +71,6 @@ function loadAppStateFromLocal() {
     return false;
 }
 
-// Master 114 Surah Al-Qur'an
 const MASTER_SURAHS = [
     { no: 1, nama: "Al-Fatihah", juz: 1 }, { no: 2, nama: "Al-Baqarah", juz: 1 }, { no: 3, nama: "Ali 'Imran", juz: 3 },
     { no: 4, nama: "An-Nisa'", juz: 4 }, { no: 5, nama: "Al-Ma'idah", juz: 6 }, { no: 6, nama: "Al-An'am", juz: 7 },
@@ -116,7 +112,6 @@ const MASTER_SURAHS = [
     { no: 112, nama: "Al-Ikhlas", juz: 30 }, { no: 113, nama: "Al-Falaq", juz: 30 }, { no: 114, nama: "An-Nas", juz: 30 }
 ];
 
-// Master 7 Kebiasaan Hebat
 const MASTER_KEBIASAAN = [
     { id: "K1", nama: "Bangun Pagi", icon: "fa-sun", color: "text-amber-500 bg-amber-50" },
     { id: "K2", nama: "Beribadah / Shalat", icon: "fa-pray", color: "text-emerald-500 bg-emerald-50" },
@@ -127,9 +122,6 @@ const MASTER_KEBIASAAN = [
     { id: "K7", nama: "Tidur Cepat & Teratur", icon: "fa-moon", color: "text-slate-600 bg-slate-100" }
 ];
 
-// ==================================================================
-// 2. HELPER UTILITY, NETWORK & DRAFT ENGINE
-// ==================================================================
 function sortSiswa(listSiswa) {
     return [...listSiswa].sort((a, b) => {
         const noA = (a.no_absen !== undefined && a.no_absen !== null && String(a.no_absen).trim() !== "") ? Number(a.no_absen) : null;
@@ -252,7 +244,6 @@ function showToast(message, icon = "success") {
     }
 }
 
-// Anti-Loss Draft Engine Helpers
 function saveFormDraft(draftKey, formData) {
     localStorage.setItem(`draft_${draftKey}`, JSON.stringify(formData));
 }
@@ -299,7 +290,6 @@ function showDraftIndicator(isSaved) {
     }
 }
 
-// TAHAP 5: ONLINE / OFFLINE STATUS LISTENERS & BACKGROUND SYNC TRIGGER
 function setupNetworkStatusListeners() {
     const banner = document.getElementById("offline-banner");
 
@@ -329,9 +319,6 @@ async function triggerBackgroundSync() {
     }
 }
 
-// ==================================================================
-// 3. API ENGINE & AUTHENTICATION
-// ==================================================================
 async function apiCall(action, payload = {}, showFullLoader = false, retries = 3) {
     if (showFullLoader) showLoading();
 
@@ -611,9 +598,6 @@ async function manualRefreshAll() {
     showToast("Data terbaru disinkronkan.");
 }
 
-// ==================================================================
-// 4. NAVIGATION & LAYOUT CONTROLLERS
-// ==================================================================
 function updateRoleVisibility(role) {
     document.querySelectorAll("[data-role-visible]").forEach(el => {
         const allowed = el.getAttribute("data-role-visible").split(",").map(r => r.trim().toLowerCase());
@@ -772,9 +756,6 @@ function renderSidebarMenu(role) {
     container.innerHTML = html;
 }
 
-// ==================================================================
-// 5. DASHBOARD & NOTIFICATION ENGINE MODULE
-// ==================================================================
 async function renderDashboard() {
     if (!appState.user) return;
     const role = appState.user.role;
@@ -921,16 +902,13 @@ function renderAgendaSection(agendaList) {
     `).join("");
 }
 
-// TAHAP 1: FITUR PROGRESS BAR CAPAIAN JUZ 30 / 114 SURAH
 function getHafalanProgressStats(hafalanList = []) {
     const lancarSurahs = hafalanList.filter(h => h.status === 'Lancar').map(h => h.nama_surat);
     
-    // Surah Juz 30: Nomor 78 s.d. 114 (37 Surah)
     const juz30Surahs = MASTER_SURAHS.filter(s => s.juz === 30);
     const juz30Lancar = juz30Surahs.filter(s => lancarSurahs.includes(s.nama)).length;
     const juz30Percent = Math.round((juz30Lancar / juz30Surahs.length) * 100);
 
-    // Total 114 Surah
     const totalLancar = MASTER_SURAHS.filter(s => lancarSurahs.includes(s.nama)).length;
     const totalPercent = Math.round((totalLancar / 114) * 100);
 
@@ -940,9 +918,6 @@ function getHafalanProgressStats(hafalanList = []) {
     };
 }
 
-// ==================================================================
-// NOTIFICATION SNOOZE & 24-HOUR AUTO-REAPPEAR ENGINE
-// ==================================================================
 function getDismissedNotificationsMap() {
     try {
         const data = localStorage.getItem("dismissed_notifications_map");
@@ -1257,7 +1232,6 @@ function openQuickPembinaan(siswaId, defaultMasalah) {
     }, 150);
 }
 
-// TAHAP 3: MODAL NOTIFIKASI DENGAN FILTER KELAS
 function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
@@ -1314,7 +1288,6 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
         </div>
 
         ${isCanManageNotif ? `
-        <!-- FILTER KELAS & TAB SWITCHER NOTIFIKASI -->
         <div class="space-y-2 mb-3">
             <div>
                 <select onchange="openNotificationModal('${activeTab}', this.value)" class="w-full bg-slate-100 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
@@ -1394,9 +1367,6 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
     document.getElementById("modal-container")?.classList.remove("hidden");
 }
 
-// ==================================================================
-// 6. PRESENSI MODULE (ACCELERATED OPTIMISTIC UI)
-// ==================================================================
 async function loadAbsensiData(forceRefresh = false) {
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
@@ -1594,9 +1564,6 @@ function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
     return menitMasuk > menitBatas ? { status: 'T', label: 'Terlambat', menitTerlambat: menitMasuk - menitBatas } : { status: 'H', label: 'Tepat Waktu', menitTerlambat: 0 };
 }
 
-// ==================================================================
-// 7. KEBIASAAN MODULE (DEBOUNCE ENGINE)
-// ==================================================================
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
     const tanggal = dateInput ? (dateInput.value || getDateWITA()) : getDateWITA();
@@ -1730,9 +1697,6 @@ function updateKebiasaanSaveStatus(state) {
     }
 }
 
-// ==================================================================
-// 8. KEAGAMAAN / HAFALAN MODULE (OPTIMISTIC)
-// ==================================================================
 async function loadKeagamaanData(forceRefresh = false) {
     const filterSelect = document.getElementById("karakter-siswa-filter");
     if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
@@ -1759,7 +1723,6 @@ async function loadKeagamaanData(forceRefresh = false) {
     }
 }
 
-// TAHAP 1: RENDER UI MODUL KEAGAMAAN DENGAN PROGRESS BAR CAPAIAN JUZ 30
 function renderKeagamaanView() {
     const container = document.getElementById("keagamaan-container");
     if (!container) return;
@@ -1783,7 +1746,6 @@ function renderKeagamaanView() {
             </span>
         </div>
 
-        <!-- Progress Bar Juz 30 -->
         <div class="space-y-1">
             <div class="flex justify-between text-xs font-semibold">
                 <span>Capaian Juz 30 (Juz Amma)</span>
@@ -1794,7 +1756,6 @@ function renderKeagamaanView() {
             </div>
         </div>
 
-        <!-- Progress Bar Total 114 Surah -->
         <div class="space-y-1">
             <div class="flex justify-between text-xs font-semibold">
                 <span>Keseluruhan 114 Surah</span>
@@ -1923,9 +1884,6 @@ async function deleteKeagamaan(id) {
     }
 }
 
-// ==================================================================
-// 9. AKADEMIK & PRESTASI MODULE (TAHAP 2 INTEGRATION)
-// ==================================================================
 function downloadTemplateAkademikCSV() {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "siswa_id,nama_siswa,mapel,nilai_akhir,kktp\n";
@@ -2323,9 +2281,6 @@ async function deletePrestasi(id) {
     }
 }
 
-// ==================================================================
-// 10. PEMBINAAN SISWA MODULE (OPTIMISTIC)
-// ==================================================================
 function getPembinaanStatusBadge(status) {
     const s = String(status || '').trim().toLowerCase();
     if (s === 'pemantauan') return 'bg-sky-50 text-sky-700 border-sky-200';
@@ -2538,9 +2493,6 @@ async function deletePembinaan(id) {
     }
 }
 
-// ==================================================================
-// 11. PROFIL SISWA 360°, VECTOR PDF & RADAR CHART MODULE (TAHAP 4)
-// ==================================================================
 function switchTabSiswa(tabName, btnEl) {
     document.querySelectorAll('.prof-tab-btn').forEach(btn => {
         btn.classList.remove('active', 'border-b-2', 'border-blue-600', 'text-blue-600', 'font-bold');
@@ -2625,7 +2577,6 @@ async function openProfilSiswa(siswaTarget) {
 
         <div class="space-y-4 pt-2">
             <div id="tab-siswa-ringkasan" class="prof-tab-content space-y-4">
-                <!-- RADAR CHART ANALISIS GRAFIS -->
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fas fa-chart-pie text-primary"></i> Analisis Grafis Radar Karakter Siswa
@@ -2749,7 +2700,6 @@ async function openProfilSiswa(siswaTarget) {
     setTimeout(() => renderRadarChartSiswa(detailData), 150);
 }
 
-// TAHAP 4: RADAR CHART SINKRONISASI DATAS
 function renderRadarChartSiswa(detailData) {
     const ctx = document.getElementById('radarChartSiswa');
     if (!ctx) return;
@@ -2797,7 +2747,6 @@ function renderRadarChartSiswa(detailData) {
     });
 }
 
-// TAHAP 4: DIRECT VECTOR PDF EXPORT HTML2PDF
 function downloadRaporPDFVector() {
     if (!appState.activeSiswaDetail) {
         Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Data siswa belum dipilih.' });
@@ -2936,9 +2885,6 @@ function hubungiOrtu(siswaId) {
     window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${message}`, '_blank');
 }
 
-// ==================================================================
-// 12. LAPORAN REKAP & EXPORT MODULE
-// ==================================================================
 async function loadLaporanRekap(forceRefresh = false) {
     const isStale = (Date.now() - (lastFetchTimes.laporan || 0)) > CACHE_TTL;
 
@@ -3102,9 +3048,6 @@ function exportRekapCSV() {
     document.body.removeChild(link);
 }
 
-// ==================================================================
-// 13. MASTER DATA MANAGEMENT (ADMIN & GURU)
-// ==================================================================
 function renderSiswaView() {
     const container = document.getElementById("siswa-card-container");
     if (!container) return;
@@ -3479,9 +3422,6 @@ async function deleteKelas(id) {
     }
 }
 
-// ==================================================================
-// 14. SETTINGS & APP INITIALIZATION
-// ==================================================================
 function openUserSettingsModal() {
     const container = document.getElementById("modal-content-box");
     if (!container) return;
@@ -3722,7 +3662,6 @@ function showExpiredMagicLinkScreen(message) {
     }
 }
 
-// Registrasi Service Worker PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
