@@ -35,6 +35,14 @@ body {
     opacity: 1;
 }
 
+#view-login.active {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding-bottom: 0 !important; /* Me-reset padding-bottom dari .view-section */
+}
+
 /* 3. Role-Based Elements Display Controller */
 body[data-role="siswa"] [data-role-visible*="admin"],
 body[data-role="siswa"] [data-role-visible*="guru"],
