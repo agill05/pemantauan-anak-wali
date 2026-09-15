@@ -1102,7 +1102,7 @@ function renderAbsensiView() {
                                         <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>Izin (I)</option>
                                         <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>Sakit (S)</option>
                                         <option value="A" ${currentStatus === 'A' ? 'selected' : ''}>Alpa (A)</option>
-                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>Tanpa Keterangan (T)</option>
+                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>TTerlambat (T)</option>
                                     </select>
                                 </div>
                             </div>
