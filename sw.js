@@ -44,3 +44,34 @@ self.addEventListener("fetch", (event) => {
             .catch(() => caches.match(event.request)) // Fallback ke Cache hanya saat Offline
     );
 });
+
+self.addEventListener("push", (event) => {
+    const data = event.data ? event.data.json() : { 
+        title: "Peringatan Anak Wali", 
+        body: "Ada perhatian khusus pada perkembangan siswa wali Anda." 
+    };
+    const options = {
+        body: data.body,
+        icon: "https://ui-avatars.com/api/?name=AW&background=2563eb&color=fff&size=192",
+        badge: "https://ui-avatars.com/api/?name=AW&background=2563eb&color=fff&size=64",
+        data: data.url || "./",
+        vibrate: [200, 100, 200]
+    };
+    event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: "window" }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow(event.notification.data || "./");
+            }
+        })
+    );
+});

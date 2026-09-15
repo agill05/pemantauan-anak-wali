@@ -891,36 +891,147 @@ function renderAgendaSection(agendaList) {
     `).join("");
 }
 
-// Notifikasi Engine
+let dismissedNotifications = new Set();
+
+// 1. Web Push Notification Helper (Out-of-App)
+async function requestNotificationPermission() {
+    if ("Notification" in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            showToast("Notifikasi browser berhasil diaktifkan!");
+        } else if (permission === "denied") {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Izin Ditolak',
+                text: 'Aktifkan izin notifikasi di pengaturan browser Anda untuk menerima peringatan langsung.',
+                confirmButtonColor: '#2563eb'
+            });
+        }
+    }
+}
+
+function sendWebPushNotification(title, body) {
+    if ("Notification" in window && Notification.permission === "granted") {
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification(title, {
+                    body: body,
+                    icon: "https://ui-avatars.com/api/?name=AW&background=2563eb&color=fff&size=192",
+                    vibrate: [200, 100, 200],
+                    tag: 'siswa-bermasalah-alert'
+                });
+            });
+        } else {
+            new Notification(title, { body: body });
+        }
+    }
+}
+
+// 2. Evaluasi Multi-Kriteria & Level Keparahan
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'ortu') return;
 
-    // Panggil rekap laporan yang memuat agregat seluruh hari
     const resRekap = await apiCall("getLaporanRekap", {}, false);
     const rekapData = resRekap?.data || [];
-
+    
     let notificationList = [];
+    const todayStr = getDateWITA();
 
     rekapData.forEach(item => {
-        if (item.presensi.alpa >= 3) {
+        const sId = String(item.id);
+        
+        // --- KRITERIA 1: PRESENSI (Kedisiplinan) ---
+        if (item.presensi.alpa >= 3 && !dismissedNotifications.has(`${sId}_alpa_kritis`)) {
             notificationList.push({
+                id: `${sId}_alpa_kritis`,
                 siswa: { id: item.id, nama: item.nama },
-                type: 'danger',
-                title: 'Absensi Bermasalah',
-                desc: `${item.nama} memiliki akumulasi Alpa sebanyak ${item.presensi.alpa} kali.`
+                level: 'kritis',
+                category: 'Kedisiplinan',
+                title: 'Akumulasi Alpa Tinggi',
+                desc: `${item.nama} memiliki akumulasi Alpa sebanyak ${item.presensi.alpa} kali (Batas maksimal 3).`,
+                defaultPembinaan: `Tindak lanjut presensi: Akumulasi Alpa mencapai ${item.presensi.alpa} hari.`
+            });
+        } else if (item.presensi.alpa >= 1 && item.presensi.alpa < 3 && !dismissedNotifications.has(`${sId}_alpa_sedang`)) {
+            notificationList.push({
+                id: `${sId}_alpa_sedang`,
+                siswa: { id: item.id, nama: item.nama },
+                level: 'sedang',
+                category: 'Kedisiplinan',
+                title: 'Perhatian Absensi',
+                desc: `${item.nama} tercatat Alpa ${item.presensi.alpa} kali. Perlu pengawasan awal.`,
+                defaultPembinaan: `Pemantauan presensi awal: Catatan Alpa ${item.presensi.alpa} hari.`
             });
         }
-        if (item.dibawah_kktp > 0) {
+
+        // --- KRITERIA 2: AKADEMIK (Nilai KKTP) ---
+        if (item.dibawah_kktp >= 2 && !dismissedNotifications.has(`${sId}_akademik_kritis`)) {
             notificationList.push({
+                id: `${sId}_akademik_kritis`,
                 siswa: { id: item.id, nama: item.nama },
-                type: 'warning',
-                title: 'Nilai Akademik Kurang',
-                desc: `${item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah KKTP.`
+                level: 'kritis',
+                category: 'Akademik',
+                title: 'Nilai di Bawah KKTP',
+                desc: `${item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah standar KKTP.`,
+                defaultPembinaan: `Bimbingan belajar khusus: ${item.dibawah_kktp} mata pelajaran belum tuntas KKTP.`
+            });
+        } else if (item.dibawah_kktp === 1 && !dismissedNotifications.has(`${sId}_akademik_sedang`)) {
+            notificationList.push({
+                id: `${sId}_akademik_sedang`,
+                siswa: { id: item.id, nama: item.nama },
+                level: 'sedang',
+                category: 'Akademik',
+                title: 'Peringatan KKTP',
+                desc: `${item.nama} memiliki 1 mata pelajaran yang belum memenuhi KKTP.`,
+                defaultPembinaan: `Bimbingan akademik untuk 1 mapel yang belum tuntas KKTP.`
             });
         }
     });
 
+    // --- KRITERIA 3: KEBIASAAN HEBAT (Ibadah/K2) ---
+    if (appState.kebiasaan && appState.kebiasaan.length > 0) {
+        appState.siswa.forEach(s => {
+            const sId = String(s.id);
+            const k2Rec = appState.kebiasaan.find(k => String(k.siswa_id) === sId && String(k.kebiasaan_id) === 'K2' && k.tanggal === todayStr);
+            if (k2Rec && k2Rec.status === 'Belum' && !dismissedNotifications.has(`${sId}_kebiasaan_k2`)) {
+                notificationList.push({
+                    id: `${sId}_kebiasaan_k2`,
+                    siswa: { id: s.id, nama: s.nama },
+                    level: 'rendah',
+                    category: 'Kebiasaan',
+                    title: 'Belum Beribadah/Shalat',
+                    desc: `${s.nama} tercatat belum melaksanakan ibadah pada pantauan hari ini.`,
+                    defaultPembinaan: `Pembinaan karakter: Pembiasaan ibadah harian.`
+                });
+            }
+        });
+    }
+
+    // --- KRITERIA 4: AGENDA PEMBINAAN & JADWAL PANTAU ---
+    if (appState.pembinaan && appState.pembinaan.length > 0) {
+        appState.pembinaan.forEach(p => {
+            const s = appState.siswa.find(x => String(x.id) === String(p.siswa_id));
+            if (s && p.jadwal_pantau && p.jadwal_pantau <= todayStr && p.status !== 'Selesai' && !dismissedNotifications.has(`pbn_${p.id}`)) {
+                notificationList.push({
+                    id: `pbn_${p.id}`,
+                    siswa: { id: s.id, nama: s.nama },
+                    level: p.status === 'Perlu Tindak Lanjut' ? 'kritis' : 'sedang',
+                    category: 'Pembinaan',
+                    title: 'Jadwal Evaluasi Pantau',
+                    desc: `Waktunya mengevaluasi tindak lanjut kasus: "${p.permasalahan}" untuk ${s.nama}.`,
+                    defaultPembinaan: `Evaluasi ulang kasus pembinaan: ${p.permasalahan}`
+                });
+            }
+        });
+    }
+
+    // Urutkan Prioritas: Kritis (High) > Sedang (Medium) > Rendah (Low)
+    const levelOrder = { 'kritis': 3, 'sedang': 2, 'rendah': 1 };
+    notificationList.sort((a, b) => levelOrder[b.level] - levelOrder[a.level]);
+
+    const prevCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
     appState.currentNotifications = notificationList;
+
+    // Update Badge UI Header
     const badge = document.getElementById("notif-badge");
     if (badge) {
         if (notificationList.length > 0) {
@@ -930,6 +1041,36 @@ async function checkStudentNotifications() {
             badge.classList.add("hidden");
         }
     }
+
+    // Kirim Web Push jika ada notifikasi level KRITIS baru
+    if (notificationList.length > prevCount) {
+        const kritisCount = notificationList.filter(n => n.level === 'kritis').length;
+        if (kritisCount > 0) {
+            sendWebPushNotification(
+                "⚠️ Perhatian Khusus Siswa",
+                `Terdapat ${kritisCount} catatan siswa dengan tingkat keparahan KRITIS membutuhkan tindakan segera.`
+            );
+        }
+    }
+}
+
+// 3. Actionable Modal & Quick Actions
+function dismissNotification(notifId) {
+    dismissedNotifications.add(notifId);
+    checkStudentNotifications();
+    openNotificationModal();
+    showToast("Notifikasi telah ditandai selesai.");
+}
+
+function openQuickPembinaan(siswaId, defaultMasalah) {
+    closeModal();
+    openModalPembinaan();
+    setTimeout(() => {
+        const siswaSelect = document.getElementById("m-pbn-siswa");
+        const masalahInput = document.getElementById("m-pbn-masalah");
+        if (siswaSelect) siswaSelect.value = siswaId;
+        if (masalahInput) masalahInput.value = defaultMasalah || "";
+    }, 150);
 }
 
 function openNotificationModal() {
@@ -938,32 +1079,69 @@ function openNotificationModal() {
 
     const list = appState.currentNotifications || [];
 
+    const getLevelBadge = (level) => {
+        if (level === 'kritis') return '<span class="px-2 py-0.5 text-[10px] font-black uppercase rounded bg-rose-600 text-white animate-pulse">KRITIS</span>';
+        if (level === 'sedang') return '<span class="px-2 py-0.5 text-[10px] font-black uppercase rounded bg-amber-500 text-white">SEDANG</span>';
+        return '<span class="px-2 py-0.5 text-[10px] font-black uppercase rounded bg-blue-500 text-white">PENGAWASAN</span>';
+    };
+
+    const getCardStyle = (level) => {
+        if (level === 'kritis') return 'bg-rose-50/70 border-rose-200';
+        if (level === 'sedang') return 'bg-amber-50/70 border-amber-200';
+        return 'bg-blue-50/70 border-blue-200';
+    };
+
     box.innerHTML = `
-        <div class="flex justify-between items-center mb-4 border-b pb-2">
-            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <i class="fas fa-bell text-amber-500"></i> Notifikasi Siswa Bermasalah (${list.length})
-            </h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                    <i class="fas fa-bell text-amber-500"></i> Notifikasi Sistem (${list.length})
+                </h3>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="requestNotificationPermission()" title="Aktifkan Notifikasi Perangkat" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-100 font-bold flex items-center gap-1">
+                    <i class="fas fa-mobile-alt"></i> Push
+                </button>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fas fa-times"></i></button>
+            </div>
         </div>
         
-        <div class="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
+        <div class="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
             ${list.length === 0 ? `
                 <div class="empty-state">
-                    <i class="fas fa-check-circle text-emerald-500 text-2xl mb-1"></i>
-                    <p class="text-xs text-slate-500">Tidak ada siswa yang memerlukan perhatian mendesak.</p>
+                    <i class="fas fa-check-circle text-emerald-500 text-3xl mb-2"></i>
+                    <p class="text-xs font-bold text-slate-700">Semua Siswa Terpantau Baik</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Tidak ada peringatan kedisiplinan atau akademik aktif.</p>
                 </div>
             ` : list.map(n => `
-                <div class="p-3 rounded-2xl border ${n.type === 'danger' ? 'bg-rose-50 border-rose-100' : (n.type === 'warning' ? 'bg-amber-50 border-amber-100' : 'bg-blue-50 border-blue-100')} flex justify-between items-center">
-                    <div>
-                        <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-xs font-bold px-2 py-0.5 rounded uppercase ${n.type === 'danger' ? 'bg-rose-200 text-rose-800' : (n.type === 'warning' ? 'bg-amber-200 text-amber-800' : 'bg-blue-200 text-blue-800')}">${n.title}</span>
-                            <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)}</h4>
+                <div class="p-3.5 rounded-2xl border ${getCardStyle(n.level)} shadow-sm space-y-2.5">
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                ${getLevelBadge(n.level)}
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">${escapeHtml(n.category)}</span>
+                            </div>
+                            <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)} — <span class="text-slate-700 font-semibold">${escapeHtml(n.title)}</span></h4>
                         </div>
-                        <p class="text-xs text-slate-600">${escapeHtml(n.desc)}</p>
+                        <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
+                            <i class="fas fa-check-circle text-base"></i>
+                        </button>
                     </div>
-                    <button onclick="closeModal(); openProfilSiswa('${n.siswa.id}')" class="p-2 bg-white text-slate-700 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 shrink-0 ml-2">
-                        Profil <i class="fas fa-chevron-right text-xs"></i>
-                    </button>
+
+                    <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(n.desc)}</p>
+
+                    <!-- ACTIONABLE QUICK BUTTONS -->
+                    <div class="flex items-center gap-1.5 pt-2 border-t border-slate-200/60 flex-wrap">
+                        <button onclick="closeModal(); openProfilSiswa('${n.siswa.id}')" class="px-2.5 py-1.5 bg-white text-slate-700 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 flex items-center gap-1">
+                            <i class="fas fa-user text-blue-500"></i> Profil
+                        </button>
+                        <button onclick="hubungiOrtu('${n.siswa.id}')" class="px-2.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-emerald-700 flex items-center gap-1">
+                            <i class="fab fa-whatsapp"></i> WA Ortu
+                        </button>
+                        <button onclick="openQuickPembinaan('${n.siswa.id}', '${escapeHtml(n.defaultPembinaan)}')" class="px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 flex items-center gap-1">
+                            <i class="fas fa-edit"></i> Buat Catatan Pembinaan
+                        </button>
+                    </div>
                 </div>
             `).join('')}
         </div>
