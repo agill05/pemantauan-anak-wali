@@ -1,8 +1,3 @@
-/* ==================================================================
-   Aplikasi Pemantauan Anak Wali — SMP Negeri 1 Talaga Jaya
-   style.css — Modern Flat & Glassmorphism Design System
-   ================================================================== */
-
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -46,7 +41,6 @@ button:active {
     transform: scale(0.97);
 }
 
-/* Area Sentuh Minimal 44px (Mobile First UX) */
 .touch-btn {
     min-width: 44px;
     min-height: 44px;
@@ -56,7 +50,6 @@ button:active {
     border-radius: 0.75rem;
 }
 
-/* Visibilitas Berbasis Role */
 [data-role-visible]:not(.view-section) {
     display: none !important;
 }
@@ -109,7 +102,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-/* Glassmorphism Header & Bottom Nav */
 #main-header {
     background: rgba(37, 99, 235, 0.95) !important;
     backdrop-filter: blur(12px);
@@ -143,7 +135,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
 }
 
-/* Kartu & Elevasi Surface */
 .bg-surface,
 .bg-white {
     background-color: #ffffff;
@@ -159,7 +150,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     }
 }
 
-/* Modal Overlay & Pop Animation */
 #modal-container {
     background: rgba(15, 23, 42, 0.45) !important;
     backdrop-filter: blur(6px);
@@ -181,7 +171,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     }
 }
 
-/* Transisi Halaman/View Smooth */
 .view-section {
     display: none;
 }
@@ -203,7 +192,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     }
 }
 
-/* Skeleton Shimmer Loading */
 .skeleton {
     background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
     background-size: 400% 100%;
@@ -221,7 +209,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     }
 }
 
-/* Empty State Styling */
 .empty-state {
     text-align: center;
     padding: 3rem 1.5rem;
@@ -231,9 +218,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     border: 1.5px dashed #cbd5e1;
 }
 
-/* Aksesibilitas: batas bawah keterbacaan teks.
-   Jaring pengaman jika ada kelas ukuran teks kecil (mis. text-[9px]/[10px]/[11px])
-   yang lolos dari refactor ke text-xs — jangan biarkan teks di bawah 12px. */
 .text-\[8px\],
 .text-\[9px\],
 .text-\[10px\],
@@ -241,7 +225,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     font-size: 12px !important;
 }
 
-/* Scrollbar Minimalis */
 ::-webkit-scrollbar {
     width: 5px;
     height: 5px;
@@ -269,7 +252,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     scrollbar-width: none;
 }
 
-/* Accessiblity Focus Ring */
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -287,11 +269,6 @@ a:focus-visible {
     padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* ==================================================================
-   DESKTOP DASHBOARD LAYOUT (Sidebar Permanen + Header Baru)
-   Menyesuaikan referensi desain dashboard tanpa mengubah fungsi apapun.
-   ================================================================== */
-
 :root {
     --sidebar-width: 272px;
     --navy-900: #101c3f;
@@ -300,7 +277,6 @@ a:focus-visible {
     --navy-line: rgba(255, 255, 255, 0.09);
 }
 
-/* ---- Sidebar: tampil sebagai drawer di mobile, panel tetap di desktop ---- */
 #app-sidebar {
     background: linear-gradient(190deg, var(--navy-700) 0%, var(--navy-900) 100%);
     border-right: 1px solid var(--navy-line);
@@ -361,7 +337,6 @@ a:focus-visible {
     background: rgba(248, 113, 113, 0.12) !important;
 }
 
-/* ---- Header: welcome greeting + tanggal (khusus desktop) ---- */
 #header-desktime {
     line-height: 1.15;
 }
@@ -448,7 +423,6 @@ a:focus-visible {
     }
 }
 
-/* ---- Stat cards & Menu Cepat tiles (semua breakpoint) ---- */
 #dash-stats-container > div {
     position: relative;
     border-radius: 1.25rem;
@@ -533,7 +507,6 @@ a:focus-visible {
     color: #ffffff;
 }
 
-/* ---- Banner "Bersama Mewujudkan Generasi Hebat" ---- */
 .dash-banner {
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 55%, #1e3a8a 100%);
     border-radius: 1.25rem;
@@ -578,7 +551,6 @@ a:focus-visible {
     background: #eff6ff;
 }
 
-/* ---- Section header dengan tombol "Lihat Semua" ---- */
 .dash-section-link {
     font-size: 0.72rem;
     font-weight: 700;
