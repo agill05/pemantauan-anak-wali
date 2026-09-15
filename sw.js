@@ -1,4 +1,4 @@
-const CACHE_NAME = "paw-cache-v4.3";
+const CACHE_NAME = "paw-cache-v4.4";
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",
@@ -45,6 +45,9 @@ self.addEventListener("fetch", (event) => {
     );
 });
 
+// ==================================================================
+// SYSTEM PUSH NOTIFICATION LISTENERS (Out-of-App Delivery)
+// ==================================================================
 self.addEventListener("push", (event) => {
     const data = event.data ? event.data.json() : { 
         title: "Peringatan Anak Wali", 

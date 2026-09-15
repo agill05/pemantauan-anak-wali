@@ -4,6 +4,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwexDqnGSgtpr1ajoFsn9Wg
 // 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD & TTL)
 // ==================================================================
 const CACHE_TTL = 5 * 60 * 1000; // Batas waktu cache: 5 Menit (300.000 ms)
+const SNOOZE_24H_MS = 24 * 60 * 60 * 1000; // 24 Jam dalam milidetik
 
 let lastFetchTimes = {
     bootstrap: 0,
@@ -742,7 +743,7 @@ function renderSidebarMenu(role) {
 }
 
 // ==================================================================
-// 5. DASHBOARD MODULE
+// 5. DASHBOARD & NOTIFICATION ENGINE MODULE
 // ==================================================================
 async function renderDashboard() {
     if (!appState.user) return;
@@ -891,9 +892,69 @@ function renderAgendaSection(agendaList) {
     `).join("");
 }
 
-let dismissedNotifications = new Set();
+// ------------------------------------------------------------------
+// NOTIFICATION SNOOZE & 24-HOUR AUTO-REAPPEAR ENGINE
+// ------------------------------------------------------------------
+function getDismissedNotificationsMap() {
+    try {
+        const data = localStorage.getItem("dismissed_notifications_map");
+        return data ? JSON.parse(data) : {};
+    } catch (e) {
+        return {};
+    }
+}
 
-// 1. Web Push Notification Helper (Out-of-App)
+function saveDismissedNotificationsMap(map) {
+    try {
+        localStorage.setItem("dismissed_notifications_map", JSON.stringify(map));
+    } catch (e) {}
+}
+
+function isNotificationDismissed(notifId) {
+    const map = getDismissedNotificationsMap();
+    if (!map[notifId]) return false;
+
+    const timestamp = map[notifId];
+    const elapsed = Date.now() - timestamp;
+
+    // Jika sudah lewat 24 jam tanpa dibuat catatan pembinaan -> Notifikasi MUNCUL KEMBALI
+    if (elapsed >= SNOOZE_24H_MS) {
+        delete map[notifId];
+        saveDismissedNotificationsMap(map);
+        return false;
+    }
+    return true;
+}
+
+function dismissNotification(notifId) {
+    const map = getDismissedNotificationsMap();
+    map[notifId] = Date.now(); // Simpan waktu penanganan saat ini
+    saveDismissedNotificationsMap(map);
+
+    checkStudentNotifications();
+    openNotificationModal();
+
+    showToast("Ditandai sementara. Jika belum ada catatan pembinaan, notifikasi akan muncul kembali dalam 24 jam.", "info");
+}
+
+function clearStudentNotificationsOnNoteAdded(siswaId) {
+    if (!siswaId) return;
+    const map = getDismissedNotificationsMap();
+    let isUpdated = false;
+
+    Object.keys(map).forEach(key => {
+        if (key.includes(String(siswaId))) {
+            delete map[key];
+            isUpdated = true;
+        }
+    });
+
+    if (isUpdated) {
+        saveDismissedNotificationsMap(map);
+    }
+}
+
+// Web Push Notification Helper
 async function requestNotificationPermission() {
     if ("Notification" in window) {
         const permission = await Notification.requestPermission();
@@ -927,7 +988,7 @@ function sendWebPushNotification(title, body) {
     }
 }
 
-// 2. Evaluasi Multi-Kriteria & Level Keparahan
+// Evaluasi Multi-Kriteria & Level Keparahan Notifikasi
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'ortu') return;
 
@@ -941,7 +1002,7 @@ async function checkStudentNotifications() {
         const sId = String(item.id);
         
         // --- KRITERIA 1: PRESENSI (Kedisiplinan) ---
-        if (item.presensi.alpa >= 3 && !dismissedNotifications.has(`${sId}_alpa_kritis`)) {
+        if (item.presensi.alpa >= 3 && !isNotificationDismissed(`${sId}_alpa_kritis`)) {
             notificationList.push({
                 id: `${sId}_alpa_kritis`,
                 siswa: { id: item.id, nama: item.nama },
@@ -951,7 +1012,7 @@ async function checkStudentNotifications() {
                 desc: `${item.nama} memiliki akumulasi Alpa sebanyak ${item.presensi.alpa} kali (Batas maksimal 3).`,
                 defaultPembinaan: `Tindak lanjut presensi: Akumulasi Alpa mencapai ${item.presensi.alpa} hari.`
             });
-        } else if (item.presensi.alpa >= 1 && item.presensi.alpa < 3 && !dismissedNotifications.has(`${sId}_alpa_sedang`)) {
+        } else if (item.presensi.alpa >= 1 && item.presensi.alpa < 3 && !isNotificationDismissed(`${sId}_alpa_sedang`)) {
             notificationList.push({
                 id: `${sId}_alpa_sedang`,
                 siswa: { id: item.id, nama: item.nama },
@@ -964,7 +1025,7 @@ async function checkStudentNotifications() {
         }
 
         // --- KRITERIA 2: AKADEMIK (Nilai KKTP) ---
-        if (item.dibawah_kktp >= 2 && !dismissedNotifications.has(`${sId}_akademik_kritis`)) {
+        if (item.dibawah_kktp >= 2 && !isNotificationDismissed(`${sId}_akademik_kritis`)) {
             notificationList.push({
                 id: `${sId}_akademik_kritis`,
                 siswa: { id: item.id, nama: item.nama },
@@ -974,7 +1035,7 @@ async function checkStudentNotifications() {
                 desc: `${item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah standar KKTP.`,
                 defaultPembinaan: `Bimbingan belajar khusus: ${item.dibawah_kktp} mata pelajaran belum tuntas KKTP.`
             });
-        } else if (item.dibawah_kktp === 1 && !dismissedNotifications.has(`${sId}_akademik_sedang`)) {
+        } else if (item.dibawah_kktp === 1 && !isNotificationDismissed(`${sId}_akademik_sedang`)) {
             notificationList.push({
                 id: `${sId}_akademik_sedang`,
                 siswa: { id: item.id, nama: item.nama },
@@ -992,7 +1053,7 @@ async function checkStudentNotifications() {
         appState.siswa.forEach(s => {
             const sId = String(s.id);
             const k2Rec = appState.kebiasaan.find(k => String(k.siswa_id) === sId && String(k.kebiasaan_id) === 'K2' && k.tanggal === todayStr);
-            if (k2Rec && k2Rec.status === 'Belum' && !dismissedNotifications.has(`${sId}_kebiasaan_k2`)) {
+            if (k2Rec && k2Rec.status === 'Belum' && !isNotificationDismissed(`${sId}_kebiasaan_k2`)) {
                 notificationList.push({
                     id: `${sId}_kebiasaan_k2`,
                     siswa: { id: s.id, nama: s.nama },
@@ -1010,7 +1071,7 @@ async function checkStudentNotifications() {
     if (appState.pembinaan && appState.pembinaan.length > 0) {
         appState.pembinaan.forEach(p => {
             const s = appState.siswa.find(x => String(x.id) === String(p.siswa_id));
-            if (s && p.jadwal_pantau && p.jadwal_pantau <= todayStr && p.status !== 'Selesai' && !dismissedNotifications.has(`pbn_${p.id}`)) {
+            if (s && p.jadwal_pantau && p.jadwal_pantau <= todayStr && p.status !== 'Selesai' && !isNotificationDismissed(`pbn_${p.id}`)) {
                 notificationList.push({
                     id: `pbn_${p.id}`,
                     siswa: { id: s.id, nama: s.nama },
@@ -1052,14 +1113,6 @@ async function checkStudentNotifications() {
             );
         }
     }
-}
-
-// 3. Actionable Modal & Quick Actions
-function dismissNotification(notifId) {
-    dismissedNotifications.add(notifId);
-    checkStudentNotifications();
-    openNotificationModal();
-    showToast("Notifikasi telah ditandai selesai.");
 }
 
 function openQuickPembinaan(siswaId, defaultMasalah) {
@@ -1280,7 +1333,7 @@ function renderAbsensiView() {
                                         <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>Izin (I)</option>
                                         <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>Sakit (S)</option>
                                         <option value="A" ${currentStatus === 'A' ? 'selected' : ''}>Alpa (A)</option>
-                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>TTerlambat (T)</option>
+                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>Terlambat (T)</option>
                                     </select>
                                 </div>
                             </div>
@@ -1319,12 +1372,10 @@ async function saveBatchAbsensiForm(event) {
         });
     });
 
-    // Kirim Synchronous/Awaited ke Server
     const res = await apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: tanggalTarget }, false);
     hideLoading();
 
     if (res && res.status === "success") {
-        // Hanya update state lokal jika server mengonfirmasi BERHASIL
         payloadAbsensi.forEach(item => {
             const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(item.siswa_id));
             if (idx !== -1) appState.absensi[idx] = item;
@@ -1612,7 +1663,6 @@ async function saveKeagamaanForm(e, id) {
         catatan: document.getElementById("m-kag-catatan").value
     };
 
-    // Optimistic Local Update
     const idx = appState.keagamaan.findIndex(x => String(x.id) === String(payload.id));
     if (idx !== -1) appState.keagamaan[idx] = payload;
     else appState.keagamaan.push(payload);
@@ -1622,7 +1672,6 @@ async function saveKeagamaanForm(e, id) {
     closeModal();
     showToast("Catatan hafalan tersimpan!");
 
-    // Background Sync
     apiCall("saveKeagamaan", payload, false);
 }
 
@@ -2065,6 +2114,11 @@ async function savePembinaanForm(e, id) {
     saveAppStateToLocal();
     renderPembinaanView();
     closeModal();
+
+    // Hapus status penanganan sementara agar notifikasi tuntas permanen
+    clearStudentNotificationsOnNoteAdded(payload.siswa_id);
+    checkStudentNotifications();
+
     showToast("Catatan pembinaan tersimpan!");
 
     apiCall("savePembinaan", payload, false);
