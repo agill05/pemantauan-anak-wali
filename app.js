@@ -1,8 +1,20 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbzh_IAvdKrS4vzVwrmqlipfv5_hDp78GwTfxmoQscdajj-GM0IPNAHMHwTXacu7YfU/exec";
 
 // ==================================================================
-// 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD)
+// 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD & TTL)
 // ==================================================================
+const CACHE_TTL = 5 * 60 * 1000; // Batas waktu cache: 5 Menit (300.000 ms)
+
+let lastFetchTimes = {
+    bootstrap: 0,
+    absensi: 0,
+    kebiasaan: 0,
+    keagamaan: 0,
+    akademik: 0,
+    pembinaan: 0,
+    laporan: 0
+};
+
 let kebiasaanDebounceTimer = null;
 let pendingKebiasaanQueue = new Map();
 let silentTokenRefreshInterval = null;
@@ -38,7 +50,8 @@ function saveAppStateToLocal() {
             akademik: appState.akademik,
             prestasi: appState.prestasi,
             pembinaan: appState.pembinaan,
-            laporanRekap: appState.laporanRekap
+            laporanRekap: appState.laporanRekap,
+            lastFetchTimes: lastFetchTimes
         }));
     } catch (e) { }
 }
@@ -48,6 +61,10 @@ function loadAppStateFromLocal() {
     if (cached) {
         try {
             const data = JSON.parse(cached);
+            if (data.lastFetchTimes) {
+                lastFetchTimes = { ...lastFetchTimes, ...data.lastFetchTimes };
+                delete data.lastFetchTimes;
+            }
             appState = { ...appState, ...data };
             return true;
         } catch (e) { }
@@ -970,17 +987,24 @@ async function loadAbsensiData(forceRefresh = false) {
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
     if (inputDate) inputDate.value = tanggal;
 
-    if (appState.absensi.length > 0 && !forceRefresh) {
+    const isStale = (Date.now() - (lastFetchTimes.absensi || 0)) > CACHE_TTL;
+
+    // 1. Tampilkan data dari memori lokal secara instan (0 ms)
+    if (appState.absensi && appState.absensi.length > 0) {
         renderAbsensiView();
     } else {
         renderSkeleton("absensi-list-container", 4);
     }
 
-    const res = await apiCall("getAbsensi", { tanggal }, false);
-    if (res && res.data) {
-        appState.absensi = res.data;
-        saveAppStateToLocal();
-        renderAbsensiView();
+    // 2. Tarik data baru di latar belakang hanya jika cache basi, dipaksa, atau kosong
+    if (forceRefresh || isStale || !appState.absensi || appState.absensi.length === 0) {
+        const res = await apiCall("getAbsensi", { tanggal }, false);
+        if (res && res.data) {
+            appState.absensi = res.data;
+            lastFetchTimes.absensi = Date.now();
+            saveAppStateToLocal();
+            renderAbsensiView(); // Perbarui UI secara halus tanpa reset loading
+        }
     }
 }
 
@@ -1176,17 +1200,22 @@ async function loadKebiasaanData(forceRefresh = false) {
         selectSiswa.innerHTML = appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
     }
 
-    if (appState.kebiasaan.length > 0 && !forceRefresh) {
+    const isStale = (Date.now() - (lastFetchTimes.kebiasaan || 0)) > CACHE_TTL;
+
+    if (appState.kebiasaan && appState.kebiasaan.length > 0) {
         renderKebiasaanView();
     } else {
         renderSkeleton("kebiasaan-list-container", 4);
     }
 
-    const res = await apiCall("getKebiasaan", { tanggal }, false);
-    if (res && res.data) {
-        appState.kebiasaan = res.data;
-        saveAppStateToLocal();
-        renderKebiasaanView();
+    if (forceRefresh || isStale || !appState.kebiasaan || appState.kebiasaan.length === 0) {
+        const res = await apiCall("getKebiasaan", { tanggal }, false);
+        if (res && res.data) {
+            appState.kebiasaan = res.data;
+            lastFetchTimes.kebiasaan = Date.now();
+            saveAppStateToLocal();
+            renderKebiasaanView();
+        }
     }
 }
 
@@ -1304,18 +1333,22 @@ async function loadKeagamaanData(forceRefresh = false) {
     }
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
+    const isStale = (Date.now() - (lastFetchTimes.keagamaan || 0)) > CACHE_TTL;
 
-    if (appState.keagamaan.length > 0 && !forceRefresh) {
+    if (appState.keagamaan && appState.keagamaan.length > 0) {
         renderKeagamaanView();
     } else {
         renderSkeleton("keagamaan-container", 3);
     }
 
-    const res = await apiCall("getKeagamaan", { siswa_id: selectedSiswaId }, false);
-    if (res && res.data) {
-        appState.keagamaan = res.data;
-        saveAppStateToLocal();
-        renderKeagamaanView();
+    if (forceRefresh || isStale || !appState.keagamaan || appState.keagamaan.length === 0) {
+        const res = await apiCall("getKeagamaan", { siswa_id: selectedSiswaId }, false);
+        if (res && res.data) {
+            appState.keagamaan = res.data;
+            lastFetchTimes.keagamaan = Date.now();
+            saveAppStateToLocal();
+            renderKeagamaanView();
+        }
     }
 }
 
@@ -1460,24 +1493,28 @@ async function loadAkademikData(forceRefresh = false) {
     }
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
+    const isStale = (Date.now() - (lastFetchTimes.akademik || 0)) > CACHE_TTL;
 
-    if (appState.akademik.length > 0 && !forceRefresh) {
+    if (appState.akademik && appState.akademik.length > 0) {
         switchAkademikTab('nilai');
     } else {
         renderSkeleton("akademik-list-container", 3);
         renderSkeleton("prestasi-list-container", 3);
     }
 
-    const [resAkd, resPrs] = await Promise.all([
-        apiCall("getAkademik", { siswa_id: selectedSiswaId }, false),
-        apiCall("getPrestasi", { siswa_id: selectedSiswaId }, false)
-    ]);
+    if (forceRefresh || isStale || !appState.akademik || appState.akademik.length === 0) {
+        const [resAkd, resPrs] = await Promise.all([
+            apiCall("getAkademik", { siswa_id: selectedSiswaId }, false),
+            apiCall("getPrestasi", { siswa_id: selectedSiswaId }, false)
+        ]);
 
-    if (resAkd && resAkd.data) appState.akademik = resAkd.data;
-    if (resPrs && resPrs.data) appState.prestasi = resPrs.data;
+        if (resAkd && resAkd.data) appState.akademik = resAkd.data;
+        if (resPrs && resPrs.data) appState.prestasi = resPrs.data;
 
-    saveAppStateToLocal();
-    switchAkademikTab('nilai');
+        lastFetchTimes.akademik = Date.now();
+        saveAppStateToLocal();
+        switchAkademikTab('nilai');
+    }
 }
 
 function renderAkademikNilai() {
@@ -1700,18 +1737,22 @@ async function loadPembinaanData(forceRefresh = false) {
     }
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
+    const isStale = (Date.now() - (lastFetchTimes.pembinaan || 0)) > CACHE_TTL;
 
-    if (appState.pembinaan.length > 0 && !forceRefresh) {
+    if (appState.pembinaan && appState.pembinaan.length > 0) {
         renderPembinaanView();
     } else {
         renderSkeleton("pembinaan-list-container", 3);
     }
 
-    const res = await apiCall("getPembinaan", { siswa_id: selectedSiswaId }, false);
-    if (res && res.data) {
-        appState.pembinaan = res.data;
-        saveAppStateToLocal();
-        renderPembinaanView();
+    if (forceRefresh || isStale || !appState.pembinaan || appState.pembinaan.length === 0) {
+        const res = await apiCall("getPembinaan", { siswa_id: selectedSiswaId }, false);
+        if (res && res.data) {
+            appState.pembinaan = res.data;
+            lastFetchTimes.pembinaan = Date.now();
+            saveAppStateToLocal();
+            renderPembinaanView();
+        }
     }
 }
 
@@ -1865,17 +1906,42 @@ function switchTabSiswa(tabName, btnEl) {
 async function openProfilSiswa(siswaTarget) {
     let detailData = null;
 
-    // PERBAIKAN: Jika parameter berupa Objek Data langsung (dari Magic Link), tidak perlu panggil API getDetailSiswa
     if (typeof siswaTarget === 'object' && siswaTarget !== null) {
         detailData = siswaTarget;
     } else {
-        showLoading("Memuat profil...");
-        const res = await apiCall("getDetailSiswa", { siswa_id: siswaTarget }, false);
-        hideLoading();
+        // Cek apakah data siswa yang dicari ada di appState lokal
+        const sLocal = appState.siswa.find(s => String(s.id) === String(siswaTarget));
+        
+        // Render rincian dari memori lokal terlebih dahulu jika data riwayat pernah tersimpan
+        if (appState.activeSiswaDetail && String(appState.activeSiswaDetail.siswa.id) === String(siswaTarget)) {
+            detailData = appState.activeSiswaDetail;
+        } else if (sLocal) {
+            // Gunakan struktur awal dari data yang ada di RAM
+            detailData = {
+                siswa: sLocal,
+                absensi: appState.absensi.filter(a => String(a.siswa_id) === String(siswaTarget)),
+                kebiasaan: appState.kebiasaan.filter(k => String(k.siswa_id) === String(siswaTarget)),
+                hafalan: appState.keagamaan.filter(h => String(h.siswa_id) === String(siswaTarget)),
+                akademik: appState.akademik.filter(ak => String(ak.siswa_id) === String(siswaTarget)),
+                prestasi: appState.prestasi.filter(p => String(p.siswa_id) === String(siswaTarget)),
+                pembinaan: appState.pembinaan.filter(pb => String(pb.siswa_id) === String(siswaTarget))
+            };
+        }
 
-        if (!res || res.status !== "success") return;
-        detailData = res.data;
+        // Jalankan fetch detail lengkap dari Apps Script di latar belakang (tanpa overlay loading)
+        apiCall("getDetailSiswa", { siswa_id: siswaTarget }, false).then(res => {
+            if (res && res.status === "success") {
+                appState.activeSiswaDetail = res.data;
+                // Jika pengguna masih berada di halaman profil siswa tersebut, perbarui tampilan secara halus
+                const activeView = document.querySelector(".view-section.active");
+                if (activeView && activeView.id === "view-profil-siswa") {
+                    openProfilSiswa(res.data);
+                }
+            }
+        });
     }
+
+    if (!detailData) return;
 
     appState.activeSiswaDetail = detailData;
     const { siswa, absensi, kebiasaan, hafalan, akademik, prestasi, pembinaan } = detailData;
@@ -1934,14 +2000,14 @@ async function openProfilSiswa(siswaTarget) {
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat</h4>
                     <div class="divide-y divide-slate-100">
                         ${MASTER_KEBIASAAN.map(k => {
-        const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
-        return `
+                            const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
+                            return `
                                 <div class="py-2 flex justify-between items-center text-xs">
                                     <span class="font-medium text-slate-700 flex items-center gap-2"><i class="fas ${k.icon} text-slate-400"></i> ${escapeHtml(k.nama)}</span>
                                     <span class="font-bold ${rec.status === 'Sudah' ? 'text-emerald-600' : (rec.status === 'Kadang' ? 'text-amber-600' : 'text-slate-400')}">${rec.status}</span>
                                 </div>
                             `;
-    }).join('')}
+                        }).join('')}
                     </div>
                 </div>
             </div>
@@ -2122,17 +2188,22 @@ function hubungiOrtu(siswaId) {
 // 12. LAPORAN REKAP & EXPORT MODULE
 // ==================================================================
 async function loadLaporanRekap(forceRefresh = false) {
-    if (appState.laporanRekap.length > 0 && !forceRefresh) {
+    const isStale = (Date.now() - (lastFetchTimes.laporan || 0)) > CACHE_TTL;
+
+    if (appState.laporanRekap && appState.laporanRekap.length > 0) {
         renderLaporanRekapView();
     } else {
         renderSkeleton("laporan-rekap-container", 4);
     }
 
-    const res = await apiCall("getLaporanRekap", {}, false);
-    if (res && res.data) {
-        appState.laporanRekap = res.data;
-        saveAppStateToLocal();
-        renderLaporanRekapView();
+    if (forceRefresh || isStale || !appState.laporanRekap || appState.laporanRekap.length === 0) {
+        const res = await apiCall("getLaporanRekap", {}, false);
+        if (res && res.data) {
+            appState.laporanRekap = res.data;
+            lastFetchTimes.laporan = Date.now();
+            saveAppStateToLocal();
+            renderLaporanRekapView();
+        }
     }
 }
 
