@@ -333,7 +333,6 @@ async function handleAppLogin(e) {
         localStorage.setItem("session_anak_wali", JSON.stringify({ token: res.token, user: res.user }));
         await setupAppSession();
     } else if (res && res.status === "error") {
-        // Tampilkan notifikasi kegagalan login
         Swal.fire({
             icon: 'error',
             title: 'Gagal Masuk',
@@ -341,7 +340,6 @@ async function handleAppLogin(e) {
             confirmButtonColor: '#2563eb'
         });
 
-        // Reset dan fokuskan kembali ke input password
         const pwdInput = document.getElementById("login-password");
         if (pwdInput) {
             pwdInput.value = "";
@@ -351,8 +349,6 @@ async function handleAppLogin(e) {
 }
 
 async function setupAppSession() {
-    // Gerbang keamanan: bila akun masih memakai password default, paksa ganti
-    // password terlebih dahulu sebelum masuk ke aplikasi utama.
     if (appState.user && appState.user.mustChangePassword) {
         showForcePasswordChangeModal();
         return;
@@ -385,7 +381,6 @@ function showForcePasswordChangeModal() {
         </form>
     `;
     container.classList.remove("hidden");
-    // Kunci modal ini agar tidak bisa ditutup sebelum password berhasil diganti.
     container.dataset.forceLock = "true";
 }
 
@@ -444,11 +439,11 @@ async function continueSessionSetup() {
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
     renderSidebarMenu(appState.user.role);
 
-    // 1. STALE-WHILE-REVALIDATE: Load Cache Lokal Seketika
-    const hasLocal = loadAppStateFromLocal();
+    // Load Cache Lokal Seketika
+    loadAppStateFromLocal();
     switchView("dashboard");
 
-    // 2. Fetch data backend di latar belakang (Non-Blocking UI)
+    // Fetch data backend di latar belakang (Non-Blocking UI)
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
 
     if (resBootstrap && resBootstrap.status === "success") {
@@ -458,7 +453,7 @@ async function continueSessionSetup() {
         appState.myStudents = resBootstrap.data.initial.siswa || [];
 
         saveAppStateToLocal();
-        renderDashboard(); // Update tampilan silently
+        renderDashboard();
     }
 
     checkStudentNotifications();
@@ -550,12 +545,25 @@ async function manualRefreshAll() {
 // ==================================================================
 // 4. NAVIGATION & LAYOUT CONTROLLERS
 // ==================================================================
+function updateRoleVisibility(role) {
+    document.querySelectorAll("[data-role-visible]").forEach(el => {
+        const allowed = el.getAttribute("data-role-visible").split(",").map(r => r.trim().toLowerCase());
+        if (allowed.includes(role.toLowerCase())) {
+            el.classList.remove("hidden");
+        } else {
+            el.classList.add("hidden");
+        }
+    });
+}
+
 function applyRoleUI(role) {
     document.body.setAttribute("data-role", role);
+    updateRoleVisibility(role);
+
     const navContainer = document.getElementById("bottom-nav-items");
     const notifBtnHeader = document.getElementById("btn-notif-header");
 
-    if (notifBtnHeader) {
+    if (notifBtnHeader && role !== "ortu") {
         notifBtnHeader.classList.remove("hidden");
     }
 
@@ -584,7 +592,7 @@ function applyRoleUI(role) {
                 <span class="text-xs font-bold">Profil</span>
             </button>
         `;
-    } else {
+    } else if (role !== "ortu") {
         navContainer.innerHTML = `
             <button onclick="switchView('dashboard')" class="nav-item flex flex-col items-center gap-1 text-slate-400 active" data-target="dashboard">
                 <i class="fas fa-home text-lg"></i>
@@ -679,7 +687,7 @@ function renderSidebarMenu(role) {
         html += item("kebiasaan", "fa-star", "7 Kebiasaan Hebat");
         html += item("karakter", "fa-quran", "Keagamaan");
         html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
-    } else {
+    } else if (role !== "ortu") {
         html += item("absensi", "fa-calendar-check", "Presensi Kehadiran");
         html += item("kebiasaan", "fa-star", "7 Kebiasaan Hebat");
         html += item("karakter", "fa-quran", "Keagamaan");
@@ -699,6 +707,7 @@ function renderSidebarMenu(role) {
 // 5. DASHBOARD MODULE
 // ==================================================================
 async function renderDashboard() {
+    if (!appState.user) return;
     const role = appState.user.role;
 
     const adminBanner = document.getElementById("dash-admin-banner");
@@ -833,7 +842,7 @@ function renderAgendaSection(agendaList) {
 
 // Notifikasi Engine
 async function checkStudentNotifications() {
-    if (!appState.user) return;
+    if (!appState.user || appState.user.role === 'ortu') return;
 
     const [resAbs, resAkd, resPbn] = await Promise.all([
         apiCall("getAbsensi", { tanggal: getDateWITA() }, false),
@@ -961,7 +970,6 @@ async function loadAbsensiData(forceRefresh = false) {
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
     if (inputDate) inputDate.value = tanggal;
 
-    // Render instan jika cache data ada
     if (appState.absensi.length > 0 && !forceRefresh) {
         renderAbsensiView();
     } else {
@@ -985,7 +993,7 @@ function renderAbsensiView() {
         return;
     }
 
-    const isEditable = appState.user.role === 'admin' || appState.user.role === 'guru';
+    const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
     const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
 
     const rawFiltered = selectedKelas
@@ -1126,7 +1134,7 @@ async function saveBatchAbsensiForm(event) {
             siswa_id: siswaId,
             status: selectedStatus,
             waktu_masuk: (selectedStatus === 'H' || selectedStatus === 'T') ? waktuMasuk : '',
-            tanggal: new Date().toISOString().split('T')[0]
+            tanggal: getDateWITA() // Menggunakan WITA secara konsisten
         });
     });
 
@@ -1193,7 +1201,7 @@ function renderKebiasaanView() {
         return;
     }
 
-    const isEditable = appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId));
+    const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
 
     container.innerHTML = MASTER_KEBIASAAN.map(k => {
         const rec = appState.kebiasaan.find(item => String(item.siswa_id) === String(selectedSiswaId) && String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
@@ -1320,7 +1328,7 @@ function renderKeagamaanView() {
         return;
     }
 
-    const isAdminOrGuru = appState.user.role === 'admin' || appState.user.role === 'guru';
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     container.innerHTML = appState.keagamaan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
@@ -1481,7 +1489,7 @@ function renderAkademikNilai() {
         return;
     }
 
-    const isAdminOrGuru = appState.user.role === 'admin' || appState.user.role === 'guru';
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     container.innerHTML = appState.akademik.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
@@ -1518,7 +1526,7 @@ function renderAkademikPrestasi() {
         return;
     }
 
-    const isAdminOrGuru = appState.user.role === 'admin' || appState.user.role === 'guru';
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     container.innerHTML = appState.prestasi.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
@@ -1716,7 +1724,7 @@ function renderPembinaanView() {
         return;
     }
 
-    const isAdminOrGuru = appState.user.role === 'admin' || appState.user.role === 'guru';
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     container.innerHTML = appState.pembinaan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
@@ -1854,16 +1862,24 @@ function switchTabSiswa(tabName, btnEl) {
     if (target) target.classList.remove('hidden');
 }
 
-async function openProfilSiswa(siswaId) {
-    showLoading("Memuat profil...");
-    const res = await apiCall("getDetailSiswa", { siswa_id: siswaId }, false);
-    hideLoading();
+async function openProfilSiswa(siswaTarget) {
+    let detailData = null;
 
-    if (!res || res.status !== "success") return;
+    // PERBAIKAN: Jika parameter berupa Objek Data langsung (dari Magic Link), tidak perlu panggil API getDetailSiswa
+    if (typeof siswaTarget === 'object' && siswaTarget !== null) {
+        detailData = siswaTarget;
+    } else {
+        showLoading("Memuat profil...");
+        const res = await apiCall("getDetailSiswa", { siswa_id: siswaTarget }, false);
+        hideLoading();
 
-    appState.activeSiswaDetail = res.data;
-    const { siswa, absensi, kebiasaan, hafalan, akademik, prestasi, pembinaan } = res.data;
-    const kls = appState.kelas.find(k => String(k.id) === String(siswa.kelas_id));
+        if (!res || res.status !== "success") return;
+        detailData = res.data;
+    }
+
+    appState.activeSiswaDetail = detailData;
+    const { siswa, absensi, kebiasaan, hafalan, akademik, prestasi, pembinaan } = detailData;
+    const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
 
     const container = document.getElementById("profil-siswa-details");
     if (!container) return;
@@ -2008,7 +2024,7 @@ async function openProfilSiswa(siswaId) {
 function printProfilSiswa() {
     if (!appState.activeSiswaDetail) return;
     const { siswa, absensi, akademik, hafalan } = appState.activeSiswaDetail;
-    const kls = appState.kelas.find(k => String(k.id) === String(siswa.kelas_id));
+    const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
 
     const printArea = document.getElementById("printable-area");
     if (!printArea) return;
@@ -2079,7 +2095,7 @@ function printProfilSiswa() {
                 <div style="text-align: center; width: 200px;">
                     <p>Wali Kelas</p>
                     <br><br><br>
-                    <p><b>${escapeHtml(appState.user.nama)}</b></p>
+                    <p><b>${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</b></p>
                 </div>
             </div>
         </div>
@@ -2130,7 +2146,7 @@ function renderLaporanRekapView() {
     }
 
     container.innerHTML = appState.laporanRekap.map(item => {
-        const kls = appState.kelas.find(k => String(k.id) === String(item.kelas_id));
+        const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(item.kelas_id)) : null;
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
@@ -2164,7 +2180,7 @@ function printLaporanRekap() {
     const formattedDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const rowsHtml = appState.laporanRekap.map((item, index) => {
-        const kls = appState.kelas.find(k => String(k.id) === String(item.kelas_id));
+        const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(item.kelas_id)) : null;
         const isPerhatian = (item.presensi.alpa >= 3 || item.dibawah_kktp >= 2);
         const statusText = isPerhatian ? 'Perlu Perhatian' : 'Tuntas / Baik';
         const statusColor = isPerhatian ? '#dc2626' : '#16a34a';
@@ -2196,7 +2212,7 @@ function printLaporanRekap() {
 
             <div style="text-align: center; margin-bottom: 16px;">
                 <h3 style="margin: 0 0 4px 0; font-size: 14px; text-transform: uppercase; text-decoration: underline; font-weight: bold;">LAPORAN REKAPITULASI PEMANTAUAN ANAK WALI</h3>
-                <p style="margin: 0; font-size: 11px; color: #475569;">Tanggal Cetak: ${formattedDate} | Dicetak Oleh: <b>${escapeHtml(appState.user.nama)}</b> (${escapeHtml(appState.user.role.toUpperCase())})</p>
+                <p style="margin: 0; font-size: 11px; color: #475569;">Tanggal Cetak: ${formattedDate} | Dicetak Oleh: <b>${escapeHtml(appState.user ? appState.user.nama : 'User')}</b> (${escapeHtml(appState.user ? appState.user.role.toUpperCase() : '')})</p>
             </div>
 
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;" border="1" borderColor="#94a3b8">
@@ -2227,14 +2243,13 @@ function printLaporanRekap() {
                 </div>
                 <div style="text-align: center; width: 220px;">
                     <p style="margin-bottom: 60px;">Talaga Jaya, ${formattedDate}<br>Guru Pemantau / Wali Kelas</p>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user.nama)}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP/ID: ${escapeHtml(appState.user.id)}</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Guru Pemantau')}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP/ID: ${escapeHtml(appState.user ? appState.user.id : '-')}</p>
                 </div>
             </div>
         </div>
     `;
 
-    // Lepas class hidden sebelum print dan pasang lagi sesudahnya
     printArea.classList.remove("hidden");
     setTimeout(() => {
         window.print();
@@ -2282,10 +2297,10 @@ function renderSiswaView() {
         return;
     }
 
-    const isAdminOrGuru = appState.user.role === 'admin' || appState.user.role === 'guru';
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     container.innerHTML = filtered.map(s => {
-        const kls = appState.kelas.find(k => String(k.id) === String(s.kelas_id));
+        const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
         const noAbsenLabel = s.no_absen ? `No. Absen: ${s.no_absen} | ` : '';
 
         return `
@@ -2656,7 +2671,7 @@ function openUserSettingsModal() {
     const container = document.getElementById("modal-content-box");
     if (!container) return;
 
-    const user = appState.user;
+    const user = appState.user || { nama: 'Pengguna', role: 'guest' };
 
     container.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -2671,12 +2686,13 @@ function openUserSettingsModal() {
                     <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">${escapeHtml(user.role)}</span>
                 </div>
             </div>
+            ${user.role !== 'ortu' ? `
             <form onsubmit="changePasswordForm(event)" class="space-y-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>
                 <input type="password" id="m-pwd-old" placeholder="Kata sandi lama" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
                 <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
                 <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl text-xs">Update Kata Sandi</button>
-            </form>
+            </form>` : ''}
             <button onclick="handleLogout()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs flex items-center justify-center gap-2">
                 <i class="fas fa-sign-out-alt"></i> Keluar
             </button>
@@ -2699,12 +2715,103 @@ async function changePasswordForm(e) {
 function closeModal() {
     const modal = document.getElementById("modal-container");
     if (!modal) return;
-    // Modal wajib ganti password tidak boleh ditutup sebelum selesai.
     if (modal.dataset.forceLock === "true") return;
     modal.classList.add("hidden");
 }
 
+async function generateAndShareMagicLink(siswaId = null) {
+    const targetId = siswaId || appState.activeSiswaDetail?.siswa?.id;
+    if (!targetId) {
+        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Data siswa tidak ditemukan.' });
+        return;
+    }
+
+    const res = await apiCall("generateMagicLink", { siswa_id: targetId }, true);
+    if (res && res.status === "success") {
+        const baseUrl = window.location.origin + window.location.pathname;
+        const magicUrl = `${baseUrl}?magic_token=${encodeURIComponent(res.magic_token)}`;
+        const siswa = appState.activeSiswaDetail?.siswa || appState.siswa.find(s => String(s.id) === String(targetId));
+
+        let phone = safeStr(siswa?.no_hp_ortu).replace(/[^0-9]/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+
+        const waText = encodeURIComponent(
+            `Assalamu'alaikum Bapak/Ibu Wali dari ${siswa?.nama || 'Siswa'}.\n\n` +
+            `Berikut adalah tautan pemantauan perkembangan anak Anda di SMPN 1 Talaga Jaya:\n` +
+            `${magicUrl}\n\n` +
+            `⚠️ *Catatan*: Demi keamanan, tautan ini hanya dapat diakses selama *15 menit* sejak pesan ini dibuat.`
+        );
+
+        Swal.fire({
+            title: '✨ Magic Link Orang Tua',
+            html: `
+                <p class="text-xs text-slate-500 mb-3">Tautan akses profil tanpa login dibuat khusus untuk orang tua. Berlaku selama <b>15 menit</b>.</p>
+                <div class="bg-slate-100 p-2.5 rounded-xl border border-slate-200 text-xs font-mono break-all select-all mb-3 text-slate-700">
+                    ${magicUrl}
+                </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#059669',
+            confirmButtonText: '<i class="fas fa-copy"></i> Salin Link',
+            cancelButtonText: '<i class="fab fa-whatsapp"></i> Kirim WhatsApp'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                navigator.clipboard.writeText(magicUrl);
+                Swal.fire({ icon: 'success', title: 'Tersalin!', text: 'Tautan berhasil disalin ke clipboard.', timer: 1500, showConfirmButton: false });
+            } else if (result.dismiss === Swal.DismissReason.cancel && phone) {
+                window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${waText}`, '_blank');
+            }
+        });
+    }
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
+    // 1. Cek Parameter Magic Link di URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const magicToken = urlParams.get('magic_token');
+
+    if (magicToken) {
+        showLoading("Memvalidasi Magic Link Orang Tua...");
+        const res = await apiCall("getMagicLinkData", { magic_token: magicToken }, false);
+        hideLoading();
+
+        if (res && res.status === "success") {
+            // Sembunyikan elemen navigasi dan otentikasi internal
+            document.getElementById("view-login")?.classList.add("hidden");
+            document.getElementById("main-header")?.classList.remove("hidden");
+            document.getElementById("btn-toggle-sidebar")?.classList.add("hidden");
+            document.getElementById("btn-refresh-header")?.classList.add("hidden");
+            document.getElementById("btn-notif-header")?.classList.add("hidden");
+            document.getElementById("bottom-nav")?.classList.add("hidden");
+            document.getElementById("btn-back-profil")?.classList.add("hidden");
+
+            // Atur nama header khusus mode orang tua
+            const headerTitle = document.getElementById("header-title");
+            const headerSubtitle = document.getElementById("header-subtitle");
+            if (headerTitle) headerTitle.innerText = "Pemantauan Anak Wali";
+            if (headerSubtitle) headerSubtitle.innerText = "Mode Akses Orang Tua (Kedaluwarsa 15 Menit)";
+
+            // Tampilkan Detail Siswa Secara Langsung
+            appState.user = { role: 'ortu', nama: 'Orang Tua / Wali' };
+            applyRoleUI('ortu');
+            renderMagicLinkProfilView(res.data);
+            return;
+        } else if (res && res.status === "expired") {
+            showExpiredMagicLinkScreen(res.message);
+            return;
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Tautan Tidak Valid',
+                text: res?.message || 'Tautan Magic Link tidak valid.',
+                confirmButtonColor: '#2563eb'
+            });
+        }
+    }
+
+    // 2. Jika bukan Magic Link, jalankan sesi normal
     const savedSession = localStorage.getItem("session_anak_wali");
     if (savedSession) {
         try {
@@ -2724,3 +2831,43 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 });
+
+function renderMagicLinkProfilView(data) {
+    const mainContent = document.getElementById("main-content");
+    if (mainContent) mainContent.classList.remove("hidden");
+
+    // Langsung buka profil dengan membawa objek data detail
+    openProfilSiswa(data).then(() => {
+        const profContainer = document.getElementById("profil-siswa-details");
+        if (profContainer) {
+            const topBanner = `
+                <div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-2xl text-xs font-semibold flex items-center gap-2 mb-3">
+                    <i class="fas fa-clock text-amber-600 text-sm"></i>
+                    <span>Tautan ini bersifat sementara dan akan otomatis kedaluwarsa 15 menit setelah dibuat.</span>
+                </div>
+            `;
+            profContainer.insertAdjacentHTML('afterbegin', topBanner);
+        }
+    });
+}
+
+function showExpiredMagicLinkScreen(message) {
+    document.getElementById("view-login")?.classList.add("hidden");
+    const mainContent = document.getElementById("main-content");
+    if (mainContent) {
+        mainContent.classList.remove("hidden");
+        mainContent.innerHTML = `
+            <div class="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background">
+                <div class="w-20 h-20 bg-rose-100 text-rose-600 rounded-3xl flex items-center justify-center text-3xl mb-4 shadow-sm">
+                    <i class="fas fa-hourglass-end"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-800 mb-2">Tautan Kedaluwarsa</h2>
+                <p class="text-xs text-slate-500 max-w-xs leading-relaxed mb-6">${escapeHtml(message)}</p>
+                <a href="${window.location.origin + window.location.pathname}" 
+                    class="bg-primary text-white text-xs font-bold px-5 py-3 rounded-xl shadow-md hover:bg-blue-600 transition">
+                    Ke Halaman Login Aplikasi
+                </a>
+            </div>
+        `;
+    }
+}
