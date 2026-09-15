@@ -141,34 +141,6 @@ function sortSiswa(listSiswa) {
     });
 }
 
-function getInitial(nama) {
-    if (!nama) return "AW";
-    const parts = nama.trim().split(" ");
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return nama.substring(0, 2).toUpperCase();
-}
-
-function updateDateTimeDisplay() {
-    const el = document.getElementById("current-date-time-display");
-    if (!el) return;
-
-    const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-    const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-
-    const now = new Date();
-    const dayName = days[now.getDay()];
-    const dateNum = now.getDate();
-    const monthName = months[now.getMonth()];
-    const yearNum = now.getFullYear();
-
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-
-    el.innerText = `${dayName}, ${dateNum} ${monthName} ${yearNum} | ${hours}:${minutes} WITA`;
-}
-
 function renderSkeleton(containerId, count = 3) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -467,8 +439,6 @@ async function continueSessionSetup() {
     startRealtimeNotificationPolling();
     applyRoleUI(appState.user.role);
     startSilentTokenRefresh();
-    updateDateTimeDisplay();
-    setInterval(updateDateTimeDisplay, 30000);
 
     const loginView = document.getElementById("view-login");
     const mainHeader = document.getElementById("main-header");
@@ -480,26 +450,20 @@ async function continueSessionSetup() {
     if (mainContent) mainContent.classList.remove("hidden");
     if (bottomNav) bottomNav.classList.remove("hidden");
 
+    const userAvatar = document.getElementById("user-avatar");
     const headerTitle = document.getElementById("header-title");
     const headerSubtitle = document.getElementById("header-subtitle");
-    const dashUserName = document.getElementById("dash-user-name");
-    const dashUserRoleSchool = document.getElementById("dash-user-role-school");
 
+    if (userAvatar) userAvatar.src = appState.user.foto || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(appState.user.nama));
     if (headerTitle) headerTitle.innerText = appState.user.nama;
     if (headerSubtitle) headerSubtitle.innerText = `SMPN 1 Talaga Jaya • ${appState.user.role.toUpperCase()}`;
-
-    if (dashUserName) dashUserName.innerText = appState.user.nama;
-    if (dashUserRoleSchool) dashUserRoleSchool.innerText = `${appState.user.role.charAt(0).toUpperCase() + appState.user.role.slice(1)} • SMPN 1 Talaga Jaya`;
 
     const sbAvatar = document.getElementById("sidebar-avatar");
     const sbNama = document.getElementById("sidebar-nama");
     const sbRole = document.getElementById("sidebar-role-badge");
-
-    const avatarUrl = appState.user.foto || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(appState.user.nama) + "&background=2563eb&color=fff");
-    if (sbAvatar) sbAvatar.src = avatarUrl;
+    if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
     if (sbNama) sbNama.innerText = appState.user.nama;
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
-
     renderSidebarMenu(appState.user.role);
 
     // Load Cache Lokal Seketika (0 ms delay)
@@ -680,7 +644,7 @@ function switchView(viewId) {
     }
     document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-    document.querySelectorAll(".sidebar-nav-item").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".sidebar-nav-item").forEach(el => el.classList.remove("active", "bg-slate-100", "text-primary"));
 
     const targetView = document.getElementById(`view-${viewId}`);
     if (targetView) targetView.classList.add("active");
@@ -689,7 +653,7 @@ function switchView(viewId) {
     if (navBtn) navBtn.classList.add("active");
 
     const sidebarBtn = document.querySelector(`.sidebar-nav-item[data-target="${viewId}"]`);
-    if (sidebarBtn) sidebarBtn.classList.add("active");
+    if (sidebarBtn) sidebarBtn.classList.add("active", "bg-slate-100", "text-primary");
 
     if (viewId === "dashboard") renderDashboard();
     if (viewId === "absensi") loadAbsensiData();
@@ -732,8 +696,8 @@ function renderSidebarMenu(role) {
     if (!container) return;
 
     const item = (view, icon, label) => `
-        <button onclick="handleSidebarNav('${view}')" class="sidebar-nav-item w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition" data-target="${view}">
-            <i class="fas ${icon} w-5 text-center"></i> <span>${label}</span>
+        <button onclick="handleSidebarNav('${view}')" class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition" data-target="${view}">
+            <i class="fas ${icon} w-5 text-center text-primary"></i> ${label}
         </button>`;
 
     let html = item("dashboard", "fa-home", "Beranda");
@@ -759,7 +723,7 @@ function renderSidebarMenu(role) {
 }
 
 // ==================================================================
-// 5. DASHBOARD MODULE (REDESIGN MATCH REFERENSI GAMBAR)
+// 5. DASHBOARD MODULE
 // ==================================================================
 async function renderDashboard() {
     if (!appState.user) return;
@@ -774,65 +738,37 @@ async function renderDashboard() {
     const statsContainer = document.getElementById("dash-stats-container");
     if (statsContainer) {
         const totalSiswaCount = appState.siswa.length;
-        const totalHadirCount = appState.absensi.filter(a => a.status === 'H').length;
-        const totalPerhatianCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
-
         if (role === "admin" || role === "guru") {
             statsContainer.innerHTML = `
-                <!-- Stat 1: Anak Wali -->
-                <div class="stat-card-widget group cursor-pointer" onclick="switchView('siswa')">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-2xl icon-box-soft-blue flex items-center justify-center text-xl shrink-0">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wide block">Anak Wali</span>
-                            <span class="text-2xl font-black text-slate-800 leading-none my-1 block">${totalSiswaCount}</span>
-                            <span class="text-[11px] text-slate-400 font-medium">Total anak wali yang dibina</span>
-                        </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</span>
+                        <span class="w-7 h-7 rounded-lg bg-blue-50 text-primary flex items-center justify-center text-xs"><i class="fas fa-users"></i></span>
                     </div>
-                    <i class="fas fa-chevron-right text-xs text-blue-500 group-hover:translate-x-1 transition-transform"></i>
+                    <p class="text-2xl font-black text-slate-800 mt-1">${totalSiswaCount}</p>
                 </div>
-
-                <!-- Stat 2: Hadir Hari Ini -->
-                <div class="stat-card-widget group cursor-pointer" onclick="switchView('absensi')">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-2xl icon-box-soft-green flex items-center justify-center text-xl shrink-0">
-                            <i class="far fa-calendar-check"></i>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-emerald-600 uppercase tracking-wide block">Hadir Hari Ini</span>
-                            <span class="text-2xl font-black text-emerald-600 leading-none my-1 block">${totalHadirCount}</span>
-                            <span class="text-[11px] text-slate-400 font-medium">Dari ${totalSiswaCount} anak wali</span>
-                        </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-500 uppercase tracking-wider">Hadir Hari Ini</span>
+                        <span class="w-7 h-7 rounded-lg bg-emerald-50 text-secondary flex items-center justify-center text-xs"><i class="fas fa-calendar-check"></i></span>
                     </div>
-                    <i class="fas fa-chevron-right text-xs text-emerald-500 group-hover:translate-x-1 transition-transform"></i>
+                    <p class="text-2xl font-black text-emerald-600 mt-1">${appState.absensi.filter(a => a.status === 'H').length}</p>
                 </div>
-
-                <!-- Stat 3: Perlu Perhatian -->
-                <div class="stat-card-widget group cursor-pointer" onclick="openNotificationModal()">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-2xl icon-box-soft-red flex items-center justify-center text-xl shrink-0">
-                            <i class="fas fa-triangle-exclamation"></i>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-rose-600 uppercase tracking-wide block">Perlu Perhatian</span>
-                            <span id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 leading-none my-1 block">${totalPerhatianCount}</span>
-                            <span class="text-[11px] text-slate-400 font-medium">Anak wali yang perlu perhatian</span>
-                        </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
+                        <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs"><i class="fas fa-triangle-exclamation"></i></span>
                     </div>
-                    <i class="fas fa-chevron-right text-xs text-rose-500 group-hover:translate-x-1 transition-transform"></i>
+                    <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 mt-1">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
                 </div>
             `;
         } else {
             statsContainer.innerHTML = `
-                <div class="stat-card-widget col-span-3">
-                    <div>
-                        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider block">Status Pemantauan Saya</span>
-                        <p class="text-sm font-extrabold text-slate-700 mt-1 flex items-center gap-2">
-                          ${(appState.currentNotifications && appState.currentNotifications.length > 0) ? '⚠️ Memerlukan Tindak Lanjut Pembinaan' : '✅ Perkembangan Berjalan Baik'}
-                        </p>
-                    </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between col-span-3">
+                    <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Status Pemantauan Saya</span>
+                    <p class="text-sm font-bold text-slate-700 mt-1">
+                      ${(appState.currentNotifications && appState.currentNotifications.length > 0) ? '⚠️ Memerlukan Tindak Lanjut' : '✅ Perkembangan Baik'}
+                    </p>
                 </div>
             `;
         }
@@ -843,7 +779,7 @@ async function renderDashboard() {
         if (res && res.status === "success") {
             renderPrioritySection(res.data.priority_list);
             renderAgendaSection(res.data.agenda_list);
-            checkStudentNotifications();
+            checkStudentNotifications(); // Panggil pengecekan ulang setelah data siap
         }
     });
 }
@@ -854,10 +790,9 @@ function renderPrioritySection(priorityList) {
 
     if (!priorityList || priorityList.length === 0) {
         container.innerHTML = `
-          <div class="empty-state py-8">
-            <i class="fas fa-check-circle text-emerald-500 text-3xl mb-2"></i>
-            <p class="text-xs font-bold text-slate-700">Semua anak wali dalam kondisi baik.</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Tidak ada indikator perhatian khusus aktif saat ini.</p>
+          <div class="empty-state">
+            <i class="fas fa-check-circle text-emerald-500 text-2xl mb-2"></i>
+            <p class="text-xs text-slate-500">Semua siswa dalam kondisi baik. Tidak ada indikator perhatian aktif.</p>
           </div>
         `;
         return;
@@ -865,34 +800,33 @@ function renderPrioritySection(priorityList) {
 
     container.innerHTML = priorityList.map(item => {
         const s = item.siswa;
-        const initial = getInitial(s.nama);
-        const klsName = s.kelas_id ? (appState.kelas.find(k => String(k.id) === String(s.kelas_id))?.nama_kelas || '-') : '-';
-
         const indicatorsHtml = item.indicators.map(ind => `
-          <span class="inline-flex items-center gap-1.5 text-[11px] font-bold bg-rose-50 text-rose-600 px-2.5 py-1 rounded-lg border border-rose-100">
-            <i class="fas fa-exclamation-circle text-xs"></i> ${escapeHtml(ind.pesan)}
+          <span class="inline-flex items-center gap-1 text-xs font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-md border border-rose-100">
+            <i class="fas fa-exclamation-triangle text-xs"></i> ${escapeHtml(ind.pesan)}
           </span>
         `).join(" ");
 
         return `
-          <div class="priority-item-card flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer group hover:bg-slate-50/80" onclick="openProfilSiswa('${escapeHtml(s.id)}')">
-            <div class="flex items-start gap-3.5">
-              <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 font-bold flex items-center justify-center text-xs shrink-0 border border-slate-300/60 uppercase">
-                ${initial}
-              </div>
-              <div>
-                <h4 class="font-bold text-xs text-slate-800 uppercase tracking-wide group-hover:text-blue-600 transition-colors">${escapeHtml(s.nama)}</h4>
-                <p class="text-[11px] text-slate-400 font-medium mt-0.5">NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${escapeHtml(klsName)} | Orang Tua: ${escapeHtml(s.no_hp_ortu || '-')}</p>
-                <div class="flex flex-wrap gap-1.5 mt-2">
-                  ${indicatorsHtml}
+          <div class="bg-white p-3.5 rounded-2xl border border-rose-100 shadow-sm space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <img src="${escapeHtml(s.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                <div>
+                  <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
+                  <p class="text-xs text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Ortu: ${escapeHtml(s.no_hp_ortu || '-')}</p>
                 </div>
               </div>
+              <div class="flex items-center gap-1">
+                <button onclick="openProfilSiswa('${escapeHtml(s.id)}')" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 text-xs" aria-label="Lihat profil siswa">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" class="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 text-xs" aria-label="Hubungi orang tua via WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                </button>
+              </div>
             </div>
-
-            <div class="flex items-center gap-2 self-end md:self-center shrink-0">
-              <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase">Akademik</span>
-              <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 uppercase">Segera</span>
-              <i class="fas fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform ml-1"></i>
+            <div class="flex flex-wrap gap-1 pt-1 border-t border-slate-50">
+              ${indicatorsHtml}
             </div>
           </div>
         `;
@@ -904,30 +838,22 @@ function renderAgendaSection(agendaList) {
     if (!container) return;
 
     if (!agendaList || agendaList.length === 0) {
-        container.innerHTML = `
-            <div class="p-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center">
-              <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-xl mb-3 shadow-sm">
-                <i class="far fa-calendar-alt"></i>
-              </div>
-              <p class="text-xs font-bold text-slate-700">Belum ada agenda pembinaan yang akan datang.</p>
-              <p class="text-[11px] text-slate-400 mt-1">Agenda akan muncul di sini setelah dijadwalkan.</p>
-            </div>
-        `;
+        container.innerHTML = `<p class="text-xs text-slate-400 italic px-1">Belum ada agenda pembinaan mendatang.</p>`;
         return;
     }
 
     container.innerHTML = agendaList.map(ag => `
-        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
+        <div class="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
-              <i class="fas fa-calendar-day"></i>
+            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+              <i class="fas fa-calendar-alt"></i>
             </div>
             <div>
               <h4 class="font-bold text-xs text-slate-800">${escapeHtml(ag.nama_siswa)}</h4>
-              <p class="text-[11px] text-slate-500">${escapeHtml(ag.jenis)} • ${escapeHtml(ag.permasalahan || '-')}</p>
+              <p class="text-xs text-slate-500">${escapeHtml(ag.jenis)} • ${escapeHtml(ag.permasalahan || '-')}</p>
             </div>
           </div>
-          <span class="text-xs font-bold bg-amber-50 text-amber-700 px-3 py-1 rounded-xl border border-amber-100">
+          <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-1 rounded-lg border border-amber-100">
             ${escapeHtml(ag.jadwal_pantau)}
           </span>
         </div>
@@ -938,6 +864,7 @@ function renderAgendaSection(agendaList) {
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'ortu') return;
 
+    // Fetch seluruh absensi (tanpa filter tanggal) agar akumulasi alpa terbaca
     const [resAbs, resAkd, resPbn] = await Promise.all([
         apiCall("getAbsensi", {}, false),
         apiCall("getAkademik", {}, false),
@@ -956,6 +883,7 @@ async function checkStudentNotifications() {
     targetStudents.forEach(s => {
         const sId = String(s.id);
 
+        // Deteksi 1: Akumulasi Alpa (Siswa bermasalah jika Alpa >= 3 kali)
         const totalAlpa = absensiData.filter(a => String(a.siswa_id) === sId && a.status === 'A').length;
         if (totalAlpa >= 3) {
             notificationList.push({
@@ -968,6 +896,7 @@ async function checkStudentNotifications() {
             });
         }
 
+        // Deteksi 2: Nilai di Bawah KKTP
         const lowGrades = akademikData.filter(a => String(a.siswa_id) === sId && Number(a.nilai_akhir || 0) < Number(a.kktp || 75));
         if (lowGrades.length > 0) {
             lowGrades.forEach(g => {
@@ -982,6 +911,7 @@ async function checkStudentNotifications() {
             });
         }
 
+        // Deteksi 3: Pembinaan Aktif
         const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && String(p.status).toLowerCase() !== 'selesai');
         if (activePem.length > 0) {
             activePem.forEach(p => {
@@ -997,33 +927,23 @@ async function checkStudentNotifications() {
 
     appState.currentNotifications = notificationList;
 
-    // Update Badge Notifikasi Seluler & Desktop
-    const badgeMobile = document.getElementById("notif-badge");
-    const badgeDesktop = document.querySelector(".notif-badge-desktop");
-    const count = notificationList.length;
-
-    if (badgeMobile) {
-        if (count > 0) {
-            badgeMobile.innerText = count;
-            badgeMobile.classList.remove("hidden");
+    // Update Badge Notifikasi di Header
+    const badge = document.getElementById("notif-badge");
+    const btnNotif = document.getElementById("btn-notif-header");
+    if (badge && btnNotif) {
+        if (notificationList.length > 0) {
+            badge.innerText = notificationList.length;
+            badge.classList.remove("hidden");
+            btnNotif.classList.remove("hidden");
         } else {
-            badgeMobile.classList.add("hidden");
+            badge.classList.add("hidden");
         }
     }
 
-    if (badgeDesktop) {
-        if (count > 0) {
-            badgeDesktop.innerText = count;
-            badgeDesktop.classList.remove("hidden");
-        } else {
-            badgeDesktop.classList.add("hidden");
-        }
-    }
-
-    // Update Angka di Kartu Statistik Dashboard
+    // Update Angka di Kartu Statistik Dashboard secara Realtime
     const statCountEl = document.getElementById("dash-stat-perhatian-count");
     if (statCountEl) {
-        statCountEl.innerText = count;
+        statCountEl.innerText = notificationList.length;
     }
 }
 
@@ -1040,7 +960,7 @@ function openNotificationModal() {
             </h3>
             <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
-
+        
         <div class="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
             ${list.length === 0 ? `
                 <div class="empty-state">
@@ -1051,7 +971,7 @@ function openNotificationModal() {
                 <div class="p-3 rounded-2xl border ${n.type === 'danger' ? 'bg-rose-50 border-rose-100' : (n.type === 'warning' ? 'bg-amber-50 border-amber-100' : 'bg-blue-50 border-blue-100')} flex justify-between items-center">
                     <div>
                         <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${n.type === 'danger' ? 'bg-rose-200 text-rose-800' : (n.type === 'warning' ? 'bg-amber-200 text-amber-800' : 'bg-blue-200 text-blue-800')}">${n.title}</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded uppercase ${n.type === 'danger' ? 'bg-rose-200 text-rose-800' : (n.type === 'warning' ? 'bg-amber-200 text-amber-800' : 'bg-blue-200 text-blue-800')}">${n.title}</span>
                             <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)}</h4>
                         </div>
                         <p class="text-xs text-slate-600">${escapeHtml(n.desc)}</p>
@@ -1216,6 +1136,7 @@ function renderAbsensiView() {
     `;
 }
 
+// OPTIMISTIC BATCH ABSENSI SAVE
 async function saveBatchAbsensiForm(event) {
     if (event) event.preventDefault();
 
@@ -1247,15 +1168,18 @@ async function saveBatchAbsensiForm(event) {
 
         payloadAbsensi.push(item);
 
+        // Update State Lokal Seketika
         const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswaId));
         if (idx !== -1) appState.absensi[idx] = item;
         else appState.absensi.push(item);
     });
 
+    // 1. Simpan & Render Ulang UI Seketika (0 ms)
     saveAppStateToLocal();
     renderAbsensiView();
     showToast("Presensi berhasil diperbarui!");
 
+    // 2. Kirim ke Server di Latar Belakang
     apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: getDateWITA() }, false);
 }
 
@@ -1405,7 +1329,7 @@ function updateKebiasaanSaveStatus(state) {
 }
 
 // ==================================================================
-// 8. KEAGAMAAN / HAFALAN MODULE
+// 8. KEAGAMAAN / HAFALAN MODULE (OPTIMISTIC)
 // ==================================================================
 async function loadKeagamaanData(forceRefresh = false) {
     const filterSelect = document.getElementById("karakter-siswa-filter");
@@ -1528,6 +1452,7 @@ async function saveKeagamaanForm(e, id) {
         catatan: document.getElementById("m-kag-catatan").value
     };
 
+    // Optimistic Local Update
     const idx = appState.keagamaan.findIndex(x => String(x.id) === String(payload.id));
     if (idx !== -1) appState.keagamaan[idx] = payload;
     else appState.keagamaan.push(payload);
@@ -1537,6 +1462,7 @@ async function saveKeagamaanForm(e, id) {
     closeModal();
     showToast("Catatan hafalan tersimpan!");
 
+    // Background Sync
     apiCall("saveKeagamaan", payload, false);
 }
 
@@ -1552,7 +1478,7 @@ async function deleteKeagamaan(id) {
 }
 
 // ==================================================================
-// 9. AKADEMIK & PRESTASI MODULE
+// 9. AKADEMIK & PRESTASI MODULE (OPTIMISTIC)
 // ==================================================================
 function switchAkademikTab(tab) {
     document.querySelectorAll(".akd-tab-content").forEach(c => c.classList.add("hidden"));
@@ -1821,7 +1747,7 @@ async function deletePrestasi(id) {
 }
 
 // ==================================================================
-// 10. PEMBINAAN SISWA MODULE
+// 10. PEMBINAAN SISWA MODULE (OPTIMISTIC)
 // ==================================================================
 function getPembinaanStatusBadge(status) {
     const s = String(status || '').trim().toLowerCase();
@@ -2059,13 +1985,9 @@ async function openProfilSiswa(siswaTarget) {
     const totalIzin = absensi.filter(a => a.status === 'I').length;
     const totalAlpa = absensi.filter(a => a.status === 'A').length;
 
-    const initial = getInitial(siswa.nama);
-
     container.innerHTML = `
         <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-slate-200 text-slate-700 font-extrabold flex items-center justify-center text-lg border border-slate-300 shrink-0">
-                ${initial}
-            </div>
+            <img src="${escapeHtml(siswa.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(siswa.nama))}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200">
             <div>
                 <h3 class="font-bold text-base text-slate-800">${escapeHtml(siswa.nama)}</h3>
                 <p class="text-xs text-slate-400">NISN: ${escapeHtml(siswa.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
@@ -2459,7 +2381,7 @@ function exportRekapCSV() {
 }
 
 // ==================================================================
-// 13. MASTER DATA MANAGEMENT (ADMIN & GURU)
+// 13. MASTER DATA MANAGEMENT (ADMIN & GURU) (OPTIMISTIC)
 // ==================================================================
 function renderSiswaView() {
     const container = document.getElementById("siswa-card-container");
@@ -2481,14 +2403,11 @@ function renderSiswaView() {
     container.innerHTML = filtered.map(s => {
         const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
         const noAbsenLabel = s.no_absen ? `No. Absen: ${s.no_absen} | ` : '';
-        const initial = getInitial(s.nama);
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 border border-slate-300 uppercase">
-                        ${initial}
-                    </div>
+                    <img src="${escapeHtml(s.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                     <div>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
                         <p class="text-xs text-slate-400">${noAbsenLabel}NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
@@ -2846,7 +2765,6 @@ function openUserSettingsModal() {
     if (!container) return;
 
     const user = appState.user || { nama: 'Pengguna', role: 'guest' };
-    const initial = getInitial(user.nama);
 
     container.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -2855,12 +2773,10 @@ function openUserSettingsModal() {
         </div>
         <div class="space-y-4">
             <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                <div class="w-12 h-12 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-sm shrink-0 uppercase">
-                    ${initial}
-                </div>
+                <img src="${user.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nama)}" class="w-12 h-12 rounded-full object-cover border border-slate-200">
                 <div>
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(user.nama)}</h4>
-                    <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">${escapeHtml(user.role)}</span>
+                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">${escapeHtml(user.role)}</span>
                 </div>
             </div>
             ${user.role !== 'ortu' ? `
@@ -2985,9 +2901,6 @@ async function generateAndShareMagicLink(siswaId = null) {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-    updateDateTimeDisplay();
-    setInterval(updateDateTimeDisplay, 30000);
-
     const urlParams = new URLSearchParams(window.location.search);
     const magicToken = urlParams.get('magic_token');
 

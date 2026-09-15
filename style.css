@@ -1,27 +1,24 @@
 /* ==================================================================
    Aplikasi Pemantauan Anak Wali — SMP Negeri 1 Talaga Jaya
-   style.css — Modern Premium Blue Theme (Redesign match target UI)
+   style.css — Modern Flat & Glassmorphism Design System
    ================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
     --primary: #2563eb;
-    --primary-dark: #1d4ed8;
+    --primary-hover: #1d4ed8;
     --primary-light: #eff6ff;
-    --sidebar-bg: linear-gradient(180deg, #1e40af 0%, #1d3557 50%, #0f172a 100%);
     --secondary: #059669;
     --accent: #d97706;
     --danger: #dc2626;
-    --background: #f4f6fb;
+    --background: #f8fafc;
     --surface: #ffffff;
     --border-subtle: #e2e8f0;
     --radius-lg: 1rem;
     --radius-xl: 1.25rem;
-    --radius-2xl: 1.5rem;
-    --shadow-soft: 0 4px 25px -4px rgba(15, 23, 42, 0.04);
-    --shadow-card: 0 2px 12px 0 rgba(15, 23, 42, 0.03);
-    --shadow-hover: 0 12px 30px -8px rgba(15, 23, 42, 0.08);
+    --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+    --shadow-hover: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
 }
 
 * {
@@ -31,14 +28,16 @@
 
 body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #1e293b;
+    color: #0f172a;
     background-color: var(--background) !important;
     -webkit-font-smoothing: antialiased;
-    letter-spacing: -0.015em;
-    overflow-x: hidden;
+    letter-spacing: -0.01em;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
     font-family: inherit;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -47,14 +46,14 @@ button:active {
     transform: scale(0.97);
 }
 
-/* Area Sentuh Minimal 44px UX Mobile */
+/* Area Sentuh Minimal 44px (Mobile First UX) */
 .touch-btn {
     min-width: 44px;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.85rem;
+    border-radius: 0.75rem;
 }
 
 /* Visibilitas Berbasis Role */
@@ -74,190 +73,95 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     display: flex !important;
 }
 
-/* ------------------------------------------------------------------
-   DESAIN SIDEBAR DESKTOP (Persis Gambar Referensi)
-   ------------------------------------------------------------------ */
-#app-sidebar {
-    background: var(--sidebar-bg) !important;
-    color: #ffffff;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+/* Login Screen UI */
+#view-login {
+    display: none !important;
+    background: radial-gradient(100% 100% at 50% 0%, #eff6ff 0%, #f8fafc 100%);
 }
 
-#app-sidebar .sidebar-brand {
-    padding: 1.5rem 1.25rem 1rem 1.25rem;
+#view-login.active {
+    display: flex !important;
 }
 
-#app-sidebar .sidebar-user-card {
-    background: rgba(255, 255, 255, 0.08);
+.login-card {
+    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.08);
+}
+
+.login-role-btn {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    color: #64748b;
+}
+
+.login-role-btn:hover {
+    border-color: #cbd5e1;
+    background: #ffffff;
+}
+
+.login-role-btn.selected {
+    border-color: var(--primary) !important;
+    background-color: var(--primary-light) !important;
+    color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Glassmorphism Header & Bottom Nav */
+#main-header {
+    background: rgba(37, 99, 235, 0.95) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 1.25rem;
-    padding: 0.85rem 1rem;
-    margin: 0 1rem 1.25rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: env(safe-area-inset-top);
 }
 
-.sidebar-nav-item {
-    color: rgba(255, 255, 255, 0.75) !important;
-    font-weight: 600;
-    font-size: 0.875rem;
-    padding: 0.85rem 1.25rem;
-    border-radius: 1rem;
-    margin: 0.2rem 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    transition: all 0.2s ease;
-}
-
-.sidebar-nav-item:hover {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.sidebar-nav-item.active {
-    color: #ffffff !important;
-    background: var(--primary) !important;
-    box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.5) !important;
-    font-weight: 700;
-}
-
-.sidebar-nav-item i {
-    font-size: 1.1rem;
-    width: 1.5rem;
-    text-align: center;
-}
-
-/* ------------------------------------------------------------------
-   DESAIN HEADER UTAMA & TOP BAR
-   ------------------------------------------------------------------ */
-#main-header {
-    background: transparent !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-}
-
-.header-top-banner {
-    background: var(--background);
-    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
-}
-
-/* ------------------------------------------------------------------
-   BOTTOM NAV MOBILE (Tampilan Hp)
-   ------------------------------------------------------------------ */
 #bottom-nav {
-    background: rgba(255, 255, 255, 0.94) !important;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.06);
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05);
     border-top: 1px solid rgba(226, 232, 240, 0.8);
     padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-item {
     transition: color 0.2s ease, transform 0.15s ease;
-    color: #64748b;
 }
 
 .nav-item.active {
     color: var(--primary) !important;
-    font-weight: 700;
 }
 
 .nav-item.active i {
     background: var(--primary-light);
-    color: var(--primary);
-    border-radius: 1rem;
-    padding: 0.4rem 0.8rem;
+    border-radius: 0.75rem;
+    padding: 0.35rem 0.65rem;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
 }
 
-/* ------------------------------------------------------------------
-   KARTU DASHBOARD & DESAIN REFERENSI UI
-   ------------------------------------------------------------------ */
+/* Kartu & Elevasi Surface */
 .bg-surface,
 .bg-white {
     background-color: #ffffff;
-    border-radius: 1.25rem;
-    border: 1px solid #eef2f6;
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-soft);
 }
 
-.stat-card-widget {
-    background: #ffffff;
-    border: 1px solid #eef2f6;
-    border-radius: 1.25rem;
-    padding: 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: var(--shadow-card);
-    transition: all 0.25s ease;
-}
+@media (hover: hover) and (pointer: fine) {
 
-.stat-card-widget:hover {
-    box-shadow: var(--shadow-hover);
-    transform: translateY(-2px);
-}
-
-.icon-box-soft-blue {
-    background-color: #eff6ff;
-    color: #2563eb;
-}
-
-.icon-box-soft-green {
-    background-color: #ecfdf5;
-    color: #10b981;
-}
-
-.icon-box-soft-red {
-    background-color: #fef2f2;
-    color: #ef4444;
-}
-
-/* Menu Cepat Icons */
-.quick-menu-btn {
-    background: #ffffff;
-    border: 1px solid #f1f5f9;
-    border-radius: 1.25rem;
-    padding: 1rem 0.75rem;
-    text-align: center;
-    transition: all 0.2s ease;
-}
-
-.quick-menu-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.05);
-}
-
-/* Banner Hero Panduan */
-.hero-banner-card {
-    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
-    border: 1px solid #bae6fd;
-    border-radius: 1.5rem;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Priority Card List */
-.priority-item-card {
-    background: #ffffff;
-    border: 1px solid #f1f5f9;
-    border-radius: 1.25rem;
-    padding: 1rem 1.25rem;
-    transition: all 0.2s ease;
-}
-
-.priority-item-card:hover {
-    border-color: #cbd5e1;
-    box-shadow: var(--shadow-hover);
+    #main-content .bg-surface:hover,
+    #main-content .bg-white:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-1.5px);
+    }
 }
 
 /* Modal Overlay & Pop Animation */
 #modal-container {
     background: rgba(15, 23, 42, 0.45) !important;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(6px);
 }
 
 #modal-container:not(.hidden) #modal-content-box {
@@ -269,13 +173,14 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
         opacity: 0;
         transform: scale(0.94) translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
     }
 }
 
-/* Transisi Halaman Smooth */
+/* Transisi Halaman/View Smooth */
 .view-section {
     display: none;
 }
@@ -290,23 +195,29 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
         opacity: 0;
         transform: translateY(8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-/* Skeleton Loading Shimmer */
+/* Skeleton Shimmer Loading */
 .skeleton {
     background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
     background-size: 400% 100%;
     animation: skeletonShimmer 1.4s ease infinite;
-    border-radius: 0.85rem;
+    border-radius: 0.75rem;
 }
 
 @keyframes skeletonShimmer {
-    0% { background-position: 100% 50%; }
-    100% { background-position: 0 50%; }
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
 }
 
 /* Empty State Styling */
@@ -319,18 +230,31 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     border: 1.5px dashed #cbd5e1;
 }
 
+/* Aksesibilitas: batas bawah keterbacaan teks.
+   Jaring pengaman jika ada kelas ukuran teks kecil (mis. text-[9px]/[10px]/[11px])
+   yang lolos dari refactor ke text-xs — jangan biarkan teks di bawah 12px. */
+.text-\[8px\],
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+    font-size: 12px !important;
+}
+
 /* Scrollbar Minimalis */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
 }
+
 ::-webkit-scrollbar-track {
     background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
@@ -338,17 +262,26 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }
+
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
 
-/* Focus Ring Accessibility */
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+/* Accessiblity Focus Ring */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 
 .view-section {
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 24px)) !important;
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 24px)) !important;
+}
+
+#bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
