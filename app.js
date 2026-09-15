@@ -128,18 +128,6 @@ const MASTER_KEBIASAAN = [
 // ==================================================================
 // 2. HELPER UTILITY & DRAFT ENGINE
 // ==================================================================
-function formatDateWITA(val) {
-    if (!val) return "";
-    if (val instanceof Date) {
-        const y = val.getFullYear();
-        const m = String(val.getMonth() + 1).padStart(2, '0');
-        const d = String(val.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-    const str = String(val).trim();
-    return str.includes("T") ? str.split("T")[0] : str;
-}
-
 function sortSiswa(listSiswa) {
     return [...listSiswa].sort((a, b) => {
         const noA = (a.no_absen !== undefined && a.no_absen !== null && String(a.no_absen).trim() !== "") ? Number(a.no_absen) : null;
@@ -481,7 +469,7 @@ async function continueSessionSetup() {
 
     // Load Cache Lokal Seketika (0 ms delay)
     loadAppStateFromLocal();
-    await switchView("dashboard");
+    switchView("dashboard");
 
     // Fetch data backend di latar belakang (Non-Blocking UI)
     apiCall("getBootstrapData", {}, false).then(resBootstrap => {
@@ -586,7 +574,7 @@ async function manualRefreshAll() {
 
     const activeView = document.querySelector(".view-section.active");
     const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
-    await switchView(viewId);
+    switchView(viewId);
 
     if (icon) icon.classList.remove("fa-spin");
     showToast("Data terbaru disinkronkan.");
@@ -669,9 +657,9 @@ function applyRoleUI(role) {
     }
 }
 
-async function switchView(viewId) {
+function switchView(viewId) {
     if (pendingKebiasaanQueue && pendingKebiasaanQueue.size > 0) {
-        await flushKebiasaanQueue();
+        flushKebiasaanQueue();
     }
     document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
@@ -1065,8 +1053,6 @@ function renderAbsensiView() {
         return;
     }
 
-    const inputDate = document.getElementById("absensi-date");
-    const selectedTanggal = inputDate ? formatDateWITA(inputDate.value || getDateWITA()) : getDateWITA();
     const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
     const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
 
@@ -1079,9 +1065,9 @@ function renderAbsensiView() {
     let countH = 0, countS = 0, countI = 0, countA = 0;
 
     filteredSiswa.forEach(s => {
-        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id) && formatDateWITA(a.tanggal) === selectedTanggal);
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id));
         const st = rec ? rec.status : 'H';
-        if (st === 'H' || st === 'T') countH++;
+        if (st === 'H') countH++;
         else if (st === 'S') countS++;
         else if (st === 'I') countI++;
         else countA++;
@@ -1144,7 +1130,7 @@ function renderAbsensiView() {
             ` : `
                 <form onsubmit="saveBatchAbsensiForm(event)" class="space-y-2">
                     ${filteredSiswa.map(s => {
-        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id) && formatDateWITA(a.tanggal) === selectedTanggal) || { status: 'H', waktu_masuk: '' };
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
         const currentStatus = rec.status || 'H';
         const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
 
@@ -1185,9 +1171,6 @@ function renderAbsensiView() {
 async function saveBatchAbsensiForm(event) {
     if (event) event.preventDefault();
 
-    const inputDate = document.getElementById("absensi-date");
-    const targetTanggal = inputDate ? formatDateWITA(inputDate.value || getDateWITA()) : getDateWITA();
-
     const now = new Date();
     const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const JAM_BATAS_SEKOLAH = "07:15";
@@ -1199,7 +1182,7 @@ async function saveBatchAbsensiForm(event) {
         const siswaId = select.getAttribute("data-siswa-id");
         let selectedStatus = select.value;
 
-        const existingRec = appState.absensi.find(a => String(a.siswa_id) === String(siswaId) && formatDateWITA(a.tanggal) === targetTanggal);
+        const existingRec = appState.absensi.find(a => String(a.siswa_id) === String(siswaId));
         let waktuMasuk = existingRec?.waktu_masuk || currentTimeStr;
 
         if (selectedStatus === 'H') {
@@ -1211,13 +1194,13 @@ async function saveBatchAbsensiForm(event) {
             siswa_id: siswaId,
             status: selectedStatus,
             waktu_masuk: (selectedStatus === 'H' || selectedStatus === 'T') ? waktuMasuk : '',
-            tanggal: targetTanggal
+            tanggal: getDateWITA()
         };
 
         payloadAbsensi.push(item);
 
-        // Update State Lokal Seketika (Pencocokan Siswa & Tanggal)
-        const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswaId) && formatDateWITA(a.tanggal) === targetTanggal);
+        // Update State Lokal Seketika
+        const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswaId));
         if (idx !== -1) appState.absensi[idx] = item;
         else appState.absensi.push(item);
     });
@@ -1228,7 +1211,7 @@ async function saveBatchAbsensiForm(event) {
     showToast("Presensi berhasil diperbarui!");
 
     // 2. Kirim ke Server di Latar Belakang
-    apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: targetTanggal }, false);
+    apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: getDateWITA() }, false);
 }
 
 function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
@@ -1241,11 +1224,11 @@ function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
 }
 
 // ==================================================================
-// 7. KEBIASAAN MODULE (DEBOUNCE ENGINE & DATE FIXED)
+// 7. KEBIASAAN MODULE (DEBOUNCE ENGINE)
 // ==================================================================
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
-    const tanggal = dateInput ? formatDateWITA(dateInput.value || getDateWITA()) : getDateWITA();
+    const tanggal = dateInput ? (dateInput.value || getDateWITA()) : getDateWITA();
     if (dateInput) dateInput.value = tanggal;
 
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
@@ -1275,10 +1258,8 @@ async function loadKebiasaanData(forceRefresh = false) {
 function renderKebiasaanView() {
     const container = document.getElementById("kebiasaan-list-container");
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
-    const dateInput = document.getElementById("kebiasaan-date");
     if (!container || !selectSiswa) return;
 
-    const selectedTanggal = dateInput ? formatDateWITA(dateInput.value || getDateWITA()) : getDateWITA();
     const selectedSiswaId = selectSiswa.value || (appState.siswa[0] ? appState.siswa[0].id : null);
     if (!selectedSiswaId) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-user-slash text-2xl mb-2"></i><p class="text-xs text-slate-500">Belum ada data siswa untuk dipantau kebiasaannya.</p></div>`;
@@ -1288,12 +1269,7 @@ function renderKebiasaanView() {
     const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
 
     container.innerHTML = MASTER_KEBIASAAN.map(k => {
-        // PERBAIKAN UTAMA: Pencocokan data kebiasaan harus memverifikasi siswa_id, kebiasaan_id, DAN tanggal
-        const rec = appState.kebiasaan.find(item => 
-            String(item.siswa_id) === String(selectedSiswaId) && 
-            String(item.kebiasaan_id) === String(k.id) &&
-            formatDateWITA(item.tanggal) === selectedTanggal
-        ) || { status: 'Belum' };
+        const rec = appState.kebiasaan.find(item => String(item.siswa_id) === String(selectedSiswaId) && String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
@@ -1325,11 +1301,11 @@ function renderKebiasaanView() {
 
 function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     const tanggalInput = document.getElementById("kebiasaan-date");
-    const tanggal = tanggalInput ? formatDateWITA(tanggalInput.value || getDateWITA()) : getDateWITA();
+    const tanggal = tanggalInput ? tanggalInput.value : getDateWITA();
 
     const existingIndex = appState.kebiasaan.findIndex(k =>
         String(k.siswa_id) === String(siswa_id) &&
-        formatDateWITA(k.tanggal) === String(tanggal) &&
+        String(k.tanggal) === String(tanggal) &&
         String(k.kebiasaan_id) === String(kebiasaan_id)
     );
 
@@ -1475,7 +1451,7 @@ function openModalKeagamaan(id = null) {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
-                    <input type="date" id="m-kag-tanggal" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" value="${record ? formatDateWITA(record.tanggal) : getDateWITA()}" required>
+                    <input type="date" id="m-kag-tanggal" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" value="${record ? record.tanggal : getDateWITA()}" required>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
@@ -1502,7 +1478,7 @@ async function saveKeagamaanForm(e, id) {
         id: id || ("HFL-" + Date.now()),
         siswa_id: document.getElementById("m-kag-siswa").value,
         nama_surat: document.getElementById("m-kag-surah").value,
-        tanggal: formatDateWITA(document.getElementById("m-kag-tanggal").value),
+        tanggal: document.getElementById("m-kag-tanggal").value,
         status: document.getElementById("m-kag-status").value,
         catatan: document.getElementById("m-kag-catatan").value
     };
@@ -1759,7 +1735,7 @@ function openModalPrestasi(id = null) {
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
-                    <input type="date" id="m-prs-tanggal" value="${rec ? formatDateWITA(rec.tanggal) : getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                    <input type="date" id="m-prs-tanggal" value="${rec ? rec.tanggal : getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
             </div>
             <button type="submit" class="w-full bg-amber-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Prestasi</button>
@@ -1775,7 +1751,7 @@ async function savePrestasiForm(e, id) {
         siswa_id: document.getElementById("m-prs-siswa").value,
         nama_prestasi: document.getElementById("m-prs-nama").value,
         tingkat: document.getElementById("m-prs-tingkat").value,
-        tanggal: formatDateWITA(document.getElementById("m-prs-tanggal").value)
+        tanggal: document.getElementById("m-prs-tanggal").value
     };
 
     const idx = appState.prestasi.findIndex(x => String(x.id) === String(payload.id));
@@ -1920,11 +1896,11 @@ function openModalPembinaan(id = null) {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
-                    <input type="date" id="m-pbn-tanggal" value="${draft?.['m-pbn-tanggal'] || (rec ? formatDateWITA(rec.tanggal) : getDateWITA())}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                    <input type="date" id="m-pbn-tanggal" value="${draft?.['m-pbn-tanggal'] || rec?.tanggal || getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
-                    <input type="date" id="m-pbn-pantau" value="${draft?.['m-pbn-pantau'] || (rec ? formatDateWITA(rec.jadwal_pantau) : '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                    <input type="date" id="m-pbn-pantau" value="${draft?.['m-pbn-pantau'] || rec?.jadwal_pantau || ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
             <button type="submit" class="w-full bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Catatan Pembinaan</button>
@@ -1948,8 +1924,8 @@ async function savePembinaanForm(e, id) {
         jenis: document.getElementById("m-pbn-jenis").value,
         status: document.getElementById("m-pbn-status").value,
         permasalahan: document.getElementById("m-pbn-masalah").value,
-        tanggal: formatDateWITA(document.getElementById("m-pbn-tanggal").value),
-        jadwal_pantau: formatDateWITA(document.getElementById("m-pbn-pantau").value)
+        tanggal: document.getElementById("m-pbn-tanggal").value,
+        jadwal_pantau: document.getElementById("m-pbn-pantau").value
     };
 
     const idx = appState.pembinaan.findIndex(x => String(x.id) === String(payload.id));
@@ -2035,8 +2011,7 @@ async function openProfilSiswa(siswaTarget) {
     const container = document.getElementById("profil-siswa-details");
     if (!container) return;
 
-    const todayStr = getDateWITA();
-    const totalHadir = absensi.filter(a => a.status === 'H' || a.status === 'T').length;
+    const totalHadir = absensi.filter(a => a.status === 'H').length;
     const totalSakit = absensi.filter(a => a.status === 'S').length;
     const totalIzin = absensi.filter(a => a.status === 'I').length;
     const totalAlpa = absensi.filter(a => a.status === 'A').length;
@@ -2083,18 +2058,10 @@ async function openProfilSiswa(siswaTarget) {
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat Hari Ini</h4>
-                        <span class="text-[11px] font-semibold text-slate-400">${todayStr}</span>
-                    </div>
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat</h4>
                     <div class="divide-y divide-slate-100">
                         ${MASTER_KEBIASAAN.map(k => {
-                            // PERBAIKAN UTAMA PROFIL SISWA: Hanya cocokkan kebiasaan untuk HARI INI
-                            const rec = kebiasaan.find(item => 
-                                String(item.kebiasaan_id) === String(k.id) &&
-                                formatDateWITA(item.tanggal) === todayStr
-                            ) || { status: 'Belum' };
-
+                            const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
                             return `
                                 <div class="py-2 flex justify-between items-center text-xs">
                                     <span class="font-medium text-slate-700 flex items-center gap-2"><i class="fas ${k.icon} text-slate-400"></i> ${escapeHtml(k.nama)}</span>
@@ -2178,7 +2145,7 @@ async function openProfilSiswa(siswaTarget) {
         </div>
     `;
 
-    await switchView("profil-siswa");
+    switchView("profil-siswa");
 }
 
 function printProfilSiswa() {
@@ -2209,7 +2176,7 @@ function printProfilSiswa() {
                 <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Hadir</th><th style="padding: 6px;">Sakit</th><th style="padding: 6px;">Izin</th><th style="padding: 6px;">Alpa</th></tr></thead>
                 <tbody>
                     <tr style="text-align: center;">
-                        <td style="padding: 6px;">${absensi.filter(a => a.status === 'H' || a.status === 'T').length} hari</td>
+                        <td style="padding: 6px;">${absensi.filter(a => a.status === 'H').length} hari</td>
                         <td style="padding: 6px;">${absensi.filter(a => a.status === 'S').length} hari</td>
                         <td style="padding: 6px;">${absensi.filter(a => a.status === 'I').length} hari</td>
                         <td style="padding: 6px;">${absensi.filter(a => a.status === 'A').length} hari</td>
