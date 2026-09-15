@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwvLasSKuU_hw1_kVM8EnTqDnC3s9fPUbJJjCWsR31BrqdmKKu_U_Sw_z7nxKnG6k2y/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxj793jMA0MgDzFA-oaqo-vSuQC6Z6gM-_I93q4dEGfo5U6pt7NwRe3ZDFNmtX-dtQa/exec";
 
 // ==================================================================
 // 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD)
