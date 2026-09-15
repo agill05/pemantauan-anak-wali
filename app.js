@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxmmJsVD7jxs_r8e0k7KJUTq_WMsiWrBN5jbOKtAQYdakxJ2oZ96g9Pd6gVoxpQjyi1/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz4aTQv2I0l1M1o_LGeCJX-U3jTTTFLfd3DJGZawfWrJmrcnlEdeX4QoNwJ4hzB33aT/exec";
 
 // ==================================================================
 // 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD)
@@ -332,6 +332,21 @@ async function handleAppLogin(e) {
         appState.user = res.user;
         localStorage.setItem("session_anak_wali", JSON.stringify({ token: res.token, user: res.user }));
         await setupAppSession();
+    } else if (res && res.status === "error") {
+        // Tampilkan notifikasi kegagalan login
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Masuk',
+            text: res.message || 'Username atau kata sandi yang Anda masukkan salah.',
+            confirmButtonColor: '#2563eb'
+        });
+
+        // Reset dan fokuskan kembali ke input password
+        const pwdInput = document.getElementById("login-password");
+        if (pwdInput) {
+            pwdInput.value = "";
+            pwdInput.focus();
+        }
     }
 }
 
