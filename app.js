@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzh_IAvdKrS4vzVwrmqlipfv5_hDp78GwTfxmoQscdajj-GM0IPNAHMHwTXacu7YfU/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwz8WI0HDZvyVJCdjKtzbP9bjiGljsH4IKvrJEGmrjllwUmC3uTE6WzW2C1GyAEoe0_/exec";
 
 // ==================================================================
 // 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD & TTL)
@@ -236,6 +236,20 @@ function hideLoading() {
     }
 }
 
+function showToast(message, icon = "success") {
+    if (typeof Swal !== "undefined") {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: icon,
+            title: message,
+            showConfirmButton: false,
+            timer: 1800,
+            timerProgressBar: true
+        });
+    }
+}
+
 // Anti-Loss Draft Engine Helpers
 function saveFormDraft(draftKey, formData) {
     localStorage.setItem(`draft_${draftKey}`, JSON.stringify(formData));
@@ -303,11 +317,7 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
             console.error(`Attempt ${attempt} failed:`, err);
             if (attempt === retries) {
                 if (showFullLoader) hideLoading();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Koneksi Gagal',
-                    text: 'Tidak dapat terhubung ke server. Pastikan jaringan stabil.'
-                });
+                showToast("Koneksi terputus. Menyimpan lokal.", "warning");
                 return null;
             }
             await new Promise(res => setTimeout(res, 1200));
@@ -456,22 +466,22 @@ async function continueSessionSetup() {
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
     renderSidebarMenu(appState.user.role);
 
-    // Load Cache Lokal Seketika
+    // Load Cache Lokal Seketika (0 ms delay)
     loadAppStateFromLocal();
     switchView("dashboard");
 
     // Fetch data backend di latar belakang (Non-Blocking UI)
-    const resBootstrap = await apiCall("getBootstrapData", {}, false);
+    apiCall("getBootstrapData", {}, false).then(resBootstrap => {
+        if (resBootstrap && resBootstrap.status === "success") {
+            appState.kelas = resBootstrap.data.initial.kelas || [];
+            appState.guru = resBootstrap.data.initial.guru || [];
+            appState.siswa = resBootstrap.data.initial.siswa || [];
+            appState.myStudents = resBootstrap.data.initial.siswa || [];
 
-    if (resBootstrap && resBootstrap.status === "success") {
-        appState.kelas = resBootstrap.data.initial.kelas || [];
-        appState.guru = resBootstrap.data.initial.guru || [];
-        appState.siswa = resBootstrap.data.initial.siswa || [];
-        appState.myStudents = resBootstrap.data.initial.siswa || [];
-
-        saveAppStateToLocal();
-        renderDashboard();
-    }
+            saveAppStateToLocal();
+            renderDashboard();
+        }
+    });
 
     checkStudentNotifications();
 }
@@ -489,15 +499,7 @@ function startRealtimeNotificationPolling() {
         const currentCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
 
         if (currentCount > prevCount) {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'warning',
-                title: 'Perhatian Notifikasi!',
-                text: `${currentCount - prevCount} catatan siswa bermasalah baru ditemukan.`,
-                showConfirmButton: false,
-                timer: 4000
-            });
+            showToast(`${currentCount - prevCount} catatan siswa baru ditemukan!`, "warning");
         }
     }, 30000);
 }
@@ -556,7 +558,7 @@ async function manualRefreshAll() {
     switchView(viewId);
 
     if (icon) icon.classList.remove("fa-spin");
-    Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data terbaru berhasil disinkronkan.', timer: 1200, showConfirmButton: false });
+    showToast("Data terbaru disinkronkan.");
 }
 
 // ==================================================================
@@ -980,7 +982,7 @@ function openNotificationModal() {
 }
 
 // ==================================================================
-// 6. PRESENSI MODULE
+// 6. PRESENSI MODULE (ACCELERATED OPTIMISTIC UI)
 // ==================================================================
 async function loadAbsensiData(forceRefresh = false) {
     const inputDate = document.getElementById("absensi-date");
@@ -989,21 +991,19 @@ async function loadAbsensiData(forceRefresh = false) {
 
     const isStale = (Date.now() - (lastFetchTimes.absensi || 0)) > CACHE_TTL;
 
-    // 1. Tampilkan data dari memori lokal secara instan (0 ms)
     if (appState.absensi && appState.absensi.length > 0) {
         renderAbsensiView();
     } else {
         renderSkeleton("absensi-list-container", 4);
     }
 
-    // 2. Tarik data baru di latar belakang hanya jika cache basi, dipaksa, atau kosong
     if (forceRefresh || isStale || !appState.absensi || appState.absensi.length === 0) {
         const res = await apiCall("getAbsensi", { tanggal }, false);
         if (res && res.data) {
             appState.absensi = res.data;
             lastFetchTimes.absensi = Date.now();
             saveAppStateToLocal();
-            renderAbsensiView(); // Perbarui UI secara halus tanpa reset loading
+            renderAbsensiView();
         }
     }
 }
@@ -1131,9 +1131,9 @@ function renderAbsensiView() {
     `;
 }
 
+// OPTIMISTIC BATCH ABSENSI SAVE
 async function saveBatchAbsensiForm(event) {
-    event.preventDefault();
-    showLoading("Menyimpan presensi...");
+    if (event) event.preventDefault();
 
     const now = new Date();
     const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -1154,28 +1154,28 @@ async function saveBatchAbsensiForm(event) {
             if (analisisWaktu.status === 'T') selectedStatus = 'T';
         }
 
-        payloadAbsensi.push({
+        const item = {
             siswa_id: siswaId,
             status: selectedStatus,
             waktu_masuk: (selectedStatus === 'H' || selectedStatus === 'T') ? waktuMasuk : '',
-            tanggal: getDateWITA() // Menggunakan WITA secara konsisten
-        });
+            tanggal: getDateWITA()
+        };
+
+        payloadAbsensi.push(item);
+
+        // Update State Lokal Seketika
+        const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswaId));
+        if (idx !== -1) appState.absensi[idx] = item;
+        else appState.absensi.push(item);
     });
 
-    const res = await apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: getDateWITA() }, true);
-    hideLoading();
+    // 1. Simpan & Render Ulang UI Seketika (0 ms)
+    saveAppStateToLocal();
+    renderAbsensiView();
+    showToast("Presensi berhasil diperbarui!");
 
-    if (res && res.status === "success") {
-        payloadAbsensi.forEach(item => {
-            const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(item.siswa_id));
-            if (idx !== -1) appState.absensi[idx] = item;
-            else appState.absensi.push(item);
-        });
-
-        saveAppStateToLocal();
-        Swal.fire({ icon: 'success', title: 'Presensi Disimpan!', timer: 1200, showConfirmButton: false });
-        renderAbsensiView();
-    }
+    // 2. Kirim ke Server di Latar Belakang
+    apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: getDateWITA() }, false);
 }
 
 function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
@@ -1324,7 +1324,7 @@ function updateKebiasaanSaveStatus(state) {
 }
 
 // ==================================================================
-// 8. KEAGAMAAN / HAFALAN MODULE
+// 8. KEAGAMAAN / HAFALAN MODULE (OPTIMISTIC)
 // ==================================================================
 async function loadKeagamaanData(forceRefresh = false) {
     const filterSelect = document.getElementById("karakter-siswa-filter");
@@ -1439,7 +1439,7 @@ function openModalKeagamaan(id = null) {
 async function saveKeagamaanForm(e, id) {
     e.preventDefault();
     const payload = {
-        id: id || null,
+        id: id || ("HFL-" + Date.now()),
         siswa_id: document.getElementById("m-kag-siswa").value,
         nama_surat: document.getElementById("m-kag-surah").value,
         tanggal: document.getElementById("m-kag-tanggal").value,
@@ -1447,24 +1447,33 @@ async function saveKeagamaanForm(e, id) {
         catatan: document.getElementById("m-kag-catatan").value
     };
 
-    const res = await apiCall("saveKeagamaan", payload, true);
-    if (res && res.status === "success") {
-        closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
-        await loadKeagamaanData(true);
-    }
+    // Optimistic Local Update
+    const idx = appState.keagamaan.findIndex(x => String(x.id) === String(payload.id));
+    if (idx !== -1) appState.keagamaan[idx] = payload;
+    else appState.keagamaan.push(payload);
+
+    saveAppStateToLocal();
+    renderKeagamaanView();
+    closeModal();
+    showToast("Catatan hafalan tersimpan!");
+
+    // Background Sync
+    apiCall("saveKeagamaan", payload, false);
 }
 
 async function deleteKeagamaan(id) {
     const confirm = await Swal.fire({ title: 'Hapus Catatan Hafalan?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
-        const res = await apiCall("deleteKeagamaan", { id }, true);
-        if (res && res.status === "success") await loadKeagamaanData(true);
+        appState.keagamaan = appState.keagamaan.filter(x => String(x.id) !== String(id));
+        saveAppStateToLocal();
+        renderKeagamaanView();
+        showToast("Hafalan dihapus");
+        apiCall("deleteKeagamaan", { id }, false);
     }
 }
 
 // ==================================================================
-// 9. AKADEMIK & PRESTASI MODULE
+// 9. AKADEMIK & PRESTASI MODULE (OPTIMISTIC)
 // ==================================================================
 function switchAkademikTab(tab) {
     document.querySelectorAll(".akd-tab-content").forEach(c => c.classList.add("hidden"));
@@ -1630,26 +1639,33 @@ function openModalAkademik(id = null) {
 async function saveAkademikForm(e, id) {
     e.preventDefault();
     const payload = {
-        id: id || null,
+        id: id || ("AKD-" + Date.now()),
         siswa_id: document.getElementById("m-akd-siswa").value,
         mapel: document.getElementById("m-akd-mapel").value,
         nilai_akhir: document.getElementById("m-akd-nilai").value,
         kktp: document.getElementById("m-akd-kktp").value
     };
 
-    const res = await apiCall("saveAkademik", payload, true);
-    if (res && res.status === "success") {
-        closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
-        await loadAkademikData(true);
-    }
+    const idx = appState.akademik.findIndex(x => String(x.id) === String(payload.id));
+    if (idx !== -1) appState.akademik[idx] = payload;
+    else appState.akademik.push(payload);
+
+    saveAppStateToLocal();
+    renderAkademikNilai();
+    closeModal();
+    showToast("Nilai tersimpan!");
+
+    apiCall("saveAkademik", payload, false);
 }
 
 async function deleteAkademik(id) {
     const confirm = await Swal.fire({ title: 'Hapus Nilai Mapel?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
-        const res = await apiCall("deleteAkademik", { id }, true);
-        if (res && res.status === "success") await loadAkademikData(true);
+        appState.akademik = appState.akademik.filter(x => String(x.id) !== String(id));
+        saveAppStateToLocal();
+        renderAkademikNilai();
+        showToast("Nilai dihapus");
+        apiCall("deleteAkademik", { id }, false);
     }
 }
 
@@ -1695,31 +1711,38 @@ function openModalPrestasi(id = null) {
 async function savePrestasiForm(e, id) {
     e.preventDefault();
     const payload = {
-        id: id || null,
+        id: id || ("PRS-" + Date.now()),
         siswa_id: document.getElementById("m-prs-siswa").value,
         nama_prestasi: document.getElementById("m-prs-nama").value,
         tingkat: document.getElementById("m-prs-tingkat").value,
         tanggal: document.getElementById("m-prs-tanggal").value
     };
 
-    const res = await apiCall("savePrestasi", payload, true);
-    if (res && res.status === "success") {
-        closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
-        await loadAkademikData(true);
-    }
+    const idx = appState.prestasi.findIndex(x => String(x.id) === String(payload.id));
+    if (idx !== -1) appState.prestasi[idx] = payload;
+    else appState.prestasi.push(payload);
+
+    saveAppStateToLocal();
+    renderAkademikPrestasi();
+    closeModal();
+    showToast("Catatan prestasi tersimpan!");
+
+    apiCall("savePrestasi", payload, false);
 }
 
 async function deletePrestasi(id) {
     const confirm = await Swal.fire({ title: 'Hapus Catatan Prestasi?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
-        const res = await apiCall("deletePrestasi", { id }, true);
-        if (res && res.status === "success") await loadAkademikData(true);
+        appState.prestasi = appState.prestasi.filter(x => String(x.id) !== String(id));
+        saveAppStateToLocal();
+        renderAkademikPrestasi();
+        showToast("Prestasi dihapus");
+        apiCall("deletePrestasi", { id }, false);
     }
 }
 
 // ==================================================================
-// 10. PEMBINAAN SISWA MODULE
+// 10. PEMBINAAN SISWA MODULE (OPTIMISTIC)
 // ==================================================================
 function getPembinaanStatusBadge(status) {
     const s = String(status || '').trim().toLowerCase();
@@ -1860,7 +1883,7 @@ function openModalPembinaan(id = null) {
 async function savePembinaanForm(e, id) {
     e.preventDefault();
     const payload = {
-        id: id || null,
+        id: id || ("PBN-" + Date.now()),
         siswa_id: document.getElementById("m-pbn-siswa").value,
         jenis: document.getElementById("m-pbn-jenis").value,
         status: document.getElementById("m-pbn-status").value,
@@ -1869,20 +1892,27 @@ async function savePembinaanForm(e, id) {
         jadwal_pantau: document.getElementById("m-pbn-pantau").value
     };
 
-    const res = await apiCall("savePembinaan", payload, true);
-    if (res && res.status === "success") {
-        clearFormDraft("pembinaan");
-        closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
-        await loadPembinaanData(true);
-    }
+    const idx = appState.pembinaan.findIndex(x => String(x.id) === String(payload.id));
+    if (idx !== -1) appState.pembinaan[idx] = payload;
+    else appState.pembinaan.push(payload);
+
+    clearFormDraft("pembinaan");
+    saveAppStateToLocal();
+    renderPembinaanView();
+    closeModal();
+    showToast("Catatan pembinaan tersimpan!");
+
+    apiCall("savePembinaan", payload, false);
 }
 
 async function deletePembinaan(id) {
     const confirm = await Swal.fire({ title: 'Hapus Catatan Pembinaan?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
-        const res = await apiCall("deletePembinaan", { id }, true);
-        if (res && res.status === "success") await loadPembinaanData(true);
+        appState.pembinaan = appState.pembinaan.filter(x => String(x.id) !== String(id));
+        saveAppStateToLocal();
+        renderPembinaanView();
+        showToast("Pembinaan dihapus");
+        apiCall("deletePembinaan", { id }, false);
     }
 }
 
@@ -1909,14 +1939,11 @@ async function openProfilSiswa(siswaTarget) {
     if (typeof siswaTarget === 'object' && siswaTarget !== null) {
         detailData = siswaTarget;
     } else {
-        // Cek apakah data siswa yang dicari ada di appState lokal
         const sLocal = appState.siswa.find(s => String(s.id) === String(siswaTarget));
         
-        // Render rincian dari memori lokal terlebih dahulu jika data riwayat pernah tersimpan
         if (appState.activeSiswaDetail && String(appState.activeSiswaDetail.siswa.id) === String(siswaTarget)) {
             detailData = appState.activeSiswaDetail;
         } else if (sLocal) {
-            // Gunakan struktur awal dari data yang ada di RAM
             detailData = {
                 siswa: sLocal,
                 absensi: appState.absensi.filter(a => String(a.siswa_id) === String(siswaTarget)),
@@ -1928,11 +1955,9 @@ async function openProfilSiswa(siswaTarget) {
             };
         }
 
-        // Jalankan fetch detail lengkap dari Apps Script di latar belakang (tanpa overlay loading)
         apiCall("getDetailSiswa", { siswa_id: siswaTarget }, false).then(res => {
             if (res && res.status === "success") {
                 appState.activeSiswaDetail = res.data;
-                // Jika pengguna masih berada di halaman profil siswa tersebut, perbarui tampilan secara halus
                 const activeView = document.querySelector(".view-section.active");
                 if (activeView && activeView.id === "view-profil-siswa") {
                     openProfilSiswa(res.data);
@@ -2351,7 +2376,7 @@ function exportRekapCSV() {
 }
 
 // ==================================================================
-// 13. MASTER DATA MANAGEMENT (ADMIN & GURU)
+// 13. MASTER DATA MANAGEMENT (ADMIN & GURU) (OPTIMISTIC)
 // ==================================================================
 function renderSiswaView() {
     const container = document.getElementById("siswa-card-container");
@@ -2561,11 +2586,7 @@ async function saveGuruForm(e, id) {
     const res = await apiCall("saveGuru", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        if (res.usedDefaultPassword) {
-            Swal.fire({ icon: 'warning', title: 'Berhasil, Password Default Dipakai', text: res.message, confirmButtonColor: '#2563eb', confirmButtonText: 'Mengerti' });
-        } else {
-            Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
-        }
+        showToast("Data Guru diperbarui!");
         await fetchAllAppData(true);
         renderAdminGuru();
     }
@@ -2654,11 +2675,7 @@ async function saveSiswaForm(e, id) {
     const res = await apiCall("saveSiswa", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        if (res.usedDefaultPassword) {
-            Swal.fire({ icon: 'warning', title: 'Berhasil, Password Default Dipakai', text: res.message, confirmButtonColor: '#2563eb', confirmButtonText: 'Mengerti' });
-        } else {
-            Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
-        }
+        showToast("Data Siswa diperbarui!");
         await fetchAllAppData(true);
         renderSiswaView();
         renderAdminSiswa();
@@ -2718,7 +2735,7 @@ async function saveKelasForm(e, id) {
     const res = await apiCall("saveKelas", payload, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1200, showConfirmButton: false });
+        showToast("Data kelas diperbarui!");
         await fetchAllAppData(true);
         renderAdminKelas();
     }
@@ -2779,7 +2796,7 @@ async function changePasswordForm(e) {
     const res = await apiCall("changePassword", { oldPassword, newPassword }, true);
     if (res && res.status === "success") {
         closeModal();
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Kata sandi diperbarui!', timer: 1200, showConfirmButton: false });
+        showToast("Kata sandi diperbarui!");
     }
 }
 
@@ -2799,10 +2816,9 @@ async function generateAndShareMagicLink(siswaId = null) {
 
     const siswa = appState.activeSiswaDetail?.siswa || appState.siswa.find(s => String(s.id) === String(targetId));
     const storageKey = `magic_link_cache_${targetId}`;
-    const COOLDOWN_MS = 15 * 60 * 1000; // 15 Menit (dalam milidetik)
+    const COOLDOWN_MS = 15 * 60 * 1000;
     const now = Date.now();
 
-    // 1. Cek cache link di localStorage
     let cachedData = null;
     try {
         const rawCache = localStorage.getItem(storageKey);
@@ -2813,31 +2829,24 @@ async function generateAndShareMagicLink(siswaId = null) {
     let isExisting = false;
     let remainingMs = 0;
 
-    // 2. Evaluasi apakah link masih dalam periode 15 menit
     if (cachedData && (now - cachedData.timestamp < COOLDOWN_MS)) {
         magicUrl = cachedData.magicUrl;
         isExisting = true;
         remainingMs = COOLDOWN_MS - (now - cachedData.timestamp);
     } else {
-        // Jika belum ada atau sudah > 15 menit, buat link baru via API
         const res = await apiCall("generateMagicLink", { siswa_id: targetId }, true);
         if (res && res.status === "success") {
             const baseUrl = window.location.origin + window.location.pathname;
             magicUrl = `${baseUrl}?magic_token=${encodeURIComponent(res.magic_token)}`;
             
-            // Simpan cache ke localStorage
-            cachedData = {
-                magicUrl: magicUrl,
-                timestamp: now
-            };
+            cachedData = { magicUrl: magicUrl, timestamp: now };
             localStorage.setItem(storageKey, JSON.stringify(cachedData));
             remainingMs = COOLDOWN_MS;
         } else {
-            return; // Error koneksi/autentikasi sudah ditangani apiCall
+            return;
         }
     }
 
-    // 3. Hitung sisa waktu menit & detik
     const sisaMenit = Math.floor(remainingMs / (1000 * 60));
     const sisaDetik = Math.floor((remainingMs % (1000 * 60)) / 1000);
     const timeInfo = `${sisaMenit} menit ${sisaDetik} detik`;
@@ -2852,7 +2861,6 @@ async function generateAndShareMagicLink(siswaId = null) {
         `⚠️ *Catatan*: Demi keamanan, tautan ini hanya dapat diakses selama *15 menit* sejak dibuat.`
     );
 
-    // 4. Tampilkan dialog beserta sisa waktu
     Swal.fire({
         title: isExisting ? '✨ Magic Link (Link Aktif)' : '✨ Magic Link Baru Dibuat',
         html: `
@@ -2880,7 +2888,7 @@ async function generateAndShareMagicLink(siswaId = null) {
     }).then((result) => {
         if (result.isConfirmed) {
             navigator.clipboard.writeText(magicUrl);
-            Swal.fire({ icon: 'success', title: 'Tersalin!', text: 'Tautan berhasil disalin ke clipboard.', timer: 1500, showConfirmButton: false });
+            showToast("Tautan disalin ke clipboard!");
         } else if (result.dismiss === Swal.DismissReason.cancel && phone) {
             window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${waText}`, '_blank');
         }
@@ -2888,7 +2896,6 @@ async function generateAndShareMagicLink(siswaId = null) {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-    // 1. Cek Parameter Magic Link di URL
     const urlParams = new URLSearchParams(window.location.search);
     const magicToken = urlParams.get('magic_token');
 
@@ -2898,7 +2905,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         hideLoading();
 
         if (res && res.status === "success") {
-            // Sembunyikan elemen navigasi dan otentikasi internal
             document.getElementById("view-login")?.classList.add("hidden");
             document.getElementById("main-header")?.classList.remove("hidden");
             document.getElementById("btn-toggle-sidebar")?.classList.add("hidden");
@@ -2907,13 +2913,11 @@ window.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("bottom-nav")?.classList.add("hidden");
             document.getElementById("btn-back-profil")?.classList.add("hidden");
 
-            // Atur nama header khusus mode orang tua
             const headerTitle = document.getElementById("header-title");
             const headerSubtitle = document.getElementById("header-subtitle");
             if (headerTitle) headerTitle.innerText = "Pemantauan Anak Wali";
             if (headerSubtitle) headerSubtitle.innerText = "Mode Akses Orang Tua (Kedaluwarsa 15 Menit)";
 
-            // Tampilkan Detail Siswa Secara Langsung
             appState.user = { role: 'ortu', nama: 'Orang Tua / Wali' };
             applyRoleUI('ortu');
             renderMagicLinkProfilView(res.data);
@@ -2931,7 +2935,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // 2. Jika bukan Magic Link, jalankan sesi normal
     const savedSession = localStorage.getItem("session_anak_wali");
     if (savedSession) {
         try {
@@ -2956,7 +2959,6 @@ function renderMagicLinkProfilView(data) {
     const mainContent = document.getElementById("main-content");
     if (mainContent) mainContent.classList.remove("hidden");
 
-    // Langsung buka profil dengan membawa objek data detail
     openProfilSiswa(data).then(() => {
         const profContainer = document.getElementById("profil-siswa-details");
         if (profContainer) {
@@ -2990,4 +2992,13 @@ function showExpiredMagicLinkScreen(message) {
             </div>
         `;
     }
+}
+
+// Registrasi Service Worker PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('ServiceWorker Aktif:', reg.scope))
+            .catch(err => console.log('Registrasi ServiceWorker Gagal:', err));
+    });
 }
