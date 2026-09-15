@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwz8WI0HDZvyVJCdjKtzbP9bjiGljsH4IKvrJEGmrjllwUmC3uTE6WzW2C1GyAEoe0_/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzjnNtoqJSgVixvwI2k09PiyviJxs1R-G2o5FdSYuMggNxmCECg-kWfXc4KSdoo3cgR/exec";
 
 // ==================================================================
 // 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD & TTL)
@@ -128,6 +128,18 @@ const MASTER_KEBIASAAN = [
 // ==================================================================
 // 2. HELPER UTILITY & DRAFT ENGINE
 // ==================================================================
+function formatDateWITA(val) {
+    if (!val) return "";
+    if (val instanceof Date) {
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const d = String(val.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    const str = String(val).trim();
+    return str.includes("T") ? str.split("T")[0] : str;
+}
+
 function sortSiswa(listSiswa) {
     return [...listSiswa].sort((a, b) => {
         const noA = (a.no_absen !== undefined && a.no_absen !== null && String(a.no_absen).trim() !== "") ? Number(a.no_absen) : null;
@@ -455,8 +467,9 @@ async function continueSessionSetup() {
     const headerSubtitle = document.getElementById("header-subtitle");
 
     if (userAvatar) userAvatar.src = appState.user.foto || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(appState.user.nama));
-    if (headerTitle) headerTitle.innerText = appState.user.nama;
-    if (headerSubtitle) headerSubtitle.innerText = `SMPN 1 Talaga Jaya • ${appState.user.role.toUpperCase()}`;
+    if (headerTitle) headerTitle.innerText = `Selamat Datang, ${appState.user.nama}`;
+    if (headerSubtitle) headerSubtitle.innerText = `${appState.user.role.charAt(0).toUpperCase() + appState.user.role.slice(1)} • SMPN 1 Talaga Jaya`;
+    startHeaderDateTimeClock();
 
     const sbAvatar = document.getElementById("sidebar-avatar");
     const sbNama = document.getElementById("sidebar-nama");
@@ -468,7 +481,7 @@ async function continueSessionSetup() {
 
     // Load Cache Lokal Seketika (0 ms delay)
     loadAppStateFromLocal();
-    switchView("dashboard");
+    await switchView("dashboard");
 
     // Fetch data backend di latar belakang (Non-Blocking UI)
     apiCall("getBootstrapData", {}, false).then(resBootstrap => {
@@ -484,6 +497,24 @@ async function continueSessionSetup() {
     });
 
     checkStudentNotifications();
+}
+
+let headerClockInterval = null;
+
+function startHeaderDateTimeClock() {
+    const dateEl = document.getElementById("header-date-text");
+    const timeEl = document.getElementById("header-time-text");
+    if (!dateEl || !timeEl) return;
+
+    const update = () => {
+        const now = new Date();
+        dateEl.innerText = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+        timeEl.innerText = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WITA";
+    };
+
+    update();
+    if (headerClockInterval) clearInterval(headerClockInterval);
+    headerClockInterval = setInterval(update, 30000);
 }
 
 let notificationPollingInterval = null;
@@ -555,7 +586,7 @@ async function manualRefreshAll() {
 
     const activeView = document.querySelector(".view-section.active");
     const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
-    switchView(viewId);
+    await switchView(viewId);
 
     if (icon) icon.classList.remove("fa-spin");
     showToast("Data terbaru disinkronkan.");
@@ -638,9 +669,9 @@ function applyRoleUI(role) {
     }
 }
 
-function switchView(viewId) {
+async function switchView(viewId) {
     if (pendingKebiasaanQueue && pendingKebiasaanQueue.size > 0) {
-        flushKebiasaanQueue();
+        await flushKebiasaanQueue();
     }
     document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
@@ -740,26 +771,32 @@ async function renderDashboard() {
         const totalSiswaCount = appState.siswa.length;
         if (role === "admin" || role === "guru") {
             statsContainer.innerHTML = `
-                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</span>
-                        <span class="w-7 h-7 rounded-lg bg-blue-50 text-primary flex items-center justify-center text-xs"><i class="fas fa-users"></i></span>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                    <span class="w-11 h-11 shrink-0 rounded-xl bg-blue-50 text-primary flex items-center justify-center text-base"><i class="fas fa-users"></i></span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-slate-500">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</p>
+                        <p class="text-2xl font-black text-slate-800 leading-tight">${totalSiswaCount}</p>
+                        <p class="text-[11px] text-slate-400">Total anak wali yang dibina</p>
                     </div>
-                    <p class="text-2xl font-black text-slate-800 mt-1">${totalSiswaCount}</p>
+                    <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
-                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-emerald-500 uppercase tracking-wider">Hadir Hari Ini</span>
-                        <span class="w-7 h-7 rounded-lg bg-emerald-50 text-secondary flex items-center justify-center text-xs"><i class="fas fa-calendar-check"></i></span>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                    <span class="w-11 h-11 shrink-0 rounded-xl bg-emerald-50 text-secondary flex items-center justify-center text-base"><i class="fas fa-calendar-check"></i></span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-emerald-600">Hadir Hari Ini</p>
+                        <p class="text-2xl font-black text-emerald-600 leading-tight">${appState.absensi.filter(a => a.status === 'H').length}</p>
+                        <p class="text-[11px] text-slate-400">Dari ${totalSiswaCount} anak wali</p>
                     </div>
-                    <p class="text-2xl font-black text-emerald-600 mt-1">${appState.absensi.filter(a => a.status === 'H').length}</p>
+                    <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
-                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
-                        <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs"><i class="fas fa-triangle-exclamation"></i></span>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                    <span class="w-11 h-11 shrink-0 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-base"><i class="fas fa-triangle-exclamation"></i></span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-rose-500">Perlu Perhatian</p>
+                        <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 leading-tight">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
+                        <p class="text-[11px] text-slate-400">Anak wali yang perlu perhatian</p>
                     </div>
-                    <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 mt-1">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
+                    <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
             `;
         } else {
@@ -838,7 +875,13 @@ function renderAgendaSection(agendaList) {
     if (!container) return;
 
     if (!agendaList || agendaList.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 italic px-1">Belum ada agenda pembinaan mendatang.</p>`;
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-calendar-day text-slate-300 text-2xl mb-2"></i>
+            <p class="text-xs text-slate-500 font-semibold">Belum ada agenda pembinaan yang akan datang.</p>
+            <p class="text-[11px] text-slate-400 mt-1">Agenda akan muncul di sini setelah dijadwalkan.</p>
+          </div>
+        `;
         return;
     }
 
@@ -1022,6 +1065,8 @@ function renderAbsensiView() {
         return;
     }
 
+    const inputDate = document.getElementById("absensi-date");
+    const selectedTanggal = inputDate ? formatDateWITA(inputDate.value || getDateWITA()) : getDateWITA();
     const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
     const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
 
@@ -1034,9 +1079,9 @@ function renderAbsensiView() {
     let countH = 0, countS = 0, countI = 0, countA = 0;
 
     filteredSiswa.forEach(s => {
-        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id));
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id) && formatDateWITA(a.tanggal) === selectedTanggal);
         const st = rec ? rec.status : 'H';
-        if (st === 'H') countH++;
+        if (st === 'H' || st === 'T') countH++;
         else if (st === 'S') countS++;
         else if (st === 'I') countI++;
         else countA++;
@@ -1099,7 +1144,7 @@ function renderAbsensiView() {
             ` : `
                 <form onsubmit="saveBatchAbsensiForm(event)" class="space-y-2">
                     ${filteredSiswa.map(s => {
-        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id) && formatDateWITA(a.tanggal) === selectedTanggal) || { status: 'H', waktu_masuk: '' };
         const currentStatus = rec.status || 'H';
         const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
 
@@ -1140,6 +1185,9 @@ function renderAbsensiView() {
 async function saveBatchAbsensiForm(event) {
     if (event) event.preventDefault();
 
+    const inputDate = document.getElementById("absensi-date");
+    const targetTanggal = inputDate ? formatDateWITA(inputDate.value || getDateWITA()) : getDateWITA();
+
     const now = new Date();
     const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const JAM_BATAS_SEKOLAH = "07:15";
@@ -1151,7 +1199,7 @@ async function saveBatchAbsensiForm(event) {
         const siswaId = select.getAttribute("data-siswa-id");
         let selectedStatus = select.value;
 
-        const existingRec = appState.absensi.find(a => String(a.siswa_id) === String(siswaId));
+        const existingRec = appState.absensi.find(a => String(a.siswa_id) === String(siswaId) && formatDateWITA(a.tanggal) === targetTanggal);
         let waktuMasuk = existingRec?.waktu_masuk || currentTimeStr;
 
         if (selectedStatus === 'H') {
@@ -1163,13 +1211,13 @@ async function saveBatchAbsensiForm(event) {
             siswa_id: siswaId,
             status: selectedStatus,
             waktu_masuk: (selectedStatus === 'H' || selectedStatus === 'T') ? waktuMasuk : '',
-            tanggal: getDateWITA()
+            tanggal: targetTanggal
         };
 
         payloadAbsensi.push(item);
 
-        // Update State Lokal Seketika
-        const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswaId));
+        // Update State Lokal Seketika (Pencocokan Siswa & Tanggal)
+        const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswaId) && formatDateWITA(a.tanggal) === targetTanggal);
         if (idx !== -1) appState.absensi[idx] = item;
         else appState.absensi.push(item);
     });
@@ -1180,7 +1228,7 @@ async function saveBatchAbsensiForm(event) {
     showToast("Presensi berhasil diperbarui!");
 
     // 2. Kirim ke Server di Latar Belakang
-    apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: getDateWITA() }, false);
+    apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: targetTanggal }, false);
 }
 
 function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
@@ -1193,11 +1241,11 @@ function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
 }
 
 // ==================================================================
-// 7. KEBIASAAN MODULE (DEBOUNCE ENGINE)
+// 7. KEBIASAAN MODULE (DEBOUNCE ENGINE & DATE FIXED)
 // ==================================================================
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
-    const tanggal = dateInput ? (dateInput.value || getDateWITA()) : getDateWITA();
+    const tanggal = dateInput ? formatDateWITA(dateInput.value || getDateWITA()) : getDateWITA();
     if (dateInput) dateInput.value = tanggal;
 
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
@@ -1227,8 +1275,10 @@ async function loadKebiasaanData(forceRefresh = false) {
 function renderKebiasaanView() {
     const container = document.getElementById("kebiasaan-list-container");
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
+    const dateInput = document.getElementById("kebiasaan-date");
     if (!container || !selectSiswa) return;
 
+    const selectedTanggal = dateInput ? formatDateWITA(dateInput.value || getDateWITA()) : getDateWITA();
     const selectedSiswaId = selectSiswa.value || (appState.siswa[0] ? appState.siswa[0].id : null);
     if (!selectedSiswaId) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-user-slash text-2xl mb-2"></i><p class="text-xs text-slate-500">Belum ada data siswa untuk dipantau kebiasaannya.</p></div>`;
@@ -1238,7 +1288,12 @@ function renderKebiasaanView() {
     const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
 
     container.innerHTML = MASTER_KEBIASAAN.map(k => {
-        const rec = appState.kebiasaan.find(item => String(item.siswa_id) === String(selectedSiswaId) && String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
+        // PERBAIKAN UTAMA: Pencocokan data kebiasaan harus memverifikasi siswa_id, kebiasaan_id, DAN tanggal
+        const rec = appState.kebiasaan.find(item => 
+            String(item.siswa_id) === String(selectedSiswaId) && 
+            String(item.kebiasaan_id) === String(k.id) &&
+            formatDateWITA(item.tanggal) === selectedTanggal
+        ) || { status: 'Belum' };
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
@@ -1270,11 +1325,11 @@ function renderKebiasaanView() {
 
 function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     const tanggalInput = document.getElementById("kebiasaan-date");
-    const tanggal = tanggalInput ? tanggalInput.value : getDateWITA();
+    const tanggal = tanggalInput ? formatDateWITA(tanggalInput.value || getDateWITA()) : getDateWITA();
 
     const existingIndex = appState.kebiasaan.findIndex(k =>
         String(k.siswa_id) === String(siswa_id) &&
-        String(k.tanggal) === String(tanggal) &&
+        formatDateWITA(k.tanggal) === String(tanggal) &&
         String(k.kebiasaan_id) === String(kebiasaan_id)
     );
 
@@ -1420,7 +1475,7 @@ function openModalKeagamaan(id = null) {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
-                    <input type="date" id="m-kag-tanggal" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" value="${record ? record.tanggal : getDateWITA()}" required>
+                    <input type="date" id="m-kag-tanggal" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" value="${record ? formatDateWITA(record.tanggal) : getDateWITA()}" required>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
@@ -1447,7 +1502,7 @@ async function saveKeagamaanForm(e, id) {
         id: id || ("HFL-" + Date.now()),
         siswa_id: document.getElementById("m-kag-siswa").value,
         nama_surat: document.getElementById("m-kag-surah").value,
-        tanggal: document.getElementById("m-kag-tanggal").value,
+        tanggal: formatDateWITA(document.getElementById("m-kag-tanggal").value),
         status: document.getElementById("m-kag-status").value,
         catatan: document.getElementById("m-kag-catatan").value
     };
@@ -1704,7 +1759,7 @@ function openModalPrestasi(id = null) {
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
-                    <input type="date" id="m-prs-tanggal" value="${rec ? rec.tanggal : getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                    <input type="date" id="m-prs-tanggal" value="${rec ? formatDateWITA(rec.tanggal) : getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
             </div>
             <button type="submit" class="w-full bg-amber-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Prestasi</button>
@@ -1720,7 +1775,7 @@ async function savePrestasiForm(e, id) {
         siswa_id: document.getElementById("m-prs-siswa").value,
         nama_prestasi: document.getElementById("m-prs-nama").value,
         tingkat: document.getElementById("m-prs-tingkat").value,
-        tanggal: document.getElementById("m-prs-tanggal").value
+        tanggal: formatDateWITA(document.getElementById("m-prs-tanggal").value)
     };
 
     const idx = appState.prestasi.findIndex(x => String(x.id) === String(payload.id));
@@ -1865,11 +1920,11 @@ function openModalPembinaan(id = null) {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
-                    <input type="date" id="m-pbn-tanggal" value="${draft?.['m-pbn-tanggal'] || rec?.tanggal || getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                    <input type="date" id="m-pbn-tanggal" value="${draft?.['m-pbn-tanggal'] || (rec ? formatDateWITA(rec.tanggal) : getDateWITA())}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
-                    <input type="date" id="m-pbn-pantau" value="${draft?.['m-pbn-pantau'] || rec?.jadwal_pantau || ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                    <input type="date" id="m-pbn-pantau" value="${draft?.['m-pbn-pantau'] || (rec ? formatDateWITA(rec.jadwal_pantau) : '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
             <button type="submit" class="w-full bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Catatan Pembinaan</button>
@@ -1893,8 +1948,8 @@ async function savePembinaanForm(e, id) {
         jenis: document.getElementById("m-pbn-jenis").value,
         status: document.getElementById("m-pbn-status").value,
         permasalahan: document.getElementById("m-pbn-masalah").value,
-        tanggal: document.getElementById("m-pbn-tanggal").value,
-        jadwal_pantau: document.getElementById("m-pbn-pantau").value
+        tanggal: formatDateWITA(document.getElementById("m-pbn-tanggal").value),
+        jadwal_pantau: formatDateWITA(document.getElementById("m-pbn-pantau").value)
     };
 
     const idx = appState.pembinaan.findIndex(x => String(x.id) === String(payload.id));
@@ -1980,7 +2035,8 @@ async function openProfilSiswa(siswaTarget) {
     const container = document.getElementById("profil-siswa-details");
     if (!container) return;
 
-    const totalHadir = absensi.filter(a => a.status === 'H').length;
+    const todayStr = getDateWITA();
+    const totalHadir = absensi.filter(a => a.status === 'H' || a.status === 'T').length;
     const totalSakit = absensi.filter(a => a.status === 'S').length;
     const totalIzin = absensi.filter(a => a.status === 'I').length;
     const totalAlpa = absensi.filter(a => a.status === 'A').length;
@@ -2027,10 +2083,18 @@ async function openProfilSiswa(siswaTarget) {
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat</h4>
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat Hari Ini</h4>
+                        <span class="text-[11px] font-semibold text-slate-400">${todayStr}</span>
+                    </div>
                     <div class="divide-y divide-slate-100">
                         ${MASTER_KEBIASAAN.map(k => {
-                            const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
+                            // PERBAIKAN UTAMA PROFIL SISWA: Hanya cocokkan kebiasaan untuk HARI INI
+                            const rec = kebiasaan.find(item => 
+                                String(item.kebiasaan_id) === String(k.id) &&
+                                formatDateWITA(item.tanggal) === todayStr
+                            ) || { status: 'Belum' };
+
                             return `
                                 <div class="py-2 flex justify-between items-center text-xs">
                                     <span class="font-medium text-slate-700 flex items-center gap-2"><i class="fas ${k.icon} text-slate-400"></i> ${escapeHtml(k.nama)}</span>
@@ -2114,7 +2178,7 @@ async function openProfilSiswa(siswaTarget) {
         </div>
     `;
 
-    switchView("profil-siswa");
+    await switchView("profil-siswa");
 }
 
 function printProfilSiswa() {
@@ -2145,7 +2209,7 @@ function printProfilSiswa() {
                 <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Hadir</th><th style="padding: 6px;">Sakit</th><th style="padding: 6px;">Izin</th><th style="padding: 6px;">Alpa</th></tr></thead>
                 <tbody>
                     <tr style="text-align: center;">
-                        <td style="padding: 6px;">${absensi.filter(a => a.status === 'H').length} hari</td>
+                        <td style="padding: 6px;">${absensi.filter(a => a.status === 'H' || a.status === 'T').length} hari</td>
                         <td style="padding: 6px;">${absensi.filter(a => a.status === 'S').length} hari</td>
                         <td style="padding: 6px;">${absensi.filter(a => a.status === 'I').length} hari</td>
                         <td style="padding: 6px;">${absensi.filter(a => a.status === 'A').length} hari</td>
