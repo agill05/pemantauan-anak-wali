@@ -455,9 +455,8 @@ async function continueSessionSetup() {
     const headerSubtitle = document.getElementById("header-subtitle");
 
     if (userAvatar) userAvatar.src = appState.user.foto || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(appState.user.nama));
-    if (headerTitle) headerTitle.innerText = `Selamat Datang, ${appState.user.nama}`;
-    if (headerSubtitle) headerSubtitle.innerText = `${appState.user.role.charAt(0).toUpperCase() + appState.user.role.slice(1)} • SMPN 1 Talaga Jaya`;
-    startHeaderDateTimeClock();
+    if (headerTitle) headerTitle.innerText = appState.user.nama;
+    if (headerSubtitle) headerSubtitle.innerText = `SMPN 1 Talaga Jaya • ${appState.user.role.toUpperCase()}`;
 
     const sbAvatar = document.getElementById("sidebar-avatar");
     const sbNama = document.getElementById("sidebar-nama");
@@ -485,24 +484,6 @@ async function continueSessionSetup() {
     });
 
     checkStudentNotifications();
-}
-
-let headerClockInterval = null;
-
-function startHeaderDateTimeClock() {
-    const dateEl = document.getElementById("header-date-text");
-    const timeEl = document.getElementById("header-time-text");
-    if (!dateEl || !timeEl) return;
-
-    const update = () => {
-        const now = new Date();
-        dateEl.innerText = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-        timeEl.innerText = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WITA";
-    };
-
-    update();
-    if (headerClockInterval) clearInterval(headerClockInterval);
-    headerClockInterval = setInterval(update, 30000);
 }
 
 let notificationPollingInterval = null;
@@ -759,32 +740,26 @@ async function renderDashboard() {
         const totalSiswaCount = appState.siswa.length;
         if (role === "admin" || role === "guru") {
             statsContainer.innerHTML = `
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-                    <span class="w-11 h-11 shrink-0 rounded-xl bg-blue-50 text-primary flex items-center justify-center text-base"><i class="fas fa-users"></i></span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs font-bold text-slate-500">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</p>
-                        <p class="text-2xl font-black text-slate-800 leading-tight">${totalSiswaCount}</p>
-                        <p class="text-[11px] text-slate-400">Total anak wali yang dibina</p>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</span>
+                        <span class="w-7 h-7 rounded-lg bg-blue-50 text-primary flex items-center justify-center text-xs"><i class="fas fa-users"></i></span>
                     </div>
-                    <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
+                    <p class="text-2xl font-black text-slate-800 mt-1">${totalSiswaCount}</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-                    <span class="w-11 h-11 shrink-0 rounded-xl bg-emerald-50 text-secondary flex items-center justify-center text-base"><i class="fas fa-calendar-check"></i></span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs font-bold text-emerald-600">Hadir Hari Ini</p>
-                        <p class="text-2xl font-black text-emerald-600 leading-tight">${appState.absensi.filter(a => a.status === 'H').length}</p>
-                        <p class="text-[11px] text-slate-400">Dari ${totalSiswaCount} anak wali</p>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-500 uppercase tracking-wider">Hadir Hari Ini</span>
+                        <span class="w-7 h-7 rounded-lg bg-emerald-50 text-secondary flex items-center justify-center text-xs"><i class="fas fa-calendar-check"></i></span>
                     </div>
-                    <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
+                    <p class="text-2xl font-black text-emerald-600 mt-1">${appState.absensi.filter(a => a.status === 'H').length}</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-                    <span class="w-11 h-11 shrink-0 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-base"><i class="fas fa-triangle-exclamation"></i></span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs font-bold text-rose-500">Perlu Perhatian</p>
-                        <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 leading-tight">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
-                        <p class="text-[11px] text-slate-400">Anak wali yang perlu perhatian</p>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-rose-500 uppercase tracking-wider">Perlu Perhatian</span>
+                        <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs"><i class="fas fa-triangle-exclamation"></i></span>
                     </div>
-                    <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
+                    <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 mt-1">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
                 </div>
             `;
         } else {
@@ -863,13 +838,7 @@ function renderAgendaSection(agendaList) {
     if (!container) return;
 
     if (!agendaList || agendaList.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-calendar-day text-slate-300 text-2xl mb-2"></i>
-            <p class="text-xs text-slate-500 font-semibold">Belum ada agenda pembinaan yang akan datang.</p>
-            <p class="text-[11px] text-slate-400 mt-1">Agenda akan muncul di sini setelah dijadwalkan.</p>
-          </div>
-        `;
+        container.innerHTML = `<p class="text-xs text-slate-400 italic px-1">Belum ada agenda pembinaan mendatang.</p>`;
         return;
     }
 
