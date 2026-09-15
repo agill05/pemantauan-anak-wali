@@ -2726,45 +2726,94 @@ async function generateAndShareMagicLink(siswaId = null) {
         return;
     }
 
-    const res = await apiCall("generateMagicLink", { siswa_id: targetId }, true);
-    if (res && res.status === "success") {
-        const baseUrl = window.location.origin + window.location.pathname;
-        const magicUrl = `${baseUrl}?magic_token=${encodeURIComponent(res.magic_token)}`;
-        const siswa = appState.activeSiswaDetail?.siswa || appState.siswa.find(s => String(s.id) === String(targetId));
+    const siswa = appState.activeSiswaDetail?.siswa || appState.siswa.find(s => String(s.id) === String(targetId));
+    const storageKey = `magic_link_cache_${targetId}`;
+    const COOLDOWN_MS = 15 * 60 * 1000; // 15 Menit (dalam milidetik)
+    const now = Date.now();
 
-        let phone = safeStr(siswa?.no_hp_ortu).replace(/[^0-9]/g, '');
-        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+    // 1. Cek cache link di localStorage
+    let cachedData = null;
+    try {
+        const rawCache = localStorage.getItem(storageKey);
+        if (rawCache) cachedData = JSON.parse(rawCache);
+    } catch (e) { }
 
-        const waText = encodeURIComponent(
-            `Assalamu'alaikum Bapak/Ibu Wali dari ${siswa?.nama || 'Siswa'}.\n\n` +
-            `Berikut adalah tautan pemantauan perkembangan anak Anda di SMPN 1 Talaga Jaya:\n` +
-            `${magicUrl}\n\n` +
-            `⚠️ *Catatan*: Demi keamanan, tautan ini hanya dapat diakses selama *15 menit* sejak pesan ini dibuat.`
-        );
+    let magicUrl = "";
+    let isExisting = false;
+    let remainingMs = 0;
 
-        Swal.fire({
-            title: '✨ Magic Link Orang Tua',
-            html: `
-                <p class="text-xs text-slate-500 mb-3">Tautan akses profil tanpa login dibuat khusus untuk orang tua. Berlaku selama <b>15 menit</b>.</p>
-                <div class="bg-slate-100 p-2.5 rounded-xl border border-slate-200 text-xs font-mono break-all select-all mb-3 text-slate-700">
+    // 2. Evaluasi apakah link masih dalam periode 15 menit
+    if (cachedData && (now - cachedData.timestamp < COOLDOWN_MS)) {
+        magicUrl = cachedData.magicUrl;
+        isExisting = true;
+        remainingMs = COOLDOWN_MS - (now - cachedData.timestamp);
+    } else {
+        // Jika belum ada atau sudah > 15 menit, buat link baru via API
+        const res = await apiCall("generateMagicLink", { siswa_id: targetId }, true);
+        if (res && res.status === "success") {
+            const baseUrl = window.location.origin + window.location.pathname;
+            magicUrl = `${baseUrl}?magic_token=${encodeURIComponent(res.magic_token)}`;
+            
+            // Simpan cache ke localStorage
+            cachedData = {
+                magicUrl: magicUrl,
+                timestamp: now
+            };
+            localStorage.setItem(storageKey, JSON.stringify(cachedData));
+            remainingMs = COOLDOWN_MS;
+        } else {
+            return; // Error koneksi/autentikasi sudah ditangani apiCall
+        }
+    }
+
+    // 3. Hitung sisa waktu menit & detik
+    const sisaMenit = Math.floor(remainingMs / (1000 * 60));
+    const sisaDetik = Math.floor((remainingMs % (1000 * 60)) / 1000);
+    const timeInfo = `${sisaMenit} menit ${sisaDetik} detik`;
+
+    let phone = safeStr(siswa?.no_hp_ortu).replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+
+    const waText = encodeURIComponent(
+        `Assalamu'alaikum Bapak/Ibu Wali dari ${siswa?.nama || 'Siswa'}.\n\n` +
+        `Berikut adalah tautan pemantauan perkembangan anak Anda di SMPN 1 Talaga Jaya:\n` +
+        `${magicUrl}\n\n` +
+        `⚠️ *Catatan*: Demi keamanan, tautan ini hanya dapat diakses selama *15 menit* sejak dibuat.`
+    );
+
+    // 4. Tampilkan dialog beserta sisa waktu
+    Swal.fire({
+        title: isExisting ? '✨ Magic Link (Link Aktif)' : '✨ Magic Link Baru Dibuat',
+        html: `
+            <div class="text-left space-y-2">
+                <p class="text-xs text-slate-500">
+                    ${isExisting 
+                        ? 'Menampilkan <b>Magic Link yang sudah dibuat sebelumnya</b>. Tautan baru dapat dibuat setelah masa aktif habis.' 
+                        : 'Tautan pemantauan baru berhasil dibuat.'}
+                </p>
+                <div class="bg-blue-50 border border-blue-200 text-blue-800 p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                    <i class="fas fa-hourglass-half text-blue-600"></i>
+                    <span>Sisa waktu aktif link ini: <b>${timeInfo}</b></span>
+                </div>
+                <div class="bg-slate-100 p-2.5 rounded-xl border border-slate-200 text-xs font-mono break-all select-all text-slate-700">
                     ${magicUrl}
                 </div>
-            `,
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonColor: '#2563eb',
-            cancelButtonColor: '#059669',
-            confirmButtonText: '<i class="fas fa-copy"></i> Salin Link',
-            cancelButtonText: '<i class="fab fa-whatsapp"></i> Kirim WhatsApp'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                navigator.clipboard.writeText(magicUrl);
-                Swal.fire({ icon: 'success', title: 'Tersalin!', text: 'Tautan berhasil disalin ke clipboard.', timer: 1500, showConfirmButton: false });
-            } else if (result.dismiss === Swal.DismissReason.cancel && phone) {
-                window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${waText}`, '_blank');
-            }
-        });
-    }
+            </div>
+        `,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#059669',
+        confirmButtonText: '<i class="fas fa-copy"></i> Salin Link',
+        cancelButtonText: '<i class="fab fa-whatsapp"></i> Kirim WhatsApp'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            navigator.clipboard.writeText(magicUrl);
+            Swal.fire({ icon: 'success', title: 'Tersalin!', text: 'Tautan berhasil disalin ke clipboard.', timer: 1500, showConfirmButton: false });
+        } else if (result.dismiss === Swal.DismissReason.cancel && phone) {
+            window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${waText}`, '_blank');
+        }
+    });
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
