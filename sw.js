@@ -1,23 +1,18 @@
-const CACHE_NAME = "demo-paw-cache-v2";
+const CACHE_NAME = "paw-cache-v4.3";
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",
     "./style.css",
-    "./app.js",
-    "https://cdn.tailwindcss.com",
-    "https://cdn.jsdelivr.net/npm/sweetalert2@11",
-    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    "./app.js"
 ];
 
-// Install Service Worker & Cache Aset Statis
 self.addEventListener("install", (event) => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
     );
-    self.skipWaiting();
 });
 
-// Bersihkan Cache Lama Saat Ada Pembaruan Versi
 self.addEventListener("activate", (event) => {
     event.waitUntil(
         caches.keys().then((keys) =>
@@ -31,14 +26,21 @@ self.addEventListener("activate", (event) => {
     self.clients.claim();
 });
 
-// Strategi Cache-First untuk Aset Statis (Abaikan Request ke GAS API)
+// Strategi Network-First untuk HTML & JS Aplikasi (Agar Update Vercel Langsung Aktif)
 self.addEventListener("fetch", (event) => {
     if (event.request.url.includes("script.google.com")) {
-        return; // Izinkan Panggilan API GAS Berjalan Normal
+        return; // API Request selalu bypass Service Worker
     }
+
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || fetch(event.request);
-        })
+        fetch(event.request)
+            .then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+                }
+                return networkResponse;
+            })
+            .catch(() => caches.match(event.request)) // Fallback ke Cache hanya saat Offline
     );
 });

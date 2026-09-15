@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzjnNtoqJSgVixvwI2k09PiyviJxs1R-G2o5FdSYuMggNxmCECg-kWfXc4KSdoo3cgR/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwexDqnGSgtpr1ajoFsn9Wg0umdUR4cJ1tVLSiUvoDXqnUzyXKgM7QUbfcI6xg7w5Kd/exec";
 
 // ==================================================================
 // 1. STATE MANAGEMENT & LOCALSTORAGE ENGINE (INSTANT LOAD & TTL)
@@ -895,86 +895,40 @@ function renderAgendaSection(agendaList) {
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'ortu') return;
 
-    // Fetch seluruh absensi (tanpa filter tanggal) agar akumulasi alpa terbaca
-    const [resAbs, resAkd, resPbn] = await Promise.all([
-        apiCall("getAbsensi", {}, false),
-        apiCall("getAkademik", {}, false),
-        apiCall("getPembinaan", {}, false)
-    ]);
-
-    const absensiData = resAbs?.data || [];
-    const akademikData = resAkd?.data || [];
-    const pembinaanData = resPbn?.data || [];
+    // Panggil rekap laporan yang memuat agregat seluruh hari
+    const resRekap = await apiCall("getLaporanRekap", {}, false);
+    const rekapData = resRekap?.data || [];
 
     let notificationList = [];
-    const targetStudents = (appState.user.role === 'siswa')
-        ? (appState.siswa.length > 0 ? appState.siswa : [appState.user])
-        : (appState.siswa || []);
 
-    targetStudents.forEach(s => {
-        const sId = String(s.id);
-
-        // Deteksi 1: Akumulasi Alpa (Siswa bermasalah jika Alpa >= 3 kali)
-        const totalAlpa = absensiData.filter(a => String(a.siswa_id) === sId && a.status === 'A').length;
-        if (totalAlpa >= 3) {
+    rekapData.forEach(item => {
+        if (item.presensi.alpa >= 3) {
             notificationList.push({
-                siswa: s,
+                siswa: { id: item.id, nama: item.nama },
                 type: 'danger',
                 title: 'Absensi Bermasalah',
-                desc: appState.user.role === 'siswa'
-                    ? `Anda memiliki akumulasi Alpa sebanyak ${totalAlpa} kali.`
-                    : `${s.nama} memiliki akumulasi Alpa sebanyak ${totalAlpa} kali.`
+                desc: `${item.nama} memiliki akumulasi Alpa sebanyak ${item.presensi.alpa} kali.`
             });
         }
-
-        // Deteksi 2: Nilai di Bawah KKTP
-        const lowGrades = akademikData.filter(a => String(a.siswa_id) === sId && Number(a.nilai_akhir || 0) < Number(a.kktp || 75));
-        if (lowGrades.length > 0) {
-            lowGrades.forEach(g => {
-                notificationList.push({
-                    siswa: s,
-                    type: 'warning',
-                    title: 'Nilai Akademik Kurang',
-                    desc: appState.user.role === 'siswa'
-                        ? `Nilai ${g.mapel} Anda (${g.nilai_akhir}) di bawah KKTP (${g.kktp}).`
-                        : `${s.nama}: Nilai ${g.mapel} (${g.nilai_akhir}) di bawah KKTP (${g.kktp}).`
-                });
-            });
-        }
-
-        // Deteksi 3: Pembinaan Aktif
-        const activePem = pembinaanData.filter(p => String(p.siswa_id) === sId && String(p.status).toLowerCase() !== 'selesai');
-        if (activePem.length > 0) {
-            activePem.forEach(p => {
-                notificationList.push({
-                    siswa: s,
-                    type: 'info',
-                    title: 'Pembinaan Aktif',
-                    desc: `${s.nama}: Catatan (${p.jenis}) - ${p.permasalahan}`
-                });
+        if (item.dibawah_kktp > 0) {
+            notificationList.push({
+                siswa: { id: item.id, nama: item.nama },
+                type: 'warning',
+                title: 'Nilai Akademik Kurang',
+                desc: `${item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah KKTP.`
             });
         }
     });
 
     appState.currentNotifications = notificationList;
-
-    // Update Badge Notifikasi di Header
     const badge = document.getElementById("notif-badge");
-    const btnNotif = document.getElementById("btn-notif-header");
-    if (badge && btnNotif) {
+    if (badge) {
         if (notificationList.length > 0) {
             badge.innerText = notificationList.length;
             badge.classList.remove("hidden");
-            btnNotif.classList.remove("hidden");
         } else {
             badge.classList.add("hidden");
         }
-    }
-
-    // Update Angka di Kartu Statistik Dashboard secara Realtime
-    const statCountEl = document.getElementById("dash-stat-perhatian-count");
-    if (statCountEl) {
-        statCountEl.innerText = notificationList.length;
     }
 }
 
@@ -1170,48 +1124,45 @@ function renderAbsensiView() {
 // OPTIMISTIC BATCH ABSENSI SAVE
 async function saveBatchAbsensiForm(event) {
     if (event) event.preventDefault();
-
-    const now = new Date();
-    const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const JAM_BATAS_SEKOLAH = "07:15";
+    showLoading("Menyimpan presensi ke server...");
 
     const selectElements = document.querySelectorAll(".absensi-select-item");
     const payloadAbsensi = [];
+    const tanggalTarget = getDateWITA();
 
     selectElements.forEach(select => {
         const siswaId = select.getAttribute("data-siswa-id");
-        let selectedStatus = select.value;
-
-        const existingRec = appState.absensi.find(a => String(a.siswa_id) === String(siswaId));
-        let waktuMasuk = existingRec?.waktu_masuk || currentTimeStr;
-
-        if (selectedStatus === 'H') {
-            const analisisWaktu = hitungStatusKeterlambatan(waktuMasuk, JAM_BATAS_SEKOLAH);
-            if (analisisWaktu.status === 'T') selectedStatus = 'T';
-        }
-
-        const item = {
+        const selectedStatus = select.value;
+        payloadAbsensi.push({
             siswa_id: siswaId,
             status: selectedStatus,
-            waktu_masuk: (selectedStatus === 'H' || selectedStatus === 'T') ? waktuMasuk : '',
-            tanggal: getDateWITA()
-        };
-
-        payloadAbsensi.push(item);
-
-        // Update State Lokal Seketika
-        const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(siswaId));
-        if (idx !== -1) appState.absensi[idx] = item;
-        else appState.absensi.push(item);
+            waktu_masuk: getTimeWITA24(),
+            tanggal: tanggalTarget
+        });
     });
 
-    // 1. Simpan & Render Ulang UI Seketika (0 ms)
-    saveAppStateToLocal();
-    renderAbsensiView();
-    showToast("Presensi berhasil diperbarui!");
+    // Kirim Synchronous/Awaited ke Server
+    const res = await apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: tanggalTarget }, false);
+    hideLoading();
 
-    // 2. Kirim ke Server di Latar Belakang
-    apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: getDateWITA() }, false);
+    if (res && res.status === "success") {
+        // Hanya update state lokal jika server mengonfirmasi BERHASIL
+        payloadAbsensi.forEach(item => {
+            const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(item.siswa_id));
+            if (idx !== -1) appState.absensi[idx] = item;
+            else appState.absensi.push(item);
+        });
+        saveAppStateToLocal();
+        renderAbsensiView();
+        showToast("Presensi berhasil disimpan!");
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menyimpan',
+            text: res?.message || 'Terjadi kesalahan jaringan. Presensi gagal disimpan ke server.',
+            confirmButtonColor: '#2563eb'
+        });
+    }
 }
 
 function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
