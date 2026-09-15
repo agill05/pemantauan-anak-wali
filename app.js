@@ -36,7 +36,7 @@ let appState = {
     activeSiswaDetail: null,
     laporanRekap: [],
     currentNotifications: [],
-    handleNotifications: []
+    handledNotifications: []
 };
 
 function saveAppStateToLocal() {
@@ -128,7 +128,7 @@ const MASTER_KEBIASAAN = [
 ];
 
 // ==================================================================
-// 2. HELPER UTILITY & DRAFT ENGINE
+// 2. HELPER UTILITY, NETWORK & DRAFT ENGINE
 // ==================================================================
 function sortSiswa(listSiswa) {
     return [...listSiswa].sort((a, b) => {
@@ -299,6 +299,36 @@ function showDraftIndicator(isSaved) {
     }
 }
 
+// TAHAP 5: ONLINE / OFFLINE STATUS LISTENERS & BACKGROUND SYNC TRIGGER
+function setupNetworkStatusListeners() {
+    const banner = document.getElementById("offline-banner");
+
+    const updateStatus = () => {
+        if (navigator.onLine) {
+            banner?.classList.add("hidden");
+            showToast("Koneksi terhubung kembali.");
+            triggerBackgroundSync();
+        } else {
+            banner?.classList.remove("hidden");
+        }
+    };
+
+    window.addEventListener("online", updateStatus);
+    window.addEventListener("offline", updateStatus);
+}
+
+async function triggerBackgroundSync() {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.sync.register('sync-presensi-queue');
+            console.log('Background Sync berhasil didaftarkan');
+        } catch (err) {
+            console.error('Pendaftaran Background Sync gagal:', err);
+        }
+    }
+}
+
 // ==================================================================
 // 3. API ENGINE & AUTHENTICATION
 // ==================================================================
@@ -441,6 +471,7 @@ async function continueSessionSetup() {
     startRealtimeNotificationPolling();
     applyRoleUI(appState.user.role);
     startSilentTokenRefresh();
+    setupNetworkStatusListeners();
 
     const loginView = document.getElementById("view-login");
     const mainHeader = document.getElementById("main-header");
@@ -469,11 +500,9 @@ async function continueSessionSetup() {
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
     renderSidebarMenu(appState.user.role);
 
-    // Load Cache Lokal Seketika (0 ms delay)
     loadAppStateFromLocal();
     switchView("dashboard");
 
-    // Fetch data backend di latar belakang (Non-Blocking UI)
     apiCall("getBootstrapData", {}, false).then(resBootstrap => {
         if (resBootstrap && resBootstrap.status === "success") {
             appState.kelas = resBootstrap.data.initial.kelas || [];
@@ -801,12 +830,11 @@ async function renderDashboard() {
         }
     }
 
-    // Ambil data dashboard backend & Sinkronkan notifikasi setelahnya
     apiCall("getDashboardData", {}, false).then(res => {
         if (res && res.status === "success") {
             renderPrioritySection(res.data.priority_list);
             renderAgendaSection(res.data.agenda_list);
-            checkStudentNotifications(); // Panggil pengecekan ulang setelah data siap
+            checkStudentNotifications();
         }
     });
 }
@@ -893,8 +921,27 @@ function renderAgendaSection(agendaList) {
     `).join("");
 }
 
+// TAHAP 1: FITUR PROGRESS BAR CAPAIAN JUZ 30 / 114 SURAH
+function getHafalanProgressStats(hafalanList = []) {
+    const lancarSurahs = hafalanList.filter(h => h.status === 'Lancar').map(h => h.nama_surat);
+    
+    // Surah Juz 30: Nomor 78 s.d. 114 (37 Surah)
+    const juz30Surahs = MASTER_SURAHS.filter(s => s.juz === 30);
+    const juz30Lancar = juz30Surahs.filter(s => lancarSurahs.includes(s.nama)).length;
+    const juz30Percent = Math.round((juz30Lancar / juz30Surahs.length) * 100);
+
+    // Total 114 Surah
+    const totalLancar = MASTER_SURAHS.filter(s => lancarSurahs.includes(s.nama)).length;
+    const totalPercent = Math.round((totalLancar / 114) * 100);
+
+    return {
+        juz30: { count: juz30Lancar, total: juz30Surahs.length, percent: juz30Percent },
+        total: { count: totalLancar, total: 114, percent: totalPercent }
+    };
+}
+
 // ==================================================================
-// NOTIFICATION SNOOZE & 24-HOUR AUTO-REAPPEAR ENGINE (UPDATED)
+// NOTIFICATION SNOOZE & 24-HOUR AUTO-REAPPEAR ENGINE
 // ==================================================================
 function getDismissedNotificationsMap() {
     try {
@@ -911,7 +958,6 @@ function saveDismissedNotificationsMap(map) {
     } catch (e) {}
 }
 
-// Mengambil timestamp penanganan (returns null jika belum pernah ditandai / sudah > 24 jam)
 function getDismissedTimestamp(notifId) {
     const map = getDismissedNotificationsMap();
     if (!map[notifId]) return null;
@@ -919,7 +965,6 @@ function getDismissedTimestamp(notifId) {
     const timestamp = map[notifId];
     const elapsed = Date.now() - timestamp;
 
-    // Jika sudah lewat 24 jam tanpa dibuat catatan pembinaan -> Otomatis kembali aktif
     if (elapsed >= SNOOZE_24H_MS) {
         delete map[notifId];
         saveDismissedNotificationsMap(map);
@@ -932,10 +977,9 @@ function isNotificationDismissed(notifId) {
     return getDismissedTimestamp(notifId) !== null;
 }
 
-// Menandai notifikasi (Centang) -> Pindah ke tab Sudah Ditangani
 async function dismissNotification(notifId) {
     const map = getDismissedNotificationsMap();
-    map[notifId] = Date.now(); // Simpan waktu penanganan saat ini
+    map[notifId] = Date.now();
     saveDismissedNotificationsMap(map);
 
     await checkStudentNotifications();
@@ -944,7 +988,6 @@ async function dismissNotification(notifId) {
     showToast("Dipindahkan ke 'Sudah Ditangani'. Jika belum ada catatan pembinaan, akan muncul kembali dalam 24 jam.", "info");
 }
 
-// Mengembalikan notifikasi yang telah ditandai ke daftar aktif (Buka Lagi / Undo)
 async function restoreNotification(notifId) {
     const map = getDismissedNotificationsMap();
     delete map[notifId];
@@ -956,7 +999,6 @@ async function restoreNotification(notifId) {
     showToast("Notifikasi dikembalikan ke daftar 'Perlu Tindakan'.", "info");
 }
 
-// Helper format relatif waktu penanganan (misal: "10 menit lalu")
 function formatTimeAgo(timestamp) {
     if (!timestamp) return "";
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -984,7 +1026,6 @@ function clearStudentNotificationsOnNoteAdded(siswaId) {
     }
 }
 
-// Web Push Notification Helper
 async function requestNotificationPermission() {
     if ("Notification" in window) {
         const permission = await Notification.requestPermission();
@@ -1024,7 +1065,6 @@ async function checkStudentNotifications() {
     const isSiswa = appState.user.role === 'siswa';
     const currentUserId = String(appState.user.id);
 
-    // 1. Pastikan data pembinaan terambil dari backend jika lokal masih kosong
     if (!appState.pembinaan || appState.pembinaan.length === 0) {
         const resPbn = await apiCall("getPembinaan", {}, false);
         if (resPbn && resPbn.data) appState.pembinaan = resPbn.data;
@@ -1037,7 +1077,6 @@ async function checkStudentNotifications() {
     let handledList = [];
     const todayStr = getDateWITA();
 
-    // Helper untuk memilah notifikasi ke daftar Aktif atau Sudah Ditangani
     const processNotifItem = (item) => {
         if (isSiswa && String(item.siswa.id) !== currentUserId) {
             return;
@@ -1051,7 +1090,6 @@ async function checkStudentNotifications() {
         }
     };
 
-    // --- KRITERIA 1 & 2: PRESENSI DAN AKADEMIK ---
     const filteredRekap = isSiswa 
         ? rekapData.filter(item => String(item.id) === currentUserId)
         : rekapData;
@@ -1059,7 +1097,6 @@ async function checkStudentNotifications() {
     filteredRekap.forEach(item => {
         const sId = String(item.id);
         
-        // PRESENSI (Kedisiplinan)
         if (item.presensi.alpa >= 3) {
             processNotifItem({
                 id: `${sId}_alpa_kritis`,
@@ -1082,7 +1119,6 @@ async function checkStudentNotifications() {
             });
         }
 
-        // AKADEMIK (Nilai KKTP)
         if (item.dibawah_kktp >= 2) {
             processNotifItem({
                 id: `${sId}_akademik_kritis`,
@@ -1106,7 +1142,6 @@ async function checkStudentNotifications() {
         }
     });
 
-    // --- KRITERIA 3: KEBIASAAN HEBAT (Ibadah/K2) ---
     if (appState.kebiasaan && appState.kebiasaan.length > 0) {
         const targetSiswa = isSiswa 
             ? appState.siswa.filter(s => String(s.id) === currentUserId)
@@ -1129,7 +1164,6 @@ async function checkStudentNotifications() {
         });
     }
 
-    // --- KRITERIA 4: KEAGAMAAN (Hafalan Surat Status Mengulang) ---
     if (appState.keagamaan && appState.keagamaan.length > 0) {
         const targetHafalan = isSiswa
             ? appState.keagamaan.filter(h => String(h.siswa_id) === currentUserId)
@@ -1153,7 +1187,6 @@ async function checkStudentNotifications() {
         });
     }
 
-    // --- KRITERIA 5: CATATAN PEMBINAAN AKTIF (SEMUA STATUS BELUM SELESAI) ---
     if (appState.pembinaan && appState.pembinaan.length > 0) {
         const targetPembinaan = isSiswa
             ? appState.pembinaan.filter(p => String(p.siswa_id) === currentUserId)
@@ -1179,7 +1212,6 @@ async function checkStudentNotifications() {
         });
     }
 
-    // Urutkan Prioritas Tingkat Keparahan
     const levelOrder = { 'kritis': 3, 'sedang': 2, 'rendah': 1 };
     activeList.sort((a, b) => levelOrder[b.level] - levelOrder[a.level]);
     handledList.sort((a, b) => b.dismissedAt - a.dismissedAt);
@@ -1188,7 +1220,6 @@ async function checkStudentNotifications() {
     appState.currentNotifications = activeList;
     appState.handledNotifications = handledList;
 
-    // Update Badge UI Header
     const badge = document.getElementById("notif-badge");
     if (badge) {
         if (activeList.length > 0) {
@@ -1199,13 +1230,11 @@ async function checkStudentNotifications() {
         }
     }
 
-    // 2. SINKRONKAN ANGKA KARTU STATISTIK DASHBOARD DENGAN HASIL TERBARU
     const statCount = document.getElementById("dash-stat-perhatian-count");
     if (statCount) {
         statCount.innerText = activeList.length;
     }
 
-    // Kirim Web Push Notification jika ada notifikasi KRITIS baru (hanya untuk Admin/Guru)
     if (!isSiswa && activeList.length > prevCount) {
         const kritisCount = activeList.filter(n => n.level === 'kritis').length;
         if (kritisCount > 0) {
@@ -1228,16 +1257,32 @@ function openQuickPembinaan(siswaId, defaultMasalah) {
     }, 150);
 }
 
-function openNotificationModal(activeTab = 'active') {
+// TAHAP 3: MODAL NOTIFIKASI DENGAN FILTER KELAS
+function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
-    // Cek Hak Akses Pengeditan Notifikasi
     const isCanManageNotif = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
-    const activeList = appState.currentNotifications || [];
-    const handledList = appState.handledNotifications || [];
+    let activeList = appState.currentNotifications || [];
+    let handledList = appState.handledNotifications || [];
+
+    if (selectedKelasId) {
+        activeList = activeList.filter(n => {
+            const s = appState.siswa.find(x => String(x.id) === String(n.siswa.id));
+            return s && String(s.kelas_id) === String(selectedKelasId);
+        });
+        handledList = handledList.filter(n => {
+            const s = appState.siswa.find(x => String(x.id) === String(n.siswa.id));
+            return s && String(s.kelas_id) === String(selectedKelasId);
+        });
+    }
+
     const currentList = activeTab === 'active' ? activeList : handledList;
+
+    const kelasOptions = (appState.kelas || []).map(k => `
+        <option value="${k.id}" ${String(selectedKelasId) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>
+    `).join("");
 
     const getLevelBadge = (level) => {
         if (level === 'kritis') return '<span class="px-2 py-0.5 text-[10px] font-black uppercase rounded bg-rose-600 text-white animate-pulse">KRITIS</span>';
@@ -1269,20 +1314,28 @@ function openNotificationModal(activeTab = 'active') {
         </div>
 
         ${isCanManageNotif ? `
-        <!-- TAB SWITCHER NOTIFIKASI (KHUSUS GURU & ADMIN) -->
-        <div class="flex bg-slate-100 p-1 rounded-xl mb-3 gap-1">
-            <button onclick="openNotificationModal('active')" 
-                class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
-                Perlu Tindakan (${activeList.length})
-            </button>
-            <button onclick="openNotificationModal('handled')" 
-                class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'handled' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
-                Sudah Ditangani (${handledList.length})
-            </button>
+        <!-- FILTER KELAS & TAB SWITCHER NOTIFIKASI -->
+        <div class="space-y-2 mb-3">
+            <div>
+                <select onchange="openNotificationModal('${activeTab}', this.value)" class="w-full bg-slate-100 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
+                    <option value="">Semua Kelas</option>
+                    ${kelasOptions}
+                </select>
+            </div>
+            <div class="flex bg-slate-100 p-1 rounded-xl gap-1">
+                <button onclick="openNotificationModal('active', '${selectedKelasId}')" 
+                    class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
+                    Perlu Tindakan (${activeList.length})
+                </button>
+                <button onclick="openNotificationModal('handled', '${selectedKelasId}')" 
+                    class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'handled' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
+                    Sudah Ditangani (${handledList.length})
+                </button>
+            </div>
         </div>
         ` : ''}
         
-        <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        <div class="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
             ${currentList.length === 0 ? `
                 <div class="empty-state">
                     <i class="fas ${activeTab === 'active' ? 'fa-check-circle text-emerald-500' : 'fa-inbox text-slate-300'} text-3xl mb-2"></i>
@@ -1305,7 +1358,6 @@ function openNotificationModal(activeTab = 'active') {
                             <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)} — <span class="text-slate-700 font-semibold">${escapeHtml(n.title)}</span></h4>
                         </div>
 
-                        <!-- HANYA GURU & ADMIN YANG BISA CENTANG / UNDO -->
                         ${isCanManageNotif ? (
                             activeTab === 'active' ? `
                                 <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (Snooze 24 Jam)" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
@@ -1321,7 +1373,6 @@ function openNotificationModal(activeTab = 'active') {
 
                     <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(n.desc)}</p>
 
-                    <!-- TOMBOL AKSI BERDASARKAN HAK AKSES ROLE -->
                     <div class="flex items-center gap-1.5 pt-2 border-t border-slate-200/60 flex-wrap">
                         <button onclick="closeModal(); openProfilSiswa('${n.siswa.id}')" class="px-2.5 py-1.5 bg-white text-slate-700 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 flex items-center gap-1">
                             <i class="fas fa-user text-blue-500"></i> Profil ${appState.user.role === 'siswa' ? 'Saya' : ''}
@@ -1456,11 +1507,11 @@ function renderAbsensiView() {
             ` : `
                 <form onsubmit="saveBatchAbsensiForm(event)" class="space-y-2">
                     ${filteredSiswa.map(s => {
-        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
-        const currentStatus = rec.status || 'H';
-        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
+                        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
+                        const currentStatus = rec.status || 'H';
+                        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
 
-        return `
+                        return `
                             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                                 <div>
                                     <h4 class="font-bold text-xs text-slate-800 flex items-center">${noAbsenBadge}${escapeHtml(s.nama)}</h4>
@@ -1479,7 +1530,7 @@ function renderAbsensiView() {
                                 </div>
                             </div>
                         `;
-    }).join('')}
+                    }).join('')}
 
                     ${isEditable ? `
                     <div class="pt-2">
@@ -1493,7 +1544,6 @@ function renderAbsensiView() {
     `;
 }
 
-// OPTIMISTIC BATCH ABSENSI SAVE
 async function saveBatchAbsensiForm(event) {
     if (event) event.preventDefault();
     showLoading("Menyimpan presensi ke server...");
@@ -1709,18 +1759,62 @@ async function loadKeagamaanData(forceRefresh = false) {
     }
 }
 
+// TAHAP 1: RENDER UI MODUL KEAGAMAAN DENGAN PROGRESS BAR CAPAIAN JUZ 30
 function renderKeagamaanView() {
     const container = document.getElementById("keagamaan-container");
     if (!container) return;
 
-    if (!appState.keagamaan || appState.keagamaan.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-quran text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan hafalan Al-Qur'an.</p></div>`;
+    const filterSiswaId = document.getElementById("karakter-siswa-filter")?.value || "";
+    const filteredHafalan = filterSiswaId 
+        ? appState.keagamaan.filter(h => String(h.siswa_id) === String(filterSiswaId))
+        : appState.keagamaan;
+
+    const stats = getHafalanProgressStats(filteredHafalan);
+
+    const progressHeaderHtml = `
+    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-4 rounded-2xl shadow-sm space-y-3 mb-4">
+        <div class="flex justify-between items-center">
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-100">Progres Hafalan Al-Qur'an</h3>
+                <p class="text-xs text-emerald-200">Capaian Juz 30 & Total 114 Surah</p>
+            </div>
+            <span class="bg-white/20 px-2.5 py-1 rounded-xl text-xs font-extrabold backdrop-blur-sm">
+                ${stats.juz30.count}/${stats.juz30.total} Surah (Juz 30)
+            </span>
+        </div>
+
+        <!-- Progress Bar Juz 30 -->
+        <div class="space-y-1">
+            <div class="flex justify-between text-xs font-semibold">
+                <span>Capaian Juz 30 (Juz Amma)</span>
+                <span>${stats.juz30.percent}%</span>
+            </div>
+            <div class="w-full bg-black/20 h-2.5 rounded-full overflow-hidden">
+                <div class="bg-amber-300 h-full rounded-full transition-all duration-500" style="width: ${stats.juz30.percent}%"></div>
+            </div>
+        </div>
+
+        <!-- Progress Bar Total 114 Surah -->
+        <div class="space-y-1">
+            <div class="flex justify-between text-xs font-semibold">
+                <span>Keseluruhan 114 Surah</span>
+                <span>${stats.total.percent}%</span>
+            </div>
+            <div class="w-full bg-black/20 h-2.5 rounded-full overflow-hidden">
+                <div class="bg-emerald-300 h-full rounded-full transition-all duration-500" style="width: ${stats.total.percent}%"></div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    if (!filteredHafalan || filteredHafalan.length === 0) {
+        container.innerHTML = progressHeaderHtml + `<div class="empty-state"><i class="fas fa-quran text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan hafalan Al-Qur'an.</p></div>`;
         return;
     }
 
     const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
-    container.innerHTML = appState.keagamaan.map(item => {
+    const cardsHtml = filteredHafalan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
         const statusBadge = item.status === 'Lancar' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (item.status === 'Mengulang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200');
 
@@ -1745,6 +1839,8 @@ function renderKeagamaanView() {
             </div>
         `;
     }).join("");
+
+    container.innerHTML = progressHeaderHtml + cardsHtml;
 }
 
 function openModalKeagamaan(id = null) {
@@ -1828,8 +1924,139 @@ async function deleteKeagamaan(id) {
 }
 
 // ==================================================================
-// 9. AKADEMIK & PRESTASI MODULE (OPTIMISTIC)
+// 9. AKADEMIK & PRESTASI MODULE (TAHAP 2 INTEGRATION)
 // ==================================================================
+function downloadTemplateAkademikCSV() {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "siswa_id,nama_siswa,mapel,nilai_akhir,kktp\n";
+    
+    appState.siswa.forEach(s => {
+        csvContent += `"${s.id}","${s.nama}","Matematika",80,75\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Template_Nilai_Akademik_${getDateWITA()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportAkademikCSV() {
+    if (!appState.akademik || appState.akademik.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada data nilai akademik untuk diekspor.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "siswa_id,nama_siswa,mapel,nilai_akhir,kktp\n";
+
+    appState.akademik.forEach(row => {
+        const s = appState.siswa.find(x => String(x.id) === String(row.siswa_id));
+        const namaSiswa = s ? s.nama : "Siswa";
+        csvContent += `"${row.siswa_id}","${namaSiswa}","${row.mapel}",${row.nilai_akhir},${row.kktp}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Rekap_Nilai_Akademik_${getDateWITA()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function handleImportAkademikCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (typeof Papa === "undefined") {
+        Swal.fire({ icon: 'error', title: 'Library Missed', text: 'PapaParse library belum dimuat.' });
+        return;
+    }
+
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async function(results) {
+            const data = results.data;
+            const validItems = [];
+
+            data.forEach((row, idx) => {
+                if (row.siswa_id && row.mapel && row.nilai_akhir && row.kktp) {
+                    validItems.push({
+                        id: "AKD-" + Date.now() + "-" + idx,
+                        siswa_id: String(row.siswa_id).trim(),
+                        mapel: String(row.mapel).trim(),
+                        nilai_akhir: Number(row.nilai_akhir),
+                        kktp: Number(row.kktp)
+                    });
+                }
+            });
+
+            if (validItems.length === 0) {
+                Swal.fire({ icon: 'error', title: 'Format Salah', text: 'Tidak ada data valid yang ditemukan. Pastikan nama header sesuai template.' });
+                return;
+            }
+
+            showLoading(`Mengunggah ${validItems.length} data nilai...`);
+            
+            const res = await apiCall("saveBatchAkademik", { items: validItems }, false);
+            hideLoading();
+
+            if (res && res.status === "success") {
+                appState.akademik.push(...validItems);
+                saveAppStateToLocal();
+                renderAkademikNilai();
+                closeModal();
+                showToast(`${validItems.length} Nilai berhasil diimport!`);
+            } else {
+                appState.akademik.push(...validItems);
+                saveAppStateToLocal();
+                renderAkademikNilai();
+                closeModal();
+                showToast(`${validItems.length} Nilai tersimpan secara lokal.`);
+            }
+        }
+    });
+}
+
+function openModalImportAkademik() {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-file-import text-primary mr-1.5"></i>Import Nilai Akademik</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div class="bg-blue-50 border border-blue-200 p-3 rounded-2xl text-xs text-blue-800 space-y-2">
+                <p class="font-bold"><i class="fas fa-info-circle"></i> Panduan Import CSV:</p>
+                <ol class="list-decimal pl-4 space-y-1">
+                    <li>Unduh template file CSV di bawah ini.</li>
+                    <li>Isi nilai dan standar KKTP sesuai ID Siswa.</li>
+                    <li>Unggah kembali file CSV yang telah diisi.</li>
+                </ol>
+                <button onclick="downloadTemplateAkademikCSV()" class="w-full mt-2 bg-white text-primary border border-primary font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 hover:bg-blue-50">
+                    <i class="fas fa-download"></i> Unduh Template CSV
+                </button>
+            </div>
+
+            <div class="border-2 border-dashed border-slate-200 p-6 rounded-2xl text-center space-y-2 hover:border-primary transition">
+                <i class="fas fa-cloud-upload-alt text-3xl text-slate-400"></i>
+                <p class="text-xs font-bold text-slate-600">Pilih file CSV nilai dari perangkat</p>
+                <input type="file" id="input-file-csv" accept=".csv" onchange="handleImportAkademikCSV(event)" class="hidden">
+                <button onclick="document.getElementById('input-file-csv').click()" class="bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm">
+                    Pilih File CSV
+                </button>
+            </div>
+        </div>
+    `;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
 function switchAkademikTab(tab) {
     document.querySelectorAll(".akd-tab-content").forEach(c => c.classList.add("hidden"));
     document.querySelectorAll(".akd-tab-btn").forEach(b => {
@@ -2173,10 +2400,6 @@ function renderPembinaanView() {
     }).join("");
 }
 
-// ==================================================================
-// PEMBINAAN SISWA MODULE (FIXED)
-// ==================================================================
-
 function openModalPembinaan(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
@@ -2188,7 +2411,6 @@ function openModalPembinaan(id = null) {
         `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
     ).join("");
 
-    // Tanggal pengisian default ke hari ini (getDateWITA()) dan dikunci
     const tanggalPengisian = rec ? rec.tanggal : getDateWITA();
 
     box.innerHTML = `
@@ -2252,7 +2474,6 @@ async function savePembinaanForm(e, id) {
     const tanggal = document.getElementById("m-pbn-tanggal").value || getDateWITA();
     const jadwal_pantau = document.getElementById("m-pbn-pantau").value;
 
-    // Untuk data baru, id dikirim sebagai null agar backend Apps Script menambahkan baris baru (INSERT)
     const payload = {
         id: id || null,
         siswa_id: siswaId,
@@ -2269,7 +2490,6 @@ async function savePembinaanForm(e, id) {
     hideLoading();
 
     if (res && res.status === "success") {
-        // Ambil ID yang dihasilkan server (atau fallback ID lokal)
         const recordId = res.id || res.data?.id || id || ("PBN-" + Date.now());
         const savedRecord = {
             id: recordId,
@@ -2293,7 +2513,6 @@ async function savePembinaanForm(e, id) {
         renderPembinaanView();
         closeModal();
 
-        // Hapus status penanganan sementara agar notifikasi tuntas permanen
         clearStudentNotificationsOnNoteAdded(siswaId);
         checkStudentNotifications();
 
@@ -2320,7 +2539,7 @@ async function deletePembinaan(id) {
 }
 
 // ==================================================================
-// 11. PROFIL SISWA 360° & PRINT MODULE
+// 11. PROFIL SISWA 360°, VECTOR PDF & RADAR CHART MODULE (TAHAP 4)
 // ==================================================================
 function switchTabSiswa(tabName, btnEl) {
     document.querySelectorAll('.prof-tab-btn').forEach(btn => {
@@ -2334,6 +2553,10 @@ function switchTabSiswa(tabName, btnEl) {
 
     const target = document.getElementById(`tab-siswa-${tabName}`);
     if (target) target.classList.remove('hidden');
+
+    if (tabName === 'ringkasan' && appState.activeSiswaDetail) {
+        setTimeout(() => renderRadarChartSiswa(appState.activeSiswaDetail), 100);
+    }
 }
 
 async function openProfilSiswa(siswaTarget) {
@@ -2402,6 +2625,16 @@ async function openProfilSiswa(siswaTarget) {
 
         <div class="space-y-4 pt-2">
             <div id="tab-siswa-ringkasan" class="prof-tab-content space-y-4">
+                <!-- RADAR CHART ANALISIS GRAFIS -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fas fa-chart-pie text-primary"></i> Analisis Grafis Radar Karakter Siswa
+                    </h4>
+                    <div class="w-full max-w-sm mx-auto p-2">
+                        <canvas id="radarChartSiswa"></canvas>
+                    </div>
+                </div>
+
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-calendar-alt text-blue-500 mr-1.5"></i>Rekapitulasi Kehadiran</h4>
                     <div class="grid grid-cols-4 gap-2 text-center">
@@ -2513,6 +2746,97 @@ async function openProfilSiswa(siswaTarget) {
     `;
 
     switchView("profil-siswa");
+    setTimeout(() => renderRadarChartSiswa(detailData), 150);
+}
+
+// TAHAP 4: RADAR CHART SINKRONISASI DATAS
+function renderRadarChartSiswa(detailData) {
+    const ctx = document.getElementById('radarChartSiswa');
+    if (!ctx) return;
+
+    if (window.activeRadarChartInstance) {
+        window.activeRadarChartInstance.destroy();
+    }
+
+    const { absensi = [], kebiasaan = [], hafalan = [], akademik = [], pembinaan = [] } = detailData;
+
+    const totalAbsen = absensi.length || 1;
+    const skorHadir = Math.round((absensi.filter(a => a.status === 'H').length / totalAbsen) * 100);
+    const skorKebiasaan = Math.round((kebiasaan.filter(k => k.status === 'Sudah').length / 7) * 100);
+    const skorKeagamaan = Math.min(100, (hafalan.filter(h => h.status === 'Lancar').length / 10) * 100);
+    const totalNilai = akademik.reduce((acc, curr) => acc + Number(curr.nilai_akhir), 0);
+    const skorAkademik = akademik.length > 0 ? Math.round(totalNilai / akademik.length) : 0;
+    const skorKedisiplinan = Math.max(0, 100 - (pembinaan.length * 20));
+
+    window.activeRadarChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Kehadiran', '7 Kebiasaan', 'Keagamaan', 'Akademik', 'Kedisiplinan'],
+            datasets: [{
+                label: 'Profil Karakter Siswa',
+                data: [skorHadir, skorKebiasaan, skorKeagamaan, skorAkademik, skorKedisiplinan],
+                backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                borderColor: '#2563eb',
+                pointBackgroundColor: '#2563eb',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#2563eb'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                r: {
+                    angleLines: { display: true },
+                    suggestedMin: 0,
+                    suggestedMax: 100
+                }
+            }
+        }
+    });
+}
+
+// TAHAP 4: DIRECT VECTOR PDF EXPORT HTML2PDF
+function downloadRaporPDFVector() {
+    if (!appState.activeSiswaDetail) {
+        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Data siswa belum dipilih.' });
+        return;
+    }
+    const { siswa } = appState.activeSiswaDetail;
+
+    printProfilSiswa();
+
+    const element = document.getElementById("printable-area");
+    if (!element) return;
+    element.classList.remove("hidden");
+
+    const opt = {
+        margin:       [10, 10, 10, 10],
+        filename:     `Rapor_Pemantauan_${siswa.nama.replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    showLoading("Membentuk dokumen PDF vector...");
+
+    if (typeof html2pdf === "undefined") {
+        hideLoading();
+        element.classList.add("hidden");
+        Swal.fire({ icon: 'error', title: 'Pustaka Hilang', text: 'html2pdf.js belum dimuat dengan benar.' });
+        return;
+    }
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        hideLoading();
+        element.classList.add("hidden");
+        showToast("File PDF Vector berhasil diunduh!");
+    }).catch(err => {
+        hideLoading();
+        element.classList.add("hidden");
+        showToast("Gagal membuat file PDF", "error");
+    });
 }
 
 function printProfilSiswa() {
@@ -2779,7 +3103,7 @@ function exportRekapCSV() {
 }
 
 // ==================================================================
-// 13. MASTER DATA MANAGEMENT (ADMIN & GURU) (OPTIMISTIC)
+// 13. MASTER DATA MANAGEMENT (ADMIN & GURU)
 // ==================================================================
 function renderSiswaView() {
     const container = document.getElementById("siswa-card-container");
@@ -3299,6 +3623,8 @@ async function generateAndShareMagicLink(siswaId = null) {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
+    setupNetworkStatusListeners();
+
     const urlParams = new URLSearchParams(window.location.search);
     const magicToken = urlParams.get('magic_token');
 
@@ -3362,18 +3688,17 @@ function renderMagicLinkProfilView(data) {
     const mainContent = document.getElementById("main-content");
     if (mainContent) mainContent.classList.remove("hidden");
 
-    openProfilSiswa(data).then(() => {
-        const profContainer = document.getElementById("profil-siswa-details");
-        if (profContainer) {
-            const topBanner = `
-                <div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-2xl text-xs font-semibold flex items-center gap-2 mb-3">
-                    <i class="fas fa-clock text-amber-600 text-sm"></i>
-                    <span>Tautan ini bersifat sementara dan akan otomatis kedaluwarsa 15 menit setelah dibuat.</span>
-                </div>
-            `;
-            profContainer.insertAdjacentHTML('afterbegin', topBanner);
-        }
-    });
+    openProfilSiswa(data);
+    const profContainer = document.getElementById("profil-siswa-details");
+    if (profContainer) {
+        const topBanner = `
+            <div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-2xl text-xs font-semibold flex items-center gap-2 mb-3">
+                <i class="fas fa-clock text-amber-600 text-sm"></i>
+                <span>Tautan ini bersifat sementara dan akan otomatis kedaluwarsa 15 menit setelah dibuat.</span>
+            </div>
+        `;
+        profContainer.insertAdjacentHTML('afterbegin', topBanner);
+    }
 }
 
 function showExpiredMagicLinkScreen(message) {
