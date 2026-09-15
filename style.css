@@ -12,7 +12,7 @@
     --secondary: #059669;
     --accent: #d97706;
     --danger: #dc2626;
-    --background: #f8fafc;
+    --background: #eef2f9;
     --surface: #ffffff;
     --border-subtle: #e2e8f0;
     --radius-lg: 1rem;
@@ -76,7 +76,7 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
 /* Login Screen UI */
 #view-login {
     display: none !important;
-    background: radial-gradient(100% 100% at 50% 0%, #eff6ff 0%, #f8fafc 100%);
+    background: radial-gradient(100% 100% at 50% 0%, #eff6ff 0%, #eef2f9 100%);
 }
 
 #view-login.active {
@@ -284,4 +284,312 @@ a:focus-visible {
 
 #bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ==================================================================
+   DESKTOP DASHBOARD LAYOUT (Sidebar Permanen + Header Baru)
+   Menyesuaikan referensi desain dashboard tanpa mengubah fungsi apapun.
+   ================================================================== */
+
+:root {
+    --sidebar-width: 272px;
+    --navy-900: #101c3f;
+    --navy-800: #16244d;
+    --navy-700: #1b2c5c;
+    --navy-line: rgba(255, 255, 255, 0.09);
+}
+
+/* ---- Sidebar: tampil sebagai drawer di mobile, panel tetap di desktop ---- */
+#app-sidebar {
+    background: linear-gradient(190deg, var(--navy-700) 0%, var(--navy-900) 100%);
+    border-right: 1px solid var(--navy-line);
+}
+
+#app-sidebar .border-b,
+#app-sidebar .border-t {
+    border-color: var(--navy-line) !important;
+}
+
+#app-sidebar #sidebar-nama,
+#app-sidebar span.font-black {
+    color: #ffffff !important;
+}
+
+#app-sidebar > div:first-child i.fa-shield-alt {
+    color: var(--navy-900);
+    background: #ffffff;
+}
+
+#app-sidebar #sidebar-role-badge {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #bfdbfe !important;
+}
+
+#app-sidebar .fa-times {
+    color: #cbd5e1;
+}
+
+.sidebar-nav-item {
+    color: #b7c3e0 !important;
+}
+
+.sidebar-nav-item i {
+    color: #7f93c9 !important;
+}
+
+.sidebar-nav-item:hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #ffffff !important;
+}
+
+#app-sidebar .sidebar-nav-item.active {
+    background: var(--primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px -4px rgba(37, 99, 235, 0.5);
+}
+
+#app-sidebar .sidebar-nav-item.active i {
+    color: #ffffff !important;
+}
+
+#app-sidebar button[onclick="handleLogout()"] {
+    color: #fca5a5 !important;
+}
+
+#app-sidebar button[onclick="handleLogout()"]:hover {
+    background: rgba(248, 113, 113, 0.12) !important;
+}
+
+/* ---- Header: welcome greeting + tanggal (khusus desktop) ---- */
+#header-desktime {
+    line-height: 1.15;
+}
+
+@media (min-width: 1024px) {
+    #app-sidebar {
+        position: fixed;
+        transform: none !important;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: var(--sidebar-width);
+        max-width: var(--sidebar-width);
+        box-shadow: none;
+        z-index: 30;
+    }
+
+    #sidebar-backdrop {
+        display: none !important;
+    }
+
+    #app-sidebar .fa-times,
+    #app-sidebar button[onclick="toggleSidebar(false)"] {
+        display: none !important;
+    }
+
+    #btn-toggle-sidebar {
+        display: none !important;
+    }
+
+    #main-header {
+        left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+        background: #ffffff !important;
+        color: #0f172a;
+        border-bottom: 1px solid var(--border-subtle);
+        backdrop-filter: none;
+    }
+
+    #header-default {
+        height: auto;
+        min-height: 5.25rem;
+        padding-top: 1.1rem;
+        padding-bottom: 1.1rem;
+    }
+
+    #header-mobile-avatar {
+        display: none !important;
+    }
+
+    #header-title {
+        font-size: 1.375rem;
+        font-weight: 800;
+        color: #0f172a !important;
+    }
+
+    #header-subtitle {
+        color: #64748b !important;
+        font-size: 0.8rem;
+    }
+
+    #main-header .touch-btn,
+    #main-header button {
+        color: #334155;
+    }
+
+    #main-header .touch-btn:hover,
+    #main-header button:hover {
+        background: #f1f5f9 !important;
+    }
+
+    #main-content {
+        margin-left: var(--sidebar-width);
+        padding-top: 7.25rem;
+        padding-bottom: 2rem;
+    }
+
+    #bottom-nav {
+        display: none !important;
+    }
+
+    .view-section {
+        max-width: 1180px;
+    }
+}
+
+/* ---- Stat cards & Menu Cepat tiles (semua breakpoint) ---- */
+#dash-stats-container > div {
+    position: relative;
+    border-radius: 1.25rem;
+}
+
+.quick-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.9rem 0.85rem;
+    border-radius: 1.1rem;
+    text-align: left;
+    position: relative;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quick-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.quick-tile-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.quick-tile-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.quick-tile-chevron {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.75rem;
+    font-size: 0.65rem;
+    color: #94a3b8;
+}
+
+.quick-tile-blue {
+    background: #eaf2ff;
+}
+
+.quick-tile-blue .quick-tile-icon {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.quick-tile-amber {
+    background: #fef6e7;
+}
+
+.quick-tile-amber .quick-tile-icon {
+    background: #d97706;
+    color: #ffffff;
+}
+
+.quick-tile-emerald {
+    background: #e9f8f1;
+}
+
+.quick-tile-emerald .quick-tile-icon {
+    background: #059669;
+    color: #ffffff;
+}
+
+.quick-tile-purple {
+    background: #f2edfd;
+}
+
+.quick-tile-purple .quick-tile-icon {
+    background: #7c3aed;
+    color: #ffffff;
+}
+
+/* ---- Banner "Bersama Mewujudkan Generasi Hebat" ---- */
+.dash-banner {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 55%, #1e3a8a 100%);
+    border-radius: 1.25rem;
+    padding: 1.4rem;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.6rem;
+    box-shadow: var(--shadow-soft);
+    min-height: 100%;
+}
+
+.dash-banner h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.dash-banner p {
+    font-size: 0.78rem;
+    color: #dbeafe;
+    line-height: 1.5;
+}
+
+.dash-banner-btn {
+    margin-top: 0.4rem;
+    align-self: flex-start;
+    background: #ffffff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.55rem 1rem;
+    border-radius: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.dash-banner-btn:hover {
+    background: #eff6ff;
+}
+
+/* ---- Section header dengan tombol "Lihat Semua" ---- */
+.dash-section-link {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.dash-section-link:hover {
+    background: #dbeafe;
 }
