@@ -2173,6 +2173,10 @@ function renderPembinaanView() {
     }).join("");
 }
 
+// ==================================================================
+// PEMBINAAN SISWA MODULE (FIXED)
+// ==================================================================
+
 function openModalPembinaan(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
@@ -2183,6 +2187,9 @@ function openModalPembinaan(id = null) {
     const siswaOpts = appState.siswa.map(s =>
         `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
     ).join("");
+
+    // Tanggal pengisian default ke hari ini (getDateWITA()) dan dikunci
+    const tanggalPengisian = rec ? rec.tanggal : getDateWITA();
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -2214,8 +2221,8 @@ function openModalPembinaan(id = null) {
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
-                    <input type="date" id="m-pbn-tanggal" value="${draft?.['m-pbn-tanggal'] || rec?.tanggal || getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL PENGISIAN</label>
+                    <input type="date" id="m-pbn-tanggal" value="${tanggalPengisian}" class="w-full bg-slate-100 border border-slate-200 p-2.5 rounded-xl text-xs outline-none cursor-not-allowed text-slate-500 font-bold" readonly disabled>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
@@ -2229,7 +2236,7 @@ function openModalPembinaan(id = null) {
     document.getElementById("modal-container")?.classList.remove("hidden");
 
     if (!id) {
-        const fields = ['m-pbn-siswa', 'm-pbn-jenis', 'm-pbn-status', 'm-pbn-masalah', 'm-pbn-tanggal', 'm-pbn-pantau'];
+        const fields = ['m-pbn-siswa', 'm-pbn-jenis', 'm-pbn-status', 'm-pbn-masalah', 'm-pbn-pantau'];
         attachAutoSaveDraft("pembinaan", fields);
         if (draft) showDraftIndicator(true);
     }
@@ -2237,32 +2244,68 @@ function openModalPembinaan(id = null) {
 
 async function savePembinaanForm(e, id) {
     e.preventDefault();
+
+    const siswaId = document.getElementById("m-pbn-siswa").value;
+    const jenis = document.getElementById("m-pbn-jenis").value;
+    const status = document.getElementById("m-pbn-status").value;
+    const permasalahan = document.getElementById("m-pbn-masalah").value;
+    const tanggal = document.getElementById("m-pbn-tanggal").value || getDateWITA();
+    const jadwal_pantau = document.getElementById("m-pbn-pantau").value;
+
+    // Untuk data baru, id dikirim sebagai null agar backend Apps Script menambahkan baris baru (INSERT)
     const payload = {
-        id: id || ("PBN-" + Date.now()),
-        siswa_id: document.getElementById("m-pbn-siswa").value,
-        jenis: document.getElementById("m-pbn-jenis").value,
-        status: document.getElementById("m-pbn-status").value,
-        permasalahan: document.getElementById("m-pbn-masalah").value,
-        tanggal: document.getElementById("m-pbn-tanggal").value,
-        jadwal_pantau: document.getElementById("m-pbn-pantau").value
+        id: id || null,
+        siswa_id: siswaId,
+        jenis: jenis,
+        status: status,
+        permasalahan: permasalahan,
+        tanggal: tanggal,
+        jadwal_pantau: jadwal_pantau
     };
 
-    const idx = appState.pembinaan.findIndex(x => String(x.id) === String(payload.id));
-    if (idx !== -1) appState.pembinaan[idx] = payload;
-    else appState.pembinaan.push(payload);
+    showLoading("Menyimpan catatan pembinaan...");
 
-    clearFormDraft("pembinaan");
-    saveAppStateToLocal();
-    renderPembinaanView();
-    closeModal();
+    const res = await apiCall("savePembinaan", payload, false);
+    hideLoading();
 
-    // Hapus status penanganan sementara agar notifikasi tuntas permanen
-    clearStudentNotificationsOnNoteAdded(payload.siswa_id);
-    checkStudentNotifications();
+    if (res && res.status === "success") {
+        // Ambil ID yang dihasilkan server (atau fallback ID lokal)
+        const recordId = res.id || res.data?.id || id || ("PBN-" + Date.now());
+        const savedRecord = {
+            id: recordId,
+            siswa_id: siswaId,
+            jenis: jenis,
+            status: status,
+            permasalahan: permasalahan,
+            tanggal: tanggal,
+            jadwal_pantau: jadwal_pantau
+        };
 
-    showToast("Catatan pembinaan tersimpan!");
+        const idx = appState.pembinaan.findIndex(x => String(x.id) === String(recordId) || (id && String(x.id) === String(id)));
+        if (idx !== -1) {
+            appState.pembinaan[idx] = savedRecord;
+        } else {
+            appState.pembinaan.push(savedRecord);
+        }
 
-    apiCall("savePembinaan", payload, false);
+        clearFormDraft("pembinaan");
+        saveAppStateToLocal();
+        renderPembinaanView();
+        closeModal();
+
+        // Hapus status penanganan sementara agar notifikasi tuntas permanen
+        clearStudentNotificationsOnNoteAdded(siswaId);
+        checkStudentNotifications();
+
+        showToast("Catatan pembinaan berhasil disimpan!");
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menyimpan',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan catatan pembinaan ke database spreadsheet.',
+            confirmButtonColor: '#2563eb'
+        });
+    }
 }
 
 async function deletePembinaan(id) {
