@@ -948,10 +948,6 @@ function getDismissedTimestamp(notifId) {
     return timestamp;
 }
 
-function isNotificationDismissed(notifId) {
-    return getDismissedTimestamp(notifId) !== null;
-}
-
 async function dismissNotification(notifId) {
     const map = getDismissedNotificationsMap();
     map[notifId] = Date.now();
@@ -1555,15 +1551,6 @@ async function saveBatchAbsensiForm(event) {
     }
 }
 
-function hitungStatusKeterlambatan(waktuStr, jamBatas = "07:15") {
-    if (!waktuStr) return { status: 'H', label: 'Hadir', menitTerlambat: 0 };
-    const [h, m] = waktuStr.split(":").map(Number);
-    const [bH, bM] = jamBatas.split(":").map(Number);
-    const menitMasuk = h * 60 + m;
-    const menitBatas = bH * 60 + bM;
-    return menitMasuk > menitBatas ? { status: 'T', label: 'Terlambat', menitTerlambat: menitMasuk - menitBatas } : { status: 'H', label: 'Tepat Waktu', menitTerlambat: 0 };
-}
-
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
     const tanggal = dateInput ? (dateInput.value || getDateWITA()) : getDateWITA();
@@ -1901,30 +1888,6 @@ function downloadTemplateAkademikCSV() {
     document.body.removeChild(link);
 }
 
-function exportAkademikCSV() {
-    if (!appState.akademik || appState.akademik.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada data nilai akademik untuk diekspor.', confirmButtonColor: '#2563eb' });
-        return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "siswa_id,nama_siswa,mapel,nilai_akhir,kktp\n";
-
-    appState.akademik.forEach(row => {
-        const s = appState.siswa.find(x => String(x.id) === String(row.siswa_id));
-        const namaSiswa = s ? s.nama : "Siswa";
-        csvContent += `"${row.siswa_id}","${namaSiswa}","${row.mapel}",${row.nilai_akhir},${row.kktp}\n`;
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Rekap_Nilai_Akademik_${getDateWITA()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
 function handleImportAkademikCSV(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1978,41 +1941,6 @@ function handleImportAkademikCSV(event) {
             }
         }
     });
-}
-
-function openModalImportAkademik() {
-    const box = document.getElementById("modal-content-box");
-    if (!box) return;
-
-    box.innerHTML = `
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-file-import text-primary mr-1.5"></i>Import Nilai Akademik</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="space-y-4">
-            <div class="bg-blue-50 border border-blue-200 p-3 rounded-2xl text-xs text-blue-800 space-y-2">
-                <p class="font-bold"><i class="fas fa-info-circle"></i> Panduan Import CSV:</p>
-                <ol class="list-decimal pl-4 space-y-1">
-                    <li>Unduh template file CSV di bawah ini.</li>
-                    <li>Isi nilai dan standar KKTP sesuai ID Siswa.</li>
-                    <li>Unggah kembali file CSV yang telah diisi.</li>
-                </ol>
-                <button onclick="downloadTemplateAkademikCSV()" class="w-full mt-2 bg-white text-primary border border-primary font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 hover:bg-blue-50">
-                    <i class="fas fa-download"></i> Unduh Template CSV
-                </button>
-            </div>
-
-            <div class="border-2 border-dashed border-slate-200 p-6 rounded-2xl text-center space-y-2 hover:border-primary transition">
-                <i class="fas fa-cloud-upload-alt text-3xl text-slate-400"></i>
-                <p class="text-xs font-bold text-slate-600">Pilih file CSV nilai dari perangkat</p>
-                <input type="file" id="input-file-csv" accept=".csv" onchange="handleImportAkademikCSV(event)" class="hidden">
-                <button onclick="document.getElementById('input-file-csv').click()" class="bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm">
-                    Pilih File CSV
-                </button>
-            </div>
-        </div>
-    `;
-    document.getElementById("modal-container")?.classList.remove("hidden");
 }
 
 function switchAkademikTab(tab) {
@@ -2751,47 +2679,6 @@ function renderRadarChartSiswa(detailData) {
                 }
             }
         }
-    });
-}
-
-function downloadRaporPDFVector() {
-    if (!appState.activeSiswaDetail) {
-        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Data siswa belum dipilih.' });
-        return;
-    }
-    const { siswa } = appState.activeSiswaDetail;
-
-    printProfilSiswa();
-
-    const element = document.getElementById("printable-area");
-    if (!element) return;
-    element.classList.remove("hidden");
-
-    const opt = {
-        margin:       [10, 10, 10, 10],
-        filename:     `Rapor_Pemantauan_${siswa.nama.replace(/\s+/g, '_')}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    showLoading("Membentuk dokumen PDF vector...");
-
-    if (typeof html2pdf === "undefined") {
-        hideLoading();
-        element.classList.add("hidden");
-        Swal.fire({ icon: 'error', title: 'Pustaka Hilang', text: 'html2pdf.js belum dimuat dengan benar.' });
-        return;
-    }
-
-    html2pdf().set(opt).from(element).save().then(() => {
-        hideLoading();
-        element.classList.add("hidden");
-        showToast("File PDF Vector berhasil diunduh!");
-    }).catch(err => {
-        hideLoading();
-        element.classList.add("hidden");
-        showToast("Gagal membuat file PDF", "error");
     });
 }
 
