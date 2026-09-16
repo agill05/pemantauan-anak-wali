@@ -68,10 +68,12 @@
 </head>
 
 <body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden bg-background" data-role="">
-    
+
     <html lang="id">
-        <div id="offline-banner" class="hidden fixed top-0 inset-x-0 z-[100] bg-rose-600 text-white text-xs font-bold py-2 px-4 text-center shadow-md transition-all">
-        <i class="fas fa-wifi-slash mr-1.5"></i> Koneksi internet terputus. Menggunakan Mode Offline (Data tersimpan di perangkat).
+    <div id="offline-banner"
+        class="hidden fixed top-0 inset-x-0 z-[100] bg-rose-600 text-white text-xs font-bold py-2 px-4 text-center shadow-md transition-all">
+        <i class="fas fa-wifi-slash mr-1.5"></i> Koneksi internet terputus. Menggunakan Mode Offline (Data tersimpan di
+        perangkat).
     </div>
 
     <div id="view-login"
@@ -128,7 +130,8 @@
                                 class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                                 placeholder="••••••••" required>
                             <button type="button" class="absolute right-3.5 text-slate-400"
-                                onclick="togglePasswordVisibility('login-password')" aria-label="Tampilkan/sembunyikan kata sandi">
+                                onclick="togglePasswordVisibility('login-password')"
+                                aria-label="Tampilkan/sembunyikan kata sandi">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
@@ -167,7 +170,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <div id="header-desktime" class="hidden lg:flex items-center gap-2 pr-3 mr-1 border-r border-slate-200 text-slate-500">
+                <div id="header-desktime"
+                    class="hidden lg:flex items-center gap-2 pr-3 mr-1 border-r border-slate-200 text-slate-500">
                     <i class="fas fa-calendar-alt text-primary"></i>
                     <div class="text-xs">
                         <p id="header-date-text" class="font-semibold text-slate-700">-</p>
@@ -175,7 +179,8 @@
                     </div>
                 </div>
                 <button id="btn-refresh-header" onclick="manualRefreshAll()"
-                    class="touch-btn hover:bg-white/10 rounded-xl transition" title="Segarkan data" aria-label="Segarkan data">
+                    class="touch-btn hover:bg-white/10 rounded-xl transition" title="Segarkan data"
+                    aria-label="Segarkan data">
                     <i class="fas fa-rotate text-base"></i>
                 </button>
                 <button id="btn-notif-header" data-role-visible="admin,guru,siswa"
@@ -185,7 +190,8 @@
                     <span id="notif-badge"
                         class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
                 </button>
-                <button class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()" aria-label="Buka pengaturan akun">
+                <button class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()"
+                    aria-label="Buka pengaturan akun">
                     <i class="fas fa-cog text-lg"></i>
                 </button>
             </div>
@@ -204,7 +210,8 @@
                         class="fas fa-shield-alt"></i></div>
                 <span class="font-black text-slate-800 text-sm">Anak Wali</span>
             </div>
-            <button onclick="toggleSidebar(false)" class="touch-btn text-slate-400 hover:bg-slate-100 rounded-lg" aria-label="Tutup menu navigasi">
+            <button onclick="toggleSidebar(false)" class="touch-btn text-slate-400 hover:bg-slate-100 rounded-lg"
+                aria-label="Tutup menu navigasi">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
@@ -428,24 +435,25 @@
         </div>
 
         <div id="view-profil-siswa" class="view-section p-4 space-y-4">
-    <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-2 flex-wrap">
-        <button onclick="switchView('siswa')" id="btn-back-profil"
-            class="text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1">
-            <i class="fas fa-arrow-left"></i> Kembali
-        </button>
-        <div class="flex items-center gap-2">
-            <button data-role-visible="admin,guru" onclick="generateAndShareMagicLink()"
-                class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
-                <i class="fas fa-magic"></i> Bagikan Magic Link (15 Menit)
-            </button>
-            <button onclick="printProfilSiswa()"
-                class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5">
-                <i class="fas fa-print"></i> Cetak Rapor
-            </button>
+            <div
+                class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-2 flex-wrap">
+                <button onclick="switchView('siswa')" id="btn-back-profil"
+                    class="text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </button>
+                <div class="flex items-center gap-2">
+                    <button data-role-visible="admin,guru" onclick="generateAndShareMagicLink()"
+                        class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
+                        <i class="fas fa-magic"></i> Bagikan Magic Link (15 Menit)
+                    </button>
+                    <button onclick="printProfilSiswa()"
+                        class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5">
+                        <i class="fas fa-print"></i> Cetak Rapor
+                    </button>
+                </div>
+            </div>
+            <div id="profil-siswa-details" class="space-y-4"></div>
         </div>
-    </div>
-    <div id="profil-siswa-details" class="space-y-4"></div>
-</div>
 
         <div id="view-laporan" class="view-section p-4 space-y-4">
             <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
