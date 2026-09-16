@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 :root {
     --primary: #2563eb;
@@ -22,7 +22,13 @@
 }
 
 body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family:
+        "Plus Jakarta Sans",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
     color: #0f172a;
     background-color: var(--background) !important;
     -webkit-font-smoothing: antialiased;
@@ -120,7 +126,9 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
 }
 
 .nav-item {
-    transition: color 0.2s ease, transform 0.15s ease;
+    transition:
+        color 0.2s ease,
+        transform 0.15s ease;
 }
 
 .nav-item.active {
@@ -292,7 +300,7 @@ a:focus-visible {
     color: #ffffff !important;
 }
 
-#app-sidebar > div:first-child i.fa-shield-alt {
+#app-sidebar>div:first-child i.fa-shield-alt {
     color: var(--navy-900);
     background: #ffffff;
 }
@@ -423,7 +431,7 @@ a:focus-visible {
     }
 }
 
-#dash-stats-container > div {
+#dash-stats-container>div {
     position: relative;
     border-radius: 1.25rem;
 }
@@ -437,7 +445,9 @@ a:focus-visible {
     border-radius: 1.1rem;
     text-align: left;
     position: relative;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
 .quick-tile:hover {

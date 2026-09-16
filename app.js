@@ -904,7 +904,7 @@ function renderAgendaSection(agendaList) {
 
 function getHafalanProgressStats(hafalanList = []) {
     const lancarSurahs = hafalanList.filter(h => h.status === 'Lancar').map(h => h.nama_surat);
-    
+
     const juz30Surahs = MASTER_SURAHS.filter(s => s.juz === 30);
     const juz30Lancar = juz30Surahs.filter(s => lancarSurahs.includes(s.nama)).length;
     const juz30Percent = Math.round((juz30Lancar / juz30Surahs.length) * 100);
@@ -930,7 +930,7 @@ function getDismissedNotificationsMap() {
 function saveDismissedNotificationsMap(map) {
     try {
         localStorage.setItem("dismissed_notifications_map", JSON.stringify(map));
-    } catch (e) {}
+    } catch (e) { }
 }
 
 function getDismissedTimestamp(notifId) {
@@ -1043,7 +1043,7 @@ async function checkStudentNotifications() {
 
     const resRekap = await apiCall("getLaporanRekap", {}, false);
     const rekapData = resRekap?.data || [];
-    
+
     let activeList = [];
     let handledList = [];
     const todayStr = getDateWITA();
@@ -1061,13 +1061,13 @@ async function checkStudentNotifications() {
         }
     };
 
-    const filteredRekap = isSiswa 
+    const filteredRekap = isSiswa
         ? rekapData.filter(item => String(item.id) === currentUserId)
         : rekapData;
 
     filteredRekap.forEach(item => {
         const sId = String(item.id);
-        
+
         if (item.presensi.alpa >= 3) {
             processNotifItem({
                 id: `${sId}_alpa_kritis`,
@@ -1114,7 +1114,7 @@ async function checkStudentNotifications() {
     });
 
     if (appState.kebiasaan && appState.kebiasaan.length > 0) {
-        const targetSiswa = isSiswa 
+        const targetSiswa = isSiswa
             ? appState.siswa.filter(s => String(s.id) === currentUserId)
             : appState.siswa;
 
@@ -1328,7 +1328,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                         </div>
 
                         ${isCanManageNotif ? (
-                            activeTab === 'active' ? `
+            activeTab === 'active' ? `
                                 <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (Snooze 24 Jam)" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
                                     <i class="fas fa-check-circle text-lg"></i>
                                 </button>
@@ -1337,7 +1337,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                                     <i class="fas fa-undo text-sm"></i> Buka Lagi
                                 </button>
                             `
-                        ) : ''}
+        ) : ''}
                     </div>
 
                     <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(n.desc)}</p>
@@ -1473,11 +1473,11 @@ function renderAbsensiView() {
             ` : `
                 <form onsubmit="saveBatchAbsensiForm(event)" class="space-y-2">
                     ${filteredSiswa.map(s => {
-                        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
-                        const currentStatus = rec.status || 'H';
-                        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
+        const currentStatus = rec.status || 'H';
+        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
 
-                        return `
+        return `
                             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                                 <div>
                                     <h4 class="font-bold text-xs text-slate-800 flex items-center">${noAbsenBadge}${escapeHtml(s.nama)}</h4>
@@ -1496,7 +1496,7 @@ function renderAbsensiView() {
                                 </div>
                             </div>
                         `;
-                    }).join('')}
+    }).join('')}
 
                     ${isEditable ? `
                     <div class="pt-2">
@@ -1715,7 +1715,7 @@ function renderKeagamaanView() {
     if (!container) return;
 
     const filterSiswaId = document.getElementById("karakter-siswa-filter")?.value || "";
-    const filteredHafalan = filterSiswaId 
+    const filteredHafalan = filterSiswaId
         ? appState.keagamaan.filter(h => String(h.siswa_id) === String(filterSiswaId))
         : appState.keagamaan;
 
@@ -1874,7 +1874,7 @@ async function deleteKeagamaan(id) {
 function downloadTemplateAkademikCSV() {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "siswa_id,nama_siswa,mapel,nilai_akhir,kktp\n";
-    
+
     appState.siswa.forEach(s => {
         csvContent += `"${s.id}","${s.nama}","Matematika",80,75\n`;
     });
@@ -1900,7 +1900,7 @@ function handleImportAkademikCSV(event) {
     Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: async function(results) {
+        complete: async function (results) {
             const data = results.data;
             const validItems = [];
 
@@ -1922,7 +1922,7 @@ function handleImportAkademikCSV(event) {
             }
 
             showLoading(`Mengunggah ${validItems.length} data nilai...`);
-            
+
             const res = await apiCall("saveBatchAkademik", { items: validItems }, false);
             hideLoading();
 
@@ -2446,7 +2446,7 @@ async function openProfilSiswa(siswaTarget) {
         detailData = siswaTarget;
     } else {
         const sLocal = appState.siswa.find(s => String(s.id) === String(siswaTarget));
-        
+
         if (appState.activeSiswaDetail && String(appState.activeSiswaDetail.siswa.id) === String(siswaTarget)) {
             detailData = appState.activeSiswaDetail;
         } else if (sLocal) {
@@ -2540,14 +2540,14 @@ async function openProfilSiswa(siswaTarget) {
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat</h4>
                     <div class="divide-y divide-slate-100">
                         ${MASTER_KEBIASAAN.map(k => {
-                            const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
-                            return `
+        const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
+        return `
                                 <div class="py-2 flex justify-between items-center text-xs">
                                     <span class="font-medium text-slate-700 flex items-center gap-2"><i class="fas ${k.icon} text-slate-400"></i> ${escapeHtml(k.nama)}</span>
                                     <span class="font-bold ${rec.status === 'Sudah' ? 'text-emerald-600' : (rec.status === 'Kadang' ? 'text-amber-600' : 'text-slate-400')}">${rec.status}</span>
                                 </div>
                             `;
-                        }).join('')}
+    }).join('')}
                     </div>
                 </div>
             </div>
@@ -2558,12 +2558,12 @@ async function openProfilSiswa(siswaTarget) {
                     ${hafalan.length === 0 ? '<p class="text-xs text-slate-400 italic">Belum ada data hafalan.</p>' : `
                         <div class="space-y-2">
                             ${hafalan.map(h => {
-                                const statusBadge = h.status === 'Lancar' 
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                    : (h.status === 'Mengulang' 
-                                        ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                                        : 'bg-slate-50 text-slate-600 border-slate-200');
-                                return `
+        const statusBadge = h.status === 'Lancar'
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            : (h.status === 'Mengulang'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-slate-50 text-slate-600 border-slate-200');
+        return `
                                     <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
                                         <div class="flex justify-between items-center font-bold text-slate-800">
                                             <span>Surah ${escapeHtml(h.nama_surat)}</span>
@@ -2572,7 +2572,7 @@ async function openProfilSiswa(siswaTarget) {
                                         ${h.catatan ? `<p class="text-xs text-slate-500 italic font-medium">"${escapeHtml(h.catatan)}"</p>` : ''}
                                     </div>
                                 `;
-                            }).join('')}
+    }).join('')}
                         </div>
                     `}
                 </div>
@@ -3399,7 +3399,7 @@ async function generateAndShareMagicLink(siswaId = null) {
         if (res && res.status === "success") {
             const baseUrl = window.location.origin + window.location.pathname;
             magicUrl = `${baseUrl}?magic_token=${encodeURIComponent(res.magic_token)}`;
-            
+
             cachedData = { magicUrl: magicUrl, timestamp: now };
             localStorage.setItem(storageKey, JSON.stringify(cachedData));
             remainingMs = COOLDOWN_MS;
@@ -3427,9 +3427,9 @@ async function generateAndShareMagicLink(siswaId = null) {
         html: `
             <div class="text-left space-y-2">
                 <p class="text-xs text-slate-500">
-                    ${isExisting 
-                        ? 'Menampilkan <b>Magic Link yang sudah dibuat sebelumnya</b>. Tautan baru dapat dibuat setelah masa aktif habis.' 
-                        : 'Tautan pemantauan baru berhasil dibuat.'}
+                    ${isExisting
+                ? 'Menampilkan <b>Magic Link yang sudah dibuat sebelumnya</b>. Tautan baru dapat dibuat setelah masa aktif habis.'
+                : 'Tautan pemantauan baru berhasil dibuat.'}
                 </p>
                 <div class="bg-blue-50 border border-blue-200 text-blue-800 p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
                     <i class="fas fa-hourglass-half text-blue-600"></i>
