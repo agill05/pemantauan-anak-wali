@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx8zL9iAAC_sL3fPL7Hecn3LwgZsQp94h4BI8wcR2Uk8X8FgWsvdg7wkGhzF4C8ZqxX/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbycxdfOFLWt0mFZAGLIr6k7u5wdSWY87rCkeNJOMuwkG2Nr5gnq_mTqF1FUzfXAoQ4/exec";
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SNOOZE_24H_MS = 24 * 60 * 60 * 1000;
@@ -293,10 +293,24 @@ function showDraftIndicator(isSaved) {
 function setupNetworkStatusListeners() {
     const banner = document.getElementById("offline-banner");
 
-    const updateStatus = () => {
+    const updateStatus = async () => {
         if (navigator.onLine) {
             banner?.classList.add("hidden");
             showToast("Koneksi terhubung kembali.");
+            
+            const offlineData = localStorage.getItem("offline_absensi_queue");
+            if (offlineData) {
+                try {
+                    const parsed = JSON.parse(offlineData);
+                    showLoading("Menyinkronkan data presensi offline...");
+                    const res = await apiCall("saveAbsensi", parsed, false);
+                    hideLoading();
+                    if (res && res.status === "success") {
+                        localStorage.removeItem("offline_absensi_queue");
+                        showToast("Data presensi offline berhasil disinkronkan ke server!");
+                    }
+                } catch (e) {}
+            }
             triggerBackgroundSync();
         } else {
             banner?.classList.remove("hidden");
@@ -544,6 +558,8 @@ function startRealtimeNotificationPolling() {
 function handleLogout(force = false) {
     const executeLogout = () => {
         if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
+        if (notificationPollingInterval) clearInterval(notificationPollingInterval);
+        
         localStorage.removeItem("session_anak_wali");
         localStorage.removeItem("cache_appState_full");
         appState = { token: null, user: null, kelas: [], guru: [], siswa: [], myStudents: [] };
@@ -566,7 +582,6 @@ function handleLogout(force = false) {
             if (result.isConfirmed) executeLogout();
         });
     }
-    if (notificationPollingInterval) clearInterval(notificationPollingInterval);
 }
 
 async function fetchAllAppData(force = true) {
@@ -1512,7 +1527,7 @@ function renderAbsensiView() {
 
 async function saveBatchAbsensiForm(event) {
     if (event) event.preventDefault();
-    showLoading("Menyimpan presensi ke server...");
+    showLoading("Menyimpan presensi...");
 
     const selectElements = document.querySelectorAll(".absensi-select-item");
     const payloadAbsensi = [];
@@ -1528,6 +1543,21 @@ async function saveBatchAbsensiForm(event) {
             tanggal: tanggalTarget
         });
     });
+
+    if (!navigator.onLine) {
+        localStorage.setItem("offline_absensi_queue", JSON.stringify({ items: payloadAbsensi, tanggal: tanggalTarget }));
+        
+        payloadAbsensi.forEach(item => {
+            const idx = appState.absensi.findIndex(a => String(a.siswa_id) === String(item.siswa_id));
+            if (idx !== -1) appState.absensi[idx] = item;
+            else appState.absensi.push(item);
+        });
+        saveAppStateToLocal();
+        renderAbsensiView();
+        hideLoading();
+        showToast("Mode Offline: Presensi disimpan sementara di perangkat.", "warning");
+        return;
+    }
 
     const res = await apiCall("saveAbsensi", { items: payloadAbsensi, tanggal: tanggalTarget }, false);
     hideLoading();
@@ -1545,7 +1575,7 @@ async function saveBatchAbsensiForm(event) {
         Swal.fire({
             icon: 'error',
             title: 'Gagal Menyimpan',
-            text: res?.message || 'Terjadi kesalahan jaringan. Presensi gagal disimpan ke server.',
+            text: res?.message || 'Terjadi kesalahan jaringan.',
             confirmButtonColor: '#2563eb'
         });
     }
@@ -1657,14 +1687,20 @@ function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
 async function flushKebiasaanQueue() {
     if (pendingKebiasaanQueue.size === 0) return;
 
-    const itemsToSave = Array.from(pendingKebiasaanQueue.values());
-    pendingKebiasaanQueue.clear();
+    const entriesToSave = Array.from(pendingKebiasaanQueue.entries());
 
-    for (const item of itemsToSave) {
-        await apiCall("saveKebiasaan", item, false);
+    for (const [key, item] of entriesToSave) {
+        const res = await apiCall("saveKebiasaan", item, false);
+        if (res && res.status === "success") {
+            pendingKebiasaanQueue.delete(key);
+        }
     }
 
-    updateKebiasaanSaveStatus('saved');
+    if (pendingKebiasaanQueue.size === 0) {
+        updateKebiasaanSaveStatus('saved');
+    } else {
+        showToast("Beberapa data kebiasaan gagal disinkronkan. Akan dicoba kembali.", "warning");
+    }
 }
 
 function updateKebiasaanSaveStatus(state) {
@@ -2725,8 +2761,8 @@ function printProfilSiswa() {
                     ${akademik.length === 0 ? '<tr><td colspan="4" style="text-align: center; padding: 6px;">Belum ada data nilai</td></tr>' : akademik.map(a => `
                         <tr>
                             <td style="padding: 6px;">${escapeHtml(a.mapel)}</td>
-                            <td style="padding: 6px; text-align: center;">${a.nilai_akhir}</td>
-                            <td style="padding: 6px; text-align: center;">${a.kktp}</td>
+                            <td style="padding: 6px; text-align: center;">${escapeHtml(a.nilai_akhir)}</td>
+                            <td style="padding: 6px; text-align: center;">${escapeHtml(a.kktp)}</td>
                             <td style="padding: 6px; text-align: center;">${Number(a.nilai_akhir) >= Number(a.kktp) ? 'Tuntas' : 'Perlu Bimbingan'}</td>
                         </tr>
                     `).join('')}

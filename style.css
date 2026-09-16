@@ -226,13 +226,6 @@ body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
     border: 1.5px dashed #cbd5e1;
 }
 
-.text-\[8px\],
-.text-\[9px\],
-.text-\[10px\],
-.text-\[11px\] {
-    font-size: 12px !important;
-}
-
 ::-webkit-scrollbar {
     width: 5px;
     height: 5px;
