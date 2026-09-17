@@ -1,9 +1,25 @@
-const CACHE_NAME = "anak-wali-pwa-v1";
+const CACHE_NAME = "anak-wali-pwa-v2";
 
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",
-    "./app.js",
+    "./css/style.css",
+    "./js/config.js",
+    "./js/state.js",
+    "./js/api.js",
+    "./js/ui.js",
+    "./js/modules/auth.js",
+    "./js/modules/absensi.js",
+    "./js/modules/kebiasaan.js",
+    "./js/modules/keagamaan.js",
+    "./js/modules/akademik.js",
+    "./js/modules/pembinaan.js",
+    "./js/modules/dashboard.js",
+    "./js/modules/siswa.js",
+    "./js/modules/laporan.js",
+    "./js/modules/admin.js",
+    "./js/modules/magiclink.js",
+    "./js/main.js",
     "https://cdn.tailwindcss.com",
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css",
     "https://cdn.jsdelivr.net/npm/chart.js",
