@@ -501,7 +501,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
 
                         ${isCanManageNotif ? (
             activeTab === 'active' ? `
-                                <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (Snooze 24 Jam)" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
+                                <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (Snooze 24 Jam)" aria-label="Tandai sudah ditangani" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
                                     <i class="fas fa-check-circle text-lg"></i>
                                 </button>
                             ` : `

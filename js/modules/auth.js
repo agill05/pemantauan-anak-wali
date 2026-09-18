@@ -2,9 +2,15 @@ function selectLoginRole(role) {
     const roleInput = document.getElementById("login-role");
     if (roleInput) roleInput.value = role;
 
-    document.querySelectorAll(".login-role-btn").forEach(btn => btn.classList.remove("selected"));
+    document.querySelectorAll(".login-role-btn").forEach(btn => {
+        btn.classList.remove("selected");
+        btn.setAttribute("aria-checked", "false");
+    });
     const selectedBtn = document.getElementById(`role-btn-${role}`);
-    if (selectedBtn) selectedBtn.classList.add("selected");
+    if (selectedBtn) {
+        selectedBtn.classList.add("selected");
+        selectedBtn.setAttribute("aria-checked", "true");
+    }
 }
 
 async function handleAppLogin(e) {
@@ -382,8 +388,8 @@ function openUserSettingsModal() {
             ${user.role !== 'ortu' ? `
             <form onsubmit="changePasswordForm(event)" class="space-y-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>
-                <input type="password" id="m-pwd-old" placeholder="Kata sandi lama" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
-                <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
+                <input type="password" id="m-pwd-old" placeholder="Kata sandi lama" aria-label="Kata sandi lama" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
+                <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" aria-label="Kata sandi baru" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
                 <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-900 transition">Update Kata Sandi</button>
             </form>` : ''}
 
@@ -447,7 +453,7 @@ function openEditProfilModal() {
 
             <!-- Nama Lengkap -->
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
+                <label for="self-nama" class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
                 <input type="text" id="self-nama" value="${escapeHtml(user.nama || '')}" 
                        class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
                        ${isEditingLocked ? 'readonly' : 'required'}>
@@ -457,7 +463,7 @@ function openEditProfilModal() {
             <div class="grid grid-cols-2 gap-2">
                 <!-- Username -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
+                    <label for="self-username" class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
                     <input type="text" id="self-username" value="${escapeHtml(user.username || '')}" 
                            class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
                            ${isEditingLocked ? 'readonly' : 'required'}>
@@ -465,7 +471,7 @@ function openEditProfilModal() {
 
                 <!-- NIP / NISN -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">${role === 'guru' ? 'NIP' : (role === 'siswa' ? 'NISN' : 'ID Identifier')}</label>
+                    <label for="self-nip-nisn" class="block text-xs font-bold text-slate-500 uppercase mb-1">${role === 'guru' ? 'NIP' : (role === 'siswa' ? 'NISN' : 'ID Identifier')}</label>
                     <input type="text" id="self-nip-nisn" value="${escapeHtml(user.nip || user.nisn || '')}" 
                            class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
                            ${isEditingLocked ? 'readonly' : ''}>
@@ -474,7 +480,7 @@ function openEditProfilModal() {
 
             <!-- No. Telepon / WhatsApp -->
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">No. WhatsApp / HP</label>
+                <label for="self-hp" class="block text-xs font-bold text-slate-500 uppercase mb-1">No. WhatsApp / HP</label>
                 <input type="text" id="self-hp" value="${escapeHtml(user.no_hp || user.no_hp_ortu || '')}" 
                        placeholder="08xxxxxxxxxx" 
                        class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:border-blue-500">

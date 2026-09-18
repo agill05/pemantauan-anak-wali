@@ -106,18 +106,21 @@
             <div class="login-card bg-surface p-6 rounded-3xl border border-slate-100 shadow-sm">
                 <form id="form-login" onsubmit="handleAppLogin(event)" class="space-y-4">
                     <div>
-                        <label class="field-label block mb-2 text-xs font-bold text-slate-600 uppercase">Masuk
-                            sebagai</label>
-                        <div class="grid grid-cols-3 gap-2">
+                        <span class="field-label block mb-2 text-xs font-bold text-slate-600 uppercase" id="login-role-label">Masuk
+                            sebagai</span>
+                        <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="login-role-label">
                             <button type="button" onclick="selectLoginRole('siswa')" id="role-btn-siswa"
+                                role="radio" aria-checked="false"
                                 class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
                                 <i class="fas fa-user-graduate block text-base mb-1"></i> Siswa
                             </button>
                             <button type="button" onclick="selectLoginRole('guru')" id="role-btn-guru"
+                                role="radio" aria-checked="false"
                                 class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
                                 <i class="fas fa-chalkboard-teacher block text-base mb-1"></i> Guru
                             </button>
                             <button type="button" onclick="selectLoginRole('admin')" id="role-btn-admin"
+                                role="radio" aria-checked="false"
                                 class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
                                 <i class="fas fa-user-shield block text-base mb-1"></i> Admin
                             </button>
@@ -126,7 +129,7 @@
                     </div>
 
                     <div>
-                        <label class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">ID /
+                        <label for="login-username" class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">ID /
                             Username</label>
                         <div class="relative flex items-center">
                             <i class="fas fa-id-card absolute left-3.5 text-slate-400"></i>
@@ -137,7 +140,7 @@
                     </div>
 
                     <div>
-                        <label class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">Kata
+                        <label for="login-password" class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">Kata
                             Sandi</label>
                         <div class="relative flex items-center">
                             <i class="fas fa-lock absolute left-3.5 text-slate-400"></i>
@@ -361,7 +364,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Pilih Siswa</label>
+                    <label for="kebiasaan-siswa-select" class="block text-xs font-bold text-slate-500 mb-1 uppercase">Pilih Siswa</label>
                     <select id="kebiasaan-siswa-select" onchange="renderKebiasaanView()"
                         class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700"></select>
                 </div>
@@ -483,14 +486,14 @@
                 <!-- Filter Controls -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
+                        <label for="laporan-kelas-filter" class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Kelas</label>
                         <select id="laporan-kelas-filter" onchange="filterLaporanView()"
                             class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-semibold outline-none text-slate-700">
                             <option value="">Semua Kelas</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Evaluasi</label>
+                        <label for="laporan-status-filter" class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Evaluasi</label>
                         <select id="laporan-status-filter" onchange="filterLaporanView()"
                             class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-semibold outline-none text-slate-700">
                             <option value="">Semua Status</option>

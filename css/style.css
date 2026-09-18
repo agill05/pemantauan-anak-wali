@@ -668,4 +668,59 @@ body.dark .login-role-btn.selected {
 body.dark #modal-content-box {
     background-color: #1e293b !important;
     color: #f8fafc !important;
-}
+}
+
+/* ==========================================================================
+   AKSESIBILITAS: kontras teks abu-abu
+   text-slate-400 dipakai luas buat caption/label — nilai default Tailwind
+   (#94a3b8) di atas putih cuma ~2.8:1, di bawah WCAG AA (min 4.5:1 teks kecil).
+   Dinaikkan supaya tetap terlihat "muted" tapi tetap terbaca.
+   ========================================================================== */
+.text-slate-400 {
+    color: #64748b !important;
+}
+
+body.dark .text-slate-400 {
+    color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   PRINT VIEW
+   Sembunyikan navigasi & tombol interaktif saat print (mis. printProfilSiswa()),
+   rapikan area cetak jadi bersih tanpa chrome aplikasi.
+   ========================================================================== */
+@media print {
+
+    #main-header,
+    #bottom-nav,
+    #app-sidebar,
+    #sidebar-backdrop,
+    #modal-container,
+    .no-print,
+    button:not(.print-visible) {
+        display: none !important;
+    }
+
+    #main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+
+    body,
+    .view-section {
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+    }
+
+    .view-section.active {
+        max-width: 100% !important;
+        animation: none !important;
+    }
+
+    .bg-surface,
+    .bg-white {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+}
