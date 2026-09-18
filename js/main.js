@@ -2,6 +2,12 @@ function switchView(viewId) {
     if (pendingKebiasaanQueue && pendingKebiasaanQueue.size > 0) {
         flushKebiasaanQueue();
     }
+
+    // Simpan view saat ini agar saat refresh pengguna tetap di halaman yang sama
+    if (viewId && viewId !== "login") {
+        sessionStorage.setItem("app_last_view", viewId);
+    }
+
     document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".sidebar-nav-item").forEach(el => el.classList.remove("active", "bg-slate-100", "text-primary"));
@@ -147,19 +153,34 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (savedSession) {
         try {
             const parsed = JSON.parse(savedSession);
-            appState.token = parsed.token;
-            appState.user = parsed.user;
+            if (parsed && parsed.token && parsed.user) {
+                appState.token = parsed.token;
+                appState.user = parsed.user;
 
-            const validRes = await apiCall("validateSession", {}, false);
-            if (validRes && validRes.status === "success") {
-                appState.user = validRes.user;
+                // Langsung inisialisasi tampilan secara instan dari cache lokal
                 await setupAppSession();
+
+                // Validasi token di background tanpa memblokir antarmuka pengguna
+                apiCall("validateSession", {}, false).then(validRes => {
+                    if (validRes && validRes.status === "success") {
+                        if (validRes.user) {
+                            appState.user = validRes.user;
+                        }
+                    } else if (validRes && validRes.status === "error") {
+                        // Sesi kedaluwarsa atau tidak valid di server
+                        handleLogout(true);
+                    }
+                });
             } else {
                 localStorage.removeItem("session_anak_wali");
+                document.documentElement.classList.remove("has-session");
             }
         } catch (e) {
             localStorage.removeItem("session_anak_wali");
+            document.documentElement.classList.remove("has-session");
         }
+    } else {
+        document.documentElement.classList.remove("has-session");
     }
 });
 

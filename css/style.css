@@ -72,6 +72,17 @@ body[data-role=""] [data-role-visible]:not(.view-section),
     display: flex !important;
 }
 
+/* Jika sesi ada di localStorage, jangan pernah tampilkan view login sekejap pun */
+html.has-session #view-login {
+    display: none !important;
+}
+
+html.has-session #main-header:not(.hidden-force),
+html.has-session #main-content:not(.hidden-force),
+html.has-session #bottom-nav:not(.hidden-force) {
+    display: flex !important;
+}
+
 .login-card {
     margin: 0 auto;
     backdrop-filter: blur(16px);

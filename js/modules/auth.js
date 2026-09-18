@@ -132,11 +132,15 @@ async function continueSessionSetup() {
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
     renderSidebarMenu(appState.user.role);
 
+    // Tandai bahwa sesi aktif untuk mencegah flicker login
+    document.documentElement.classList.add("has-session");
+
     // Muat cache lokal agar UI tidak kosong saat menunggu server
     const hasCachedData = loadAppStateFromLocal();
 
-    // Tampil dashboard segera dengan data cache (jika ada)
-    switchView("dashboard");
+    // Buka halaman/view terakhir yang sedang dibuka pengguna sebelum di-refresh
+    const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
+    switchView(targetView);
 
     // Ambil data bootstrap dari server (data master siswa, kelas, guru)
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
@@ -151,8 +155,10 @@ async function continueSessionSetup() {
     // Setelah data siswa tersedia, refresh semua dropdown dan view aktif
     _refreshAllSiswaDropdowns();
 
-    // Re-render dashboard dengan data terbaru
-    renderDashboard();
+    // Jika view yang dibuka adalah dashboard, render ulang dashboardnya
+    if (targetView === "dashboard") {
+        renderDashboard();
+    }
 
     // Mulai polling notifikasi SETELAH data siswa siap
     startRealtimeNotificationPolling();
@@ -196,6 +202,8 @@ function handleLogout(force = false) {
         if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
         if (notificationPollingInterval) clearInterval(notificationPollingInterval);
 
+        document.documentElement.classList.remove("has-session");
+        sessionStorage.removeItem("app_last_view");
         localStorage.removeItem("session_anak_wali");
         localStorage.removeItem("cache_appState_full");
         appState = { token: null, user: null, kelas: [], guru: [], siswa: [], myStudents: [] };
