@@ -357,6 +357,22 @@ function openUserSettingsModal() {
                     <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">${escapeHtml(user.role)}</span>
                 </div>
             </div>
+            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                        <i class="fas fa-moon"></i>
+                    </span>
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-800">Mode Tampilan</h4>
+                        <p class="text-[11px] text-slate-400">Pilih tema Gelap / Terang</p>
+                    </div>
+                </div>
+                <button onclick="toggleDarkMode(); openUserSettingsModal();" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-sm transition flex items-center gap-1.5">
+                    <i class="fas ${document.body.classList.contains('dark') ? 'fa-sun text-amber-500' : 'fa-moon text-slate-600'}"></i>
+                    <span>${document.body.classList.contains('dark') ? 'Mode Terang' : 'Mode Gelap'}</span>
+                </button>
+            </div>
+
             ${user.role !== 'ortu' ? `
             <form onsubmit="changePasswordForm(event)" class="space-y-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>

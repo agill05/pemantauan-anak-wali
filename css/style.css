@@ -77,9 +77,13 @@ html.has-session #view-login {
     display: none !important;
 }
 
-html.has-session #main-header:not(.hidden-force),
-html.has-session #main-content:not(.hidden-force),
-html.has-session #bottom-nav:not(.hidden-force) {
+html.has-session #main-header.hidden,
+html.has-session #main-content.hidden,
+html.has-session #bottom-nav.hidden {
+    display: block !important;
+}
+
+html.has-session #bottom-nav.hidden {
     display: flex !important;
 }
 
