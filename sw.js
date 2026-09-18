@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v2";
+const CACHE_NAME = "anak-wali-pwa-v3";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -21,10 +21,10 @@ const ASSETS_TO_CACHE = [
     "./js/modules/magiclink.js",
     "./js/main.js",
     "https://cdn.tailwindcss.com",
-    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
     "https://cdn.jsdelivr.net/npm/chart.js",
     "https://cdn.jsdelivr.net/npm/sweetalert2@11",
-    "https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js",
+    "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
 ];
 

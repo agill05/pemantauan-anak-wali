@@ -37,14 +37,19 @@ function renderPembinaanView() {
     const container = document.getElementById("pembinaan-list-container");
     if (!container) return;
 
-    if (!appState.pembinaan || appState.pembinaan.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-user-check text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Tidak ada catatan pembinaan aktif.</p></div>`;
+    const filterSiswaId = document.getElementById("pembinaan-siswa-filter")?.value || "";
+    const filteredPembinaan = filterSiswaId
+        ? (appState.pembinaan || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
+        : (appState.pembinaan || []);
+
+    if (filteredPembinaan.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-user-check text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Tidak ada catatan pembinaan aktif untuk siswa ini.</p></div>`;
         return;
     }
 
     const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
-    container.innerHTML = appState.pembinaan.map(item => {
+    container.innerHTML = filteredPembinaan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
         const statusBadge = getPembinaanStatusBadge(item.status);
 

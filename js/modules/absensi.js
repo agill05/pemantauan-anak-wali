@@ -151,7 +151,8 @@ async function saveBatchAbsensiForm(event) {
 
     const selectElements = document.querySelectorAll(".absensi-select-item");
     const payloadAbsensi = [];
-    const tanggalTarget = getDateWITA();
+    const inputDate = document.getElementById("absensi-date");
+    const tanggalTarget = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
 
     selectElements.forEach(select => {
         const siswaId = select.getAttribute("data-siswa-id");

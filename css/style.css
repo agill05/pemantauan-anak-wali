@@ -56,20 +56,10 @@ button:active {
     border-radius: 0.75rem;
 }
 
-[data-role-visible]:not(.view-section) {
+body:not([data-role]) [data-role-visible]:not(.view-section),
+body[data-role=""] [data-role-visible]:not(.view-section),
+[data-role-visible].hidden {
     display: none !important;
-}
-
-body[data-role="admin"] [data-role-visible*="admin"]:not(.view-section) {
-    display: flex !important;
-}
-
-body[data-role="guru"] [data-role-visible*="guru"]:not(.view-section) {
-    display: flex !important;
-}
-
-body[data-role="siswa"] [data-role-visible*="siswa"]:not(.view-section) {
-    display: flex !important;
 }
 
 #view-login {

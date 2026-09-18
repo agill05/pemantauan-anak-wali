@@ -99,8 +99,11 @@ async function loadAkademikData(forceRefresh = false) {
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
     const isStale = (Date.now() - (lastFetchTimes.akademik || 0)) > CACHE_TTL;
 
+    const isPrestasiActive = !document.getElementById("akd-tab-prestasi")?.classList.contains("hidden");
+    const currentTab = isPrestasiActive ? 'prestasi' : 'nilai';
+
     if (appState.akademik && appState.akademik.length > 0) {
-        switchAkademikTab('nilai');
+        switchAkademikTab(currentTab);
     } else {
         renderSkeleton("akademik-list-container", 3);
         renderSkeleton("prestasi-list-container", 3);
@@ -117,7 +120,7 @@ async function loadAkademikData(forceRefresh = false) {
 
         lastFetchTimes.akademik = Date.now();
         saveAppStateToLocal();
-        switchAkademikTab('nilai');
+        switchAkademikTab(currentTab);
     }
 }
 
@@ -125,14 +128,19 @@ function renderAkademikNilai() {
     const container = document.getElementById("akademik-list-container");
     if (!container) return;
 
-    if (!appState.akademik || appState.akademik.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-graduation-cap text-2xl mb-2 text-indigo-500"></i><p class="text-xs text-slate-500">Belum ada data nilai mata pelajaran.</p></div>`;
+    const filterSiswaId = document.getElementById("akademik-siswa-filter")?.value || "";
+    const filteredAkademik = filterSiswaId
+        ? (appState.akademik || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
+        : (appState.akademik || []);
+
+    if (filteredAkademik.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-graduation-cap text-2xl mb-2 text-indigo-500"></i><p class="text-xs text-slate-500">Belum ada data nilai mata pelajaran untuk siswa ini.</p></div>`;
         return;
     }
 
     const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
-    container.innerHTML = appState.akademik.map(item => {
+    container.innerHTML = filteredAkademik.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
         const isBelowKKTP = Number(item.nilai_akhir) < Number(item.kktp);
         const badgeColor = isBelowKKTP ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200';
@@ -162,14 +170,19 @@ function renderAkademikPrestasi() {
     const container = document.getElementById("prestasi-list-container");
     if (!container) return;
 
-    if (!appState.prestasi || appState.prestasi.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-trophy text-2xl mb-2 text-amber-500"></i><p class="text-xs text-slate-500">Belum ada data catatan prestasi.</p></div>`;
+    const filterSiswaId = document.getElementById("akademik-siswa-filter")?.value || "";
+    const filteredPrestasi = filterSiswaId
+        ? (appState.prestasi || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
+        : (appState.prestasi || []);
+
+    if (filteredPrestasi.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-trophy text-2xl mb-2 text-amber-500"></i><p class="text-xs text-slate-500">Belum ada data catatan prestasi untuk siswa ini.</p></div>`;
         return;
     }
 
     const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
-    container.innerHTML = appState.prestasi.map(item => {
+    container.innerHTML = filteredPrestasi.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
 
         return `

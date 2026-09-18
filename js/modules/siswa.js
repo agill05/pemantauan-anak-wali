@@ -339,7 +339,11 @@ function printProfilSiswa() {
         </div>
     `;
 
-    window.print();
+    printArea.classList.remove("hidden");
+    setTimeout(() => {
+        window.print();
+        printArea.classList.add("hidden");
+    }, 150);
 }
 
 function renderSiswaView() {
