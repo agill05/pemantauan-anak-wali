@@ -338,45 +338,57 @@ function openUserSettingsModal() {
     const user = appState.user || { nama: 'Pengguna', role: 'guest' };
 
     container.innerHTML = `
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-cog text-blue-600 mr-1.5"></i>Pengaturan Akun</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fas fa-cog text-blue-600"></i> Pengaturan Akun
+            </h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fas fa-times"></i></button>
         </div>
-        <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
-            <div class="flex items-center gap-3">
-                <img src="${user.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nama)}" class="w-12 h-12 rounded-full object-cover border border-slate-200">
-                <div>
-                    <h4 class="font-bold text-xs text-slate-800">${escapeHtml(user.nama)}</h4>
-                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">${escapeHtml(user.role)}</span>
-                </div>
-            </div>
-            <button onclick="openEditProfilModal()" class="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm transition flex items-center gap-1">
-                <i class="fas fa-user-edit"></i> Edit Profil
-            </button>
-            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
-                        <i class="fas fa-moon"></i>
-                    </span>
-                    <div>
-                        <h4 class="font-bold text-xs text-slate-800">Mode Tampilan</h4>
-                        <p class="text-[11px] text-slate-400">Pilih tema Gelap / Terang</p>
+
+        <div class="flex flex-col space-y-3 w-full">
+            <!-- 1. Kartu Profil & Tombol Edit -->
+            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100 gap-2 w-full">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <img src="${user.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nama)}" 
+                         class="w-11 h-11 rounded-full object-cover border border-slate-200 shrink-0">
+                    <div class="min-w-0">
+                        <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(user.nama)}</h4>
+                        <span class="inline-block text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase mt-0.5">${escapeHtml(user.role)}</span>
                     </div>
                 </div>
-                <button onclick="toggleDarkMode(); openUserSettingsModal();" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-sm transition flex items-center gap-1.5">
-                    <i class="fas ${document.body.classList.contains('dark') ? 'fa-sun text-amber-500' : 'fa-moon text-slate-600'}"></i>
-                    <span>${document.body.classList.contains('dark') ? 'Mode Terang' : 'Mode Gelap'}</span>
+                <button onclick="openEditProfilModal()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5 shrink-0">
+                    <i class="fas fa-user-edit"></i> <span>Edit Profil</span>
                 </button>
             </div>
 
+            <!-- 2. Mode Tampilan -->
+            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100 gap-2 w-full">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0">
+                        <i class="fas fa-moon"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <h4 class="font-bold text-xs text-slate-800">Mode Tampilan</h4>
+                        <p class="text-[11px] text-slate-400 truncate">Pilih tema Gelap / Terang</p>
+                    </div>
+                </div>
+                <button onclick="toggleDarkMode(); openUserSettingsModal();" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-sm transition flex items-center gap-1.5 shrink-0">
+                    <i class="fas ${document.body.classList.contains('dark') ? 'fa-sun text-amber-500' : 'fa-moon text-slate-600'}"></i>
+                    <span>${document.body.classList.contains('dark') ? 'Terang' : 'Gelap'}</span>
+                </button>
+            </div>
+
+            <!-- 3. Form Ganti Kata Sandi -->
             ${user.role !== 'ortu' ? `
-            <form onsubmit="changePasswordForm(event)" class="space-y-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            <form onsubmit="changePasswordForm(event)" class="space-y-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>
                 <input type="password" id="m-pwd-old" placeholder="Kata sandi lama" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
                 <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
-                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl text-xs">Update Kata Sandi</button>
+                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-900 transition">Update Kata Sandi</button>
             </form>` : ''}
-            <button onclick="handleLogout()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs flex items-center justify-center gap-2">
+
+            <!-- 4. Tombol Keluar -->
+            <button onclick="handleLogout()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs flex items-center justify-center gap-2 hover:bg-rose-100 transition">
                 <i class="fas fa-sign-out-alt"></i> Keluar
             </button>
         </div>
