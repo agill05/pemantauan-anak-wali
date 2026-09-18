@@ -350,7 +350,6 @@ function renderSiswaView() {
     const container = document.getElementById("siswa-card-container");
     if (!container) return;
 
-    // Jika data siswa belum ada, tampilkan skeleton dan coba ambil dari server
     if (!appState.siswa || appState.siswa.length === 0) {
         renderSkeleton("siswa-card-container", 5);
         fetchAllAppData(false).then(() => {

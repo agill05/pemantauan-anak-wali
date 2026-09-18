@@ -558,7 +558,6 @@ function hubungiOrtu(siswaId) {
         return;
     }
 
-    // Ambil data statistik siswa terkait jika ada di state
     const sId = String(s.id);
     const presensiList = appState.absensi.filter(a => String(a.siswa_id) === sId);
     const countH = presensiList.filter(a => a.status === 'H').length;
@@ -572,7 +571,6 @@ function hubungiOrtu(siswaId) {
     const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
     const namaKelas = kls ? kls.nama_kelas : '-';
 
-    // Buat Template Pesan
     const templateLengkap = `*LAPORAN PERKEMBANGAN ANAK WALI*
 *SMP NEGERI 1 TALAGA JAYA*
 ----------------------------------------

@@ -3,7 +3,6 @@ function switchView(viewId) {
         flushKebiasaanQueue();
     }
 
-    // Simpan view saat ini agar saat refresh pengguna tetap di halaman yang sama
     if (viewId && viewId !== "login") {
         sessionStorage.setItem("app_last_view", viewId);
     }
@@ -32,16 +31,10 @@ function switchView(viewId) {
     if (viewId === "admin-manage") renderAdminManage();
 }
 
-/**
- * Memperbarui semua dropdown/select yang berisi daftar siswa di seluruh modul.
- * Dipanggil setelah data bootstrap dari server berhasil dimuat agar
- * dropdown tidak kosong akibat race condition saat inisialisasi.
- */
 function _refreshAllSiswaDropdowns() {
     const siswaList = appState.siswa || [];
     const siswaOptions = siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
 
-    // Dropdown di modul Kebiasaan
     const selKebiasaan = document.getElementById("kebiasaan-siswa-select");
     if (selKebiasaan) {
         const prev = selKebiasaan.value;
@@ -49,7 +42,6 @@ function _refreshAllSiswaDropdowns() {
         if (prev) selKebiasaan.value = prev;
     }
 
-    // Dropdown di modul Karakter/Keagamaan
     const selKarakter = document.getElementById("karakter-siswa-filter");
     if (selKarakter && siswaList.length > 0) {
         const prev = selKarakter.value;
@@ -57,7 +49,6 @@ function _refreshAllSiswaDropdowns() {
         if (prev) selKarakter.value = prev;
     }
 
-    // Dropdown di modul Akademik - filter siswa
     const selAkademik = document.getElementById("akademik-siswa-filter");
     if (selAkademik && siswaList.length > 0) {
         const prev = selAkademik.value;
@@ -65,7 +56,6 @@ function _refreshAllSiswaDropdowns() {
         if (prev) selAkademik.value = prev;
     }
 
-    // Dropdown di modul Pembinaan - filter siswa
     const selPembinaan = document.getElementById("pembinaan-siswa-filter");
     if (selPembinaan && siswaList.length > 0) {
         const prev = selPembinaan.value;
@@ -74,11 +64,9 @@ function _refreshAllSiswaDropdowns() {
         if (prev) selPembinaan.value = prev;
     }
 
-    // Re-render view aktif agar tampilan langsung diperbarui
     const activeView = document.querySelector(".view-section.active");
     if (activeView) {
         const viewId = activeView.id.replace("view-", "");
-        // Render ulang view aktif (selain dashboard yang sudah dihandle terpisah)
         if (viewId === "absensi") renderAbsensiView();
         else if (viewId === "kebiasaan") renderKebiasaanView();
         else if (viewId === "karakter") renderKeagamaanView();
@@ -146,7 +134,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // Inisialisasi Tema (Dark / Light Mode)
     initTheme();
 
     const savedSession = localStorage.getItem("session_anak_wali");
@@ -157,17 +144,14 @@ window.addEventListener("DOMContentLoaded", async () => {
                 appState.token = parsed.token;
                 appState.user = parsed.user;
 
-                // Langsung inisialisasi tampilan secara instan dari cache lokal
                 await setupAppSession();
 
-                // Validasi token di background tanpa memblokir antarmuka pengguna
                 apiCall("validateSession", {}, false).then(validRes => {
                     if (validRes && validRes.status === "success") {
                         if (validRes.user) {
                             appState.user = validRes.user;
                         }
                     } else if (validRes && validRes.status === "error") {
-                        // Sesi kedaluwarsa atau tidak valid di server
                         handleLogout(true);
                     }
                 });

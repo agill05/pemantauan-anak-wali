@@ -1,7 +1,6 @@
 async function loadLaporanRekap(forceRefresh = false) {
     const isStale = (Date.now() - (lastFetchTimes.laporan || 0)) > CACHE_TTL;
 
-    // Isi dropdown filter kelas jika belum terisi
     populateLaporanKelasFilter();
 
     if (appState.laporanRekap && appState.laporanRekap.length > 0) {
@@ -198,7 +197,6 @@ function exportRekapCSV() {
         return;
     }
 
-    // Menggunakan UTF-8 BOM agar langsung kompatibel di Microsoft Excel
     let csvContent = "\uFEFF";
     csvContent += "No,NISN,Nama Siswa,Kelas,Hadir,Sakit,Izin,Alpa,Mapel_Dibawah_KKTP,Status_Evaluasi\n";
 
@@ -222,4 +220,4 @@ function exportRekapCSV() {
     URL.revokeObjectURL(url);
 
     showToast("File Excel/CSV berhasil diunduh!");
-}
+}

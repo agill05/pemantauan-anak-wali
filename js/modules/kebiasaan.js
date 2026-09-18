@@ -40,7 +40,6 @@ function renderKebiasaanView() {
 
     const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
 
-    // Hitung Progress & Gamifikasi Siswa Terpilih
     const studentRecords = appState.kebiasaan.filter(k => String(k.siswa_id) === String(selectedSiswaId));
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
@@ -49,10 +48,8 @@ function renderKebiasaanView() {
     const completedToday = todayRecords.filter(k => k.status === 'Sudah').length;
     const persenTuntas = Math.round((completedToday / 7) * 100);
 
-    // Hitung Total Kebiasaan yang Sudah Dikerjakan Sepanjang Waktu
     const totalSemuaSudah = studentRecords.filter(k => k.status === 'Sudah').length;
 
-    // Tentukan Lencana Gamifikasi
     let badgeTitle = "Prajurit Karakter";
     let badgeIcon = "fa-shield-halved";
     let badgeColor = "bg-blue-500 text-white";
@@ -169,7 +166,6 @@ function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     saveAppStateToLocal();
     renderKebiasaanView();
 
-    // Cek jika seluruh 7 kebiasaan sudah terpenuhi
     const todaySudah = appState.kebiasaan.filter(k => String(k.siswa_id) === String(siswa_id) && String(k.tanggal) === String(tanggal) && k.status === 'Sudah').length;
     if (todaySudah === 7) {
         showToast("🌟 Luar biasa! Seluruh 7 Kebiasaan Hebat hari ini telah tuntas!");

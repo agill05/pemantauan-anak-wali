@@ -1,8 +1,3 @@
-/**
- * Modul Magic Link Akses Pemantauan Orang Tua (15 Menit)
- * SMP Negeri 1 Talaga Jaya
- */
-
 async function generateAndShareMagicLink() {
     const detail = appState.activeSiswaDetail;
     const siswa = detail ? detail.siswa : null;
