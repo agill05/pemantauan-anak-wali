@@ -132,17 +132,13 @@ async function continueSessionSetup() {
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
     renderSidebarMenu(appState.user.role);
 
-    // Tandai bahwa sesi aktif untuk mencegah flicker login
     document.documentElement.classList.add("has-session");
 
-    // Muat cache lokal agar UI tidak kosong saat menunggu server
     const hasCachedData = loadAppStateFromLocal();
 
-    // Buka halaman/view terakhir yang sedang dibuka pengguna sebelum di-refresh
     const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
     switchView(targetView);
 
-    // Ambil data bootstrap dari server (data master siswa, kelas, guru)
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
@@ -152,15 +148,12 @@ async function continueSessionSetup() {
         saveAppStateToLocal();
     }
 
-    // Setelah data siswa tersedia, refresh semua dropdown dan view aktif
     _refreshAllSiswaDropdowns();
 
-    // Jika view yang dibuka adalah dashboard, render ulang dashboardnya
     if (targetView === "dashboard") {
         renderDashboard();
     }
 
-    // Mulai polling notifikasi SETELAH data siswa siap
     startRealtimeNotificationPolling();
     checkStudentNotifications();
 }
@@ -396,5 +389,166 @@ async function changePasswordForm(e) {
     if (res && res.status === "success") {
         closeModal();
         showToast("Kata sandi diperbarui!");
+    }
+}
+
+function openEditProfilModal() {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+
+    const user = appState.user || {};
+    const role = (user.role || "").toLowerCase();
+
+    const isEditingLocked = role === "siswa" || role === "guru";
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-user-pen text-blue-600"></i> Edit Profil Saya
+            </h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fas fa-times"></i></button>
+        </div>
+
+        <form onsubmit="saveSelfProfileForm(event)" class="space-y-4">
+            <!-- Upload Foto Profil -->
+            <div class="flex flex-col items-center justify-center gap-2">
+                <div class="relative group">
+                    <img id="preview-foto-profil" 
+                        src="${user.foto || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nama || 'User'))}" 
+                        class="w-20 h-20 rounded-full object-cover border-2 border-blue-500 shadow-md">
+                    <label for="input-foto-file" 
+                        class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition active:scale-95" 
+                        title="Ubah Foto">
+                        <i class="fas fa-camera text-xs"></i>
+                    </label>
+                    <input type="file" id="input-foto-file" accept="image/*" onchange="previewSelectedPhoto(event)" class="hidden">
+                </div>
+                <span class="text-[11px] text-slate-400">Format: JPG/PNG (Maks. 2MB)</span>
+            </div>
+
+            <!-- Nama Lengkap -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
+                <input type="text" id="self-nama" value="${escapeHtml(user.nama || '')}" 
+                       class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
+                       ${isEditingLocked ? 'readonly' : 'required'}>
+                ${isEditingLocked ? '<p class="text-[10px] text-slate-400 mt-0.5">*Nama hanya dapat diubah oleh Admin sekolah.</p>' : ''}
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <!-- Username -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
+                    <input type="text" id="self-username" value="${escapeHtml(user.username || '')}" 
+                           class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
+                           ${isEditingLocked ? 'readonly' : 'required'}>
+                </div>
+
+                <!-- NIP / NISN -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">${role === 'guru' ? 'NIP' : (role === 'siswa' ? 'NISN' : 'ID Identifier')}</label>
+                    <input type="text" id="self-nip-nisn" value="${escapeHtml(user.nip || user.nisn || '')}" 
+                           class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
+                           ${isEditingLocked ? 'readonly' : ''}>
+                </div>
+            </div>
+
+            <!-- No. Telepon / WhatsApp -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">No. WhatsApp / HP</label>
+                <input type="text" id="self-hp" value="${escapeHtml(user.no_hp || user.no_hp_ortu || '')}" 
+                       placeholder="08xxxxxxxxxx" 
+                       class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:border-blue-500">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+                <i class="fas fa-save"></i> Simpan Perubahan Profil
+            </button>
+        </form>
+    `;
+
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+/**
+ * Preview Foto secara lokal sebelum diunggah
+ */
+function previewSelectedPhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+        showToast("Ukuran foto maksimal 2MB!", "warning");
+        event.target.value = "";
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const previewImg = document.getElementById("preview-foto-profil");
+        if (previewImg) previewImg.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+/**
+ * Handle Submit Form Edit Profil
+ */
+async function saveSelfProfileForm(e) {
+    e.preventDefault();
+
+    const fileInput = document.getElementById("input-foto-file");
+    const file = fileInput?.files[0];
+
+    let base64Photo = null;
+
+    if (file) {
+        base64Photo = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    const payload = {
+        nama: document.getElementById("self-nama").value,
+        username: document.getElementById("self-username").value,
+        no_hp: document.getElementById("self-hp").value,
+        fileData: base64Photo
+    };
+
+    showLoading("Memperbarui profil...");
+
+    const res = await apiCall("updateSelfProfile", payload, false);
+    hideLoading();
+
+    if (res && res.status === "success") {
+        closeModal();
+
+        appState.user.nama = payload.nama;
+        appState.user.username = payload.username;
+        appState.user.no_hp = payload.no_hp;
+        if (res.photoUrl) appState.user.foto = res.photoUrl;
+
+        const savedSession = JSON.parse(localStorage.getItem("session_anak_wali") || "{}");
+        savedSession.user = appState.user;
+        localStorage.setItem("session_anak_wali", JSON.stringify(savedSession));
+
+        const userAvatar = document.getElementById("user-avatar");
+        const sbAvatar = document.getElementById("sidebar-avatar");
+        const headerTitle = document.getElementById("header-title");
+
+        if (userAvatar) userAvatar.src = appState.user.foto;
+        if (sbAvatar) sbAvatar.src = appState.user.foto;
+        if (headerTitle) headerTitle.innerText = `Selamat Datang, ${appState.user.nama}`;
+
+        showToast("Profil berhasil diperbarui!");
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Memperbarui',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan profil.',
+            confirmButtonColor: '#2563eb'
+        });
     }
 }
