@@ -342,14 +342,17 @@ function openUserSettingsModal() {
             <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-cog text-blue-600 mr-1.5"></i>Pengaturan Akun</h3>
             <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
-        <div class="space-y-4">
-            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+        <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            <div class="flex items-center gap-3">
                 <img src="${user.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nama)}" class="w-12 h-12 rounded-full object-cover border border-slate-200">
                 <div>
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(user.nama)}</h4>
                     <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase">${escapeHtml(user.role)}</span>
                 </div>
             </div>
+            <button onclick="openEditProfilModal()" class="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm transition flex items-center gap-1">
+                <i class="fas fa-user-edit"></i> Edit Profil
+            </button>
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <div class="flex items-center gap-2.5">
                     <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
