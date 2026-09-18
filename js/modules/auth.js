@@ -439,6 +439,10 @@ function openEditProfilModal() {
                     <input type="file" id="input-foto-file" accept="image/*" onchange="previewSelectedPhoto(event)" class="hidden">
                 </div>
                 <span class="text-[11px] text-slate-400">Format: JPG/PNG (Maks. 2MB)</span>
+                ${user.foto ? `
+                <button type="button" onclick="hapusFotoProfil()" class="text-[11px] text-rose-500 hover:text-rose-600 font-bold flex items-center gap-1">
+                    <i class="fas fa-trash-alt"></i> Hapus Foto
+                </button>` : ''}
             </div>
 
             <!-- Nama Lengkap -->
@@ -504,6 +508,53 @@ function previewSelectedPhoto(event) {
         if (previewImg) previewImg.src = e.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+/**
+ * Hapus Foto Profil (hapus file di Drive + kosongkan kolom foto)
+ */
+async function hapusFotoProfil() {
+    const confirm = await Swal.fire({
+        icon: 'warning',
+        title: 'Hapus Foto Profil?',
+        text: 'Foto akan dihapus permanen dari Drive.',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#e11d48'
+    });
+    if (!confirm.isConfirmed) return;
+
+    showLoading("Menghapus foto...");
+    const res = await apiCall("hapusFotoProfil", {}, true);
+    hideLoading();
+
+    if (res && res.status === "success") {
+        appState.user.foto = "";
+
+        const savedSession = JSON.parse(localStorage.getItem("session_anak_wali") || "{}");
+        savedSession.user = appState.user;
+        localStorage.setItem("session_anak_wali", JSON.stringify(savedSession));
+
+        const defaultAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(appState.user.nama || "User");
+        const previewImg = document.getElementById("preview-foto-profil");
+        const userAvatar = document.getElementById("user-avatar");
+        const sbAvatar = document.getElementById("sidebar-avatar");
+
+        if (previewImg) previewImg.src = defaultAvatar;
+        if (userAvatar) userAvatar.src = defaultAvatar;
+        if (sbAvatar) sbAvatar.src = defaultAvatar;
+
+        openEditProfilModal();
+        showToast("Foto profil dihapus!");
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menghapus',
+            text: res?.message || 'Terjadi kesalahan saat menghapus foto.',
+            confirmButtonColor: '#2563eb'
+        });
+    }
 }
 
 /**
