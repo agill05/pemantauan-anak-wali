@@ -1,0 +1,1142 @@
+const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
+const TOKEN_LIFETIME_MS = 15 * 60 * 1000;
+const PASSWORD_PEPPER = "AnakWali-SMPN1TalagaJaya-2026";
+const TIMEZONE_WITA = "Asia/Makassar";
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+  } catch (err) {
+    return responseJSON({ status: "error", message: "Server sedang sibuk. Silakan coba beberapa saat lagi." });
+  }
+
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return responseJSON({ status: "error", message: "Payload request kosong." });
+    }
+
+    const contents = JSON.parse(e.postData.contents);
+    const action = contents.action;
+    const token = contents.token || null;
+    const payload = contents.payload || {};
+
+    if (action === "login") return responseJSON(handleLogin(payload));
+    if (action === "getMagicLinkData") return responseJSON(handleGetMagicLinkData(payload));
+
+    const authUser = validateToken(token);
+    if (!authUser) {
+      return responseJSON({ status: "error", message: "Sesi telah berakhir atau token tidak valid. Silakan login kembali." });
+    }
+
+    if (action === "validateSession") return responseJSON({ status: "success", user: authUser });
+    if (action === "refreshToken") return responseJSON(handleRefreshToken(authUser));
+    if (action === "changePassword") return responseJSON(handleChangePassword(authUser, payload));
+
+    let responseData = null;
+
+    switch (action) {
+      case "getBootstrapData": responseData = handleGetBootstrapData(authUser); break;
+      case "getDashboardData": responseData = handleGetDashboardData(authUser); break;
+      case "saveGuru": responseData = handleSaveGuru(authUser, payload); break;
+      case "deleteGuru": responseData = handleDeleteGuru(authUser, payload); break;
+      case "saveSiswa": responseData = handleSaveSiswa(authUser, payload); break;
+      case "deleteSiswa": responseData = handleDeleteSiswa(authUser, payload); break;
+      case "saveKelas": responseData = handleSaveKelas(authUser, payload); break;
+      case "deleteKelas": responseData = handleDeleteKelas(authUser, payload); break;
+      case "getAbsensi": responseData = handleGetAbsensi(authUser, payload); break;
+      case "saveAbsensi": responseData = handleSaveAbsensi(authUser, payload); break;
+      case "getKebiasaan": responseData = handleGetKebiasaan(authUser, payload); break;
+      case "saveKebiasaan": responseData = handleSaveKebiasaan(authUser, payload); break;
+      case "getKeagamaan": responseData = handleGetKeagamaan(authUser, payload); break;
+      case "saveKeagamaan": responseData = handleSaveKeagamaan(authUser, payload); break;
+      case "deleteKeagamaan": responseData = handleDeleteKeagamaan(authUser, payload); break;
+      case "getAkademik": responseData = handleGetAkademik(authUser, payload); break;
+      case "saveAkademik": responseData = handleSaveAkademik(authUser, payload); break;
+      case "deleteAkademik": responseData = handleDeleteAkademik(authUser, payload); break;
+      case "getPrestasi": responseData = handleGetPrestasi(authUser, payload); break;
+      case "savePrestasi": responseData = handleSavePrestasi(authUser, payload); break;
+      case "deletePrestasi": responseData = handleDeletePrestasi(authUser, payload); break;
+      case "getPembinaan": responseData = handleGetPembinaan(authUser, payload); break;
+      case "savePembinaan": responseData = handleSavePembinaan(authUser, payload); break;
+      case "deletePembinaan": responseData = handleDeletePembinaan(authUser, payload); break;
+      case "getDetailSiswa": responseData = handleGetDetailSiswa(authUser, payload); break;
+      case "getLaporanRekap": responseData = handleGetLaporanRekap(authUser, payload); break;
+      case "generateMagicLink": responseData = handleGenerateMagicLink(authUser, payload); break;
+      case "updateSelfProfile": responseData = handleUpdateSelfProfile(authUser, payload); break; // <-- Penanganan Action Baru
+      default: responseData = { status: "error", message: "Aksi tidak dikenal: " + action };
+    }
+
+    return responseJSON(responseData);
+
+  } catch (err) {
+    return responseJSON({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function responseJSON(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSheet(sheetName) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(sheetName);
+  if (!sheet) sheet = ss.insertSheet(sheetName);
+  return sheet;
+}
+
+function getSheetDataCached(sheetName) {
+  const cache = CacheService.getScriptCache();
+  const cacheKey = "cache_sheet_" + sheetName;
+  const cached = cache.get(cacheKey);
+
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch (e) {}
+  }
+
+  const data = getSheetData(sheetName);
+  try {
+    const jsonStr = JSON.stringify(data);
+    if (jsonStr.length < 95000) {
+      cache.put(cacheKey, jsonStr, 600);
+    }
+  } catch (e) {}
+
+  return data;
+}
+
+function clearSheetCache(sheetName) {
+  try {
+    const cache = CacheService.getScriptCache();
+    if (sheetName) {
+      cache.remove("cache_sheet_" + sheetName);
+    } else {
+      const keys = ["Siswa", "Guru", "Kelas", "Admin", "Kehadiran", "Kebiasaan", "Hafalan", "Akademik", "Prestasi", "Pembinaan"];
+      keys.forEach(k => cache.remove("cache_sheet_" + k));
+    }
+  } catch (e) {}
+}
+
+function sanitizeForSheet(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" && /^[=+\-@\t\r]/.test(value)) return "'" + value;
+  return value;
+}
+
+function formatDateWITA(val) {
+  if (val === null || val === undefined || val === "") return "";
+  if (val instanceof Date) {
+    if (val.getFullYear() < 1920) return "";
+    return Utilities.formatDate(val, TIMEZONE_WITA, "yyyy-MM-dd");
+  }
+  let str = String(val).trim();
+  if (str.indexOf("T") !== -1) str = str.split("T")[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime()) && d.getFullYear() >= 1920) {
+      return Utilities.formatDate(d, TIMEZONE_WITA, "yyyy-MM-dd");
+    }
+  } catch (e) {}
+  return str;
+}
+
+function formatTimeWITA(val) {
+  if (!val) return Utilities.formatDate(new Date(), TIMEZONE_WITA, "HH:mm");
+  if (val instanceof Date) return Utilities.formatDate(val, TIMEZONE_WITA, "HH:mm");
+  const str = String(val).trim();
+  if (str.indexOf("T") !== -1) {
+    try {
+      return Utilities.formatDate(new Date(str), TIMEZONE_WITA, "HH:mm");
+    } catch (e) {
+      return str;
+    }
+  }
+  return str;
+}
+
+function getSheetData(sheetName) {
+  const sheet = getSheet(sheetName);
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  const headers = data[0].map(h => String(h).trim());
+  const rows = [];
+  for (let i = 1; i < data.length; i++) {
+    let rowObj = {};
+    let isEmptyRow = true;
+    for (let j = 0; j < headers.length; j++) {
+      let val = data[i][j];
+      if (val !== "" && val !== null && val !== undefined) isEmptyRow = false;
+      if (headers[j] === "tanggal" || headers[j] === "created_at" || headers[j] === "jadwal_pantau") {
+        val = formatDateWITA(val);
+      }
+      rowObj[headers[j]] = val;
+    }
+    if (!isEmptyRow) rows.push(rowObj);
+  }
+  return rows;
+}
+
+function updateSheetRow(sheetName, id, updatedObj) {
+  const sheet = getSheet(sheetName);
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return false;
+  const headers = data[0].map(h => String(h).trim());
+  const idColIndex = headers.indexOf("id");
+
+  if (idColIndex === -1) return false;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idColIndex]) === String(id)) {
+      for (let j = 0; j < headers.length; j++) {
+        const key = headers[j];
+        if (updatedObj[key] !== undefined) {
+          let valToSave = updatedObj[key];
+          if (key === "tanggal" || key === "jadwal_pantau") valToSave = formatDateWITA(valToSave);
+          sheet.getRange(i + 1, j + 1).setValue(sanitizeForSheet(valToSave));
+        }
+      }
+      clearSheetCache(sheetName);
+      return true;
+    }
+  }
+  return false;
+}
+
+function deleteRowById(sheetName, id) {
+  const sheet = getSheet(sheetName);
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return { status: "error", message: "Data kosong." };
+
+  const headers = data[0].map(h => String(h).trim());
+  const idColIndex = headers.indexOf("id");
+  if (idColIndex === -1) return { status: "error", message: "Kolom ID tidak ditemukan." };
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idColIndex]) === String(id)) {
+      sheet.deleteRow(i + 1);
+      clearSheetCache(sheetName);
+      return { status: "success", message: "Data berhasil dihapus." };
+    }
+  }
+  return { status: "error", message: "ID tidak ditemukan." };
+}
+
+function logActivity(userId, role, action, details) {
+  try {
+    const sheet = getSheet("Logs");
+    const timestamp = Utilities.formatDate(new Date(), TIMEZONE_WITA, "yyyy-MM-dd HH:mm:ss");
+    sheet.appendRow([Date.now(), timestamp, userId, role, action, JSON.stringify(details)]);
+  } catch (e) {}
+}
+
+function getSecretKey() {
+  const props = PropertiesService.getScriptProperties();
+  let key = props.getProperty("APP_SECRET_KEY");
+  if (!key) {
+    key = Utilities.getUuid();
+    props.setProperty("APP_SECRET_KEY", key);
+  }
+  return key;
+}
+
+function hashPassword(plainPassword) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(plainPassword) + PASSWORD_PEPPER);
+  return bytes.map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0')).join("");
+}
+
+function getDefaultPasswordForRole(role) {
+  return role === "admin" ? "admin123" : (role === "guru" ? "guru123" : "siswa123");
+}
+
+function generateToken(userId, role) {
+  const expiry = Date.now() + TOKEN_LIFETIME_MS;
+  const payload = String(userId) + "|" + role + "|" + expiry;
+  const encodedPayload = Utilities.base64EncodeWebSafe(payload);
+  const signature = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payload, getSecretKey()));
+  return encodedPayload + "." + signature;
+}
+
+function validateToken(token) {
+  if (!token || typeof token !== "string" || token.indexOf(".") === -1) return null;
+  try {
+    const parts = token.split(".");
+    const payload = Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString();
+    const expectedSig = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payload, getSecretKey()));
+    if (parts[1] !== expectedSig) return null;
+
+    const p = payload.split("|");
+    if (Number(p[2]) < Date.now()) return null;
+
+    const sheetName = p[1] === "admin" ? "Admin" : (p[1] === "guru" ? "Guru" : "Siswa");
+    const rawUser = getSheetDataCached(sheetName).find(r => String(r.id) === String(p[0]));
+    if (!rawUser) return null;
+
+    const user = JSON.parse(JSON.stringify(rawUser));
+    const storedHash = user.password;
+    delete user.password;
+    user.role = p[1];
+    user.mustChangePassword = (storedHash === hashPassword(getDefaultPasswordForRole(p[1])));
+
+    return user;
+  } catch (e) {
+    return null;
+  }
+}
+
+function handleLogin(payload) {
+  const { role, username, password } = payload;
+  if (!role || !username || !password) {
+    return { status: "error", message: "Role, Username, dan Kata Sandi wajib diisi." };
+  }
+
+  let sheetName = role === "admin" ? "Admin" : (role === "guru" ? "Guru" : "Siswa");
+  const users = getSheetDataCached(sheetName);
+  const user = users.find(u => String(u.username).trim().toLowerCase() === String(username).trim().toLowerCase());
+
+  const errMessage = "Username atau kata sandi yang Anda masukkan salah.";
+  if (!user) return { status: "error", message: errMessage };
+
+  const inputHash = hashPassword(password);
+  const isMatch = (user.password === inputHash) || (String(user.password) === String(password));
+
+  if (!isMatch) return { status: "error", message: errMessage };
+
+  if (user.password !== inputHash) {
+    updateSheetRow(sheetName, user.id, { password: inputHash });
+  }
+
+  const token = generateToken(user.id, role);
+  const mustChangePassword = (inputHash === hashPassword(getDefaultPasswordForRole(role)));
+  delete user.password;
+  user.role = role;
+  user.mustChangePassword = mustChangePassword;
+
+  logActivity(user.id, role, "LOGIN", { username: user.username });
+  return { status: "success", token, user, mustChangePassword };
+}
+
+function handleRefreshToken(authUser) {
+  const newToken = generateToken(authUser.id, authUser.role);
+  return { status: "success", token: newToken, user: authUser };
+}
+
+function handleChangePassword(authUser, payload) {
+  const { oldPassword, newPassword } = payload;
+  if (!oldPassword || !newPassword) return { status: "error", message: "Password lama dan baru wajib diisi." };
+
+  const sheetName = authUser.role === "admin" ? "Admin" : (authUser.role === "guru" ? "Guru" : "Siswa");
+  const users = getSheetDataCached(sheetName);
+  const targetUser = users.find(u => String(u.id) === String(authUser.id));
+
+  if (!targetUser || targetUser.password !== hashPassword(oldPassword)) {
+    return { status: "error", message: "Password lama Anda tidak sesuai." };
+  }
+
+  updateSheetRow(sheetName, authUser.id, { password: hashPassword(newPassword) });
+  logActivity(authUser.id, authUser.role, "CHANGE_PASSWORD", { user_id: authUser.id });
+  return { status: "success", message: "Password berhasil diperbarui." };
+}
+
+function handleGetBootstrapData(authUser) {
+  const initial = handleGetInitialData(authUser);
+  const dashboard = handleGetDashboardData(authUser);
+  return {
+    status: "success",
+    data: { initial: initial.data, dashboard: dashboard.data }
+  };
+}
+
+function handleGetInitialData(authUser) {
+  const role = authUser.role;
+  const kelasList = getSheetDataCached("Kelas");
+  const guruList = getSheetDataCached("Guru").map(g => { delete g.password; return g; });
+  const siswaList = getSheetDataCached("Siswa").map(s => { delete s.password; return s; });
+
+  let allowedSiswa = [];
+  if (role === "admin") {
+    allowedSiswa = siswaList;
+  } else if (role === "guru") {
+    const kls = kelasList.find(k => String(k.guru_id) === String(authUser.id));
+    allowedSiswa = kls ? siswaList.filter(s => String(s.kelas_id) === String(kls.id)) : [];
+  } else if (role === "siswa") {
+    allowedSiswa = siswaList.filter(s => String(s.id) === String(authUser.id));
+  }
+
+  return {
+    status: "success",
+    data: { kelas: kelasList, guru: guruList, siswa: allowedSiswa }
+  };
+}
+
+function handleGetDashboardData(authUser) {
+  const role = authUser.role;
+  const today = formatDateWITA(new Date());
+
+  const allSiswa = getSheetDataCached("Siswa").map(s => { delete s.password; return s; });
+  const allKelas = getSheetDataCached("Kelas");
+  const allAbsensi = getSheetDataCached("Kehadiran");
+  const allAkademik = getSheetDataCached("Akademik");
+  const allPembinaan = getSheetDataCached("Pembinaan");
+
+  let mySiswaList = [];
+  if (role === "admin") {
+    mySiswaList = allSiswa;
+  } else if (role === "guru") {
+    const kls = allKelas.find(k => String(k.guru_id) === String(authUser.id));
+    mySiswaList = kls ? allSiswa.filter(s => String(s.kelas_id) === String(kls.id)) : [];
+  } else if (role === "siswa") {
+    mySiswaList = allSiswa.filter(s => String(s.id) === String(authUser.id));
+  }
+
+  const mySiswaIds = mySiswaList.map(s => String(s.id));
+  const todayAbsensi = allAbsensi.filter(a => formatDateWITA(a.tanggal) === today && mySiswaIds.includes(String(a.siswa_id)));
+  const totalHadirToday = todayAbsensi.filter(a => a.status === "H" || a.status === "T").length;
+
+  const priorityList = [];
+  const activePembinaanStatuses = ["Pemantauan", "Dalam pembinaan", "Perlu tindak lanjut"];
+
+  mySiswaList.forEach(siswa => {
+    const sId = String(siswa.id);
+    const flags = [];
+
+    const totalAlpa = allAbsensi.filter(a => String(a.siswa_id) === sId && a.status === "A").length;
+    if (totalAlpa >= 3) flags.push({ jenis: "absensi", pesan: `Banyak alpa (${totalAlpa} kali)` });
+
+    const lowGrades = allAkademik.filter(a => String(a.siswa_id) === sId && Number(a.nilai_akhir || 0) < Number(a.kktp || 75));
+    if (lowGrades.length >= 2) flags.push({ jenis: "akademik", pesan: `Nilai akademik kurang pada ${lowGrades.length} mapel` });
+
+    const activePem = allPembinaan.filter(p => String(p.siswa_id) === sId && activePembinaanStatuses.includes(String(p.status)));
+    if (activePem.length > 0) flags.push({ jenis: "pembinaan", pesan: `Ada ${activePem.length} catatan pembinaan aktif` });
+
+    if (flags.length > 0) priorityList.push({ siswa, indicators: flags });
+  });
+
+  const agendaList = allPembinaan
+    .filter(p => mySiswaIds.includes(String(p.siswa_id)) && p.jadwal_pantau && formatDateWITA(p.jadwal_pantau) >= today)
+    .sort((a, b) => new Date(formatDateWITA(a.jadwal_pantau)) - new Date(formatDateWITA(b.jadwal_pantau)))
+    .slice(0, 5)
+    .map(p => {
+      const s = mySiswaList.find(x => String(x.id) === String(p.siswa_id));
+      return {
+        id: p.id,
+        siswa_id: p.siswa_id,
+        nama_siswa: s ? s.nama : "Siswa",
+        jadwal_pantau: formatDateWITA(p.jadwal_pantau),
+        jenis: p.jenis,
+        permasalahan: p.permasalahan,
+        status: p.status
+      };
+    });
+
+  return {
+    status: "success",
+    data: {
+      total_siswa: mySiswaList.length,
+      hadir_today: totalHadirToday,
+      priority_list: priorityList,
+      agenda_list: agendaList
+    }
+  };
+}
+
+function handleSaveGuru(authUser, payload) {
+  if (authUser.role !== "admin") return { status: "error", message: "Akses ditolak." };
+  const { id, username, password, nama, nip, no_hp, foto } = payload;
+  if (!username || !nama) return { status: "error", message: "Username dan Nama Guru wajib diisi." };
+
+  const sheet = getSheet("Guru");
+  const data = getSheetDataCached("Guru");
+
+  if (id) {
+    const updatedObj = { username, nama, nip, no_hp, foto };
+    if (password && password.trim() !== "") updatedObj.password = hashPassword(password);
+    updateSheetRow("Guru", id, updatedObj);
+    return { status: "success", message: "Data Guru berhasil diperbarui." };
+  } else {
+    const existing = data.find(g => String(g.username).toLowerCase() === String(username).toLowerCase());
+    if (existing) return { status: "error", message: "Username sudah digunakan." };
+
+    const newId = "GRU-" + Date.now();
+    const usedDefaultPassword = !password || password.trim() === "";
+    const finalPwd = usedDefaultPassword ? hashPassword(getDefaultPasswordForRole("guru")) : hashPassword(password);
+    sheet.appendRow([newId, username, finalPwd, nama, nip || "", no_hp || "", foto || ""]);
+    clearSheetCache("Guru");
+    return {
+      status: "success",
+      message: usedDefaultPassword ? `Guru baru ditambahkan. Password diset ke "${getDefaultPasswordForRole("guru")}".` : "Guru baru berhasil ditambahkan.",
+      usedDefaultPassword
+    };
+  }
+}
+
+function handleDeleteGuru(authUser, payload) {
+  if (authUser.role !== "admin") return { status: "error", message: "Akses ditolak." };
+  return deleteRowById("Guru", payload.id);
+}
+
+function handleSaveSiswa(authUser, payload) {
+  if (authUser.role !== "admin" && authUser.role !== "guru") return { status: "error", message: "Akses ditolak." };
+
+  const { id, username, password, nama, no_absen, nisn, kelas_id, no_hp_ortu, foto } = payload;
+  if (!username || !nama) return { status: "error", message: "Username dan Nama Siswa wajib diisi." };
+
+  const sheet = getSheet("Siswa");
+  const data = getSheetDataCached("Siswa");
+
+  if (id) {
+    const updatedObj = { username, nama, no_absen, nisn, kelas_id, no_hp_ortu, foto };
+    if (password && password.trim() !== "") updatedObj.password = hashPassword(password);
+    updateSheetRow("Siswa", id, updatedObj);
+    return { status: "success", message: "Data Siswa berhasil diperbarui." };
+  } else {
+    const existing = data.find(s => String(s.username).toLowerCase() === String(username).toLowerCase());
+    if (existing) return { status: "error", message: "Username Siswa sudah digunakan." };
+
+    const newId = "SSW-" + Date.now();
+    const usedDefaultPassword = !password || password.trim() === "";
+    const finalPwd = usedDefaultPassword ? hashPassword(getDefaultPasswordForRole("siswa")) : hashPassword(password);
+
+    sheet.appendRow([newId, username, finalPwd, nama, no_absen || "", nisn || "", kelas_id || "", no_hp_ortu || "", foto || ""]);
+    clearSheetCache("Siswa");
+    return {
+      status: "success",
+      message: usedDefaultPassword ? `Siswa baru ditambahkan. Password diset ke "${getDefaultPasswordForRole("siswa")}".` : "Siswa baru berhasil ditambahkan.",
+      usedDefaultPassword
+    };
+  }
+}
+
+function handleDeleteSiswa(authUser, payload) {
+  if (authUser.role !== "admin" && authUser.role !== "guru") return { status: "error", message: "Akses ditolak." };
+  return deleteRowById("Siswa", payload.id);
+}
+
+function handleSaveKelas(authUser, payload) {
+  if (authUser.role !== "admin") return { status: "error", message: "Akses ditolak." };
+  const { id, nama_kelas, guru_id } = payload;
+  if (!nama_kelas) return { status: "error", message: "Nama kelas wajib diisi." };
+
+  const sheet = getSheet("Kelas");
+  if (id) {
+    updateSheetRow("Kelas", id, { nama_kelas, guru_id });
+    return { status: "success", message: "Data kelas berhasil diperbarui." };
+  } else {
+    const newId = "KLS-" + Date.now();
+    sheet.appendRow([newId, nama_kelas, guru_id || ""]);
+    clearSheetCache("Kelas");
+    return { status: "success", message: "Kelas baru berhasil dibuat." };
+  }
+}
+
+function handleDeleteKelas(authUser, payload) {
+  if (authUser.role !== "admin") return { status: "error", message: "Akses ditolak." };
+  return deleteRowById("Kelas", payload.id);
+}
+
+function handleGetAbsensi(authUser, payload) {
+  const tanggal = formatDateWITA(payload.tanggal || new Date());
+  const allAbsensi = getSheetDataCached("Kehadiran");
+  
+  const absensiMap = new Map();
+  allAbsensi.forEach(a => {
+    if (formatDateWITA(a.tanggal) === tanggal) {
+      absensiMap.set(String(a.siswa_id), a);
+    }
+  });
+
+  return { status: "success", data: Array.from(absensiMap.values()) };
+}
+
+function handleSaveAbsensi(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Siswa tidak dapat menyimpan presensi." };
+
+  const targetTanggal = formatDateWITA(payload.tanggal || new Date());
+  const items = payload.items || [];
+  if (items.length === 0) return { status: "success", message: "Tidak ada data disave." };
+
+  const sheet = getSheet("Kehadiran");
+  const data = sheet.getDataRange().getValues();
+  
+  if (data.length === 0 || (data.length === 1 && data[0][0] === "")) {
+    data[0] = ["id", "siswa_id", "tanggal", "status", "waktu_masuk"];
+  }
+
+  const headers = data[0].map(h => String(h).trim().toLowerCase());
+  const idIdx = headers.indexOf("id") !== -1 ? headers.indexOf("id") : 0;
+  const siswaIdIdx = headers.indexOf("siswa_id") !== -1 ? headers.indexOf("siswa_id") : 1;
+  const tglIdx = headers.indexOf("tanggal") !== -1 ? headers.indexOf("tanggal") : 2;
+  const statusIdx = headers.indexOf("status") !== -1 ? headers.indexOf("status") : 3;
+  const waktuIdx = headers.indexOf("waktu_masuk") !== -1 ? headers.indexOf("waktu_masuk") : 4;
+
+  const rowMap = new Map();
+  for (let i = 1; i < data.length; i++) {
+    const sId = String(data[i][siswaIdIdx]).trim();
+    const tglStr = formatDateWITA(data[i][tglIdx]);
+    if (sId && tglStr) {
+      rowMap.set(sId + "_" + tglStr, i);
+    }
+  }
+
+  const currentTime = formatTimeWITA(new Date());
+
+  items.forEach(item => {
+    const sId = String(item.siswa_id).trim();
+    if (!sId) return;
+
+    const waktu = item.waktu_masuk || currentTime;
+    const statusVal = sanitizeForSheet(item.status);
+    const key = sId + "_" + targetTanggal;
+
+    if (rowMap.has(key)) {
+      const idx = rowMap.get(key);
+      data[idx][tglIdx] = targetTanggal;
+      data[idx][statusIdx] = statusVal;
+      data[idx][waktuIdx] = sanitizeForSheet(waktu);
+    } else {
+      const newId = "ABS-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+      const newRow = new Array(headers.length).fill("");
+      newRow[idIdx] = newId;
+      newRow[siswaIdIdx] = sId;
+      newRow[tglIdx] = targetTanggal;
+      newRow[statusIdx] = statusVal;
+      newRow[waktuIdx] = sanitizeForSheet(waktu);
+      data.push(newRow);
+      rowMap.set(key, data.length - 1);
+    }
+  });
+
+  sheet.getRange(1, 1, data.length, headers.length).setValues(data);
+  clearSheetCache("Kehadiran");
+  return { status: "success", message: "Data presensi berhasil disimpan." };
+}
+
+function handleGetKebiasaan(authUser, payload) {
+  const targetTanggal = payload.tanggal ? formatDateWITA(payload.tanggal) : null;
+  const allKebiasaan = getSheetDataCached("Kebiasaan");
+  
+  let filtered = allKebiasaan;
+  if (targetTanggal) {
+    filtered = filtered.filter(k => formatDateWITA(k.tanggal) === targetTanggal);
+  }
+  if (payload.siswa_id) {
+    filtered = filtered.filter(k => String(k.siswa_id) === String(payload.siswa_id));
+  }
+
+  return { status: "success", data: filtered };
+}
+
+function handleSaveKebiasaan(authUser, payload) {
+  const { tanggal, siswa_id, kebiasaan_id, status } = payload;
+  if (!siswa_id || !kebiasaan_id) return { status: "error", message: "Data tidak lengkap." };
+
+  if (authUser.role === "siswa" && String(siswa_id) !== String(authUser.id)) {
+    return { status: "error", message: "Akses ditolak. Anda tidak dapat mengubah data siswa lain." };
+  }
+  if (authUser.role === "guru" && !isGuruAllowedToAccessSiswa(authUser.id, siswa_id)) {
+    return { status: "error", message: "Akses ditolak. Siswa ini bukan anak wali Anda." };
+  }
+
+  const targetTanggal = formatDateWITA(tanggal || new Date());
+  const sheet = getSheet("Kebiasaan");
+  const data = sheet.getDataRange().getValues();
+
+  if (data.length === 0 || (data.length === 1 && data[0][0] === "")) {
+    data[0] = ["id", "siswa_id", "tanggal", "kebiasaan_id", "status"];
+  }
+
+  const headers = data[0].map(h => String(h).trim().toLowerCase());
+  const idIdx = headers.indexOf("id") !== -1 ? headers.indexOf("id") : 0;
+  const siswaIdIdx = headers.indexOf("siswa_id") !== -1 ? headers.indexOf("siswa_id") : 1;
+  const tglIdx = headers.indexOf("tanggal") !== -1 ? headers.indexOf("tanggal") : 2;
+  const kebiasaanIdIdx = headers.indexOf("kebiasaan_id") !== -1 ? headers.indexOf("kebiasaan_id") : 3;
+  const statusIdx = headers.indexOf("status") !== -1 ? headers.indexOf("status") : 4;
+
+  let foundIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (
+      String(data[i][siswaIdIdx]) === String(siswa_id) &&
+      formatDateWITA(data[i][tglIdx]) === targetTanggal &&
+      String(data[i][kebiasaanIdIdx]) === String(kebiasaan_id)
+    ) {
+      foundIndex = i;
+      break;
+    }
+  }
+
+  const statusVal = sanitizeForSheet(status);
+
+  if (foundIndex !== -1) {
+    data[foundIndex][statusIdx] = statusVal;
+    sheet.getRange(foundIndex + 1, statusIdx + 1).setValue(statusVal);
+  } else {
+    const newId = "KBS-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    const newRow = new Array(headers.length).fill("");
+    newRow[idIdx] = newId;
+    newRow[siswaIdIdx] = String(siswa_id);
+    newRow[tglIdx] = targetTanggal;
+    newRow[kebiasaanIdIdx] = String(kebiasaan_id);
+    newRow[statusIdx] = statusVal;
+    sheet.appendRow(newRow);
+  }
+
+  clearSheetCache("Kebiasaan");
+  return { status: "success", message: "Kebiasaan diperbarui." };
+}
+
+function handleGetKeagamaan(authUser, payload) {
+  const data = getSheetDataCached("Hafalan");
+  if (authUser.role === "siswa") return { status: "success", data: data.filter(h => String(h.siswa_id) === String(authUser.id)) };
+  if (payload && payload.siswa_id) return { status: "success", data: data.filter(h => String(h.siswa_id) === String(payload.siswa_id)) };
+  return { status: "success", data };
+}
+
+function handleSaveKeagamaan(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Akses ditolak." };
+  const { id, siswa_id, tanggal, nama_surat, status, catatan } = payload;
+  if (!siswa_id || !nama_surat) return { status: "error", message: "Siswa dan nama surah wajib diisi." };
+
+  const sheet = getSheet("Hafalan");
+  const tglStr = formatDateWITA(tanggal || new Date());
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length === 0 || (data.length === 1 && data[0][0] === "")) {
+    sheet.getRange(1, 1, 1, 6).setValues([["id", "siswa_id", "tanggal", "nama_surat", "status", "catatan"]]);
+  }
+
+  if (id) {
+    const isUpdated = updateSheetRow("Hafalan", id, { tanggal: tglStr, nama_surat, status, catatan });
+    if (isUpdated) {
+      return { status: "success", message: "Hafalan diperbarui." };
+    }
+  }
+
+  const newId = id || ("HFL-" + Date.now());
+  sheet.appendRow([newId, String(siswa_id), tglStr, nama_surat, status || "Belum Mulai", catatan || ""]);
+  clearSheetCache("Hafalan");
+  
+  return { status: "success", message: "Hafalan berhasil dicatat." };
+}
+
+function handleDeleteKeagamaan(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Akses ditolak." };
+  return deleteRowById("Hafalan", payload.id);
+}
+
+function handleGetAkademik(authUser, payload) {
+  const data = getSheetDataCached("Akademik");
+  if (authUser.role === "siswa") return { status: "success", data: data.filter(a => String(a.siswa_id) === String(authUser.id)) };
+  if (payload && payload.siswa_id) return { status: "success", data: data.filter(a => String(a.siswa_id) === String(payload.siswa_id)) };
+  return { status: "success", data };
+}
+
+function handleSaveAkademik(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Akses ditolak." };
+  const { id, siswa_id, mapel, nilai_akhir, kktp } = payload;
+  if (!siswa_id || !mapel) return { status: "error", message: "Siswa dan Mata Pelajaran wajib diisi." };
+
+  const valNilai = Number(nilai_akhir || 0);
+  const valKktp = Number(kktp || 75);
+
+  if (id) {
+    updateSheetRow("Akademik", id, { mapel, nilai_akhir: valNilai, kktp: valKktp });
+    return { status: "success", message: "Nilai akademik diperbarui." };
+  } else {
+    const sheet = getSheet("Akademik");
+    const newId = "AKD-" + Date.now();
+    sheet.appendRow([newId, String(siswa_id), mapel, valNilai, valKktp]);
+    clearSheetCache("Akademik");
+    return { status: "success", message: "Nilai akademik tersimpan." };
+  }
+}
+
+function handleDeleteAkademik(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Akses ditolak." };
+  return deleteRowById("Akademik", payload.id);
+}
+
+function handleGetPrestasi(authUser, payload) {
+  const data = getSheetDataCached("Prestasi");
+  if (authUser.role === "siswa") return { status: "success", data: data.filter(p => String(p.siswa_id) === String(authUser.id)) };
+  if (payload && payload.siswa_id) return { status: "success", data: data.filter(p => String(p.siswa_id) === String(payload.siswa_id)) };
+  return { status: "success", data };
+}
+
+function handleSavePrestasi(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Akses ditolak." };
+  const { id, siswa_id, tanggal, nama_prestasi, tingkat, kategori } = payload;
+  if (!siswa_id || !nama_prestasi) return { status: "error", message: "Siswa dan Nama Prestasi wajib diisi." };
+
+  const sheet = getSheet("Prestasi");
+  const tglStr = formatDateWITA(tanggal || new Date());
+
+  if (id) {
+    updateSheetRow("Prestasi", id, { tanggal: tglStr, nama_prestasi, tingkat, kategori });
+    return { status: "success", message: "Prestasi diperbarui." };
+  } else {
+    const newId = "PRS-" + Date.now();
+    sheet.appendRow([newId, String(siswa_id), tglStr, nama_prestasi, tingkat || "Sekolah", kategori || "Non-Akademik"]);
+    clearSheetCache("Prestasi");
+    return { status: "success", message: "Prestasi berhasil dicatat." };
+  }
+}
+
+function handleDeletePrestasi(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Akses ditolak." };
+  return deleteRowById("Prestasi", payload.id);
+}
+
+function handleGetPembinaan(authUser, payload) {
+  const data = getSheetDataCached("Pembinaan");
+  if (authUser.role === "siswa") return { status: "success", data: data.filter(p => String(p.siswa_id) === String(authUser.id)) };
+  if (payload && payload.siswa_id) return { status: "success", data: data.filter(p => String(p.siswa_id) === String(payload.siswa_id)) };
+  return { status: "success", data };
+}
+
+function handleSavePembinaan(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Akses ditolak." };
+  const { id, siswa_id, tanggal, jenis, permasalahan, status, jadwal_pantau } = payload;
+  if (!siswa_id || !permasalahan) return { status: "error", message: "Siswa dan Deskripsi Permasalahan wajib diisi." };
+
+  const sheet = getSheet("Pembinaan");
+  const tglStr = formatDateWITA(tanggal || new Date());
+  const jdwlStr = jadwal_pantau ? formatDateWITA(jadwal_pantau) : "";
+
+  if (id) {
+    updateSheetRow("Pembinaan", id, { tanggal: tglStr, jenis, permasalahan, status, jadwal_pantau: jdwlStr });
+    return { status: "success", message: "Pembinaan diperbarui." };
+  } else {
+    const newId = "PBN-" + Date.now();
+    sheet.appendRow([newId, String(siswa_id), tglStr, jenis || "Sikap", permasalahan, status || "Pemantauan", jdwlStr]);
+    clearSheetCache("Pembinaan");
+    return { status: "success", message: "Catatan pembinaan berhasil ditambahkan." };
+  }
+}
+
+function handleDeletePembinaan(authUser, payload) {
+  if (authUser.role === "siswa") return { status: "error", message: "Akses ditolak." };
+  return deleteRowById("Pembinaan", payload.id);
+}
+
+function handleGetDetailSiswa(authUser, payload) {
+  const targetId = payload.siswa_id || authUser.id;
+  
+  if (authUser.role === "siswa" && String(targetId) !== String(authUser.id)) {
+    return { status: "error", message: "Akses ditolak. Anda hanya dapat melihat data pribadi Anda." };
+  }
+
+  if (authUser.role === "guru") {
+    const meKelas = getSheetDataCached("Kelas").find(k => String(k.guru_id) === String(authUser.id));
+    const targetSiswa = getSheetDataCached("Siswa").find(s => String(s.id) === String(targetId));
+    if (!targetSiswa || (meKelas && String(targetSiswa.kelas_id) !== String(meKelas.id))) {
+      return { status: "error", message: "Akses ditolak. Siswa ini bukan anak wali Anda." };
+    }
+  }
+
+  const siswa = getSheetDataCached("Siswa").find(s => String(s.id) === String(targetId));
+  if (!siswa) return { status: "error", message: "Data siswa tidak ditemukan." };
+
+  const cleanedSiswa = Object.assign({}, siswa);
+  delete cleanedSiswa.password;
+
+  return {
+    status: "success",
+    data: {
+      siswa: cleanedSiswa,
+      absensi: getSheetDataCached("Kehadiran").filter(a => String(a.siswa_id) === String(targetId)),
+      kebiasaan: getSheetDataCached("Kebiasaan").filter(k => String(k.siswa_id) === String(targetId)),
+      hafalan: getSheetDataCached("Hafalan").filter(h => String(h.siswa_id) === String(targetId)),
+      akademik: getSheetDataCached("Akademik").filter(ak => String(ak.siswa_id) === String(targetId)),
+      prestasi: getSheetDataCached("Prestasi").filter(p => String(p.siswa_id) === String(targetId)),
+      pembinaan: getSheetDataCached("Pembinaan").filter(pb => String(pb.siswa_id) === String(targetId))
+    }
+  };
+}
+
+function handleGetLaporanRekap(authUser, payload) {
+  const kelasId = payload.kelas_id;
+  let allSiswa = getSheetDataCached("Siswa").map(s => { delete s.password; return s; });
+
+  if (authUser.role === "siswa") {
+    allSiswa = allSiswa.filter(s => String(s.id) === String(authUser.id));
+  } else if (authUser.role === "guru") {
+    const mySiswaIds = getTeacherSiswaIds(authUser.id);
+    allSiswa = allSiswa.filter(s => mySiswaIds.includes(String(s.id)));
+  } else if (kelasId) {
+    allSiswa = allSiswa.filter(s => String(s.kelas_id) === String(kelasId));
+  }
+
+  const absensi = getSheetDataCached("Kehadiran");
+  const akademik = getSheetDataCached("Akademik");
+
+  const rekap = allSiswa.map(s => {
+    const sAbs = absensi.filter(a => String(a.siswa_id) === String(s.id));
+    const hadir = sAbs.filter(a => a.status === 'H').length;
+    const sakit = sAbs.filter(a => a.status === 'S').length;
+    const izin = sAbs.filter(a => a.status === 'I').length;
+    const alpa = sAbs.filter(a => a.status === 'A').length;
+
+    const sAkd = akademik.filter(a => String(a.siswa_id) === String(s.id));
+    const nilaiDibawahKKTP = sAkd.filter(a => Number(a.nilai_akhir) < Number(a.kktp)).length;
+
+    return {
+      id: s.id,
+      nama: s.nama,
+      nisn: s.nisn,
+      kelas_id: s.kelas_id,
+      presensi: { hadir, sakit, izin, alpa },
+      total_mapel: sAkd.length,
+      dibawah_kktp: nilaiDibawahKKTP
+    };
+  });
+
+  return { status: "success", data: rekap };
+}
+
+function generateMagicToken(siswaId) {
+  const expiry = Date.now() + (15 * 60 * 1000);
+  const payloadStr = String(siswaId) + "|" + expiry;
+  const encodedPayload = Utilities.base64EncodeWebSafe(payloadStr);
+  const signature = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payloadStr, getSecretKey()));
+  return encodedPayload + "." + signature;
+}
+
+function validateMagicToken(magicToken) {
+  if (!magicToken || typeof magicToken !== "string" || magicToken.indexOf(".") === -1) return null;
+  try {
+    const parts = magicToken.split(".");
+    const payloadStr = Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString();
+    const expectedSig = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payloadStr, getSecretKey()));
+    
+    if (parts[1] !== expectedSig) return null;
+
+    const p = payloadStr.split("|");
+    const siswaId = p[0];
+    const expiry = Number(p[1]);
+
+    if (Date.now() > expiry) {
+      return { status: "expired", message: "Tautan Magic Link telah kedaluwarsa (berlaku 15 menit). Silakan minta tautan baru kepada Guru/Wali Kelas." };
+    }
+
+    return { status: "valid", siswaId };
+  } catch (e) {
+    return null;
+  }
+}
+
+function handleGenerateMagicLink(authUser, payload) {
+  if (authUser.role !== "admin" && authUser.role !== "guru") {
+    return { status: "error", message: "Akses ditolak." };
+  }
+  const { siswa_id } = payload;
+  if (!siswa_id) return { status: "error", message: "ID Siswa wajib diisi." };
+
+  const magicToken = generateMagicToken(siswa_id);
+  return { status: "success", magic_token: magicToken };
+}
+
+function handleGetMagicLinkData(payload) {
+  const magicToken = payload.magic_token;
+  const validation = validateMagicToken(magicToken);
+
+  if (!validation) return { status: "error", message: "Tautan Magic Link tidak valid." };
+  if (validation.status === "expired") return { status: "expired", message: validation.message };
+
+  const siswaId = validation.siswaId;
+  const siswa = getSheetDataCached("Siswa").find(s => String(s.id) === String(siswaId));
+  if (!siswa) return { status: "error", message: "Data siswa tidak ditemukan." };
+
+  const cleanedSiswa = Object.assign({}, siswa);
+  delete cleanedSiswa.password;
+
+  const absensi = getSheetDataCached("Kehadiran").filter(a => String(a.siswa_id) === String(siswaId));
+  const kebiasaan = getSheetDataCached("Kebiasaan").filter(k => String(k.siswa_id) === String(siswaId));
+  const hafalan = getSheetDataCached("Hafalan").filter(h => String(h.siswa_id) === String(siswaId));
+  const akademik = getSheetDataCached("Akademik").filter(ak => String(ak.siswa_id) === String(siswaId));
+  const prestasi = getSheetDataCached("Prestasi").filter(p => String(p.siswa_id) === String(siswaId));
+  const pembinaan = getSheetDataCached("Pembinaan").filter(pb => String(pb.siswa_id) === String(siswaId));
+
+  return {
+    status: "success",
+    data: { siswa: cleanedSiswa, absensi, kebiasaan, hafalan, akademik, prestasi, pembinaan }
+  };
+}
+
+function getTeacherSiswaIds(guruId) {
+  const allKelas = getSheetDataCached("Kelas");
+  const myKelas = allKelas.filter(k => String(k.guru_id) === String(guruId)).map(k => String(k.id));
+  if (myKelas.length === 0) return [];
+  
+  const allSiswa = getSheetDataCached("Siswa");
+  return allSiswa.filter(s => myKelas.includes(String(s.kelas_id))).map(s => String(s.id));
+}
+
+function isGuruAllowedToAccessSiswa(guruId, siswaId) {
+  const allowedSiswaIds = getTeacherSiswaIds(guruId);
+  return allowedSiswaIds.includes(String(siswaId));
+}
+
+const FOLDER_IDS = {
+  admin: "https://drive.google.com/drive/folders/1rtEzgWnS6cvoS1UKIsgQaZEMw88K6NTv?usp=drive_link",
+  guru: "https://drive.google.com/drive/folders/1O_IPyMgtwmHRmJKdYo1M08nxJb493NpK?usp=drive_link",
+  siswa: "https://drive.google.com/drive/folders/1_rGeY122OW-bwRU3q0ug47XJt6vFhpod?usp=drive_link"
+};
+
+function handleUploadFotoProfil(payload, user) {
+  try {
+    if (!payload.fileData) {
+      return { status: "error", message: "Data file tidak ditemukan." };
+    }
+
+    var role = (user.role || "siswa").toLowerCase();
+    var folderId = FOLDER_IDS[role] || FOLDER_IDS["siswa"];
+
+    var targetFolder = DriveApp.getFolderById(folderId);
+
+    if (user.foto && user.foto.includes("googleusercontent.com/d/")) {
+      deleteOldDriveFile(user.foto);
+    }
+
+    var contentType = payload.fileData.substring(5, payload.fileData.indexOf(';base64'));
+    var bytes = Utilities.base64Decode(payload.fileData.substr(payload.fileData.indexOf('base64,') + 7));
+    var fileName = user.role + "_" + user.id + "_" + Date.now() + ".jpg";
+    var blob = Utilities.newBlob(bytes, contentType, fileName);
+
+    var file = targetFolder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    var photoUrl = "https://lh3.googleusercontent.com/d/" + file.getId();
+    updateUserPhotoInSheet(user.role, user.id, photoUrl);
+
+    return { 
+      status: "success", 
+      photoUrl: photoUrl,
+      message: "Foto profil berhasil diperbarui!"
+    };
+
+  } catch (err) {
+    return { status: "error", message: err.toString() };
+  }
+}
+
+function updateUserPhotoInSheet(role, id, photoUrl) {
+  const sheetName = role === "admin" ? "Admin" : (role === "guru" ? "Guru" : "Siswa");
+  updateSheetRow(sheetName, id, { foto: photoUrl });
+}
+
+function handleUploadFotoProfil(payload, user) {
+  try {
+    if (!payload.fileData) {
+      return { status: "error", message: "Data file tidak ditemukan." };
+    }
+
+    var parentFolder = getOrCreateFolder("Anak_Wali_Assets");
+    var profilFolder = getOrCreateFolder("Foto_Profil", parentFolder);
+    var roleFolderName = capitalizeFirst(user.role || "Siswa");
+    var targetFolder = getOrCreateFolder(roleFolderName, profilFolder);
+
+    if (user.foto && user.foto.includes("googleusercontent.com/d/")) {
+      deleteOldDriveFile(user.foto);
+    }
+
+    var contentType = payload.fileData.substring(5, payload.fileData.indexOf(';base64'));
+    var bytes = Utilities.base64Decode(payload.fileData.substr(payload.fileData.indexOf('base64,') + 7));
+    var fileName = user.role + "_" + user.id + "_" + Date.now() + ".jpg";
+    var blob = Utilities.newBlob(bytes, contentType, fileName);
+
+    var file = targetFolder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    var photoUrl = "https://lh3.googleusercontent.com/d/" + file.getId();
+
+    updateUserPhotoInSheet(user.role, user.id, photoUrl);
+
+    return { 
+      status: "success", 
+      photoUrl: photoUrl,
+      message: "Foto profil berhasil diperbarui!"
+    };
+
+  } catch (err) {
+    return { status: "error", message: err.toString() };
+  }
+}
+
+function getOrCreateFolder(folderName, parent) {
+  var collection = parent ? parent.getFoldersByName(folderName) : DriveApp.getFoldersByName(folderName);
+  if (collection.hasNext()) {
+    return collection.next();
+  } else {
+    return parent ? parent.createFolder(folderName) : DriveApp.createFolder(folderName);
+  }
+}
+
+function deleteOldDriveFile(oldUrl) {
+  try {
+    var fileId = oldUrl.replace("https://lh3.googleusercontent.com/d/", "");
+    if (fileId) {
+      DriveApp.getFileById(fileId).setTrashed(true);
+    }
+  } catch (e) {
+    Logger.log("Gagal menghapus file lama: " + e.toString());
+  }
+}
+
+function capitalizeFirst(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+}
+
+function handleUpdateSelfProfile(authUser, payload) {
+  try {
+    let photoUrl = authUser.foto || "";
+
+    if (payload.fileData) {
+      const uploadRes = handleUploadFotoProfil(payload, authUser);
+      if (uploadRes.status === "success") {
+        photoUrl = uploadRes.photoUrl;
+      } else {
+        return uploadRes;
+      }
+    }
+
+    const sheetName = authUser.role === "admin" ? "Admin" : (authUser.role === "guru" ? "Guru" : "Siswa");
+    const updatedObj = {};
+
+    if (authUser.role === "admin") {
+      if (payload.nama) updatedObj.nama = payload.nama;
+      if (payload.username) updatedObj.username = payload.username;
+      if (payload.no_hp !== undefined) updatedObj.no_hp = payload.no_hp;
+    } else if (authUser.role === "guru") {
+      if (payload.no_hp !== undefined) updatedObj.no_hp = payload.no_hp;
+    } else if (authUser.role === "siswa") {
+      if (payload.no_hp !== undefined) updatedObj.no_hp_ortu = payload.no_hp;
+    }
+
+    if (photoUrl) {
+      updatedObj.foto = photoUrl;
+    }
+
+    const isUpdated = updateSheetRow(sheetName, authUser.id, updatedObj);
+
+    if (isUpdated) {
+      return {
+        status: "success",
+        photoUrl: photoUrl,
+        message: "Profil berhasil diperbarui!"
+      };
+    } else {
+      return { status: "error", message: "Gagal memperbarui profil di spreadsheet." };
+    }
+  } catch (err) {
+    return { status: "error", message: err.toString() };
+  }
+}
+
+function forceAuthorizeDrive() {
+  var root = DriveApp.getRootFolder();
+  Logger.log("Izin Drive Berhasil Disetujui: " + root.getName());
+}
