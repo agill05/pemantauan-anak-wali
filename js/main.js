@@ -140,6 +140,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    // Inisialisasi Tema (Dark / Light Mode)
+    initTheme();
+
     const savedSession = localStorage.getItem("session_anak_wali");
     if (savedSession) {
         try {
@@ -159,6 +162,42 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 });
+
+/**
+ * Inisialisasi tema saat aplikasi dibuka (Dark Mode / Light Mode).
+ */
+function initTheme() {
+    const savedTheme = localStorage.getItem("app_theme") || "light";
+    applyTheme(savedTheme);
+}
+
+/**
+ * Mengganti tema antara Dark Mode dan Light Mode.
+ */
+function toggleDarkMode() {
+    const isDark = document.body.classList.contains("dark");
+    const nextTheme = isDark ? "light" : "dark";
+    applyTheme(nextTheme);
+    localStorage.setItem("app_theme", nextTheme);
+    showToast(nextTheme === "dark" ? "Mode Gelap diaktifkan 🌙" : "Mode Terang diaktifkan ☀️");
+}
+
+function applyTheme(theme) {
+    const icon = document.getElementById("theme-toggle-icon");
+    if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.body.classList.add("dark");
+        if (icon) {
+            icon.className = "fas fa-sun text-amber-300 text-base";
+        }
+    } else {
+        document.documentElement.classList.remove("dark");
+        document.body.classList.remove("dark");
+        if (icon) {
+            icon.className = "fas fa-moon text-base";
+        }
+    }
+}
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

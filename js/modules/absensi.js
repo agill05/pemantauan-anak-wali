@@ -58,46 +58,60 @@ function renderAbsensiView() {
 
     container.innerHTML = `
         <div class="space-y-3">
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
-                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
-                <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
-                    <option value="">Semua Kelas</option>
-                    ${kelasOptions}
-                </select>
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-2 justify-between sm:items-center">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
+                    <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
+                        <option value="">Semua Kelas</option>
+                        ${kelasOptions}
+                    </select>
+                </div>
+                ${isEditable && filteredSiswa.length > 0 ? `
+                <div class="flex items-center gap-1.5 pt-1 sm:pt-4">
+                    <button type="button" onclick="setAllAbsensiStatus('H')" class="touch-btn flex-1 sm:flex-none px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-200 transition flex items-center justify-center gap-1.5 shadow-sm" title="Ubah status seluruh siswa jadi Hadir">
+                        <i class="fas fa-check-double text-emerald-600"></i> Set Semua Hadir
+                    </button>
+                    <button type="button" onclick="setAllAbsensiStatus('I')" class="touch-btn px-2.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs rounded-xl border border-amber-200 transition" title="Set Semua Izin">
+                        <i class="fas fa-envelope-open-text"></i>
+                    </button>
+                    <button type="button" onclick="setAllAbsensiStatus('S')" class="touch-btn px-2.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl border border-blue-200 transition" title="Set Semua Sakit">
+                        <i class="fas fa-notes-medical"></i>
+                    </button>
+                </div>` : ''}
             </div>
 
             ${totalSiswa > 0 ? `
-            <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-md space-y-3">
+            <div id="absensi-stats-card" class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-md space-y-3">
                 <div class="flex items-center justify-between">
                     <div>
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Tingkat Kehadiran</span>
-                        <h3 class="text-xl font-extrabold text-emerald-400">${persenHadir}% <span class="text-xs font-normal text-slate-300">Hadir</span></h3>
+                        <h3 id="absensi-persen-text" class="text-xl font-extrabold text-emerald-400">${persenHadir}% <span class="text-xs font-normal text-slate-300">Hadir</span></h3>
                     </div>
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-500/30">
+                    <div id="absensi-ratio-badge" class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-500/30">
                         ${countH}/${totalSiswa}
                     </div>
                 </div>
 
                 <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                    <div class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: ${persenHadir}%"></div>
+                    <div id="absensi-progress-bar" class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: ${persenHadir}%"></div>
                 </div>
 
                 <div class="grid grid-cols-4 gap-2 pt-1 border-t border-slate-700/60 text-center">
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                         <span class="block text-xs text-slate-400 font-bold">Hadir</span>
-                        <span class="text-xs font-extrabold text-emerald-400">${countH}</span>
+                        <span id="stat-count-h" class="text-xs font-extrabold text-emerald-400">${countH}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                         <span class="block text-xs text-slate-400 font-bold">Sakit</span>
-                        <span class="text-xs font-extrabold text-blue-400">${countS}</span>
+                        <span id="stat-count-s" class="text-xs font-extrabold text-blue-400">${countS}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                         <span class="block text-xs text-slate-400 font-bold">Izin</span>
-                        <span class="text-xs font-extrabold text-amber-400">${countI}</span>
+                        <span id="stat-count-i" class="text-xs font-extrabold text-amber-400">${countI}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                         <span class="block text-xs text-slate-400 font-bold">Alpa</span>
-                        <span class="text-xs font-extrabold text-rose-400">${countA}</span>
+                        <span id="stat-count-a" class="text-xs font-extrabold text-rose-400">${countA}</span>
                     </div>
                 </div>
             </div>
@@ -121,7 +135,7 @@ function renderAbsensiView() {
                                     </span>
                                 </div>
                                 <div>
-                                    <select data-siswa-id="${s.id}" class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700" ${!isEditable ? 'disabled' : ''}>
+                                    <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700" ${!isEditable ? 'disabled' : ''}>
                                         <option value="H" ${currentStatus === 'H' ? 'selected' : ''}>Hadir (H)</option>
                                         <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>Izin (I)</option>
                                         <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>Sakit (S)</option>
@@ -201,3 +215,58 @@ async function saveBatchAbsensiForm(event) {
         });
     }
 }
+
+/**
+ * Mengubah status seluruh siswa di formulir presensi secara serentak (Quick Action).
+ * @param {'H'|'I'|'S'|'A'|'T'} targetStatus 
+ */
+function setAllAbsensiStatus(targetStatus) {
+    const selects = document.querySelectorAll(".absensi-select-item");
+    if (!selects || selects.length === 0) return;
+
+    selects.forEach(sel => {
+        sel.value = targetStatus;
+    });
+
+    updateLiveAbsensiStats();
+    
+    const labelMap = { 'H': 'Hadir', 'I': 'Izin', 'S': 'Sakit', 'A': 'Alpa', 'T': 'Terlambat' };
+    showToast(`Semua siswa diatur menjadi: ${labelMap[targetStatus] || targetStatus}`);
+}
+
+/**
+ * Menghitung ulang statistik kehadiran di header absensi secara live saat form diubah.
+ */
+function updateLiveAbsensiStats() {
+    const selects = document.querySelectorAll(".absensi-select-item");
+    if (!selects || selects.length === 0) return;
+
+    const total = selects.length;
+    let countH = 0, countS = 0, countI = 0, countA = 0;
+
+    selects.forEach(sel => {
+        const val = sel.value;
+        if (val === 'H') countH++;
+        else if (val === 'S') countS++;
+        else if (val === 'I') countI++;
+        else countA++;
+    });
+
+    const persen = total > 0 ? Math.round((countH / total) * 100) : 0;
+
+    const persenEl = document.getElementById("absensi-persen-text");
+    const ratioEl = document.getElementById("absensi-ratio-badge");
+    const progressEl = document.getElementById("absensi-progress-bar");
+    const statH = document.getElementById("stat-count-h");
+    const statS = document.getElementById("stat-count-s");
+    const statI = document.getElementById("stat-count-i");
+    const statA = document.getElementById("stat-count-a");
+
+    if (persenEl) persenEl.innerHTML = `${persen}% <span class="text-xs font-normal text-slate-300">Hadir</span>`;
+    if (ratioEl) ratioEl.innerText = `${countH}/${total}`;
+    if (progressEl) progressEl.style.width = `${persen}%`;
+    if (statH) statH.innerText = countH;
+    if (statS) statS.innerText = countS;
+    if (statI) statI.innerText = countI;
+    if (statA) statA.innerText = countA;
+}

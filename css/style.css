@@ -559,3 +559,98 @@ a:focus-visible {
 .dash-section-link:hover {
     background: #dbeafe;
 }
+
+/* ==========================================================================
+   DARK MODE THEME SYSTEM
+   ========================================================================== */
+html.dark {
+    color-scheme: dark;
+}
+
+body.dark {
+    --background: #0b0f19;
+    --surface: #1e293b;
+    --border-subtle: #334155;
+    background-color: #0b0f19 !important;
+    color: #f1f5f9 !important;
+}
+
+body.dark #main-header {
+    background: #0f172a !important;
+    border-bottom: 1px solid #1e293b;
+}
+
+body.dark #app-sidebar,
+body.dark #bottom-nav {
+    background-color: #0f172a !important;
+    border-color: #1e293b !important;
+}
+
+body.dark .bg-surface,
+body.dark .bg-white {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+body.dark .border-slate-100,
+body.dark .border-slate-200,
+body.dark .border-slate-50 {
+    border-color: #334155 !important;
+}
+
+body.dark .text-slate-800,
+body.dark .text-slate-700 {
+    color: #f8fafc !important;
+}
+
+body.dark .text-slate-600,
+body.dark .text-slate-500,
+body.dark .text-slate-400 {
+    color: #94a3b8 !important;
+}
+
+body.dark .bg-slate-50,
+body.dark .bg-slate-100 {
+    background-color: #0f172a !important;
+    color: #f1f5f9 !important;
+}
+
+body.dark input,
+body.dark select,
+body.dark textarea {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+body.dark input::placeholder,
+body.dark textarea::placeholder {
+    color: #64748b !important;
+}
+
+body.dark .sidebar-nav-item:hover {
+    background-color: #1e293b !important;
+    color: #60a5fa !important;
+}
+
+body.dark .login-card {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-color: #334155 !important;
+}
+
+body.dark .login-role-btn {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+body.dark .login-role-btn.selected {
+    background: #1e3a8a !important;
+    border-color: #3b82f6 !important;
+    color: #93c5fd !important;
+}
+
+body.dark #modal-content-box {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}

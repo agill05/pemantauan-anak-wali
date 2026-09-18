@@ -40,8 +40,80 @@ function renderKebiasaanView() {
 
     const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
 
-    container.innerHTML = MASTER_KEBIASAAN.map(k => {
-        const rec = appState.kebiasaan.find(item => String(item.siswa_id) === String(selectedSiswaId) && String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
+    // Hitung Progress & Gamifikasi Siswa Terpilih
+    const studentRecords = appState.kebiasaan.filter(k => String(k.siswa_id) === String(selectedSiswaId));
+    const tanggalInput = document.getElementById("kebiasaan-date");
+    const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
+    
+    const todayRecords = studentRecords.filter(k => String(k.tanggal) === String(tanggal));
+    const completedToday = todayRecords.filter(k => k.status === 'Sudah').length;
+    const persenTuntas = Math.round((completedToday / 7) * 100);
+
+    // Hitung Total Kebiasaan yang Sudah Dikerjakan Sepanjang Waktu
+    const totalSemuaSudah = studentRecords.filter(k => k.status === 'Sudah').length;
+
+    // Tentukan Lencana Gamifikasi
+    let badgeTitle = "Prajurit Karakter";
+    let badgeIcon = "fa-shield-halved";
+    let badgeColor = "bg-blue-500 text-white";
+
+    if (completedToday === 7) {
+        badgeTitle = "Bintang 7 Kebiasaan Hari Ini ⭐";
+        badgeIcon = "fa-crown";
+        badgeColor = "bg-amber-500 text-white";
+    } else if (completedToday >= 4) {
+        badgeTitle = "Pejuang Hebat 💪";
+        badgeIcon = "fa-medal";
+        badgeColor = "bg-emerald-500 text-white";
+    }
+
+    const gamificationCard = `
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-4 text-white shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-10 h-10 rounded-2xl ${badgeColor} flex items-center justify-center text-lg shadow-inner">
+                        <i class="fas ${badgeIcon}"></i>
+                    </span>
+                    <div>
+                        <span class="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">Status Pencapaian</span>
+                        <h3 class="text-sm font-black text-white leading-tight">${badgeTitle}</h3>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-xl font-black text-amber-300">${completedToday}/7</span>
+                    <span class="text-[10px] text-blue-200 block font-medium">Kebiasaan</span>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <div class="flex justify-between text-[11px] font-bold">
+                    <span class="text-blue-100">Ketercapaian Hari Ini</span>
+                    <span class="text-amber-300">${persenTuntas}%</span>
+                </div>
+                <div class="w-full bg-white/20 h-2.5 rounded-full overflow-hidden p-0.5">
+                    <div class="bg-amber-400 h-full rounded-full transition-all duration-500" style="width: ${persenTuntas}%"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-white/10 text-center text-xs">
+                <div class="bg-white/10 rounded-xl p-1.5">
+                    <span class="text-[10px] text-blue-200 block">Selesai</span>
+                    <span class="font-black text-emerald-300">${completedToday}</span>
+                </div>
+                <div class="bg-white/10 rounded-xl p-1.5">
+                    <span class="text-[10px] text-blue-200 block">Kadang</span>
+                    <span class="font-black text-amber-300">${todayRecords.filter(k => k.status === 'Kadang').length}</span>
+                </div>
+                <div class="bg-white/10 rounded-xl p-1.5">
+                    <span class="text-[10px] text-blue-200 block">Total Poin</span>
+                    <span class="font-black text-white">${totalSemuaSudah * 10}</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const itemsHtml = MASTER_KEBIASAAN.map(k => {
+        const rec = todayRecords.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
@@ -69,11 +141,18 @@ function renderKebiasaanView() {
             </div>
         `;
     }).join("");
+
+    container.innerHTML = `
+        <div class="space-y-3">
+            ${gamificationCard}
+            ${itemsHtml}
+        </div>
+    `;
 }
 
 function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     const tanggalInput = document.getElementById("kebiasaan-date");
-    const tanggal = tanggalInput ? tanggalInput.value : getDateWITA();
+    const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
 
     const existingIndex = appState.kebiasaan.findIndex(k =>
         String(k.siswa_id) === String(siswa_id) &&
@@ -89,6 +168,12 @@ function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
 
     saveAppStateToLocal();
     renderKebiasaanView();
+
+    // Cek jika seluruh 7 kebiasaan sudah terpenuhi
+    const todaySudah = appState.kebiasaan.filter(k => String(k.siswa_id) === String(siswa_id) && String(k.tanggal) === String(tanggal) && k.status === 'Sudah').length;
+    if (todaySudah === 7) {
+        showToast("🌟 Luar biasa! Seluruh 7 Kebiasaan Hebat hari ini telah tuntas!");
+    }
 
     const queueKey = `${siswa_id}_${kebiasaan_id}_${tanggal}`;
     pendingKebiasaanQueue.set(queueKey, { tanggal, siswa_id, kebiasaan_id, status });
