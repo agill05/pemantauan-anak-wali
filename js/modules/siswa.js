@@ -350,6 +350,16 @@ function renderSiswaView() {
     const container = document.getElementById("siswa-card-container");
     if (!container) return;
 
+    // Jika data siswa belum ada, tampilkan skeleton dan coba ambil dari server
+    if (!appState.siswa || appState.siswa.length === 0) {
+        renderSkeleton("siswa-card-container", 5);
+        fetchAllAppData(false).then(() => {
+            _refreshAllSiswaDropdowns();
+            renderSiswaView();
+        });
+        return;
+    }
+
     const searchInput = document.getElementById("search-siswa-input");
     const query = (searchInput ? searchInput.value : "").toLowerCase();
 
@@ -395,6 +405,7 @@ function renderSiswaView() {
         `;
     }).join("");
 }
+
 
 function openModalSiswa(id = null) {
     const box = document.getElementById("modal-content-box");

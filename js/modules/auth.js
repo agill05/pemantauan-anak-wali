@@ -101,7 +101,6 @@ async function submitForcePasswordChange(e) {
 }
 
 async function continueSessionSetup() {
-    startRealtimeNotificationPolling();
     applyRoleUI(appState.user.role);
     startSilentTokenRefresh();
     setupNetworkStatusListeners();
@@ -133,21 +132,30 @@ async function continueSessionSetup() {
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
     renderSidebarMenu(appState.user.role);
 
-    loadAppStateFromLocal();
+    // Muat cache lokal agar UI tidak kosong saat menunggu server
+    const hasCachedData = loadAppStateFromLocal();
+
+    // Tampil dashboard segera dengan data cache (jika ada)
     switchView("dashboard");
 
-    apiCall("getBootstrapData", {}, false).then(resBootstrap => {
-        if (resBootstrap && resBootstrap.status === "success") {
-            appState.kelas = resBootstrap.data.initial.kelas || [];
-            appState.guru = resBootstrap.data.initial.guru || [];
-            appState.siswa = resBootstrap.data.initial.siswa || [];
-            appState.myStudents = resBootstrap.data.initial.siswa || [];
+    // Ambil data bootstrap dari server (data master siswa, kelas, guru)
+    const resBootstrap = await apiCall("getBootstrapData", {}, false);
+    if (resBootstrap && resBootstrap.status === "success") {
+        appState.kelas = resBootstrap.data.initial.kelas || [];
+        appState.guru = resBootstrap.data.initial.guru || [];
+        appState.siswa = resBootstrap.data.initial.siswa || [];
+        appState.myStudents = resBootstrap.data.initial.siswa || [];
+        saveAppStateToLocal();
+    }
 
-            saveAppStateToLocal();
-            renderDashboard();
-        }
-    });
+    // Setelah data siswa tersedia, refresh semua dropdown dan view aktif
+    _refreshAllSiswaDropdowns();
 
+    // Re-render dashboard dengan data terbaru
+    renderDashboard();
+
+    // Mulai polling notifikasi SETELAH data siswa siap
+    startRealtimeNotificationPolling();
     checkStudentNotifications();
 }
 
