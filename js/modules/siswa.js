@@ -261,7 +261,7 @@ function renderRadarChartSiswa(detailData) {
 
 function printProfilSiswa() {
     if (!appState.activeSiswaDetail) return;
-    const { siswa, absensi, akademik, hafalan } = appState.activeSiswaDetail;
+    const { siswa, absensi, akademik, hafalan, prestasi = [], pembinaan = [] } = appState.activeSiswaDetail;
     const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
 
     const printArea = document.getElementById("printable-area");
@@ -324,6 +324,34 @@ function printProfilSiswa() {
                 </tbody>
             </table>
 
+            <h4 style="font-size: 14px; margin-bottom: 5px;">4. Catatan Prestasi</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px;" border="1">
+                <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Nama Prestasi / Juara</th><th style="padding: 6px;">Tingkat</th><th style="padding: 6px;">Tanggal</th></tr></thead>
+                <tbody>
+                    ${prestasi.length === 0 ? '<tr><td colspan="3" style="text-align: center; padding: 6px;">Belum ada catatan prestasi</td></tr>' : prestasi.map(p => `
+                        <tr>
+                            <td style="padding: 6px;">${escapeHtml(p.nama_prestasi)}</td>
+                            <td style="padding: 6px; text-align: center;">${escapeHtml(p.tingkat)}</td>
+                            <td style="padding: 6px; text-align: center;">${escapeHtml(p.tanggal)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+
+            <h4 style="font-size: 14px; margin-bottom: 5px;">5. Catatan Pembinaan</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;" border="1">
+                <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Permasalahan</th><th style="padding: 6px;">Status</th><th style="padding: 6px;">Tanggal</th></tr></thead>
+                <tbody>
+                    ${pembinaan.length === 0 ? '<tr><td colspan="3" style="text-align: center; padding: 6px;">Tidak ada catatan pembinaan</td></tr>' : pembinaan.map(p => `
+                        <tr>
+                            <td style="padding: 6px;">${escapeHtml(p.permasalahan)}</td>
+                            <td style="padding: 6px; text-align: center;">${escapeHtml(p.status)}</td>
+                            <td style="padding: 6px; text-align: center;">${escapeHtml(p.tanggal)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+
             <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px;">
                 <div style="text-align: center; width: 200px;">
                     <p>Orang Tua / Wali Siswa</p>
@@ -344,6 +372,164 @@ function printProfilSiswa() {
         window.print();
         printArea.classList.add("hidden");
     }, 150);
+}
+
+// Catatan perbaikan: versi lama fungsi ini (di dashboard.js) menghitung rekap H/S/I/A dari
+// appState.absensi — array itu isinya snapshot presensi HARI INI SAJA untuk semua siswa
+// (lihat handleGetAbsensi di backend), bukan histori lengkap. Akibatnya rekap yang dikirim
+// ke WhatsApp orang tua ("Laporan Perkembangan Lengkap" & "Laporan Khusus Presensi &
+// Kehadiran") selalu salah/nyaris nol. Versi ini pakai histori lengkap per siswa dari
+// getDetailSiswa (appState.activeSiswaDetail atau fetch baru), sama seperti yang dipakai
+// halaman Profil Siswa & Cetak Rapor — jadi angkanya konsisten dan benar.
+async function hubungiOrtu(siswaId) {
+    const sBasic = appState.siswa.find(x => String(x.id) === String(siswaId)) || (appState.activeSiswaDetail?.siswa?.id == siswaId ? appState.activeSiswaDetail.siswa : null) || appState.user;
+    if (!sBasic) return;
+
+    if (!sBasic.no_hp_ortu) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nomor Tidak Ada',
+            text: `Nomor WhatsApp Orang Tua/Wali untuk ${sBasic.nama} belum terdaftar. Silakan lengkapi di Master Siswa.`,
+            confirmButtonColor: '#2563eb'
+        });
+        return;
+    }
+
+    let phone = safeStr(sBasic.no_hp_ortu).replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+
+    const box = document.getElementById("modal-content-box");
+    if (!box) {
+        window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(`Assalamu'alaikum Bapak/Ibu Wali dari ${sBasic.nama}.`)}`, '_blank');
+        return;
+    }
+
+    // Ambil histori lengkap (bukan snapshot harian) supaya rekap presensi akurat.
+    let detail = (appState.activeSiswaDetail && String(appState.activeSiswaDetail.siswa.id) === String(siswaId))
+        ? appState.activeSiswaDetail
+        : null;
+
+    if (!detail) {
+        showLoading("Menyiapkan data laporan...");
+        const res = await apiCall("getDetailSiswa", { siswa_id: siswaId }, false);
+        hideLoading();
+        if (res && res.status === "success") {
+            detail = res.data;
+        }
+    }
+
+    const s = detail ? detail.siswa : sBasic;
+    const absensiFull = detail ? (detail.absensi || []) : [];
+
+    const countH = absensiFull.filter(a => a.status === 'H').length;
+    const countS = absensiFull.filter(a => a.status === 'S').length;
+    const countI = absensiFull.filter(a => a.status === 'I').length;
+    const countA = absensiFull.filter(a => a.status === 'A').length;
+
+    const sId = String(s.id);
+    const kebiasaanToday = (appState.kebiasaan || []).filter(k => String(k.siswa_id) === sId && k.tanggal === getDateWITA());
+    const kebiasaanDone = kebiasaanToday.filter(k => k.status === 'Sudah').length;
+
+    const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
+    const namaKelas = kls ? kls.nama_kelas : '-';
+
+    const templateLengkap = `*LAPORAN PERKEMBANGAN ANAK WALI*
+*SMP NEGERI 1 TALAGA JAYA*
+----------------------------------------
+Assalamu'alaikum Wr. Wb.
+Yth. Bapak/Ibu Orang Tua/Wali dari ananda:
+👤 *Nama:* ${s.nama}
+🏫 *Kelas:* ${namaKelas}
+🆔 *NISN:* ${s.nisn || '-'}
+
+📊 *Ringkasan Kehadiran:*
+• Hadir: ${countH} hari
+• Sakit: ${countS} hari
+• Izin: ${countI} hari
+• Alpa: ${countA} hari
+
+⭐ *Karakter & 7 Kebiasaan Hebat:*
+• Ketercapaian Hari Ini: ${kebiasaanDone}/7 Kebiasaan
+
+Mohon kerja sama Bapak/Ibu untuk terus mendampingi dan memotivasi ananda di rumah. Terima kasih.
+_Wassalamu'alaikum Wr. Wb._
+*Wali Kelas / Guru SMPN 1 Talaga Jaya*`;
+
+    const templatePresensi = `*PEMBERITAHUAN PRESENSI SISWA*
+*SMP NEGERI 1 TALAGA JAYA*
+----------------------------------------
+Assalamu'alaikum Wr. Wb.
+Yth. Orang Tua dari ananda *${s.nama}* (Kelas ${namaKelas}).
+
+Kami ingin menginformasikan rekapitulasi kehadiran ananda saat ini:
+✅ Hadir: ${countH} hari | 🤒 Sakit: ${countS} hari | ✉️ Izin: ${countI} hari | ⚠️ Alpa: ${countA} hari
+
+${countA >= 3 ? '⚠️ *Catatan Khusus:* Ananda memiliki catatan alpa yang perlu diperhatikan. Mohon konfirmasi dan bimbingannya di rumah.' : 'Alhamdulillah kehadiran ananda cukup baik. Mohon pertahankan kedisiplinannya.'}
+
+Terima kasih atas perhatian Bapak/Ibu.
+_Wassalamu'alaikum Wr. Wb._`;
+
+    const templateSapaan = `Assalamu'alaikum Bapak/Ibu Wali dari ${s.nama}. Kami dari SMP Negeri 1 Talaga Jaya ingin berdiskusi mengenai perkembangan belajar ananda. Mohon konfirmasinya. Terima kasih.`;
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i class="fab fa-whatsapp text-emerald-600 text-lg"></i> Kirim Laporan WhatsApp
+            </h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 mb-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+                <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(s.nama)}</h4>
+                <p class="text-xs text-emerald-700 font-semibold"><i class="fab fa-whatsapp"></i> ${escapeHtml(s.no_hp_ortu)}</p>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pilih Format Laporan:</p>
+
+            <button type="button" onclick="sendCustomWhatsApp('${phone}', \`${encodeURIComponent(templateLengkap)}\`)" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition flex items-start gap-3 group">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-600 group-hover:text-white transition">
+                    <i class="fas fa-file-invoice text-xs"></i>
+                </span>
+                <div>
+                    <h5 class="font-bold text-xs text-slate-800">Laporan Perkembangan Lengkap</h5>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Berisi rekap presensi (H/S/I/A), ketercapaian 7 kebiasaan, dan catatan wali kelas.</p>
+                </div>
+            </button>
+
+            <button type="button" onclick="sendCustomWhatsApp('${phone}', \`${encodeURIComponent(templatePresensi)}\`)" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition flex items-start gap-3 group">
+                <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-600 group-hover:text-white transition">
+                    <i class="fas fa-calendar-check text-xs"></i>
+                </span>
+                <div>
+                    <h5 class="font-bold text-xs text-slate-800">Laporan Khusus Presensi & Kehadiran</h5>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Berisi detail kehadiran, alpa, izin, dan pengingat kedisiplinan orang tua.</p>
+                </div>
+            </button>
+
+            <button type="button" onclick="sendCustomWhatsApp('${phone}', \`${encodeURIComponent(templateSapaan)}\`)" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition flex items-start gap-3 group">
+                <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-600 group-hover:text-white transition">
+                    <i class="fas fa-comment-dots text-xs"></i>
+                </span>
+                <div>
+                    <h5 class="font-bold text-xs text-slate-800">Pesan Sapaan Singkat</h5>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Sapaan awal sopan dari wali kelas untuk memulai obrolan/konsultasi.</p>
+                </div>
+            </button>
+        </div>
+    `;
+
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+function sendCustomWhatsApp(phone, encodedMessage) {
+    closeModal();
+    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
 }
 
 function renderSiswaView() {

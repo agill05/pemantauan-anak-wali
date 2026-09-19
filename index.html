@@ -526,14 +526,18 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 pt-1">
+                <div class="grid grid-cols-3 gap-2 pt-1">
                     <button onclick="exportRekapCSV()"
                         class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-                        <i class="fas fa-file-excel"></i> Export Excel (.csv)
+                        <i class="fas fa-file-excel"></i> Excel
                     </button>
-                    <button onclick="printLaporanRekap()"
+                    <button onclick="exportLaporanDocs()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+                        <i class="fas fa-file-word"></i> Ekspor Docs
+                    </button>
+                    <button onclick="exportLaporanPDF()"
                         class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-                        <i class="fas fa-print"></i> Cetak PDF / Print
+                        <i class="fas fa-file-pdf"></i> Ekspor PDF
                     </button>
                 </div>
             </div>

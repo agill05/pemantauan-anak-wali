@@ -175,23 +175,35 @@ function openModalAkademik(id = null) {
 async function saveAkademikForm(e, id) {
     e.preventDefault();
     const payload = {
-        id: id || ("AKD-" + Date.now()),
+        id: id || null,
         siswa_id: document.getElementById("m-akd-siswa").value,
         mapel: document.getElementById("m-akd-mapel").value,
         nilai_akhir: document.getElementById("m-akd-nilai").value,
         kktp: document.getElementById("m-akd-kktp").value
     };
 
-    const idx = appState.akademik.findIndex(x => String(x.id) === String(payload.id));
-    if (idx !== -1) appState.akademik[idx] = payload;
-    else appState.akademik.push(payload);
+    showLoading("Menyimpan nilai akademik...");
+    const res = await apiCall("saveAkademik", payload, false);
+    hideLoading();
 
-    saveAppStateToLocal();
-    renderAkademikNilai();
-    closeModal();
-    showToast("Nilai tersimpan!");
+    if (res && res.status === "success") {
+        const savedRecord = { ...payload, id: res.id || id || ("AKD-" + Date.now()) };
+        const idx = appState.akademik.findIndex(x => String(x.id) === String(savedRecord.id));
+        if (idx !== -1) appState.akademik[idx] = savedRecord;
+        else appState.akademik.push(savedRecord);
 
-    apiCall("saveAkademik", payload, false);
+        saveAppStateToLocal();
+        renderAkademikNilai();
+        closeModal();
+        showToast("Nilai tersimpan!");
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menyimpan',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan nilai akademik ke database spreadsheet.',
+            confirmButtonColor: '#2563eb'
+        });
+    }
 }
 
 async function deleteAkademik(id) {
@@ -247,23 +259,35 @@ function openModalPrestasi(id = null) {
 async function savePrestasiForm(e, id) {
     e.preventDefault();
     const payload = {
-        id: id || ("PRS-" + Date.now()),
+        id: id || null,
         siswa_id: document.getElementById("m-prs-siswa").value,
         nama_prestasi: document.getElementById("m-prs-nama").value,
         tingkat: document.getElementById("m-prs-tingkat").value,
         tanggal: document.getElementById("m-prs-tanggal").value
     };
 
-    const idx = appState.prestasi.findIndex(x => String(x.id) === String(payload.id));
-    if (idx !== -1) appState.prestasi[idx] = payload;
-    else appState.prestasi.push(payload);
+    showLoading("Menyimpan catatan prestasi...");
+    const res = await apiCall("savePrestasi", payload, false);
+    hideLoading();
 
-    saveAppStateToLocal();
-    renderAkademikPrestasi();
-    closeModal();
-    showToast("Catatan prestasi tersimpan!");
+    if (res && res.status === "success") {
+        const savedRecord = { ...payload, id: res.id || id || ("PRS-" + Date.now()) };
+        const idx = appState.prestasi.findIndex(x => String(x.id) === String(savedRecord.id));
+        if (idx !== -1) appState.prestasi[idx] = savedRecord;
+        else appState.prestasi.push(savedRecord);
 
-    apiCall("savePrestasi", payload, false);
+        saveAppStateToLocal();
+        renderAkademikPrestasi();
+        closeModal();
+        showToast("Catatan prestasi tersimpan!");
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menyimpan',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan catatan prestasi ke database spreadsheet.',
+            confirmButtonColor: '#2563eb'
+        });
+    }
 }
 
 async function deletePrestasi(id) {

@@ -8,13 +8,21 @@ function getPembinaanStatusBadge(status) {
 }
 
 async function loadPembinaanData(forceRefresh = false) {
+    const isSiswa = appState.user && appState.user.role === 'siswa';
     const filterSelect = document.getElementById("pembinaan-siswa-filter");
-    if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
-        filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+
+    if (filterSelect) {
+        if (isSiswa) {
+            // Siswa hanya boleh melihat catatan miliknya sendiri: kunci, jangan bisa pilih siswa lain.
+            filterSelect.innerHTML = `<option value="${appState.user.id}">${escapeHtml(appState.user.nama || 'Saya')}</option>`;
+            filterSelect.value = appState.user.id;
+            filterSelect.disabled = true;
+        } else if (appState.siswa.length > 0 && filterSelect.options.length <= 1) {
+            filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+        }
     }
 
-    const selectedSiswaId = filterSelect ? filterSelect.value : null;
-    const isStale = (Date.now() - (lastFetchTimes.pembinaan || 0)) > CACHE_TTL;
+    const selectedSiswaId = isSiswa ? appState.user.id : (filterSelect ? filterSelect.value : null);
 
     if (appState.pembinaan && appState.pembinaan.length > 0) {
         renderPembinaanView();
@@ -22,14 +30,15 @@ async function loadPembinaanData(forceRefresh = false) {
         renderSkeleton("pembinaan-list-container", 3);
     }
 
-    if (forceRefresh || isStale || !appState.pembinaan || appState.pembinaan.length === 0) {
-        const res = await apiCall("getPembinaan", { siswa_id: selectedSiswaId }, false);
-        if (res && res.data) {
-            appState.pembinaan = res.data;
-            lastFetchTimes.pembinaan = Date.now();
-            saveAppStateToLocal();
-            renderPembinaanView();
-        }
+    // Data pembinaan sensitif & sering diubah guru (status/hapus) — selalu ambil data
+    // terbaru dari server tiap kali view ini dibuka, jangan andalkan cache lokal basi
+    // (guru & siswa beda device, cache 5 menit bikin perubahan guru tidak langsung terlihat siswa).
+    const res = await apiCall("getPembinaan", { siswa_id: selectedSiswaId }, false);
+    if (res && res.data) {
+        appState.pembinaan = res.data;
+        lastFetchTimes.pembinaan = Date.now();
+        saveAppStateToLocal();
+        renderPembinaanView();
     }
 }
 

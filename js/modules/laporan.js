@@ -100,16 +100,7 @@ function renderLaporanRekapView() {
     }).join("");
 }
 
-function printLaporanRekap() {
-    const data = getFilteredLaporanData();
-    if (data.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk dicetak.', confirmButtonColor: '#2563eb' });
-        return;
-    }
-
-    const printArea = document.getElementById("printable-area");
-    if (!printArea) return;
-
+function buildLaporanRekapHtml(data) {
     const formattedDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const rowsHtml = data.map((item, index) => {
@@ -134,7 +125,7 @@ function printLaporanRekap() {
         `;
     }).join('');
 
-    printArea.innerHTML = `
+    return `
         <div style="font-family: 'Times New Roman', Times, serif; color: #0f172a; padding: 10px;">
             <div style="text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 16px;">
                 <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase;">Pemerintah Kabupaten Gorontalo</h4>
@@ -182,12 +173,57 @@ function printLaporanRekap() {
             </div>
         </div>
     `;
+}
 
+// "Ekspor PDF" — render ke area cetak lalu buka dialog Print (user pilih "Save as PDF").
+function exportLaporanPDF() {
+    const data = getFilteredLaporanData();
+    if (data.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk diekspor.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const printArea = document.getElementById("printable-area");
+    if (!printArea) return;
+
+    printArea.innerHTML = buildLaporanRekapHtml(data);
     printArea.classList.remove("hidden");
     setTimeout(() => {
         window.print();
         printArea.classList.add("hidden");
     }, 150);
+}
+
+// "Ekspor Docs" — bungkus HTML laporan jadi file .doc yang bisa dibuka Microsoft Word / Google Docs.
+function exportLaporanDocs() {
+    const data = getFilteredLaporanData();
+    if (data.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk diekspor.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const contentHtml = buildLaporanRekapHtml(data);
+    const docHtml = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>Laporan Rekapitulasi Pemantauan Anak Wali</title></head>
+<body>${contentHtml}</body></html>`;
+
+    const blob = new Blob(['\ufeff', docHtml], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Laporan_Rekap_Anak_Wali_${getDateWITA()}.doc`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast("File Docs berhasil diunduh!");
+}
+
+// Alias — kompatibel dengan tombol lama "Cetak PDF / Print" kalau belum sempat diganti di index.html.
+function printLaporanRekap() {
+    exportLaporanPDF();
 }
 
 function exportRekapCSV() {
