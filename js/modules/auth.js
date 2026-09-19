@@ -177,6 +177,7 @@ async function continueSessionSetup() {
 
     startRealtimeNotificationPolling();
     checkStudentNotifications();
+    startSmartPolling();
 }
 
 function startHeaderDateTimeClock() {

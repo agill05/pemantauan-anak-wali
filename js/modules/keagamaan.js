@@ -44,7 +44,21 @@ function renderKeagamaanView() {
     const container = document.getElementById("keagamaan-container");
     if (!container) return;
 
-    const filterSiswaId = document.getElementById("karakter-siswa-filter")?.value || "";
+    const isSiswa = appState.user && appState.user.role === 'siswa';
+    const filterSelect = document.getElementById("karakter-siswa-filter");
+    const filterSiswaId = isSiswa ? appState.user.id : (filterSelect ? filterSelect.value : "");
+
+    if (!isSiswa && !filterSiswaId) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-hand-pointer text-2xl mb-2 text-emerald-500"></i>
+                <p class="text-xs font-bold text-slate-700">Silakan Pilih Siswa Terlebih Dahulu</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Pilih nama siswa pada opsi filter di atas untuk melihat pencapaian hafalan Al-Qur'an.</p>
+            </div>
+        `;
+        return;
+    }
+
     const filteredHafalan = filterSiswaId
         ? appState.keagamaan.filter(h => String(h.siswa_id) === String(filterSiswaId))
         : appState.keagamaan;
@@ -86,7 +100,7 @@ function renderKeagamaanView() {
     `;
 
     if (!filteredHafalan || filteredHafalan.length === 0) {
-        container.innerHTML = progressHeaderHtml + `<div class="empty-state"><i class="fas fa-quran text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan hafalan Al-Qur'an.</p></div>`;
+        container.innerHTML = progressHeaderHtml + `<div class="empty-state"><i class="fas fa-quran text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan hafalan Al-Qur'an untuk siswa ini.</p></div>`;
         return;
     }
 
@@ -126,7 +140,12 @@ function openModalKeagamaan(id = null) {
     if (!box) return;
 
     const record = id ? appState.keagamaan.find(x => String(x.id) === String(id)) : null;
-    const siswaOptions = appState.siswa.map(s => `<option value="${s.id}" ${record && String(record.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const filterSiswaSelect = document.getElementById("karakter-siswa-filter");
+    const preselectedSiswaId = record ? record.siswa_id : (filterSiswaSelect ? filterSiswaSelect.value : "");
+
+    const siswaOptions = `<option value="">-- Pilih Siswa --</option>` + 
+        appState.siswa.map(s => `<option value="${s.id}" ${String(preselectedSiswaId) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    
     const surahOptions = MASTER_SURAHS.map(s => `<option value="${s.nama}" ${record && record.nama_surat === s.nama ? 'selected' : ''}>${s.no}. Surah ${s.nama} (Juz ${s.juz})</option>`).join("");
 
     box.innerHTML = `
@@ -169,9 +188,21 @@ function openModalKeagamaan(id = null) {
 
 async function saveKeagamaanForm(e, id) {
     e.preventDefault();
+    const siswaId = document.getElementById("m-kag-siswa").value;
+
+    if (!siswaId) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Siswa Belum Dipilih',
+            text: 'Silakan pilih siswa terlebih dahulu sebelum menyimpan data hafalan.',
+            confirmButtonColor: '#2563eb'
+        });
+        return;
+    }
+
     const payload = {
         id: id || ("HFL-" + Date.now()),
-        siswa_id: document.getElementById("m-kag-siswa").value,
+        siswa_id: siswaId,
         nama_surat: document.getElementById("m-kag-surah").value,
         tanggal: document.getElementById("m-kag-tanggal").value,
         status: document.getElementById("m-kag-status").value,

@@ -21,7 +21,7 @@ function switchAkademikTab(tab) {
 async function loadAkademikData(forceRefresh = false) {
     const filterSelect = document.getElementById("akademik-siswa-filter");
     if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
-        filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+        filterSelect.innerHTML = `<option value="">-- Pilih Siswa --</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
     }
 
     const selectedSiswaId = filterSelect ? filterSelect.value : null;
@@ -56,7 +56,21 @@ function renderAkademikNilai() {
     const container = document.getElementById("akademik-list-container");
     if (!container) return;
 
-    const filterSiswaId = document.getElementById("akademik-siswa-filter")?.value || "";
+    const isSiswa = appState.user && appState.user.role === 'siswa';
+    const filterSelect = document.getElementById("akademik-siswa-filter");
+    const filterSiswaId = isSiswa ? appState.user.id : (filterSelect ? filterSelect.value : "");
+
+    if (!isSiswa && !filterSiswaId) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-hand-pointer text-2xl mb-2 text-indigo-500"></i>
+                <p class="text-xs font-bold text-slate-700">Silakan Pilih Siswa Terlebih Dahulu</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Pilih nama siswa pada opsi filter di atas untuk melihat nilai mata pelajaran & KKTP.</p>
+            </div>
+        `;
+        return;
+    }
+
     const filteredAkademik = filterSiswaId
         ? (appState.akademik || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
         : (appState.akademik || []);
@@ -98,7 +112,21 @@ function renderAkademikPrestasi() {
     const container = document.getElementById("prestasi-list-container");
     if (!container) return;
 
-    const filterSiswaId = document.getElementById("akademik-siswa-filter")?.value || "";
+    const isSiswa = appState.user && appState.user.role === 'siswa';
+    const filterSelect = document.getElementById("akademik-siswa-filter");
+    const filterSiswaId = isSiswa ? appState.user.id : (filterSelect ? filterSelect.value : "");
+
+    if (!isSiswa && !filterSiswaId) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-hand-pointer text-2xl mb-2 text-amber-500"></i>
+                <p class="text-xs font-bold text-slate-700">Silakan Pilih Siswa Terlebih Dahulu</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Pilih nama siswa pada opsi filter di atas untuk melihat catatan prestasi.</p>
+            </div>
+        `;
+        return;
+    }
+
     const filteredPrestasi = filterSiswaId
         ? (appState.prestasi || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
         : (appState.prestasi || []);
@@ -140,7 +168,11 @@ function openModalAkademik(id = null) {
     if (!box) return;
 
     const rec = id ? appState.akademik.find(x => String(x.id) === String(id)) : null;
-    const siswaOpts = appState.siswa.map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const filterSelect = document.getElementById("akademik-siswa-filter");
+    const preselectedSiswaId = rec ? rec.siswa_id : (filterSelect ? filterSelect.value : "");
+
+    const siswaOpts = `<option value="">-- Pilih Siswa --</option>` + 
+        appState.siswa.map(s => `<option value="${s.id}" ${String(preselectedSiswaId) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -174,9 +206,21 @@ function openModalAkademik(id = null) {
 
 async function saveAkademikForm(e, id) {
     e.preventDefault();
+    const siswaId = document.getElementById("m-akd-siswa").value;
+
+    if (!siswaId) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Siswa Belum Dipilih',
+            text: 'Silakan pilih siswa terlebih dahulu sebelum menyimpan nilai akademik.',
+            confirmButtonColor: '#2563eb'
+        });
+        return;
+    }
+
     const payload = {
         id: id || null,
-        siswa_id: document.getElementById("m-akd-siswa").value,
+        siswa_id: siswaId,
         mapel: document.getElementById("m-akd-mapel").value,
         nilai_akhir: document.getElementById("m-akd-nilai").value,
         kktp: document.getElementById("m-akd-kktp").value
@@ -200,7 +244,7 @@ async function saveAkademikForm(e, id) {
         Swal.fire({
             icon: 'error',
             title: 'Gagal Menyimpan',
-            text: res?.message || 'Terjadi kesalahan saat menyimpan nilai akademik ke database spreadsheet.',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan nilai akademik.',
             confirmButtonColor: '#2563eb'
         });
     }
@@ -222,7 +266,11 @@ function openModalPrestasi(id = null) {
     if (!box) return;
 
     const rec = id ? appState.prestasi.find(x => String(x.id) === String(id)) : null;
-    const siswaOpts = appState.siswa.map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const filterSelect = document.getElementById("akademik-siswa-filter");
+    const preselectedSiswaId = rec ? rec.siswa_id : (filterSelect ? filterSelect.value : "");
+
+    const siswaOpts = `<option value="">-- Pilih Siswa --</option>` + 
+        appState.siswa.map(s => `<option value="${s.id}" ${String(preselectedSiswaId) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -258,9 +306,21 @@ function openModalPrestasi(id = null) {
 
 async function savePrestasiForm(e, id) {
     e.preventDefault();
+    const siswaId = document.getElementById("m-prs-siswa").value;
+
+    if (!siswaId) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Siswa Belum Dipilih',
+            text: 'Silakan pilih siswa terlebih dahulu sebelum menyimpan prestasi.',
+            confirmButtonColor: '#2563eb'
+        });
+        return;
+    }
+
     const payload = {
         id: id || null,
-        siswa_id: document.getElementById("m-prs-siswa").value,
+        siswa_id: siswaId,
         nama_prestasi: document.getElementById("m-prs-nama").value,
         tingkat: document.getElementById("m-prs-tingkat").value,
         tanggal: document.getElementById("m-prs-tanggal").value
@@ -284,7 +344,7 @@ async function savePrestasiForm(e, id) {
         Swal.fire({
             icon: 'error',
             title: 'Gagal Menyimpan',
-            text: res?.message || 'Terjadi kesalahan saat menyimpan catatan prestasi ke database spreadsheet.',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan catatan prestasi.',
             confirmButtonColor: '#2563eb'
         });
     }
