@@ -168,17 +168,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-/**
- * Inisialisasi tema saat aplikasi dibuka (Dark Mode / Light Mode).
- */
 function initTheme() {
     const savedTheme = localStorage.getItem("app_theme") || "light";
     applyTheme(savedTheme);
 }
 
-/**
- * Mengganti tema antara Dark Mode dan Light Mode.
- */
 function toggleDarkMode() {
     const isDark = document.body.classList.contains("dark");
     const nextTheme = isDark ? "light" : "dark";
@@ -211,3 +205,66 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('Registrasi ServiceWorker Gagal:', err));
     });
 }
+
+let globalAutoSyncInterval = null;
+
+/**
+ * Jalankan auto-sync global untuk seluruh modul (Siswa & Guru)
+ * @param {number} intervalMs - Waktu jeda polling dalam milidetik (Default: 20 detik)
+ */
+
+function startGlobalAutoSync() {
+    if (globalAutoSyncInterval) clearInterval(globalAutoSyncInterval);
+
+    globalAutoSyncInterval = setInterval(async () => {
+        const isModalOpen = !document.getElementById("modal-container").classList.contains("hidden");
+        if (isModalOpen) return;
+
+        const activeViewEl = document.querySelector(".view-section.active");
+        if (!activeViewEl) return;
+        const activeView = activeViewEl.id.replace("view-", "");
+
+        switch (activeView){
+            case "dashboard":
+                await renderDashboard();
+                break;
+            case "absensi":
+                await loadAbsensiData(true);
+                break;
+            case "kebiasaan":
+                await loadKebiasaanData(true);
+                break;
+            case "karakter":
+                await loadKeagamaanData(true);
+                break;
+            case "akademik":
+                await loadAkademikData(true);
+                break;
+            case "pembinaan":
+                await loadPembinaanData(true);
+                break;
+            case "laporan":
+                await loadLaporanRekap(true);
+                break;
+            case "profil-siswa":
+                if (appState.activeSiswaDetail?.siswa?.id){
+                    const sId = appState.activeSiswaDetail.siswa.id;
+                    const res = await apiCall("getDetailSiswa", { siswa_id }, false);
+                    if (res && res.status === "success") {
+                        appState.activeSiswaDetail = res.data;
+                        openProfilSiswa(res.data);
+                    }
+                }
+                break;
+        }
+
+        await checkStudentNotifications();
+        
+    }, intervalMs);
+}
+
+window.addEventListener("focus", () => {
+    if (appState.token && appState.user) {
+        manualRefreshAll();
+    }
+});
