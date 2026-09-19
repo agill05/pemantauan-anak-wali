@@ -65,7 +65,7 @@ async function openProfilSiswa(siswaTarget) {
 
     container.innerHTML = `
         <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-            <img src="${escapeHtml(siswa.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(siswa.nama))}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200">
+            <img src="${escapeHtml(siswa.foto || getInitialsAvatar(siswa.nama))}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200">
             <div>
                 <h3 class="font-bold text-base text-slate-800">${escapeHtml(siswa.nama)}</h3>
                 <p class="text-xs text-slate-400">NISN: ${escapeHtml(siswa.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
@@ -379,7 +379,7 @@ function renderSiswaView() {
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
-                    <img src="${escapeHtml(s.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                    <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                     <div>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
                         <p class="text-xs text-slate-400">${noAbsenLabel}NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
@@ -524,6 +524,8 @@ async function deleteSiswa(id) {
             await fetchAllAppData(true);
             renderSiswaView();
             renderAdminSiswa();
+        } else {
+            Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data siswa.', confirmButtonColor: '#2563eb' });
         }
     }
 }

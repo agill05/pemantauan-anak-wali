@@ -149,20 +149,20 @@ function openModalAkademik(id = null) {
         </div>
         <form onsubmit="saveAkademikForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
+                <label for="m-akd-siswa" class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
                 <select id="m-akd-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
+                <label for="m-akd-mapel" class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
                 <input type="text" id="m-akd-mapel" value="${escapeHtml(rec?.mapel || '')}" placeholder="Contoh: Matematika" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">NILAI AKHIR</label>
+                    <label for="m-akd-nilai" class="block text-xs font-bold text-slate-500 mb-1">NILAI AKHIR</label>
                     <input type="number" id="m-akd-nilai" value="${rec?.nilai_akhir || ''}" placeholder="0 - 100" min="0" max="100" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">KKTP (STANDAR)</label>
+                    <label for="m-akd-kktp" class="block text-xs font-bold text-slate-500 mb-1">KKTP (STANDAR)</label>
                     <input type="number" id="m-akd-kktp" value="${rec?.kktp || '75'}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
             </div>
@@ -219,22 +219,22 @@ function openModalPrestasi(id = null) {
         </div>
         <form onsubmit="savePrestasiForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
+                <label for="m-prs-siswa" class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
                 <select id="m-prs-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA PRESTASI / JUARA</label>
+                <label for="m-prs-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA PRESTASI / JUARA</label>
                 <input type="text" id="m-prs-nama" value="${escapeHtml(rec?.nama_prestasi || '')}" placeholder="Contoh: Juara 1 OSN IPA" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">TINGKAT</label>
+                    <label for="m-prs-tingkat" class="block text-xs font-bold text-slate-500 mb-1">TINGKAT</label>
                     <select id="m-prs-tingkat" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                         ${['Sekolah', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Nasional'].map(t => `<option value="${t}" ${rec && rec.tingkat === t ? 'selected' : ''}>${t}</option>`).join('')}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
+                    <label for="m-prs-tanggal" class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
                     <input type="date" id="m-prs-tanggal" value="${rec ? rec.tanggal : getDateWITA()}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
             </div>

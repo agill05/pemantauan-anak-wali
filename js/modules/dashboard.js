@@ -88,7 +88,7 @@ function renderPrioritySection(priorityList) {
           <div class="bg-white p-3.5 rounded-2xl border border-rose-100 shadow-sm space-y-2">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <img src="${escapeHtml(s.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                 <div>
                   <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
                   <p class="text-xs text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Ortu: ${escapeHtml(s.no_hp_ortu || '-')}</p>
@@ -558,6 +558,7 @@ function hubungiOrtu(siswaId) {
         return;
     }
 
+    // Ambil data statistik siswa terkait jika ada di state
     const sId = String(s.id);
     const presensiList = appState.absensi.filter(a => String(a.siswa_id) === sId);
     const countH = presensiList.filter(a => a.status === 'H').length;
@@ -571,6 +572,7 @@ function hubungiOrtu(siswaId) {
     const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
     const namaKelas = kls ? kls.nama_kelas : '-';
 
+    // Buat Template Pesan
     const templateLengkap = `*LAPORAN PERKEMBANGAN ANAK WALI*
 *SMP NEGERI 1 TALAGA JAYA*
 ----------------------------------------

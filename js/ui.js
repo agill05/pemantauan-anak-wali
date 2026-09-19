@@ -107,6 +107,28 @@ function hideLoading() {
     }
 }
 
+/**
+ * Generate avatar inisial secara lokal (SVG data-URI) — pengganti ui-avatars.com.
+ * Menghindari network request eksternal tiap kartu siswa/guru dirender.
+ * Warna latar konsisten per nama (hash sederhana), supaya tiap orang punya warna tetap.
+ */
+function getInitialsAvatar(nama) {
+    const name = (nama || "User").trim();
+    const initials = name.split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase() || "U";
+
+    const palette = ["#2563eb", "#7c3aed", "#db2777", "#dc2626", "#ea580c", "#65a30d", "#059669", "#0891b2"];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const bg = palette[Math.abs(hash) % palette.length];
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="${bg}"/>
+        <text x="50" y="50" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="central">${initials}</text>
+    </svg>`;
+
+    return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
 function showToast(message, icon = "success") {
     if (typeof Swal !== "undefined") {
         Swal.fire({

@@ -68,14 +68,14 @@ function showForcePasswordChangeModal() {
         </div>
         <form onsubmit="submitForcePasswordChange(event)" class="space-y-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD DEFAULT SAAT INI</label>
+                <label for="force-pwd-old" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD DEFAULT SAAT INI</label>
                 <input type="password" id="force-pwd-old" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD BARU (MIN. 6 KARAKTER)</label>
+                <label for="force-pwd-new" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD BARU (MIN. 6 KARAKTER)</label>
                 <input type="password" id="force-pwd-new" minlength="6" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan & Lanjutkan</button>
+            <button type="submit" id="btn-force-pwd" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan & Lanjutkan</button>
         </form>
     `;
     container.classList.remove("hidden");
@@ -86,6 +86,14 @@ async function submitForcePasswordChange(e) {
     e.preventDefault();
     const oldPassword = document.getElementById("force-pwd-old").value;
     const newPassword = document.getElementById("force-pwd-new").value;
+
+    const btn = document.getElementById("btn-force-pwd");
+    const originalHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-70", "cursor-not-allowed");
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    }
 
     const res = await apiCall("changePassword", { oldPassword, newPassword }, true);
     if (res && res.status === "success") {
@@ -103,6 +111,13 @@ async function submitForcePasswordChange(e) {
 
         showToast("Password berhasil diganti. Selamat datang!");
         await continueSessionSetup();
+    } else {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove("opacity-70", "cursor-not-allowed");
+            btn.innerHTML = originalHtml;
+        }
+        Swal.fire({ icon: 'error', title: 'Gagal Mengganti Password', text: res?.message || 'Kata sandi lama kemungkinan salah.', confirmButtonColor: '#2563eb' });
     }
 }
 
@@ -125,7 +140,7 @@ async function continueSessionSetup() {
     const headerTitle = document.getElementById("header-title");
     const headerSubtitle = document.getElementById("header-subtitle");
 
-    if (userAvatar) userAvatar.src = appState.user.foto || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(appState.user.nama));
+    if (userAvatar) userAvatar.src = appState.user.foto || (getInitialsAvatar(appState.user.nama));
     if (headerTitle) headerTitle.innerText = `Selamat Datang, ${appState.user.nama}`;
     if (headerSubtitle) headerSubtitle.innerText = `${appState.user.role.charAt(0).toUpperCase() + appState.user.role.slice(1)} • SMPN 1 Talaga Jaya`;
     startHeaderDateTimeClock();
@@ -355,7 +370,7 @@ function openUserSettingsModal() {
             <!-- 1. Kartu Profil & Tombol Edit -->
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100 gap-2 w-full">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <img src="${user.foto || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nama)}" 
+                    <img src="${user.foto || getInitialsAvatar(user.nama)}" 
                          class="w-11 h-11 rounded-full object-cover border border-slate-200 shrink-0">
                     <div class="min-w-0">
                         <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(user.nama)}</h4>
@@ -463,7 +478,7 @@ function openEditProfilModal() {
             <div class="flex flex-col items-center justify-center gap-2">
                 <div class="relative group">
                     <img id="preview-foto-profil" 
-                        src="${user.foto || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.nama || 'User'))}" 
+                        src="${user.foto || getInitialsAvatar(user.nama)}" 
                         class="w-20 h-20 rounded-full object-cover border-2 border-blue-500 shadow-md">
                     <label for="input-foto-file" 
                         class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition active:scale-95" 
@@ -571,7 +586,7 @@ async function hapusFotoProfil() {
         savedSession.user = appState.user;
         localStorage.setItem("session_anak_wali", JSON.stringify(savedSession));
 
-        const defaultAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(appState.user.nama || "User");
+        const defaultAvatar = getInitialsAvatar(appState.user.nama);
         const previewImg = document.getElementById("preview-foto-profil");
         const userAvatar = document.getElementById("user-avatar");
         const sbAvatar = document.getElementById("sidebar-avatar");

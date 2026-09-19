@@ -86,7 +86,7 @@ async function generateAndShareMagicLink() {
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tautan Akses Cepat</label>
+                <label for="magic-link-url-input" class="block text-xs font-bold text-slate-500 uppercase mb-1">Tautan Akses Cepat</label>
                 <div class="flex items-center gap-2">
                     <input type="text" id="magic-link-url-input" readonly value="${magicUrl}"
                         class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-600 outline-none select-all font-mono">

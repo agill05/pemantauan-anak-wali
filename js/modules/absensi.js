@@ -60,7 +60,7 @@ function renderAbsensiView() {
         <div class="space-y-3">
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-2 justify-between sm:items-center">
                 <div class="flex-1">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
+                    <label for="absensi-kelas-filter" class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
                     <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
                         <option value="">Semua Kelas</option>
                         ${kelasOptions}
@@ -269,4 +269,4 @@ function updateLiveAbsensiStats() {
     if (statS) statS.innerText = countS;
     if (statI) statI.innerText = countI;
     if (statA) statA.innerText = countA;
-}
+}

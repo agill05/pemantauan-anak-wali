@@ -136,20 +136,20 @@ function openModalKeagamaan(id = null) {
         </div>
         <form onsubmit="saveKeagamaanForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
+                <label for="m-kag-siswa" class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
                 <select id="m-kag-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOptions}</select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">SURAH AL-QUR'AN</label>
+                <label for="m-kag-surah" class="block text-xs font-bold text-slate-500 mb-1">SURAH AL-QUR'AN</label>
                 <select id="m-kag-surah" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${surahOptions}</select>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
+                    <label for="m-kag-tanggal" class="block text-xs font-bold text-slate-500 mb-1">TANGGAL</label>
                     <input type="date" id="m-kag-tanggal" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" value="${record ? record.tanggal : getDateWITA()}" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
+                    <label for="m-kag-status" class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
                     <select id="m-kag-status" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                         <option value="Lancar" ${record && record.status === 'Lancar' ? 'selected' : ''}>Lancar</option>
                         <option value="Mengulang" ${record && record.status === 'Mengulang' ? 'selected' : ''}>Mengulang</option>
@@ -158,7 +158,7 @@ function openModalKeagamaan(id = null) {
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">CATATAN GURU</label>
+                <label for="m-kag-catatan" class="block text-xs font-bold text-slate-500 mb-1">CATATAN GURU</label>
                 <textarea id="m-kag-catatan" rows="2" placeholder="Catatan kelancaran / tajwid..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">${record ? escapeHtml(record.catatan || '') : ''}</textarea>
             </div>
             <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Hafalan</button>

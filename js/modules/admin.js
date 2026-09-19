@@ -113,15 +113,21 @@ function openModalGuru(id = null) {
         </div>
         <form onsubmit="saveGuruForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
+                <label for="m-guru-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
                 <input type="text" id="m-guru-nama" value="${escapeHtml(g?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
-                <input type="text" id="m-guru-user" value="${escapeHtml(g?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label for="m-guru-user" class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
+                    <input type="text" id="m-guru-user" value="${escapeHtml(g?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                </div>
+                <div>
+                    <label for="m-guru-nip" class="block text-xs font-bold text-slate-500 mb-1">NIP</label>
+                    <input type="text" id="m-guru-nip" value="${escapeHtml(g?.nip || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                </div>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD ${g ? '(Kosongkan jika tidak diganti)' : '(Opsional)'}</label>
+                <label for="m-guru-pwd" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD ${g ? '(Kosongkan jika tidak diganti)' : '(Opsional)'}</label>
                 <input type="password" id="m-guru-pwd" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="${g ? '' : 'Kosongkan untuk pakai password default'}">
                 <p class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-1.5 flex items-start gap-1.5">
                     <i class="fas fa-triangle-exclamation mt-0.5"></i>
@@ -129,14 +135,11 @@ function openModalGuru(id = null) {
                 </p>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">NIP</label>
-                <input type="text" id="m-guru-nip" value="${escapeHtml(g?.nip || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                <label for="m-guru-hp" class="block text-xs font-bold text-slate-500 mb-1">NO. TELEPON / WA</label>
+                <input type="text" id="m-guru-hp" value="${escapeHtml(g?.no_hp || '')}" oninput="validatePhoneField(this)" placeholder="08xxxxxxxxxx" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                <p id="m-guru-hp-error" class="hidden text-[10px] text-rose-500 mt-1 font-semibold"><i class="fas fa-circle-exclamation"></i> Format nomor tidak valid. Gunakan 08xxxxxxxxxx (10-14 digit).</p>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">NO. TELEPON / WA</label>
-                <input type="text" id="m-guru-hp" value="${escapeHtml(g?.no_hp || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-            </div>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Guru</button>
+            <button type="submit" id="btn-save-guru" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Guru</button>
         </form>
     `;
     document.getElementById("modal-container")?.classList.remove("hidden");
@@ -144,6 +147,21 @@ function openModalGuru(id = null) {
 
 async function saveGuruForm(e, id) {
     e.preventDefault();
+
+    const hpInput = document.getElementById("m-guru-hp");
+    if (hpInput && !validatePhoneField(hpInput)) {
+        hpInput.focus();
+        return;
+    }
+
+    const btn = document.getElementById("btn-save-guru");
+    const originalHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-70", "cursor-not-allowed");
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    }
+
     const payload = {
         id: id || null,
         nama: document.getElementById("m-guru-nama").value,
@@ -159,6 +177,13 @@ async function saveGuruForm(e, id) {
         showToast("Data Guru diperbarui!");
         await fetchAllAppData(true);
         renderAdminGuru();
+    } else {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove("opacity-70", "cursor-not-allowed");
+            btn.innerHTML = originalHtml;
+        }
+        Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: res?.message || 'Terjadi kesalahan saat menyimpan data guru.', confirmButtonColor: '#2563eb' });
     }
 }
 
@@ -169,6 +194,8 @@ async function deleteGuru(id) {
         if (res && res.status === "success") {
             await fetchAllAppData(true);
             renderAdminGuru();
+        } else {
+            Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data guru.', confirmButtonColor: '#2563eb' });
         }
     }
 }
@@ -187,17 +214,17 @@ function openModalKelas(id = null) {
         </div>
         <form onsubmit="saveKelasForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA KELAS (Contoh: 7A, 8B)</label>
+                <label for="m-kls-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA KELAS (Contoh: 7A, 8B)</label>
                 <input type="text" id="m-kls-nama" value="${escapeHtml(k?.nama_kelas || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">WALI KELAS</label>
+                <label for="m-kls-guru" class="block text-xs font-bold text-slate-500 mb-1">WALI KELAS</label>
                 <select id="m-kls-guru" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                     <option value="">Pilih Wali Kelas</option>
                     ${guruOpts}
                 </select>
             </div>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Kelas</button>
+            <button type="submit" id="btn-save-kelas" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Kelas</button>
         </form>
     `;
     document.getElementById("modal-container")?.classList.remove("hidden");
@@ -205,6 +232,15 @@ function openModalKelas(id = null) {
 
 async function saveKelasForm(e, id) {
     e.preventDefault();
+
+    const btn = document.getElementById("btn-save-kelas");
+    const originalHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-70", "cursor-not-allowed");
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    }
+
     const payload = {
         id: id || null,
         nama_kelas: document.getElementById("m-kls-nama").value,
@@ -217,6 +253,13 @@ async function saveKelasForm(e, id) {
         showToast("Data kelas diperbarui!");
         await fetchAllAppData(true);
         renderAdminKelas();
+    } else {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove("opacity-70", "cursor-not-allowed");
+            btn.innerHTML = originalHtml;
+        }
+        Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: res?.message || 'Terjadi kesalahan saat menyimpan data kelas.', confirmButtonColor: '#2563eb' });
     }
 }
 
@@ -227,6 +270,8 @@ async function deleteKelas(id) {
         if (res && res.status === "success") {
             await fetchAllAppData(true);
             renderAdminKelas();
+        } else {
+            Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data kelas.', confirmButtonColor: '#2563eb' });
         }
     }
 }

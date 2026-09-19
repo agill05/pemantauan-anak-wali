@@ -97,38 +97,38 @@ function openModalPembinaan(id = null) {
         </div>
         <form onsubmit="savePembinaanForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
+                <label for="m-pbn-siswa" class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
                 <select id="m-pbn-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">JENIS</label>
+                    <label for="m-pbn-jenis" class="block text-xs font-bold text-slate-500 mb-1">JENIS</label>
                     <select id="m-pbn-jenis" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                         ${['Sikap', 'Akademik', 'Kehadiran', 'Sosial'].map(j => `<option value="${j}" ${(draft?.['m-pbn-jenis'] || rec?.jenis) === j ? 'selected' : ''}>${j}</option>`).join('')}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
+                    <label for="m-pbn-status" class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
                     <select id="m-pbn-status" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                         ${['Pemantauan', 'Dalam Pembinaan', 'Perlu Tindak Lanjut', 'Selesai'].map(st => `<option value="${st}" ${String(draft?.['m-pbn-status'] || rec?.status).toLowerCase() === st.toLowerCase() ? 'selected' : ''}>${st}</option>`).join('')}
                     </select>
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">DESKRIPSI PERMASALAHAN / CATATAN</label>
+                <label for="m-pbn-masalah" class="block text-xs font-bold text-slate-500 mb-1">DESKRIPSI PERMASALAHAN / CATATAN</label>
                 <textarea id="m-pbn-masalah" rows="3" placeholder="Jelaskan kasus..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${escapeHtml(draft?.['m-pbn-masalah'] || rec?.permasalahan || '')}</textarea>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL PENGISIAN</label>
+                    <label for="m-pbn-tanggal" class="block text-xs font-bold text-slate-500 mb-1">TANGGAL PENGISIAN</label>
                     <input type="date" id="m-pbn-tanggal" value="${tanggalPengisian}" class="w-full bg-slate-100 border border-slate-200 p-2.5 rounded-xl text-xs outline-none cursor-not-allowed text-slate-500 font-bold" readonly disabled>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
+                    <label for="m-pbn-pantau" class="block text-xs font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
                     <input type="date" id="m-pbn-pantau" value="${draft?.['m-pbn-pantau'] || rec?.jadwal_pantau || ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
-            <button type="submit" class="w-full bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Catatan Pembinaan</button>
+            <button type="submit" id="btn-save-pembinaan" class="w-full bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Catatan Pembinaan</button>
         </form>
     `;
 
