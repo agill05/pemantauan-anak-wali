@@ -101,7 +101,7 @@ async function submitForcePasswordChange(e) {
             modal.classList.add("hidden");
         }
 
-        Swal.fire({ icon: 'success', title: 'Password Diperbarui', text: 'Password berhasil diganti. Selamat datang!', timer: 1400, showConfirmButton: false });
+        showToast("Password berhasil diganti. Selamat datang!");
         await continueSessionSetup();
     }
 }
@@ -389,8 +389,8 @@ function openUserSettingsModal() {
             <form onsubmit="changePasswordForm(event)" class="space-y-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>
                 <input type="password" id="m-pwd-old" placeholder="Kata sandi lama" aria-label="Kata sandi lama" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
-                <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" aria-label="Kata sandi baru" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
-                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-900 transition">Update Kata Sandi</button>
+                <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" aria-label="Kata sandi baru" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required minlength="6">
+                <button type="submit" id="btn-change-pwd" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-900 transition">Update Kata Sandi</button>
             </form>` : ''}
 
             <!-- 4. Tombol Keluar -->
@@ -406,10 +406,38 @@ async function changePasswordForm(e) {
     e.preventDefault();
     const oldPassword = document.getElementById("m-pwd-old").value;
     const newPassword = document.getElementById("m-pwd-new").value;
+
+    if (newPassword.length < 6) {
+        Swal.fire({ icon: 'warning', title: 'Password Terlalu Pendek', text: 'Kata sandi baru minimal 6 karakter.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const btn = document.getElementById("btn-change-pwd");
+    const originalHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-70", "cursor-not-allowed");
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    }
+
     const res = await apiCall("changePassword", { oldPassword, newPassword }, true);
+
+    if (btn) {
+        btn.disabled = false;
+        btn.classList.remove("opacity-70", "cursor-not-allowed");
+        btn.innerHTML = originalHtml;
+    }
+
     if (res && res.status === "success") {
         closeModal();
         showToast("Kata sandi diperbarui!");
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Mengganti Password',
+            text: res?.message || 'Kata sandi lama kemungkinan salah.',
+            confirmButtonColor: '#2563eb'
+        });
     }
 }
 
@@ -482,11 +510,12 @@ function openEditProfilModal() {
             <div>
                 <label for="self-hp" class="block text-xs font-bold text-slate-500 uppercase mb-1">No. WhatsApp / HP</label>
                 <input type="text" id="self-hp" value="${escapeHtml(user.no_hp || user.no_hp_ortu || '')}" 
-                       placeholder="08xxxxxxxxxx" 
+                       placeholder="08xxxxxxxxxx" oninput="validatePhoneField(this)"
                        class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:border-blue-500">
+                <p id="self-hp-error" class="hidden text-[10px] text-rose-500 mt-1 font-semibold"><i class="fas fa-circle-exclamation"></i> Format nomor tidak valid. Gunakan 08xxxxxxxxxx (10-14 digit).</p>
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+            <button type="submit" id="btn-save-profil" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
                 <i class="fas fa-save"></i> Simpan Perubahan Profil
             </button>
         </form>
@@ -566,8 +595,43 @@ async function hapusFotoProfil() {
 /**
  * Handle Submit Form Edit Profil
  */
+/**
+ * Validasi inline No. HP/WhatsApp — kasih feedback real-time sebelum submit,
+ * daripada nunggu roundtrip ke server baru tahu formatnya salah.
+ */
+function validatePhoneField(input, errorElId) {
+    const errorEl = document.getElementById(errorElId || (input.id + "-error"));
+    const value = input.value.trim();
+    const isValid = value === "" || /^08[0-9]{8,12}$/.test(value);
+
+    if (isValid) {
+        input.classList.remove("border-rose-400", "focus:border-rose-500");
+        input.classList.add("focus:border-blue-500");
+        if (errorEl) errorEl.classList.add("hidden");
+    } else {
+        input.classList.add("border-rose-400", "focus:border-rose-500");
+        input.classList.remove("focus:border-blue-500");
+        if (errorEl) errorEl.classList.remove("hidden");
+    }
+    return isValid;
+}
+
 async function saveSelfProfileForm(e) {
     e.preventDefault();
+
+    const hpInput = document.getElementById("self-hp");
+    if (hpInput && !validatePhoneField(hpInput)) {
+        hpInput.focus();
+        return;
+    }
+
+    const submitBtn = document.getElementById("btn-save-profil");
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : "";
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-70", "cursor-not-allowed");
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    }
 
     const fileInput = document.getElementById("input-foto-file");
     const file = fileInput?.files[0];
@@ -593,6 +657,12 @@ async function saveSelfProfileForm(e) {
 
     const res = await apiCall("updateSelfProfile", payload, false);
     hideLoading();
+
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-70", "cursor-not-allowed");
+        submitBtn.innerHTML = originalBtnHtml;
+    }
 
     if (res && res.status === "success") {
         closeModal();

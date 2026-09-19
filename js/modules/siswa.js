@@ -420,25 +420,34 @@ function openModalSiswa(id = null) {
         </div>
         <form onsubmit="saveSiswaForm(event, '${id || ''}')" class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
+                <label for="m-ssw-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
                 <input type="text" id="m-ssw-nama" value="${escapeHtml(s?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">NOMOR ABSEN (OPSIONAL)</label>
+                    <label for="m-ssw-absen" class="block text-xs font-bold text-slate-500 mb-1">NOMOR ABSEN (OPSIONAL)</label>
                     <input type="number" id="m-ssw-absen" value="${s?.no_absen !== undefined && s?.no_absen !== null ? s.no_absen : ''}" placeholder="Contoh: 1" min="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">NISN</label>
+                    <label for="m-ssw-nisn" class="block text-xs font-bold text-slate-500 mb-1">NISN</label>
                     <input type="text" id="m-ssw-nisn" value="${escapeHtml(s?.nisn || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
-                <input type="text" id="m-ssw-user" value="${escapeHtml(s?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label for="m-ssw-user" class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
+                    <input type="text" id="m-ssw-user" value="${escapeHtml(s?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                </div>
+                <div>
+                    <label for="m-ssw-kelas" class="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
+                    <select id="m-ssw-kelas" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                        <option value="">Pilih Kelas</option>
+                        ${kelasOpts}
+                    </select>
+                </div>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD ${s ? '(Kosongkan jika tidak diganti)' : '(Opsional)'}</label>
+                <label for="m-ssw-pwd" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD ${s ? '(Kosongkan jika tidak diganti)' : '(Opsional)'}</label>
                 <input type="password" id="m-ssw-pwd" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="${s ? '' : 'Kosongkan untuk pakai password default'}">
                 <p class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-1.5 flex items-start gap-1.5">
                     <i class="fas fa-triangle-exclamation mt-0.5"></i>
@@ -446,17 +455,11 @@ function openModalSiswa(id = null) {
                 </p>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
-                <select id="m-ssw-kelas" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                    <option value="">Pilih Kelas</option>
-                    ${kelasOpts}
-                </select>
+                <label for="m-ssw-ortu" class="block text-xs font-bold text-slate-500 mb-1">NO. WA ORANG TUA / WALI</label>
+                <input type="text" id="m-ssw-ortu" value="${escapeHtml(s?.no_hp_ortu || '')}" oninput="validatePhoneField(this, 'm-ssw-ortu-error')" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="08xxxxxxxxxx">
+                <p id="m-ssw-ortu-error" class="hidden text-[10px] text-rose-500 mt-1 font-semibold"><i class="fas fa-circle-exclamation"></i> Format nomor tidak valid. Gunakan 08xxxxxxxxxx (10-14 digit).</p>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">NO. WA ORANG TUA / WALI</label>
-                <input type="text" id="m-ssw-ortu" value="${escapeHtml(s?.no_hp_ortu || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="08xxxxxxxxxx">
-            </div>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Siswa</button>
+            <button type="submit" id="btn-save-siswa" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Siswa</button>
         </form>
     `;
     document.getElementById("modal-container")?.classList.remove("hidden");
@@ -464,6 +467,21 @@ function openModalSiswa(id = null) {
 
 async function saveSiswaForm(e, id) {
     e.preventDefault();
+
+    const hpInput = document.getElementById("m-ssw-ortu");
+    if (hpInput && !validatePhoneField(hpInput, "m-ssw-ortu-error")) {
+        hpInput.focus();
+        return;
+    }
+
+    const btn = document.getElementById("btn-save-siswa");
+    const originalHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-70", "cursor-not-allowed");
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    }
+
     const payload = {
         id: id || null,
         nama: document.getElementById("m-ssw-nama").value,
@@ -476,12 +494,25 @@ async function saveSiswaForm(e, id) {
     };
 
     const res = await apiCall("saveSiswa", payload, true);
+
     if (res && res.status === "success") {
         closeModal();
         showToast("Data Siswa diperbarui!");
         await fetchAllAppData(true);
         renderSiswaView();
         renderAdminSiswa();
+    } else {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove("opacity-70", "cursor-not-allowed");
+            btn.innerHTML = originalHtml;
+        }
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menyimpan',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan data siswa.',
+            confirmButtonColor: '#2563eb'
+        });
     }
 }
 
