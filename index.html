@@ -43,13 +43,9 @@
                 display: none !important;
             }
 
-            #printable-area,
-            #printable-area * {
+            #printable-area {
                 display: block !important;
                 visibility: visible !important;
-            }
-
-            #printable-area {
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
@@ -58,6 +54,33 @@
                 padding: 10px !important;
                 background: #ffffff !important;
                 color: #000000 !important;
+            }
+
+            /* Cukup pastikan semua turunan terlihat — JANGAN paksa display:block,
+               atau struktur <table>/<tr>/<td> hancur jadi list vertikal. */
+            #printable-area * {
+                visibility: visible !important;
+            }
+
+            #printable-area table {
+                display: table !important;
+            }
+
+            #printable-area thead {
+                display: table-header-group !important;
+            }
+
+            #printable-area tbody {
+                display: table-row-group !important;
+            }
+
+            #printable-area tr {
+                display: table-row !important;
+            }
+
+            #printable-area th,
+            #printable-area td {
+                display: table-cell !important;
             }
 
             .no-print {
@@ -176,8 +199,8 @@
                     <i class="fas fa-bars text-lg"></i>
                 </button>
                 <div id="header-mobile-avatar"
-                    class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden border border-white/30">
-                    <img id="user-avatar" src="" alt="Avatar" class="w-full h-full object-cover">
+                    class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden border border-white/30 shrink-0">
+                    <img id="user-avatar" src="" alt="Avatar" class="w-full h-full object-cover rounded-full">
                 </div>
                 <div class="flex items-start gap-2">
                     <span class="hidden lg:inline text-2xl leading-none" aria-hidden="true">👋</span>
