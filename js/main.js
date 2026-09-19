@@ -33,67 +33,35 @@ function switchView(viewId) {
 
 function _refreshAllSiswaDropdowns() {
     const siswaList = appState.siswa || [];
-    const isSiswa = appState.user && appState.user.role === 'siswa';
-    const isGuruOrAdmin = appState.user && (appState.user.role === 'guru' || appState.user.role === 'admin');
+    const siswaOptions = siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
 
     const selKebiasaan = document.getElementById("kebiasaan-siswa-select");
     if (selKebiasaan) {
-        if (isSiswa) {
-            selKebiasaan.innerHTML = `<option value="${appState.user.id}">${escapeHtml(appState.user.nama)}</option>`;
-            selKebiasaan.value = appState.user.id;
-            selKebiasaan.disabled = true;
-        } else {
-            const prev = selKebiasaan.value;
-            selKebiasaan.innerHTML = `<option value="">-- Pilih Siswa --</option>` + 
-                siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
-            selKebiasaan.value = prev || "";
-            selKebiasaan.disabled = false;
-        }
+        const prev = selKebiasaan.value;
+        selKebiasaan.innerHTML = siswaOptions;
+        if (prev) selKebiasaan.value = prev;
     }
 
     const selKarakter = document.getElementById("karakter-siswa-filter");
-    if (selKarakter) {
-        if (isSiswa) {
-            selKarakter.innerHTML = `<option value="${appState.user.id}">${escapeHtml(appState.user.nama)}</option>`;
-            selKarakter.value = appState.user.id;
-            selKarakter.disabled = true;
-        } else {
-            const prev = selKarakter.value;
-            selKarakter.innerHTML = `<option value="">-- Pilih Siswa --</option>` + 
-                siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
-            selKarakter.value = prev || "";
-            selKarakter.disabled = false;
-        }
+    if (selKarakter && siswaList.length > 0) {
+        const prev = selKarakter.value;
+        selKarakter.innerHTML = siswaOptions;
+        if (prev) selKarakter.value = prev;
     }
 
     const selAkademik = document.getElementById("akademik-siswa-filter");
-    if (selAkademik) {
-        if (isSiswa) {
-            selAkademik.innerHTML = `<option value="${appState.user.id}">${escapeHtml(appState.user.nama)}</option>`;
-            selAkademik.value = appState.user.id;
-            selAkademik.disabled = true;
-        } else {
-            const prev = selAkademik.value;
-            selAkademik.innerHTML = `<option value="">-- Pilih Siswa --</option>` + 
-                siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
-            selAkademik.value = prev || "";
-            selAkademik.disabled = false;
-        }
+    if (selAkademik && siswaList.length > 0) {
+        const prev = selAkademik.value;
+        selAkademik.innerHTML = siswaOptions;
+        if (prev) selAkademik.value = prev;
     }
 
     const selPembinaan = document.getElementById("pembinaan-siswa-filter");
-    if (selPembinaan) {
-        if (isSiswa) {
-            selPembinaan.innerHTML = `<option value="${appState.user.id}">${escapeHtml(appState.user.nama)}</option>`;
-            selPembinaan.value = appState.user.id;
-            selPembinaan.disabled = true;
-        } else {
-            const prev = selPembinaan.value;
-            selPembinaan.innerHTML = `<option value="">-- Semua Siswa --</option>` + 
-                siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
-            selPembinaan.value = prev || "";
-            selPembinaan.disabled = false;
-        }
+    if (selPembinaan && siswaList.length > 0) {
+        const prev = selPembinaan.value;
+        const allOption = `<option value="">-- Semua Siswa --</option>`;
+        selPembinaan.innerHTML = allOption + siswaOptions;
+        if (prev) selPembinaan.value = prev;
     }
 
     const activeView = document.querySelector(".view-section.active");
@@ -106,67 +74,6 @@ function _refreshAllSiswaDropdowns() {
         else if (viewId === "siswa") renderSiswaView();
     }
 }
-
-/**
- * Mekanisme Smart Polling untuk Pembaruan Data Otomatis
- */
-function isUserInteracting() {
-    const modalContainer = document.getElementById("modal-container");
-    const isModalOpen = modalContainer && !modalContainer.classList.contains("hidden");
-    const activeEl = document.activeElement;
-    const isInputFocused = activeEl && (
-        activeEl.tagName === "INPUT" || 
-        activeEl.tagName === "SELECT" || 
-        activeEl.tagName === "TEXTAREA"
-    );
-    return isModalOpen || isInputFocused;
-}
-
-function startSmartPolling() {
-    if (autoPollingInterval) clearInterval(autoPollingInterval);
-
-    autoPollingInterval = setInterval(async () => {
-        if (document.hidden || !appState.token || !appState.user || isUserInteracting()) return;
-
-        if (typeof pendingKebiasaanQueue !== "undefined" && pendingKebiasaanQueue.size > 0) return;
-
-        const activeView = document.querySelector(".view-section.active");
-        if (!activeView) return;
-
-        const viewId = activeView.id.replace("view-", "");
-
-        try {
-            if (viewId === "dashboard") {
-                await checkStudentNotifications();
-            } else if (viewId === "absensi") {
-                await loadAbsensiData(true);
-            } else if (viewId === "kebiasaan") {
-                const selectSiswa = document.getElementById("kebiasaan-siswa-select");
-                if (selectSiswa && selectSiswa.value) {
-                    await loadKebiasaanData(true);
-                }
-            } else if (viewId === "karakter") {
-                await loadKeagamaanData(true);
-            } else if (viewId === "akademik") {
-                await loadAkademikData(true);
-            } else if (viewId === "pembinaan") {
-                await loadPembinaanData(true);
-            }
-        } catch (err) {
-            console.warn("Polling silent error:", err);
-        }
-    }, POLLING_INTERVAL_MS);
-}
-
-document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && appState.token) {
-        const activeView = document.querySelector(".view-section.active");
-        if (activeView) {
-            const viewId = activeView.id.replace("view-", "");
-            switchView(viewId);
-        }
-    }
-});
 
 async function manualRefreshAll() {
     const icon = document.querySelector("#btn-refresh-header i");

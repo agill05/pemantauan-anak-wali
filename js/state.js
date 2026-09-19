@@ -1,6 +1,3 @@
-let autoPollingInterval = null;
-const POLLING_INTERVAL_MS = 20000;
-
 let lastFetchTimes = {
     bootstrap: 0,
     absensi: 0,

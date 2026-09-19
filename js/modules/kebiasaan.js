@@ -32,26 +32,13 @@ function renderKebiasaanView() {
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
     if (!container || !selectSiswa) return;
 
-    const isSiswa = appState.user && appState.user.role === 'siswa';
-
-    const selectedSiswaId = isSiswa ? appState.user.id : (selectSiswa.value || "");
-
+    const selectedSiswaId = selectSiswa.value || (appState.siswa[0] ? appState.siswa[0].id : null);
     if (!selectedSiswaId) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-hand-pointer text-2xl mb-2 text-blue-500"></i>
-                <p class="text-xs font-bold text-slate-700">Silakan Pilih Siswa Terlebih Dahulu</p>
-                <p class="text-[11px] text-slate-400 mt-0.5">Pilih nama siswa pada opsi di atas untuk memantau atau menginput 7 Kebiasaan Hebat.</p>
-            </div>
-        `;
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-user-slash text-2xl mb-2"></i><p class="text-xs text-slate-500">Belum ada data siswa untuk dipantau kebiasaannya.</p></div>`;
         return;
     }
 
-    const isEditable = appState.user && (
-        appState.user.role === 'admin' || 
-        appState.user.role === 'guru' || 
-        (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId))
-    );
+    const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
 
     const studentRecords = appState.kebiasaan.filter(k => String(k.siswa_id) === String(selectedSiswaId));
     const tanggalInput = document.getElementById("kebiasaan-date");
@@ -60,6 +47,7 @@ function renderKebiasaanView() {
     const todayRecords = studentRecords.filter(k => String(k.tanggal) === String(tanggal));
     const completedToday = todayRecords.filter(k => k.status === 'Sudah').length;
     const persenTuntas = Math.round((completedToday / 7) * 100);
+
     const totalSemuaSudah = studentRecords.filter(k => k.status === 'Sudah').length;
 
     let badgeTitle = "Prajurit Karakter";
@@ -137,10 +125,10 @@ function renderKebiasaanView() {
                 </div>
                 <div class="flex gap-1">
                     ${[
-                        { val: 'Sudah', label: 'Sudah', cls: 'bg-emerald-600 text-white' },
-                        { val: 'Kadang', label: 'Kadang', cls: 'bg-amber-500 text-white' },
-                        { val: 'Belum', label: 'Belum', cls: 'bg-slate-700 text-white' }
-                    ].map(st => `
+                { val: 'Sudah', label: 'Sudah', cls: 'bg-emerald-600 text-white' },
+                { val: 'Kadang', label: 'Kadang', cls: 'bg-amber-500 text-white' },
+                { val: 'Belum', label: 'Belum', cls: 'bg-slate-700 text-white' }
+            ].map(st => `
                         <button ${isEditable ? `onclick="saveKebiasaanItem('${escapeHtml(selectedSiswaId)}', '${k.id}', '${st.val}')"` : 'disabled'}
                                 class="px-2.5 py-1 rounded-lg text-xs font-bold ${rec.status === st.val ? st.cls : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} transition">
                             ${st.label}
