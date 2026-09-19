@@ -175,7 +175,7 @@ async function continueSessionSetup() {
         renderDashboard();
     }
 
-    startGlobalAutoSync(20000);
+    startRealtimeNotificationPolling();
     checkStudentNotifications();
 }
 
@@ -215,7 +215,6 @@ function handleLogout(force = false) {
     const executeLogout = () => {
         if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
         if (notificationPollingInterval) clearInterval(notificationPollingInterval);
-        if (globalAutoSyncInterval) clearInterval(globalAutoSyncInterval);
 
         document.documentElement.classList.remove("has-session");
         sessionStorage.removeItem("app_last_view");
