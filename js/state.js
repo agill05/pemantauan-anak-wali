@@ -33,6 +33,9 @@ let appState = {
     handledNotifications: []
 };
 
+let dataPollingInterval = null;
+const DATA_POLL_INTERVAL_MS = 18000;
+
 function saveAppStateToLocal() {
     try {
         localStorage.setItem("cache_appState_full", JSON.stringify({

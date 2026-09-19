@@ -198,6 +198,39 @@ function applyTheme(theme) {
     }
 }
 
+function startDataPolling() {
+    if (dataPollingInterval) clearInterval(dataPollingInterval);
+
+    dataPollingInterval = setInterval(async () => {
+        if (!appState.token || !appState.user) return;
+        if (document.hidden) return;
+
+        if (pendingKebiasaanQueue && pendingKebiasaanQueue.size > 0) return;
+        const modal = document.getElementById("modal-container");
+        if (modal && !modal.classList.contains("hidden")) return;
+
+        const activeView = document.querySelector(".view-section.active");
+        const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
+
+        try {
+            switch (viewId) {
+                case "dashboard":
+                    await loadAbsensiData(true);
+                    renderDashboard();
+                    break;
+                case "absensi": await loadAbsensiData(true); break;
+                case "kebiasaan": await loadKebiasaanData(true); break;
+                case "karakter": await loadKeagamaanData(true); break;
+                case "akademik": await loadAkademikData(true); break;
+                case "pembinaan": await loadPembinaanData(true); break;
+                case "laporan": await loadLaporanRekap(true); break;
+            }
+        } catch (e) {
+            console.error("Polling error:", e);
+        }
+    }, DATA_POLL_INTERVAL_MS);
+}
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')

@@ -176,6 +176,7 @@ async function continueSessionSetup() {
     }
 
     startRealtimeNotificationPolling();
+    startDataPolling();
     checkStudentNotifications();
 }
 
@@ -215,6 +216,7 @@ function handleLogout(force = false) {
     const executeLogout = () => {
         if (silentTokenRefreshInterval) clearInterval(silentTokenRefreshInterval);
         if (notificationPollingInterval) clearInterval(notificationPollingInterval);
+        if (dataPollingInterval) clearInterval(dataPollingInterval);
 
         document.documentElement.classList.remove("has-session");
         sessionStorage.removeItem("app_last_view");
@@ -607,13 +609,6 @@ async function hapusFotoProfil() {
     }
 }
 
-/**
- * Handle Submit Form Edit Profil
- */
-/**
- * Validasi inline No. HP/WhatsApp — kasih feedback real-time sebelum submit,
- * daripada nunggu roundtrip ke server baru tahu formatnya salah.
- */
 function validatePhoneField(input, errorElId) {
     const errorEl = document.getElementById(errorElId || (input.id + "-error"));
     const value = input.value.trim();
