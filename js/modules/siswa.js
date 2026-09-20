@@ -360,21 +360,21 @@ function printProfilSiswa() {
             <div style="margin-top: 30px; text-align: center; font-size: 12px;">
                 <p>Mengetahui,<br>Kepala Sekolah</p>
                 <br><br><br>
-                <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: -1px; line-height: 1.1;">${escapeHtml(appState.pengaturan?.nama_kepsek || '............................................')}</p>
-                <p style="margin: 0; font-size: 10px; color: #64748b; line-height: 1.1;">NIP.${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
+                <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: -1px; line-height: 1;">${escapeHtml(appState.pengaturan?.nama_kepsek || '............................................')}</p>
+                <p style="margin: 0; font-size: 10px; color: #64748b; line-height: 1;">NIP.${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
             </div>
 
             <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 12px;">
                 <div style="text-align: center; width: 200px;">
                     <p>Orang Tua / Wali Siswa</p>
                     <br><br><br>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: -1px; line-height: 1.1;">${escapeHtml(siswa.nama_ortu || '............................................')}</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: -1px; line-height: 1;">${escapeHtml(siswa.nama_ortu || '............................................')}</p>
                 </div>
                 <div style="text-align: center; width: 200px;">
                     <p>Wali Kelas</p>
                     <br><br><br>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: -1px; line-height: 1.1;">${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</p>
-                    <p style="margin: 0; font-size: 10px; color: #64748b; line-height: 1.1;">NIP.${escapeHtml(getGuruNip())}</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: -1px; line-height: 1;">${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</p>
+                    <p style="margin: 0; font-size: 10px; color: #64748b; line-height: 1;">NIP.${escapeHtml(getGuruNip())}</p>
                 </div>
             </div>
         </div>
