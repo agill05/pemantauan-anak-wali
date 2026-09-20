@@ -342,6 +342,8 @@ function handleLogout(force = false) {
         sessionStorage.removeItem("app_last_view");
         localStorage.removeItem("session_anak_wali");
         localStorage.removeItem("cache_appState_full");
+        localStorage.removeItem("notif_ditangani_cache");
+        localStorage.removeItem("dismissed_notifications_map");
         appState = { token: null, user: null, kelas: [], guru: [], siswa: [], myStudents: [] };
         location.reload();
     };

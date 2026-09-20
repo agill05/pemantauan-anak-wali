@@ -199,7 +199,7 @@ async function savePembinaanForm(e, id) {
         renderPembinaanView();
         closeModal();
 
-        clearStudentNotificationsOnNoteAdded(siswaId);
+        await markNotifHandledByPembinaan(siswaId, recordId);
         checkStudentNotifications();
 
         showToast("Catatan pembinaan berhasil disimpan!");
@@ -224,9 +224,10 @@ async function deletePembinaan(id) {
     }
 }
 
-function openQuickPembinaan(siswaId, defaultMasalah) {
+function openQuickPembinaan(siswaId, defaultMasalah, notifId = "") {
     closeModal();
     openModalPembinaan();
+    setPendingPembinaanNotif(notifId, siswaId);
     setTimeout(() => {
         const siswaSelect = document.getElementById("m-pbn-siswa");
         const masalahInput = document.getElementById("m-pbn-masalah");

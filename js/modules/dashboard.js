@@ -144,73 +144,111 @@ function renderAgendaSection(agendaList) {
     `).join("");
 }
 
-function getDismissedNotificationsMap() {
-    try {
-        const data = localStorage.getItem("dismissed_notifications_map");
-        return data ? JSON.parse(data) : {};
-    } catch (e) {
-        return {};
+const NOTIF_CACHE_KEY = "notif_ditangani_cache";
+let pendingPembinaanNotif = null;
+
+async function fetchNotifDitangani() {
+    const res = await apiCall("getNotifDitangani", {}, false);
+    if (res && res.status === "success") {
+        appState.notifDitangani = res.data || [];
+        try { localStorage.setItem(NOTIF_CACHE_KEY, JSON.stringify(appState.notifDitangani)); } catch (e) { }
+    } else if (!appState.notifDitangani) {
+        try { appState.notifDitangani = JSON.parse(localStorage.getItem(NOTIF_CACHE_KEY) || "[]"); }
+        catch (e) { appState.notifDitangani = []; }
     }
 }
 
-function saveDismissedNotificationsMap(map) {
-    try {
-        localStorage.setItem("dismissed_notifications_map", JSON.stringify(map));
-    } catch (e) { }
+function getHandledRecord(notifId) {
+    const rec = (appState.notifDitangani || []).find(r => String(r.id) === String(notifId));
+    if (!rec) return null;
+    if (Date.now() - Number(rec.ditangani_at) >= SNOOZE_24H_MS) return null;
+    return rec;
 }
 
-function getDismissedTimestamp(notifId) {
-    const map = getDismissedNotificationsMap();
-    if (!map[notifId]) return null;
-
-    const timestamp = map[notifId];
-    const elapsed = Date.now() - timestamp;
-
-    if (elapsed >= SNOOZE_24H_MS) {
-        delete map[notifId];
-        saveDismissedNotificationsMap(map);
-        return null;
-    }
-    return timestamp;
+function saveNotifDitangani(n, extra = {}) {
+    return apiCall("setNotifDitangani", {
+        notif_id: n.id,
+        siswa_id: n.siswa.id,
+        level: n.level,
+        kategori: n.category,
+        judul: n.title,
+        ...extra
+    }, false);
 }
 
 async function dismissNotification(notifId) {
-    const map = getDismissedNotificationsMap();
-    map[notifId] = Date.now();
-    saveDismissedNotificationsMap(map);
+    const n = (appState.currentNotifications || []).find(x => String(x.id) === String(notifId));
+    if (!n) return;
+
+    const { isConfirmed, value } = await Swal.fire({
+        title: 'Tandai Sudah Ditangani?',
+        text: `${n.siswa.nama} — ${n.title}`,
+        input: 'text',
+        inputPlaceholder: 'Catatan singkat (opsional), mis. sudah menghubungi ortu',
+        inputAttributes: { maxlength: 300 },
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Tandai',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#059669'
+    });
+    if (!isConfirmed) return;
+
+    showLoading("Menyimpan...");
+    const res = await saveNotifDitangani(n, { catatan: (value || '').trim(), sumber: 'manual' });
+    hideLoading();
 
     await checkStudentNotifications();
     openNotificationModal('active');
 
-    showToast("Dipindahkan ke 'Sudah Ditangani'. Jika belum ada catatan pembinaan, akan muncul kembali dalam 24 jam.", "info");
+    if (res && res.status === "success") {
+        showToast("Dipindahkan ke 'Sudah Ditangani'. Jika belum ada catatan pembinaan, akan muncul kembali dalam 24 jam.", "info");
+    } else {
+        showToast(res?.message || "Gagal menandai notifikasi. Coba lagi.", "warning");
+    }
 }
 
 async function restoreNotification(notifId) {
-    const map = getDismissedNotificationsMap();
-    delete map[notifId];
-    saveDismissedNotificationsMap(map);
+    showLoading("Membuka kembali...");
+    const res = await apiCall("restoreNotifDitangani", { notif_id: notifId }, false);
+    hideLoading();
+
+    if (!res || res.status !== "success") {
+        showToast(res?.message || "Gagal membuka kembali notifikasi.", "warning");
+        return;
+    }
 
     await checkStudentNotifications();
     openNotificationModal('handled');
-
     showToast("Notifikasi dikembalikan ke daftar 'Perlu Tindakan'.", "info");
 }
 
-function clearStudentNotificationsOnNoteAdded(siswaId) {
-    if (!siswaId) return;
-    const map = getDismissedNotificationsMap();
-    let isUpdated = false;
+function setPendingPembinaanNotif(notifId, siswaId) {
+    pendingPembinaanNotif = notifId ? { notifId: notifId, siswaId: siswaId } : null;
+}
 
-    Object.keys(map).forEach(key => {
-        if (key.includes(String(siswaId))) {
-            delete map[key];
-            isUpdated = true;
-        }
-    });
+async function markNotifHandledByPembinaan(siswaId, pembinaanId) {
+    const p = pendingPembinaanNotif;
+    pendingPembinaanNotif = null;
+    if (!p || String(p.siswaId) !== String(siswaId)) return;
 
-    if (isUpdated) {
-        saveDismissedNotificationsMap(map);
-    }
+    const n = (appState.currentNotifications || []).find(x => String(x.id) === String(p.notifId));
+    if (!n) return;
+    await saveNotifDitangani(n, { sumber: 'pembinaan', pembinaan_id: pembinaanId });
+}
+
+function renderHandledInfo(n) {
+    const h = n.handledBy || {};
+    const isSelf = String(h.ditangani_oleh_id) === String(appState.user.id);
+    const roleLabel = h.ditangani_oleh_role === 'admin' ? 'Admin' : 'Guru';
+    const oleh = isSelf ? 'Anda' : `${escapeHtml(h.ditangani_oleh_nama || '-')} (${roleLabel})`;
+    const via = h.sumber === 'pembinaan' ? 'Ditindaklanjuti lewat catatan pembinaan' : 'Ditangani';
+    return `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fas fa-check text-[9px]"></i> ${via} oleh ${oleh} · ${formatTimeAgo(n.dismissedAt)}</span>`;
+}
+
+function renderHandledNote(n) {
+    const catatan = n.handledBy && n.handledBy.catatan;
+    if (!catatan) return '';
+    return `<p class="text-[11px] text-slate-500 italic">Catatan: ${escapeHtml(catatan)}</p>`;
 }
 
 async function checkStudentNotifications() {
@@ -224,7 +262,10 @@ async function checkStudentNotifications() {
         if (resPbn && resPbn.data) appState.pembinaan = resPbn.data;
     }
 
-    const resRekap = await apiCall("getLaporanRekap", {}, false);
+    const [resRekap] = await Promise.all([
+        apiCall("getLaporanRekap", {}, false),
+        fetchNotifDitangani()
+    ]);
     const rekapData = resRekap?.data || [];
 
     let activeList = [];
@@ -236,9 +277,9 @@ async function checkStudentNotifications() {
             return;
         }
 
-        const dismissedAt = getDismissedTimestamp(item.id);
-        if (dismissedAt) {
-            handledList.push({ ...item, dismissedAt });
+        const rec = getHandledRecord(item.id);
+        if (rec) {
+            handledList.push({ ...item, dismissedAt: Number(rec.ditangani_at), handledBy: rec });
         } else {
             activeList.push(item);
         }
@@ -493,10 +534,10 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                 <div class="p-3.5 rounded-2xl border ${getCardStyle(n.level, activeTab === 'handled')} shadow-sm space-y-2.5">
                     <div class="flex justify-between items-start gap-2">
                         <div>
-                            <div class="flex items-center gap-1.5 mb-1">
+                            <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                                 ${getLevelBadge(n.level)}
                                 <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">${escapeHtml(n.category)}</span>
-                                ${activeTab === 'handled' ? `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fas fa-check text-[9px]"></i> Ditandai ${formatTimeAgo(n.dismissedAt)}</span>` : ''}
+                                ${activeTab === 'handled' ? renderHandledInfo(n) : ''}
                             </div>
                             <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)} — <span class="text-slate-700 font-semibold">${escapeHtml(n.title)}</span></h4>
                         </div>
@@ -515,6 +556,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                     </div>
 
                     <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(n.desc)}</p>
+                    ${activeTab === 'handled' ? renderHandledNote(n) : ''}
 
                     <div class="flex items-center gap-1.5 pt-2 border-t border-slate-200/60 flex-wrap">
                         <button onclick="closeModal(); openProfilSiswa('${n.siswa.id}')" class="px-2.5 py-1.5 bg-white text-slate-700 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 flex items-center gap-1">
@@ -525,7 +567,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                         <button onclick="hubungiOrtu('${n.siswa.id}')" class="px-2.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-emerald-700 flex items-center gap-1">
                             <i class="fab fa-whatsapp"></i> WA Ortu
                         </button>
-                        <button onclick="openQuickPembinaan('${n.siswa.id}', '${escapeHtml(n.defaultPembinaan)}')" class="px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 flex items-center gap-1">
+                        <button onclick="openQuickPembinaan('${n.siswa.id}', '${escapeHtml(n.defaultPembinaan)}', '${n.id}')" class="px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 flex items-center gap-1">
                             <i class="fas fa-edit"></i> Buat Catatan Pembinaan
                         </button>
                         ` : ''}
