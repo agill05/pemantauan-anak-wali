@@ -94,7 +94,7 @@ async function handleAppLogin(e) {
     }
 
     if (res && res.status === "success") {
-        try { localStorage.setItem(LOGIN_ROLE_KEY, role); } catch (_) {  }
+        try { localStorage.setItem(LOGIN_ROLE_KEY, role); } catch (_) { }
         appState.token = res.token;
         appState.user = res.user;
         localStorage.setItem("session_anak_wali", JSON.stringify({ token: res.token, user: res.user }));
@@ -131,7 +131,7 @@ function initLoginForm() {
     form.dataset.ready = "1";
 
     let saved = null;
-    try { saved = localStorage.getItem(LOGIN_ROLE_KEY); } catch (_) {  }
+    try { saved = localStorage.getItem(LOGIN_ROLE_KEY); } catch (_) { }
     const roleEl = document.getElementById("login-role");
     if (roleEl && LOGIN_ROLE_LABEL[saved]) roleEl.value = saved;
 
@@ -442,24 +442,34 @@ function renderSidebarMenu(role) {
     const container = document.getElementById("sidebar-menu-items");
     if (!container) return;
 
-    const item = (view, icon, label) => `
+    const item = (view, icon, label, badgeId = "") => `
         <button onclick="handleSidebarNav('${view}')" class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition" data-target="${view}">
-            <i class="fas ${icon} w-5 text-center text-primary"></i> ${label}
+            <i class="fas ${icon} w-5 text-center text-primary"></i>
+            <span class="flex-1 text-left">${label}</span>
+            ${badgeId ? `<span id="${badgeId}" class="sidebar-badge"></span>` : ""}
         </button>`;
+
+    const section = (label) => `<p class="sidebar-section-label">${label}</p>`;
 
     let html = item("dashboard", "fa-home", "Beranda");
 
     if (role === "siswa") {
+        html += section("Pemantauan");
         html += item("kebiasaan", "fa-star", "7 Kebiasaan Hebat");
         html += item("karakter", "fa-quran", "Keagamaan");
         html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
     } else if (role !== "ortu") {
+        html += section("Pemantauan");
         html += item("absensi", "fa-calendar-check", "Presensi Kehadiran");
         html += item("kebiasaan", "fa-star", "7 Kebiasaan Hebat");
         html += item("karakter", "fa-quran", "Keagamaan");
         html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
-        html += item("pembinaan", "fa-user-edit", "Catatan Pembinaan");
+
+        html += section("Pembinaan");
+        html += item("pembinaan", "fa-user-edit", "Catatan Pembinaan", "sidebar-badge-pembinaan");
         html += item("siswa", "fa-users", "Data Siswa");
+
+        html += section("Lainnya");
         html += item("laporan", "fa-file-invoice", "Laporan");
         if (role === "admin") {
             html += item("admin-manage", "fa-user-cog", "Master Data");
@@ -467,6 +477,14 @@ function renderSidebarMenu(role) {
     }
 
     container.innerHTML = html;
+    updateSidebarBadge();
+}
+
+function updateSidebarBadge() {
+    const el = document.getElementById("sidebar-badge-pembinaan");
+    if (!el) return;
+    const n = appState.currentNotifications ? appState.currentNotifications.length : 0;
+    el.innerText = n > 0 ? n : "";
 }
 
 function handleSidebarNav(viewId) {

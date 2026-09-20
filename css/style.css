@@ -286,12 +286,35 @@ a:focus-visible {
     color: #cbd5e1;
 }
 
-.sidebar-nav-item {
-    color: #b7c3e0 !important;
+.sidebar-section-label {
+    padding: 14px 16px 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8fa2d6;
 }
 
-.sidebar-nav-item i {
-    color: #7f93c9 !important;
+.sidebar-badge {
+    display: inline-block;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 9999px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 20px;
+    text-align: center;
+}
+
+.sidebar-badge:empty {
+    display: none;
+}
+
+.sidebar-nav-item {
+    color: #b7c3e0 !important;
 }
 
 .sidebar-nav-item:hover {

@@ -383,6 +383,8 @@ async function checkStudentNotifications() {
             badge.classList.add("hidden");
         }
     }
+    
+    updateSidebarBadge();
 
     const statCount = document.getElementById("dash-stat-perhatian-count");
     if (statCount) {
