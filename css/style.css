@@ -1,4 +1,3 @@
-
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 :root {
@@ -62,7 +61,7 @@ button:active {
 }
 
 .pwd-toggle-btn:active{
-    transform: none;
+    transform: translateY(-50%);
 }
 
 body:not([data-role]) [data-role-visible]:not(.view-section),
