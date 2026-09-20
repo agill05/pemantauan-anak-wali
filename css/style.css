@@ -57,9 +57,11 @@ button:active {
     border-radius: 0.75rem;
 }
 
-.pwd-toggle-btn,
-.pwd-toggle-btn:active {
+.pwd-toggle-btn {
     transition: none;
+}
+
+.pwd-toggle-btn:active{
     transform: none;
 }
 
