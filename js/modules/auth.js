@@ -342,7 +342,7 @@ function handleLogout(force = false) {
         localStorage.removeItem("cache_appState_full");
         localStorage.removeItem("notif_ditangani_cache");
         localStorage.removeItem("dismissed_notifications_map");
-        localStorage.removeIrem("login_last_role");
+        localStorage.removeItem("login_last_role");
         appState = { token: null, user: null, kelas: [], guru: [], siswa: [], myStudents: [] };
         location.reload();
     };
