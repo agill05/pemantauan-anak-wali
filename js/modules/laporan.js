@@ -175,8 +175,6 @@ function buildLaporanRekapHtml(data) {
     `;
 }
 
-// "Cetak PDF" — render ke area cetak lalu buka dialog Print (user pilih printer fisik
-// atau "Save as PDF" manual di dialog browser).
 function printLaporanRekap() {
     const data = getFilteredLaporanData();
     if (data.length === 0) {
@@ -195,8 +193,6 @@ function printLaporanRekap() {
     }, 150);
 }
 
-// "Eksport PDF" — render ke elemen tersembunyi lalu convert jadi file .pdf beneran
-// pakai html2pdf.js, langsung terunduh tanpa dialog Print.
 function exportLaporanPDF() {
     const data = getFilteredLaporanData();
     if (data.length === 0) {
