@@ -1,3 +1,4 @@
+
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 :root {
@@ -54,6 +55,12 @@ button:active {
     align-items: center;
     justify-content: center;
     border-radius: 0.75rem;
+}
+
+.pwd-toggle-btn,
+.pwd-toggle-btn:active {
+    transition: none;
+    transform: none;
 }
 
 body:not([data-role]) [data-role-visible]:not(.view-section),
