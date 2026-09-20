@@ -87,19 +87,18 @@ async function handleAppLogin(e) {
 
     let res = null;
     try {
-        // false: loader penuh layar dimatikan, status ada di tombol
         res = await apiCall("login", { role, username, password }, false);
     } catch (err) {
         console.error("Login gagal:", err);
     }
 
     if (res && res.status === "success") {
-        try { localStorage.setItem(LOGIN_ROLE_KEY, role); } catch (_) { /* storage penuh/diblokir: abaikan */ }
+        try { localStorage.setItem(LOGIN_ROLE_KEY, role); } catch (_) {  }
         appState.token = res.token;
         appState.user = res.user;
         localStorage.setItem("session_anak_wali", JSON.stringify({ token: res.token, user: res.user }));
         try {
-            await setupAppSession(); // tombol tetap "Memeriksa…" sampai view login disembunyikan
+            await setupAppSession();
         } catch (err) {
             console.error("setupAppSession gagal:", err);
             loginInFlight = false;
@@ -130,13 +129,11 @@ function initLoginForm() {
     if (!form || form.dataset.ready) return;
     form.dataset.ready = "1";
 
-    // Jenis pengguna terakhir dipakai ulang; kosong kalau belum pernah masuk.
     let saved = null;
-    try { saved = localStorage.getItem(LOGIN_ROLE_KEY); } catch (_) { /* abaikan */ }
+    try { saved = localStorage.getItem(LOGIN_ROLE_KEY); } catch (_) {  }
     const roleEl = document.getElementById("login-role");
     if (roleEl && LOGIN_ROLE_LABEL[saved]) roleEl.value = saved;
 
-    // Peringatan Caps Lock
     const pwd = document.getElementById("login-password");
     const caps = document.getElementById("login-caps");
     const updateCaps = ev => {
@@ -663,9 +660,6 @@ function openEditProfilModal() {
     document.getElementById("modal-container")?.classList.remove("hidden");
 }
 
-/**
- * Preview Foto secara lokal sebelum diunggah
- */
 function previewSelectedPhoto(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -684,9 +678,6 @@ function previewSelectedPhoto(event) {
     reader.readAsDataURL(file);
 }
 
-/**
- * Hapus Foto Profil (hapus file di Drive + kosongkan kolom foto)
- */
 async function hapusFotoProfil() {
     const confirm = await Swal.fire({
         icon: 'warning',
