@@ -1,49 +1,185 @@
-function selectLoginRole(role) {
+const LOGIN_ROLE_KEY = "login_last_role";
+const LOGIN_ROLES = ["siswa", "guru", "admin"];
+const LOGIN_ROLE_LABEL = { siswa: "Siswa", guru: "Guru", admin: "Admin" };
+let loginInFlight = false;
+
+function selectLoginRole(role, { focus = false } = {}) {
+    if (!LOGIN_ROLES.includes(role)) return;
     const roleInput = document.getElementById("login-role");
     if (roleInput) roleInput.value = role;
 
-    document.querySelectorAll(".login-role-btn").forEach(btn => {
-        btn.classList.remove("selected");
-        btn.setAttribute("aria-checked", "false");
+    LOGIN_ROLES.forEach(r => {
+        const btn = document.getElementById(`role-btn-${r}`);
+        if (!btn) return;
+        const active = r === role;
+        btn.setAttribute("aria-checked", active ? "true" : "false");
+        btn.tabIndex = active ? 0 : -1; // roving tabindex: satu tab stop, panah untuk pindah
+        if (active && focus) btn.focus();
     });
-    const selectedBtn = document.getElementById(`role-btn-${role}`);
-    if (selectedBtn) {
-        selectedBtn.classList.add("selected");
-        selectedBtn.setAttribute("aria-checked", "true");
+    clearLoginError();
+}
+
+function onLoginRoleKeydown(e) {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const current = LOGIN_ROLES.indexOf(document.getElementById("login-role").value);
+    const next = LOGIN_ROLES[(current + step + LOGIN_ROLES.length) % LOGIN_ROLES.length];
+    selectLoginRole(next, { focus: true });
+}
+
+function showLoginError(message, invalidIds = []) {
+    const box = document.getElementById("login-error");
+    if (!box) return;
+    box.textContent = message;
+    ["login-username", "login-password"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (invalidIds.includes(id)) el.setAttribute("aria-invalid", "true");
+        else el.removeAttribute("aria-invalid");
+    });
+}
+
+function clearLoginError() {
+    const box = document.getElementById("login-error");
+    if (box) box.textContent = "";
+    ["login-username", "login-password"].forEach(id => {
+        document.getElementById(id)?.removeAttribute("aria-invalid");
+    });
+}
+
+function setLoginBusy(busy) {
+    const btn = document.getElementById("btn-submit-login");
+    const label = document.getElementById("btn-login-label");
+    if (btn) {
+        btn.disabled = busy;
+        btn.setAttribute("aria-busy", busy ? "true" : "false");
     }
+    if (label) label.textContent = busy ? "Memeriksa…" : "Masuk";
+}
+
+function toggleLoginPassword() {
+    const input = document.getElementById("login-password");
+    const btn = document.getElementById("login-toggle");
+    if (!input || !btn) return;
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    btn.textContent = show ? "Sembunyikan" : "Tampilkan";
 }
 
 async function handleAppLogin(e) {
     e.preventDefault();
-    const role = document.getElementById("login-role") ? document.getElementById("login-role").value : "";
-    const username = document.getElementById("login-username").value.trim();
-    const password = document.getElementById("login-password").value;
+    if (loginInFlight) return;
+
+    const role = document.getElementById("login-role")?.value || "";
+    const usernameEl = document.getElementById("login-username");
+    const passwordEl = document.getElementById("login-password");
+    const username = usernameEl.value.trim();
+    const password = passwordEl.value;
+
+    clearLoginError();
 
     if (!role) {
-        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih role pengguna terlebih dahulu.', confirmButtonColor: '#2563eb' });
+        showLoginError("Pilih peran: Siswa, Guru, atau Admin.");
+        document.getElementById("role-btn-siswa")?.focus();
+        return;
+    }
+    if (!username) {
+        showLoginError("Isi ID atau username.", ["login-username"]);
+        usernameEl.focus();
+        return;
+    }
+    if (!password) {
+        showLoginError("Isi kata sandi.", ["login-password"]);
+        passwordEl.focus();
+        return;
+    }
+    if (!navigator.onLine) {
+        showLoginError("Tidak ada koneksi internet. Sambungkan dulu, lalu coba lagi.");
         return;
     }
 
-    const res = await apiCall("login", { role, username, password }, true);
+    loginInFlight = true;
+    setLoginBusy(true);
+
+    let res = null;
+    try {
+        // false: loader penuh layar dimatikan, status ada di tombol
+        res = await apiCall("login", { role, username, password }, false);
+    } catch (err) {
+        console.error("Login gagal:", err);
+    }
+
     if (res && res.status === "success") {
+        try { localStorage.setItem(LOGIN_ROLE_KEY, role); } catch (_) { /* storage penuh/diblokir: abaikan */ }
         appState.token = res.token;
         appState.user = res.user;
         localStorage.setItem("session_anak_wali", JSON.stringify({ token: res.token, user: res.user }));
-        await setupAppSession();
-    } else if (res && res.status === "error") {
-        Swal.fire({
-            icon: 'error',
-            title: 'Gagal Masuk',
-            text: res.message || 'Username atau kata sandi yang Anda masukkan salah.',
-            confirmButtonColor: '#2563eb'
-        });
-
-        const pwdInput = document.getElementById("login-password");
-        if (pwdInput) {
-            pwdInput.value = "";
-            pwdInput.focus();
+        try {
+            await setupAppSession(); // tombol tetap "Memeriksa…" sampai view login disembunyikan
+        } catch (err) {
+            console.error("setupAppSession gagal:", err);
+            loginInFlight = false;
+            setLoginBusy(false);
+            showLoginError("Berhasil masuk, tetapi aplikasi gagal dimuat. Coba masuk lagi.");
         }
+        return;
     }
+
+    loginInFlight = false;
+    setLoginBusy(false);
+
+    if (res) {
+        showLoginError(
+            res.message || `Username atau kata sandi salah. Cek juga peran yang dipilih (${LOGIN_ROLE_LABEL[role]}).`,
+            ["login-username", "login-password"]
+        );
+        passwordEl.value = "";
+        passwordEl.focus();
+    } else {
+        showLoginError("Tidak bisa terhubung ke server. Periksa internet, lalu coba lagi.");
+    }
+}
+
+function initLoginForm() {
+    const form = document.getElementById("form-login");
+    if (!form || form.dataset.ready) return;
+    form.dataset.ready = "1";
+
+    // Peran terakhir dipakai ulang; default Siswa. Tidak ada langkah wajib.
+    let saved = null;
+    try { saved = localStorage.getItem(LOGIN_ROLE_KEY); } catch (_) { /* abaikan */ }
+    selectLoginRole(LOGIN_ROLES.includes(saved) ? saved : "siswa");
+
+    document.querySelector(".lg-roles")?.addEventListener("keydown", onLoginRoleKeydown);
+
+    // Peringatan Caps Lock
+    const pwd = document.getElementById("login-password");
+    const caps = document.getElementById("login-caps");
+    const updateCaps = ev => {
+        if (caps && typeof ev.getModifierState === "function") caps.hidden = !ev.getModifierState("CapsLock");
+    };
+    pwd?.addEventListener("keydown", updateCaps);
+    pwd?.addEventListener("keyup", updateCaps);
+    pwd?.addEventListener("blur", () => { if (caps) caps.hidden = true; });
+
+    // Error hilang saat pengguna mulai mengetik ulang
+    ["login-username", "login-password"].forEach(id => {
+        document.getElementById(id)?.addEventListener("input", clearLoginError);
+    });
+
+    // Login butuh internet; setupNetworkStatusListeners() baru jalan setelah login
+    const notice = document.getElementById("login-offline");
+    const syncOnline = () => { if (notice) notice.hidden = navigator.onLine; };
+    window.addEventListener("online", syncOnline);
+    window.addEventListener("offline", syncOnline);
+    syncOnline();
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initLoginForm);
+} else {
+    initLoginForm();
 }
 
 async function setupAppSession() {

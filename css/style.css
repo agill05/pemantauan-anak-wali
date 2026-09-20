@@ -87,32 +87,6 @@ html.has-session #bottom-nav.hidden {
     display: flex !important;
 }
 
-.login-card {
-    margin: 0 auto;
-    backdrop-filter: blur(16px);
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.08);
-}
-
-.login-role-btn {
-    background: #f8fafc;
-    border: 1.5px solid #e2e8f0;
-    color: #64748b;
-}
-
-.login-role-btn:hover {
-    border-color: #cbd5e1;
-    background: #ffffff;
-}
-
-.login-role-btn.selected {
-    border-color: var(--primary) !important;
-    background-color: var(--primary-light) !important;
-    color: var(--primary) !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
 #main-header {
     background: rgba(37, 99, 235, 0.95) !important;
     backdrop-filter: blur(12px);
@@ -645,23 +619,6 @@ body.dark .sidebar-nav-item:hover {
     color: #60a5fa !important;
 }
 
-body.dark .login-card {
-    background: rgba(15, 23, 42, 0.95) !important;
-    border-color: #334155 !important;
-}
-
-body.dark .login-role-btn {
-    background: #0f172a !important;
-    border-color: #334155 !important;
-    color: #94a3b8 !important;
-}
-
-body.dark .login-role-btn.selected {
-    background: #1e3a8a !important;
-    border-color: #3b82f6 !important;
-    color: #93c5fd !important;
-}
-
 body.dark #modal-content-box {
     background-color: #1e293b !important;
     color: #f8fafc !important;
@@ -711,26 +668,430 @@ body.dark .text-slate-400 {
     }
 }
 
-.login-brand-panel {
-    background: linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 55%, #2563eb 100%);
+#view-login.active {
+    padding-bottom: 0 !important;
 }
 
-.login-photo-panel {
-    background-image: url('../assets/img/background-sekolah.jpg');
-    background-size: cover;
-    background-position: center;
+/* ---------- Login (tampilan baru) ---------- */
+/* Fade geser bawaan .view-section dimatikan; login hanya fade foto sekali. */
+#view-login.active {
+    animation: none;
 }
 
-.login-photo-overlay {
-    background: linear-gradient(160deg, rgba(15, 23, 42, 0.55) 0%, rgba(30, 58, 138, 0.35) 60%, rgba(15, 23, 42, 0.15) 100%);
+.lg-shell {
+    --lg-primary: var(--primary, #2563eb);
+    --lg-primary-hover: var(--primary-hover, #1d4ed8);
+    --lg-ink: #0f172a;
+    --lg-muted: #475569;
+    --lg-line: #7b8ba1;
+    --lg-field: #f8fafc;
+    --lg-track: #eef2f9;
+    --lg-danger: #b42318;
+    --lg-danger-bg: #fef3f2;
+
+    flex: 1;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(440px, 34rem);
+    background: #ffffff;
+    color: var(--lg-ink);
+    font-family: inherit;
 }
 
-@media (min-width: 1024px) {
-    .login-photo-overlay {
-        background: linear-gradient(90deg, rgba(15, 23, 42, 0.12) 0%, rgba(15, 23, 42, 0.05) 40%, rgba(15, 23, 42, 0.02) 100%);
+.lg-shell *,
+.lg-shell *::before,
+.lg-shell *::after {
+    box-sizing: border-box;
+}
+
+.lg-shell button,
+.lg-shell input {
+    font-family: inherit;
+}
+
+/* ---------- Foto sekolah ---------- */
+.lg-photo {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    background: #1e3a8a;
+}
+
+.lg-photo-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    animation: lg-photo-in 0.9s ease-out both;
+}
+
+.lg-photo-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(10, 20, 50, 0.86) 0%, rgba(10, 20, 50, 0.4) 40%, rgba(10, 20, 50, 0) 68%);
+}
+
+.lg-brand {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 36rem;
+    padding: 2.5rem;
+    color: #ffffff;
+}
+
+.lg-logo {
+    flex: none;
+    width: 64px;
+    height: 64px;
+    padding: 6px;
+    object-fit: contain;
+    background: #ffffff;
+    border-radius: 16px;
+}
+
+.lg-school {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.lg-tagline {
+    margin: 0.35rem 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ---------- Panel form ---------- */
+.lg-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem clamp(2rem, 5vw, 4rem);
+    background: #ffffff;
+}
+
+.lg-form-wrap {
+    width: 100%;
+    max-width: 22.5rem;
+}
+
+.lg-title {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+.lg-sub {
+    margin: 0.5rem 0 1.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--lg-muted);
+}
+
+.lg-field {
+    margin-bottom: 1.125rem;
+}
+
+.lg-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--lg-ink);
+}
+
+/* Role: segmented control */
+.lg-roles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--lg-track);
+    border-radius: 14px;
+}
+
+.lg-role {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 44px;
+    border: 1.5px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+    color: var(--lg-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.lg-role:hover {
+    color: var(--lg-ink);
+}
+
+.lg-role[aria-checked="true"] {
+    background: #ffffff;
+    border-color: var(--lg-primary);
+    color: var(--lg-primary);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.lg-role:focus-visible,
+.lg-toggle:focus-visible,
+.lg-submit:focus-visible {
+    outline: 3px solid var(--lg-primary);
+    outline-offset: 2px;
+}
+
+/* Input */
+.lg-input {
+    display: block;
+    width: 100%;
+    height: 48px;
+    padding: 0 0.9rem;
+    border: 1.5px solid var(--lg-line);
+    border-radius: 12px;
+    background: var(--lg-field);
+    color: var(--lg-ink);
+    font-size: 1rem; /* 16px: iOS tidak zoom saat fokus */
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+}
+
+.lg-input:hover {
+    border-color: #5b6b82;
+}
+
+.lg-input:focus,
+.lg-input:focus-visible {
+    outline: 2px solid transparent; /* tetap terlihat di Windows High Contrast */
+    outline-offset: 2px;
+    border-color: var(--lg-primary);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+.lg-input[aria-invalid="true"] {
+    border-color: var(--lg-danger);
+}
+
+.lg-pass {
+    position: relative;
+}
+
+.lg-pass .lg-input {
+    padding-right: 7.5rem;
+}
+
+.lg-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.35rem;
+    transform: translateY(-50%);
+    min-height: 40px;
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--lg-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.lg-toggle:hover {
+    background: var(--primary-light, #eff6ff);
+}
+
+.lg-hint {
+    margin: 0.4rem 0 0;
+    font-size: 0.8125rem;
+    color: #92400e;
+}
+
+.lg-hint[hidden],
+.lg-notice[hidden] {
+    display: none;
+}
+
+/* Error inline: teks yang menjelaskan, bukan warna saja */
+.lg-error {
+    margin: 0 0 1rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid #fecdca;
+    border-left: 4px solid var(--lg-danger);
+    border-radius: 12px;
+    background: var(--lg-danger-bg);
+    color: #7a271a;
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.lg-error:empty {
+    display: none;
+}
+
+.lg-notice {
+    margin: 0 0 1.25rem;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    background: #fffbeb;
+    color: #78350f;
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+/* Tombol kirim */
+.lg-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 50px;
+    margin-top: 0.5rem;
+    border: 0;
+    border-radius: 12px;
+    background: var(--lg-primary);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.1s;
+}
+
+.lg-submit:hover {
+    background: var(--lg-primary-hover);
+}
+
+.lg-submit:active {
+    transform: scale(0.99);
+}
+
+.lg-submit:disabled {
+    cursor: progress;
+    opacity: 0.85;
+}
+
+.lg-spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: lg-spin 0.7s linear infinite;
+}
+
+.lg-submit[aria-busy="true"] .lg-spinner {
+    display: inline-block;
+}
+
+/* Bantuan */
+.lg-help {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--lg-muted);
+}
+
+.lg-help p {
+    margin: 0;
+}
+
+.lg-help strong {
+    font-weight: 700;
+    color: var(--lg-ink);
+}
+
+.lg-copy {
+    margin: 1.5rem 0 0;
+    font-size: 0.8125rem;
+    color: #64748b;
+}
+
+@keyframes lg-photo-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes lg-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---------- Mobile / tablet kecil: foto jadi strip di atas ---------- */
+@media (max-width: 899px) {
+    .lg-shell {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .lg-photo {
+        flex: none;
+        height: 168px;
+    }
+
+    .lg-brand {
+        padding: 1rem 1.25rem 2.25rem;
+        gap: 0.75rem;
+    }
+
+    .lg-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+    }
+
+    .lg-school {
+        font-size: 1.0625rem;
+    }
+
+    .lg-tagline {
+        display: none;
+    }
+
+    .lg-panel {
+        flex: 1;
+        align-items: flex-start;
+        position: relative;
+        margin-top: -20px;
+        padding: 1.75rem 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px));
+        border-radius: 22px 22px 0 0;
+    }
+
+    .lg-form-wrap {
+        max-width: 26rem;
     }
 }
 
-#view-login.active {
-    padding-bottom: 0 !important;
+@media (prefers-reduced-motion: reduce) {
+    .lg-photo-img {
+        animation: none;
+    }
+
+    .lg-role,
+    .lg-input,
+    .lg-submit {
+        transition: none;
+    }
+
+    .lg-spinner {
+        animation-duration: 1.6s;
+    }
 }

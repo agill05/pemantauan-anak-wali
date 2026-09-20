@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -115,97 +115,86 @@
     </div>
 
     <div id="view-login" class="view-section active fixed inset-0 z-50 min-h-screen flex overflow-y-auto">
-        <!-- Panel kiri: brand + welcome text, cuma tampil di layar besar -->
-        <div class="hidden lg:flex lg:w-[40%] shrink-0 relative flex-col justify-center px-12 py-10 login-brand-panel text-white overflow-hidden">
-            <div class="relative z-10 max-w-sm">
-                <img src="assets/img/logo-sekolah.png" alt="Logo SMPN 1 Talaga Jaya" class="w-24 h-24 rounded-2xl bg-white object-contain p-2 mb-8 shadow-lg">
-                <h2 class="text-4xl font-black leading-tight mb-2">Selamat Datang<br>di <span class="text-sky-300">Sistem Sekolah</span></h2>
-                <p class="text-lg text-blue-100 mb-4">SMP Negeri 1 Talaga Jaya</p>
-                <div class="h-1 w-16 bg-sky-300 rounded-full mb-4"></div>
-                <p class="text-sm text-blue-100/90 max-w-xs">Bersama membangun pendidikan yang lebih baik untuk masa depan.</p>
-            </div>
-        </div>
+        <div class="lg-shell">
 
-        <!-- Panel kanan: foto sekolah jadi background, kartu login mengambang di atasnya -->
-        <div class="flex-1 relative flex items-center justify-center p-4 py-10 login-photo-panel">
-            <div class="absolute inset-0 login-photo-overlay"></div>
-            <div class="relative z-10 w-full max-w-sm">
-                <div class="text-center mb-8 lg:hidden">
-                    <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20 mb-4 overflow-hidden border border-slate-100">
-                        <img src="assets/img/logo-sekolah.png" alt="Logo SMPN 1 Talaga Jaya" class="w-full h-full object-contain p-2">
+            <aside class="lg-photo" aria-label="SMP Negeri 1 Talaga Jaya">
+                <img class="lg-photo-img" src="assets/img/background-sekolah.jpg" alt="" width="1600" height="1067"
+                    fetchpriority="high" decoding="async" onerror="this.style.display='none'">
+                <div class="lg-photo-shade"></div>
+                <div class="lg-brand">
+                    <img class="lg-logo" src="assets/img/logo-sekolah.png" alt="Logo SMP Negeri 1 Talaga Jaya"
+                        width="64" height="64">
+                    <div>
+                        <p class="lg-school">SMP Negeri 1 Talaga Jaya</p>
+                        <p class="lg-tagline">Presensi, 7 Kebiasaan Hebat, hafalan, dan pembinaan siswa dalam satu tempat.</p>
                     </div>
-                    <h1 class="text-2xl font-black text-white drop-shadow mb-1">Anak Wali</h1>
-                    <p class="text-sm text-blue-50 drop-shadow">SMP Negeri 1 Talaga Jaya</p>
                 </div>
+            </aside>
 
-                <div class="login-card bg-surface p-6 rounded-3xl border border-slate-100 shadow-xl">
-                    <div class="text-center mb-5 hidden lg:block">
-                        <img src="assets/img/logo-sekolah.png" alt="Logo SMPN 1 Talaga Jaya" class="w-16 h-16 object-contain mx-auto mb-3">
-                        <h1 class="text-xl font-black text-slate-800 mb-0.5">Anak Wali</h1>
-                        <p class="text-xs text-slate-500">SMP Negeri 1 Talaga Jaya</p>
-                        <div class="h-0.5 w-10 bg-primary rounded-full mx-auto mt-2"></div>
-                    </div>
-                    <form id="form-login" onsubmit="handleAppLogin(event)" class="space-y-4">
-                    <div>
-                        <span class="field-label block mb-2 text-xs font-bold text-slate-600 uppercase" id="login-role-label">Masuk
-                            sebagai</span>
-                        <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="login-role-label">
-                            <button type="button" onclick="selectLoginRole('siswa')" id="role-btn-siswa"
-                                role="radio" aria-checked="false"
-                                class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
-                                <i class="fas fa-user-graduate block text-base mb-1"></i> Siswa
-                            </button>
-                            <button type="button" onclick="selectLoginRole('guru')" id="role-btn-guru"
-                                role="radio" aria-checked="false"
-                                class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
-                                <i class="fas fa-chalkboard-teacher block text-base mb-1"></i> Guru
-                            </button>
-                            <button type="button" onclick="selectLoginRole('admin')" id="role-btn-admin"
-                                role="radio" aria-checked="false"
-                                class="login-role-btn py-3 rounded-xl border text-xs font-bold border-slate-200 text-slate-500 hover:border-primary transition">
-                                <i class="fas fa-user-shield block text-base mb-1"></i> Admin
-                            </button>
+            <main class="lg-panel">
+                <div class="lg-form-wrap">
+                    <h1 class="lg-title">Masuk</h1>
+                    <p class="lg-sub">Gunakan akun yang diberikan sekolah.</p>
+
+                    <p class="lg-notice" id="login-offline" role="status" hidden>
+                        Tidak ada koneksi internet. Masuk butuh internet.
+                    </p>
+
+                    <form id="form-login" onsubmit="handleAppLogin(event)" novalidate>
+                        <div class="lg-field">
+                            <span class="lg-label" id="login-role-label">Masuk sebagai</span>
+                            <div class="lg-roles" role="radiogroup" aria-labelledby="login-role-label">
+                                <button type="button" id="role-btn-siswa" class="lg-role" role="radio"
+                                    aria-checked="false" tabindex="-1" onclick="selectLoginRole('siswa')">
+                                    <i class="fas fa-user-graduate" aria-hidden="true"></i><span>Siswa</span>
+                                </button>
+                                <button type="button" id="role-btn-guru" class="lg-role" role="radio"
+                                    aria-checked="false" tabindex="-1" onclick="selectLoginRole('guru')">
+                                    <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i><span>Guru</span>
+                                </button>
+                                <button type="button" id="role-btn-admin" class="lg-role" role="radio"
+                                    aria-checked="false" tabindex="-1" onclick="selectLoginRole('admin')">
+                                    <i class="fas fa-user-shield" aria-hidden="true"></i><span>Admin</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="login-role" value="">
                         </div>
-                        <input type="hidden" id="login-role" value="" required>
-                    </div>
 
-                    <div>
-                        <label for="login-username" class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">ID /
-                            Username</label>
-                        <div class="relative flex items-center">
-                            <i class="fas fa-id-card absolute left-3.5 text-slate-400"></i>
-                            <input type="text" id="login-username"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
-                                placeholder="Masukkan Username" required>
+                        <div class="lg-field">
+                            <label class="lg-label" for="login-username">ID atau username</label>
+                            <input class="lg-input" type="text" id="login-username" name="username"
+                                autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+                                enterkeyhint="next" aria-describedby="login-error">
                         </div>
-                    </div>
 
-                    <div>
-                        <label for="login-password" class="field-label block mb-1.5 text-xs font-bold text-slate-600 uppercase">Kata
-                            Sandi</label>
-                        <div class="relative flex items-center">
-                            <i class="fas fa-lock absolute left-3.5 text-slate-400"></i>
-                            <input type="password" id="login-password"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
-                                placeholder="••••••••" required>
-                            <button type="button" class="absolute right-3.5 text-slate-400"
-                                onclick="togglePasswordVisibility('login-password')"
-                                aria-label="Tampilkan/sembunyikan kata sandi">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                        <div class="lg-field">
+                            <label class="lg-label" for="login-password">Kata sandi</label>
+                            <div class="lg-pass">
+                                <input class="lg-input" type="password" id="login-password" name="password"
+                                    autocomplete="current-password" enterkeyhint="go"
+                                    aria-describedby="login-caps login-error">
+                                <button type="button" class="lg-toggle" id="login-toggle" aria-controls="login-password"
+                                    onclick="toggleLoginPassword()">Tampilkan</button>
+                            </div>
+                            <p class="lg-hint" id="login-caps" hidden>Caps Lock aktif.</p>
                         </div>
-                    </div>
 
-                    <button type="submit" id="btn-submit-login"
-                        class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-xl mt-2 active:scale-[0.98] transition shadow-md shadow-blue-500/30 flex justify-center items-center gap-2">
-                        <span>Masuk Aplikasi</span>
-                        <i class="fas fa-arrow-right text-xs"></i>
-                    </button>
-                </form>
+                        <div class="lg-error" id="login-error" role="alert"></div>
+
+                        <button type="submit" id="btn-submit-login" class="lg-submit" aria-busy="false">
+                            <span class="lg-spinner" aria-hidden="true"></span>
+                            <span id="btn-login-label">Masuk</span>
+                        </button>
+                    </form>
+
+                    <div class="lg-help">
+                        <p><strong>Orang tua?</strong> Buka tautan akses dari wali kelas. Tautan berlaku 15 menit, tanpa akun.</p>
+                        <p><strong>Lupa kata sandi?</strong> Hubungi admin sekolah.</p>
+                    </div>
+                    <p class="lg-copy">© 2026 SMP Negeri 1 Talaga Jaya</p>
                 </div>
-                <p class="text-center text-xs text-white/80 drop-shadow mt-6 lg:text-slate-400 lg:drop-shadow-none">© 2026 SMP Negeri 1 Talaga Jaya. All rights reserved.
-                </p>
-            </div>
+            </main>
+
         </div>
     </div>
 
