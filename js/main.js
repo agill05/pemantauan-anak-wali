@@ -1,3 +1,4 @@
+
 function switchView(viewId) {
     if (pendingKebiasaanQueue && pendingKebiasaanQueue.size > 0) {
         flushKebiasaanQueue();
@@ -166,23 +167,15 @@ function toggleDarkMode() {
     const nextTheme = isDark ? "light" : "dark";
     applyTheme(nextTheme);
     localStorage.setItem("app_theme", nextTheme);
-    showToast(nextTheme === "dark" ? "Mode Gelap diaktifkan 🌙" : "Mode Terang diaktifkan ☀️");
 }
 
 function applyTheme(theme) {
-    const icon = document.getElementById("theme-toggle-icon");
     if (theme === "dark") {
         document.documentElement.classList.add("dark");
         document.body.classList.add("dark");
-        if (icon) {
-            icon.className = "fas fa-sun text-amber-300 text-base";
-        }
     } else {
         document.documentElement.classList.remove("dark");
         document.body.classList.remove("dark");
-        if (icon) {
-            icon.className = "fas fa-moon text-base";
-        }
     }
 }
 

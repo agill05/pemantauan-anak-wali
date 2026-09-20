@@ -167,7 +167,12 @@ function openModalGuru(id = null) {
             </div>
             <div>
                 <label for="m-guru-pwd" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD ${g ? '(Kosongkan jika tidak diganti)' : '(Opsional)'}</label>
-                <input type="password" id="m-guru-pwd" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="${g ? '' : 'Kosongkan untuk pakai password default'}">
+                <div class="relative">
+                    <input type="password" id="m-guru-pwd" class="w-full bg-slate-50 border p-2.5 pr-9 rounded-xl text-xs outline-none" placeholder="${g ? '' : 'Kosongkan untuk pakai password default'}">
+                    <button type="button" onclick="togglePasswordVisibility('m-guru-pwd', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
                 <p class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 mt-1.5 flex items-start gap-1.5">
                     <i class="fas fa-triangle-exclamation mt-0.5"></i>
                     <span>Jika dikosongkan, password akan diset otomatis ke <b>guru123</b>. Sarankan pengguna segera menggantinya — sistem akan memaksa ganti password saat login pertama.</span>

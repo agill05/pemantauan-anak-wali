@@ -363,11 +363,21 @@ function showForcePasswordChangeModal() {
         <form onsubmit="submitForcePasswordChange(event)" class="space-y-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
             <div>
                 <label for="force-pwd-old" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD DEFAULT SAAT INI</label>
-                <input type="password" id="force-pwd-old" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
+                <div class="relative">
+                    <input type="password" id="force-pwd-old" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required>
+                    <button type="button" onclick="togglePasswordVisibility('force-pwd-old', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
             <div>
                 <label for="force-pwd-new" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD BARU (MIN. 6 KARAKTER)</label>
-                <input type="password" id="force-pwd-new" minlength="6" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
+                <div class="relative">
+                    <input type="password" id="force-pwd-new" minlength="6" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required>
+                    <button type="button" onclick="togglePasswordVisibility('force-pwd-new', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
             <button type="submit" id="btn-force-pwd" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan & Lanjutkan</button>
         </form>
@@ -726,8 +736,18 @@ function openUserSettingsModal() {
             ${user.role !== 'ortu' ? `
             <form onsubmit="changePasswordForm(event)" class="space-y-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>
-                <input type="password" id="m-pwd-old" placeholder="Kata sandi lama" aria-label="Kata sandi lama" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required>
-                <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" aria-label="Kata sandi baru" class="w-full bg-white border p-2.5 rounded-xl text-xs outline-none" required minlength="6">
+                <div class="relative">
+                    <input type="password" id="m-pwd-old" placeholder="Kata sandi lama" aria-label="Kata sandi lama" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required>
+                    <button type="button" onclick="togglePasswordVisibility('m-pwd-old', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" aria-label="Kata sandi baru" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required minlength="6">
+                    <button type="button" onclick="togglePasswordVisibility('m-pwd-new', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
                 <button type="submit" id="btn-change-pwd" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-900 transition">Update Kata Sandi</button>
             </form>` : ''}
 

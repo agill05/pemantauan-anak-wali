@@ -1,3 +1,4 @@
+
 function escapeHtml(str) {
     if (str === null || str === undefined) return "";
     return String(str)
@@ -42,9 +43,15 @@ function renderSkeleton(containerId, count = 3) {
     `).join('');
 }
 
-function togglePasswordVisibility(inputId) {
+function togglePasswordVisibility(inputId, btnEl) {
     const el = document.getElementById(inputId);
-    if (el) el.type = el.type === 'password' ? 'text' : 'password';
+    if (!el) return;
+    const show = el.type === 'password';
+    el.type = show ? 'text' : 'password';
+    if (btnEl) {
+        const icon = btnEl.querySelector('i');
+        if (icon) icon.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+    }
 }
 
 function getTimeWITA24() {
