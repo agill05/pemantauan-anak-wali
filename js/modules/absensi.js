@@ -216,10 +216,6 @@ async function saveBatchAbsensiForm(event) {
     }
 }
 
-/**
- * Mengubah status seluruh siswa di formulir presensi secara serentak (Quick Action).
- * @param {'H'|'I'|'S'|'A'|'T'} targetStatus 
- */
 function setAllAbsensiStatus(targetStatus) {
     const selects = document.querySelectorAll(".absensi-select-item");
     if (!selects || selects.length === 0) return;
@@ -229,14 +225,11 @@ function setAllAbsensiStatus(targetStatus) {
     });
 
     updateLiveAbsensiStats();
-    
+
     const labelMap = { 'H': 'Hadir', 'I': 'Izin', 'S': 'Sakit', 'A': 'Alpa', 'T': 'Terlambat' };
     showToast(`Semua siswa diatur menjadi: ${labelMap[targetStatus] || targetStatus}`);
 }
 
-/**
- * Menghitung ulang statistik kehadiran di header absensi secara live saat form diubah.
- */
 function updateLiveAbsensiStats() {
     const selects = document.querySelectorAll(".absensi-select-item");
     if (!selects || selects.length === 0) return;

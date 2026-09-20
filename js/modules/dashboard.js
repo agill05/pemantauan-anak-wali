@@ -424,7 +424,7 @@ async function checkStudentNotifications() {
             badge.classList.add("hidden");
         }
     }
-    
+
     updateSidebarBadge();
 
     const statCount = document.getElementById("dash-stat-perhatian-count");
@@ -507,18 +507,18 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                 </select>
             </div>
             <div class="flex bg-slate-100 p-1 rounded-xl gap-1">
-                <button onclick="openNotificationModal('active', '${selectedKelasId}')" 
+                <button onclick="openNotificationModal('active', '${selectedKelasId}')"
                     class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
                     Perlu Tindakan (${activeList.length})
                 </button>
-                <button onclick="openNotificationModal('handled', '${selectedKelasId}')" 
+                <button onclick="openNotificationModal('handled', '${selectedKelasId}')"
                     class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'handled' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
                     Sudah Ditangani (${handledList.length})
                 </button>
             </div>
         </div>
         ` : ''}
-        
+
         <div class="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
             ${currentList.length === 0 ? `
                 <div class="empty-state">

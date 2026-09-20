@@ -507,10 +507,9 @@ function openUserSettingsModal() {
         </div>
 
         <div class="flex flex-col space-y-3 w-full">
-            <!-- 1. Kartu Profil & Tombol Edit -->
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100 gap-2 w-full">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <img src="${user.foto || getInitialsAvatar(user.nama)}" 
+                    <img src="${user.foto || getInitialsAvatar(user.nama)}"
                          class="w-11 h-11 rounded-full object-cover border border-slate-200 shrink-0">
                     <div class="min-w-0">
                         <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(user.nama)}</h4>
@@ -522,7 +521,6 @@ function openUserSettingsModal() {
                 </button>
             </div>
 
-            <!-- 2. Mode Tampilan -->
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100 gap-2 w-full">
                 <div class="flex items-center gap-2.5 min-w-0">
                     <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0">
@@ -539,7 +537,6 @@ function openUserSettingsModal() {
                 </button>
             </div>
 
-            <!-- 3. Form Ganti Kata Sandi -->
             ${user.role !== 'ortu' ? `
             <form onsubmit="changePasswordForm(event)" class="space-y-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>
@@ -548,7 +545,6 @@ function openUserSettingsModal() {
                 <button type="submit" id="btn-change-pwd" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-900 transition">Update Kata Sandi</button>
             </form>` : ''}
 
-            <!-- 4. Tombol Keluar -->
             <button onclick="handleLogout()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs flex items-center justify-center gap-2 hover:bg-rose-100 transition">
                 <i class="fas fa-sign-out-alt"></i> Keluar
             </button>
@@ -614,14 +610,13 @@ function openEditProfilModal() {
         </div>
 
         <form onsubmit="saveSelfProfileForm(event)" class="space-y-4">
-            <!-- Upload Foto Profil -->
             <div class="flex flex-col items-center justify-center gap-2">
                 <div class="relative group">
-                    <img id="preview-foto-profil" 
-                        src="${user.foto || getInitialsAvatar(user.nama)}" 
+                    <img id="preview-foto-profil"
+                        src="${user.foto || getInitialsAvatar(user.nama)}"
                         class="w-20 h-20 rounded-full object-cover border-2 border-blue-500 shadow-md">
-                    <label for="input-foto-file" 
-                        class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition active:scale-95" 
+                    <label for="input-foto-file"
+                        class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition active:scale-95"
                         title="Ubah Foto">
                         <i class="fas fa-camera text-xs"></i>
                     </label>
@@ -634,37 +629,33 @@ function openEditProfilModal() {
                 </button>` : ''}
             </div>
 
-            <!-- Nama Lengkap -->
             <div>
                 <label for="self-nama" class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
-                <input type="text" id="self-nama" value="${escapeHtml(user.nama || '')}" 
-                       class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
+                <input type="text" id="self-nama" value="${escapeHtml(user.nama || '')}"
+                       class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}"
                        ${isEditingLocked ? 'readonly' : 'required'}>
                 ${isEditingLocked ? '<p class="text-[10px] text-slate-400 mt-0.5">*Nama hanya dapat diubah oleh Admin sekolah.</p>' : ''}
             </div>
 
             <div class="grid grid-cols-2 gap-2">
-                <!-- Username -->
                 <div>
                     <label for="self-username" class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
-                    <input type="text" id="self-username" value="${escapeHtml(user.username || '')}" 
-                           class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
+                    <input type="text" id="self-username" value="${escapeHtml(user.username || '')}"
+                           class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}"
                            ${isEditingLocked ? 'readonly' : 'required'}>
                 </div>
 
-                <!-- NIP / NISN -->
                 <div>
                     <label for="self-nip-nisn" class="block text-xs font-bold text-slate-500 uppercase mb-1">${role === 'guru' ? 'NIP' : (role === 'siswa' ? 'NISN' : 'ID Identifier')}</label>
-                    <input type="text" id="self-nip-nisn" value="${escapeHtml(user.nip || user.nisn || '')}" 
-                           class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}" 
+                    <input type="text" id="self-nip-nisn" value="${escapeHtml(user.nip || user.nisn || '')}"
+                           class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}"
                            ${isEditingLocked ? 'readonly' : ''}>
                 </div>
             </div>
 
-            <!-- No. Telepon / WhatsApp -->
             <div>
                 <label for="self-hp" class="block text-xs font-bold text-slate-500 uppercase mb-1">No. WhatsApp / HP</label>
-                <input type="text" id="self-hp" value="${escapeHtml(user.no_hp || user.no_hp_ortu || '')}" 
+                <input type="text" id="self-hp" value="${escapeHtml(user.no_hp || user.no_hp_ortu || '')}"
                        placeholder="08xxxxxxxxxx" oninput="validatePhoneField(this)"
                        class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:border-blue-500">
                 <p id="self-hp-error" class="hidden text-[10px] text-rose-500 mt-1 font-semibold"><i class="fas fa-circle-exclamation"></i> Format nomor tidak valid. Gunakan 08xxxxxxxxxx (10-14 digit).</p>

@@ -22,8 +22,6 @@ function switchAdminTab(tab) {
     if (tab === "sekolah") renderAdminSekolah();
 }
 
-// Tab "Sekolah" — data Kepala Sekolah bersifat global (1 sekolah = 1 kepsek), dipakai
-// di semua laporan/rapor. Bukan per-siswa, biar tidak diulang & rawan typo tiap form.
 function renderAdminSekolah() {
     const nama = document.getElementById("m-skl-kepsek");
     const nip = document.getElementById("m-skl-nip-kepsek");

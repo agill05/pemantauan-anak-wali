@@ -27,7 +27,6 @@ async function generateAndShareMagicLink() {
 
     hideLoading();
 
-    // Jika API server belum support atau offline, buat token fallback berbasis encoding waktu
     if (!magicToken) {
         const payload = {
             sId: siswa.id,
@@ -147,14 +146,12 @@ function renderMagicLinkProfilView(detailData) {
     document.getElementById("bottom-nav")?.classList.add("hidden");
     document.getElementById("btn-back-profil")?.classList.add("hidden");
 
-    // Sembunyikan tombol generate magic link dan cetak saat diakses oleh ortu
     const roleButtons = document.querySelectorAll("[data-role-visible]");
     roleButtons.forEach(el => el.classList.add("hidden"));
 
     openProfilSiswa(detailData);
     switchView("profil-siswa");
 
-    // Pastikan tombol kembali di profil disembunyikan
     const backBtn = document.getElementById("btn-back-profil");
     if (backBtn) backBtn.classList.add("hidden");
 }

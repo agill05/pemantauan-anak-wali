@@ -72,7 +72,6 @@ body[data-role=""] [data-role-visible]:not(.view-section),
     display: flex !important;
 }
 
-/* Jika sesi ada di localStorage, jangan pernah tampilkan view login sekejap pun */
 html.has-session #view-login {
     display: none !important;
 }
@@ -728,7 +727,6 @@ body.dark .text-slate-400 {
     padding-bottom: 0 !important;
 }
 
-/* ---------- Login (tampilan baru) ---------- */
 #view-login.active {
     animation: none;
 }
@@ -753,7 +751,7 @@ body.dark .text-slate-400 {
     justify-content: space-between;
     gap: 3rem;
     padding: 2rem clamp(1.5rem, 6vw, 6rem);
-    overflow: hidden; /* foto sempat membesar saat animasi masuk: jangan bocor */
+    overflow: hidden;
     background: #1e3a8a;
     color: #ffffff;
     font-family: inherit;
@@ -771,7 +769,6 @@ body.dark .text-slate-400 {
     font-family: inherit;
 }
 
-/* Foto sekolah: latar penuh */
 .lg-bg {
     position: absolute;
     inset: 0;
@@ -787,7 +784,6 @@ body.dark .text-slate-400 {
     background: linear-gradient(90deg, rgba(8, 20, 55, 0.82) 0%, rgba(8, 20, 55, 0.6) 50%, rgba(8, 20, 55, 0.42) 100%);
 }
 
-/* Teks sambutan */
 .lg-intro,
 .lg-side {
     position: relative;
@@ -838,7 +834,6 @@ body.dark .text-slate-400 {
     animation: lg-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 1.15s both;
 }
 
-/* Kartu login */
 .lg-side {
     flex: none;
     width: 100%;
@@ -882,7 +877,7 @@ body.dark .text-slate-400 {
     border-radius: 12px;
     background: var(--lg-field);
     color: var(--lg-ink);
-    font-size: 1rem; /* 16px: iOS tidak zoom saat fokus */
+    font-size: 1rem;
     transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
 }
 
@@ -892,7 +887,7 @@ body.dark .text-slate-400 {
 
 .lg-input:focus,
 .lg-input:focus-visible {
-    outline: 2px solid transparent; /* tetap terlihat di Windows High Contrast */
+    outline: 2px solid transparent;
     outline-offset: 2px;
     border-color: var(--lg-primary);
     background-color: #ffffff;
@@ -913,7 +908,6 @@ body.dark .text-slate-400 {
     background-position: right 0.9rem center;
 }
 
-/* Placeholder (opsi disabled) tampil redup; pilihan asli tampil normal */
 .lg-select:required:invalid {
     color: #64748b;
 }
@@ -932,7 +926,7 @@ body.dark .text-slate-400 {
 
 .lg-toggle {
     position: absolute;
-    top: 2px; /* (48px input - 44px tombol) / 2; tanpa transform supaya tidak ikut animasi tekan */
+    top: 2px;
     right: 0.25rem;
     display: flex;
     align-items: center;
@@ -952,12 +946,10 @@ body.dark .text-slate-400 {
     background: var(--primary-light, #eff6ff);
 }
 
-/* Timpa button:active global (scale 0.97): tombol mata diam saat ditekan */
 .lg-toggle:active {
     transform: none;
 }
 
-/* Sandi terlihat: ikon mata bergaris. Ganti ikon saja, tanpa animasi. */
 .lg-toggle .lg-eye-off,
 .lg-toggle.is-shown .lg-eye {
     display: none;
@@ -967,7 +959,6 @@ body.dark .text-slate-400 {
     display: block;
 }
 
-/* Tombol "lihat sandi" bawaan Edge disembunyikan supaya tidak ada dua ikon mata */
 .lg-input::-ms-reveal,
 .lg-input::-ms-clear {
     display: none;
@@ -990,7 +981,6 @@ body.dark .text-slate-400 {
     display: none;
 }
 
-/* Error inline: teks yang menjelaskan, bukan warna saja */
 .lg-error {
     margin: 0 0 1rem;
     padding: 0.75rem 0.9rem;
@@ -1106,7 +1096,6 @@ body.dark .text-slate-400 {
     to { opacity: 1; transform: none; }
 }
 
-/* Login ditolak server: form bergetar sekali */
 #form-login.is-shaking {
     animation: lg-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
@@ -1118,7 +1107,6 @@ body.dark .text-slate-400 {
     40%, 60% { transform: translateX(6px); }
 }
 
-/* Mobile / tablet kecil: sambutan ringkas di atas, kartu di bawah */
 @media (max-width: 899px) {
     .lg-shell {
         flex-direction: column;

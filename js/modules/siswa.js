@@ -596,7 +596,6 @@ function renderSiswaView() {
     }).join("");
 }
 
-
 function openModalSiswa(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
