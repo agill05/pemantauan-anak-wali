@@ -163,12 +163,12 @@ function buildLaporanRekapHtml(data) {
                 <div style="text-align: center; width: 220px;">
                     <p style="margin-bottom: 60px;">Mengetahui,<br>Kepala SMPN 1 Talaga Jaya</p>
                     <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '( ............................................ )')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP. ${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
                 </div>
                 <div style="text-align: center; width: 220px;">
                     <p style="margin-bottom: 60px;">Talaga Jaya, ${formattedDate}<br>Guru Pemantau / Wali Kelas</p>
                     <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Guru Pemantau')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ${escapeHtml(getGuruNip())}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP. ${escapeHtml(getGuruNip())}</p>
                 </div>
             </div>
         </div>
