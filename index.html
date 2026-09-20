@@ -640,13 +640,51 @@
     </div>
 
     <div id="post-login-splash"
-        class="hidden fixed inset-0 z-[200] bg-white flex-col items-center justify-center gap-4 no-print">
-        <img src="assets/img/logo-sekolah.png" alt="Logo Sekolah" class="w-20 h-20 object-contain">
-        <h2 class="text-base font-extrabold text-primary">SMPN 1 Talaga Jaya</h2>
-        <div class="w-56 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-            <div id="splash-bar" class="h-full w-0 bg-primary rounded-full"></div>
+        class="hidden fixed inset-0 z-[200] bg-white flex-col items-center justify-center gap-3 no-print">
+        <div class="splash-core flex flex-col items-center gap-3">
+            <img src="assets/img/logo-sekolah.png" alt="Logo Sekolah" class="w-20 h-20 object-contain">
+            <h2 class="text-base font-extrabold text-primary">SMPN 1 Talaga Jaya</h2>
+
+            <i id="splash-icon" class="fas fa-key text-primary text-sm" aria-hidden="true"></i>
+
+            <div class="w-56">
+                <div class="flex items-center justify-between mb-1">
+                    <p id="splash-text" class="text-xs text-slate-500 font-semibold">Login Berhasil, Mengalihkan...</p>
+                    <span id="splash-percent" class="text-xs text-slate-400 font-bold tabular-nums">0%</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden" role="progressbar"
+                    id="splash-track" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                    aria-label="Progres penyiapan aplikasi">
+                    <div id="splash-bar" class="h-full w-0 bg-primary rounded-full"></div>
+                </div>
+            </div>
+
+            <ul id="splash-steps" class="w-56 space-y-1 text-[11px] text-slate-500 font-semibold">
+                <li class="splash-step flex items-center gap-2" data-step="session">
+                    <i class="far fa-circle w-3 text-center" aria-hidden="true"></i><span>Sesi disiapkan</span>
+                </li>
+                <li class="splash-step flex items-center gap-2" data-step="data">
+                    <i class="far fa-circle w-3 text-center" aria-hidden="true"></i><span>Data sekolah dimuat</span>
+                </li>
+                <li class="splash-step flex items-center gap-2" data-step="dashboard">
+                    <i class="far fa-circle w-3 text-center" aria-hidden="true"></i><span>Menyusun dashboard</span>
+                </li>
+            </ul>
+
+            <p id="splash-tip" class="w-56 text-[10px] text-slate-400 leading-relaxed min-h-[28px]"></p>
+
+            <div id="splash-fallback" class="hidden flex-col items-center gap-2 w-56">
+                <p class="text-[11px] text-amber-600 font-semibold text-center" id="splash-fallback-text">
+                    Proses lebih lama dari biasanya.
+                </p>
+                <div class="flex gap-2 w-full">
+                    <button type="button" onclick="retrySplash()"
+                        class="flex-1 bg-primary text-white font-bold py-2 rounded-xl text-xs">Coba lagi</button>
+                    <button type="button" onclick="exitSplash()"
+                        class="flex-1 bg-slate-100 text-slate-600 font-bold py-2 rounded-xl text-xs">Keluar</button>
+                </div>
+            </div>
         </div>
-        <p id="splash-text" class="text-xs text-slate-500 font-semibold">Login Berhasil, Mengalihkan...</p>
     </div>
 
     <div id="modal-container" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 no-print">

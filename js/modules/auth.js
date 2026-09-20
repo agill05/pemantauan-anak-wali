@@ -40,16 +40,40 @@ function shakeLoginForm() {
     form.addEventListener("animationend", () => form.classList.remove("is-shaking"), { once: true });
 }
 
-let splashProgressTimer = null;
-let splashProgressValue = 0;
+const SPLASH_TIMEOUT_MS = 15000;
 
-function showPostLoginSplash(text) {
-    const el = document.getElementById("post-login-splash");
-    const txt = document.getElementById("splash-text");
+const SPLASH_STAGES = {
+    session:   { label: "Menyiapkan sesi...",      icon: "fa-key",               ceiling: 35 },
+    data:      { label: "Memuat data sekolah...",  icon: "fa-database",          ceiling: 70 },
+    dashboard: { label: "Menyusun dashboard...",   icon: "fa-table-cells-large", ceiling: 92 }
+};
+
+const SPLASH_TIPS = [
+    "Tips: tekan logo di header untuk kembali ke dashboard kapan saja.",
+    "Tips: data terakhir disimpan di perangkat, jadi aplikasi tetap bisa dibuka saat sinyal lemah.",
+    "Tips: menu samping berisi semua fitur sesuai peran akun Anda.",
+    "Tips: ganti kata sandi secara berkala lewat menu profil."
+];
+
+let splashProgressTimer = null;
+let splashTipTimer = null;
+let splashTimeoutTimer = null;
+let splashProgressValue = 0;
+let splashCeiling = 90;
+let splashActive = false;
+
+function setSplashProgress(value) {
+    splashProgressValue = Math.max(0, Math.min(100, value));
+    const rounded = Math.round(splashProgressValue);
     const bar = document.getElementById("splash-bar");
-    if (txt && text) txt.textContent = text;
-    if (bar) bar.style.width = "0%";
-    if (el) { el.classList.remove("hidden"); el.classList.add("flex"); }
+    const track = document.getElementById("splash-track");
+    const percent = document.getElementById("splash-percent");
+    if (bar) {
+        bar.style.width = splashProgressValue + "%";
+        bar.classList.toggle("is-near-done", splashProgressValue >= 85);
+    }
+    if (track) track.setAttribute("aria-valuenow", String(rounded));
+    if (percent) percent.textContent = rounded + "%";
 }
 
 function setSplashText(text) {
@@ -57,31 +81,136 @@ function setSplashText(text) {
     if (txt && text) txt.textContent = text;
 }
 
+// Tandai satu tahap aktif, naikkan plafon progres, centang tahap sebelumnya.
+function setSplashStage(key) {
+    const stage = SPLASH_STAGES[key];
+    if (!stage) return;
+
+    setSplashText(stage.label);
+    splashCeiling = stage.ceiling;
+
+    const icon = document.getElementById("splash-icon");
+    if (icon) icon.className = `fas ${stage.icon} text-primary text-sm`;
+
+    const order = Object.keys(SPLASH_STAGES);
+    const index = order.indexOf(key);
+    order.slice(0, index).forEach(doneKey => markSplashStepDone(doneKey));
+}
+
+function markSplashStepDone(key) {
+    const li = document.querySelector(`.splash-step[data-step="${key}"]`);
+    if (!li || li.classList.contains("is-done")) return;
+    li.classList.add("is-done");
+    const mark = li.querySelector("i");
+    if (mark) mark.className = "fas fa-check w-3 text-center";
+}
+
+function startSplashTips() {
+    const el = document.getElementById("splash-tip");
+    if (!el) return;
+    let i = Math.floor(Math.random() * SPLASH_TIPS.length);
+    el.textContent = SPLASH_TIPS[i];
+    clearInterval(splashTipTimer);
+    splashTipTimer = setInterval(() => {
+        i = (i + 1) % SPLASH_TIPS.length;
+        el.textContent = SPLASH_TIPS[i];
+    }, 4500);
+}
+
+function showSplashFallback(message) {
+    if (!splashActive) return;
+    clearInterval(splashProgressTimer);
+    splashProgressTimer = null;
+    const box = document.getElementById("splash-fallback");
+    const text = document.getElementById("splash-fallback-text");
+    if (text && message) text.textContent = message;
+    if (box) { box.classList.remove("hidden"); box.classList.add("flex"); }
+}
+
+function hideSplashFallback() {
+    const box = document.getElementById("splash-fallback");
+    if (box) { box.classList.add("hidden"); box.classList.remove("flex"); }
+}
+
+function handleSplashOffline() {
+    showSplashFallback("Koneksi internet terputus. Sambungkan lagi, lalu tekan Coba lagi.");
+}
+
+function retrySplash() {
+    location.reload();
+}
+
+function exitSplash() {
+    try { localStorage.removeItem("session_anak_wali"); } catch (_) { }
+    location.reload();
+}
+
+function showPostLoginSplash(text) {
+    const el = document.getElementById("post-login-splash");
+    const nama = appState.user && appState.user.nama ? String(appState.user.nama).split(" ")[0] : "";
+
+    splashActive = true;
+    hideSplashFallback();
+    setSplashProgress(0);
+    setSplashText(nama ? `Menyiapkan akun untuk ${nama}...` : (text || "Menyiapkan aplikasi..."));
+    startSplashTips();
+
+    document.querySelectorAll(".splash-step").forEach(li => {
+        li.classList.remove("is-done");
+        const mark = li.querySelector("i");
+        if (mark) mark.className = "far fa-circle w-3 text-center";
+    });
+
+    if (el) {
+        el.classList.remove("hidden", "is-done");
+        el.classList.add("flex");
+    }
+
+    window.addEventListener("offline", handleSplashOffline);
+    clearTimeout(splashTimeoutTimer);
+    splashTimeoutTimer = setTimeout(() => {
+        showSplashFallback(navigator.onLine
+            ? "Proses lebih lama dari biasanya. Server mungkin sibuk."
+            : "Koneksi internet terputus. Sambungkan lagi, lalu tekan Coba lagi.");
+    }, SPLASH_TIMEOUT_MS);
+
+    if (!navigator.onLine) handleSplashOffline();
+}
+
 function startSplashAutoProgress() {
-    const bar = document.getElementById("splash-bar");
-    splashProgressValue = 0;
-    if (bar) bar.style.width = "0%";
+    splashCeiling = SPLASH_STAGES.session.ceiling;
+    setSplashProgress(0);
     clearInterval(splashProgressTimer);
     splashProgressTimer = setInterval(() => {
-        const remaining = 90 - splashProgressValue;
-        const step = Math.max(0.3, remaining * 0.05);
-        splashProgressValue = Math.min(90, splashProgressValue + step);
-        if (bar) bar.style.width = splashProgressValue + "%";
+        const remaining = splashCeiling - splashProgressValue;
+        if (remaining <= 0) return;
+        setSplashProgress(splashProgressValue + Math.max(0.3, remaining * 0.05));
     }, 120);
 }
 
 function finishSplashProgress() {
     clearInterval(splashProgressTimer);
     splashProgressTimer = null;
-    const bar = document.getElementById("splash-bar");
-    if (bar) bar.style.width = "100%";
+    clearTimeout(splashTimeoutTimer);
+    splashTimeoutTimer = null;
+    Object.keys(SPLASH_STAGES).forEach(markSplashStepDone);
+    setSplashProgress(100);
+    const el = document.getElementById("post-login-splash");
+    if (el) el.classList.add("is-done");
 }
 
 function hidePostLoginSplash() {
+    splashActive = false;
     clearInterval(splashProgressTimer);
+    clearInterval(splashTipTimer);
+    clearTimeout(splashTimeoutTimer);
     splashProgressTimer = null;
+    splashTipTimer = null;
+    splashTimeoutTimer = null;
+    window.removeEventListener("offline", handleSplashOffline);
+    hideSplashFallback();
     const el = document.getElementById("post-login-splash");
-    if (el) { el.classList.add("hidden"); el.classList.remove("flex"); }
+    if (el) { el.classList.add("hidden"); el.classList.remove("flex", "is-done"); }
 }
 
 function toggleLoginPassword() {
@@ -324,11 +453,11 @@ async function continueSessionSetup() {
     const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
     switchView(targetView);
 
-    setSplashText("Menyiapkan sesi...");
+    setSplashStage("session");
 
-    setSplashText("Memuat data sekolah...");
+    setSplashStage("data");
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
-    setSplashText("Menyusun data...");
+    setSplashStage("dashboard");
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
         appState.guru = resBootstrap.data.initial.guru || [];
