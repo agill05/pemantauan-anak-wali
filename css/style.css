@@ -673,7 +673,6 @@ body.dark .text-slate-400 {
 }
 
 /* ---------- Login (tampilan baru) ---------- */
-/* Fade geser bawaan .view-section dimatikan; login hanya fade foto sekali. */
 #view-login.active {
     animation: none;
 }
@@ -685,18 +684,21 @@ body.dark .text-slate-400 {
     --lg-muted: #475569;
     --lg-line: #7b8ba1;
     --lg-field: #f8fafc;
-    --lg-track: #eef2f9;
     --lg-danger: #b42318;
     --lg-danger-bg: #fef3f2;
 
+    position: relative;
     flex: 1;
     width: 100%;
     min-height: 100vh;
     min-height: 100dvh;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(440px, 34rem);
-    background: #ffffff;
-    color: var(--lg-ink);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3rem;
+    padding: 2rem clamp(1.5rem, 6vw, 6rem);
+    background: #1e3a8a;
+    color: #ffffff;
     font-family: inherit;
 }
 
@@ -707,100 +709,96 @@ body.dark .text-slate-400 {
 }
 
 .lg-shell button,
-.lg-shell input {
+.lg-shell input,
+.lg-shell select {
     font-family: inherit;
 }
 
-/* ---------- Foto sekolah ---------- */
-.lg-photo {
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: flex-end;
-    background: #1e3a8a;
-}
-
-.lg-photo-img {
+/* Foto sekolah: latar penuh */
+.lg-bg {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    animation: lg-photo-in 0.9s ease-out both;
+    animation: lg-bg-in 0.9s ease-out both;
 }
 
-.lg-photo-shade {
+.lg-shade {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(10, 20, 50, 0.86) 0%, rgba(10, 20, 50, 0.4) 40%, rgba(10, 20, 50, 0) 68%);
+    background: linear-gradient(90deg, rgba(8, 20, 55, 0.82) 0%, rgba(8, 20, 55, 0.6) 50%, rgba(8, 20, 55, 0.42) 100%);
 }
 
-.lg-brand {
+/* Teks sambutan */
+.lg-intro,
+.lg-side {
     position: relative;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    max-width: 36rem;
-    padding: 2.5rem;
-    color: #ffffff;
+}
+
+.lg-intro {
+    max-width: 34rem;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
 }
 
 .lg-logo {
-    flex: none;
-    width: 64px;
-    height: 64px;
-    padding: 6px;
+    display: block;
+    width: 72px;
+    height: 72px;
+    margin-bottom: 1.5rem;
+    padding: 7px;
     object-fit: contain;
     background: #ffffff;
-    border-radius: 16px;
+    border-radius: 18px;
+}
+
+.lg-heading {
+    margin: 0;
+    font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
 }
 
 .lg-school {
-    margin: 0;
+    margin: 0.75rem 0 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.lg-desc {
+    margin: 0.75rem 0 0;
+    max-width: 30rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+/* Kartu login */
+.lg-side {
+    flex: none;
+    width: 100%;
+    max-width: 25rem;
+}
+
+.lg-card {
+    padding: 2rem;
+    background: #ffffff;
+    color: var(--lg-ink);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.5);
+}
+
+.lg-title {
+    margin: 0 0 1.5rem;
     font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.01em;
     line-height: 1.2;
 }
 
-.lg-tagline {
-    margin: 0.35rem 0 0;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-/* ---------- Panel form ---------- */
-.lg-panel {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2.5rem clamp(2rem, 5vw, 4rem);
-    background: #ffffff;
-}
-
-.lg-form-wrap {
-    width: 100%;
-    max-width: 22.5rem;
-}
-
-.lg-title {
-    margin: 0;
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-}
-
-.lg-sub {
-    margin: 0.5rem 0 1.75rem;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: var(--lg-muted);
-}
-
 .lg-field {
-    margin-bottom: 1.125rem;
+    margin-bottom: 1rem;
 }
 
 .lg-label {
@@ -808,54 +806,8 @@ body.dark .text-slate-400 {
     margin-bottom: 0.4rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--lg-ink);
 }
 
-/* Role: segmented control */
-.lg-roles {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.25rem;
-    padding: 0.25rem;
-    background: var(--lg-track);
-    border-radius: 14px;
-}
-
-.lg-role {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    min-height: 44px;
-    border: 1.5px solid transparent;
-    border-radius: 11px;
-    background: transparent;
-    color: var(--lg-muted);
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
-}
-
-.lg-role:hover {
-    color: var(--lg-ink);
-}
-
-.lg-role[aria-checked="true"] {
-    background: #ffffff;
-    border-color: var(--lg-primary);
-    color: var(--lg-primary);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-}
-
-.lg-role:focus-visible,
-.lg-toggle:focus-visible,
-.lg-submit:focus-visible {
-    outline: 3px solid var(--lg-primary);
-    outline-offset: 2px;
-}
-
-/* Input */
 .lg-input {
     display: block;
     width: 100%;
@@ -878,12 +830,22 @@ body.dark .text-slate-400 {
     outline: 2px solid transparent; /* tetap terlihat di Windows High Contrast */
     outline-offset: 2px;
     border-color: var(--lg-primary);
-    background: #ffffff;
+    background-color: #ffffff;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 .lg-input[aria-invalid="true"] {
     border-color: var(--lg-danger);
+}
+
+.lg-select {
+    padding-right: 2.5rem;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
 }
 
 .lg-pass {
@@ -912,6 +874,12 @@ body.dark .text-slate-400 {
 
 .lg-toggle:hover {
     background: var(--primary-light, #eff6ff);
+}
+
+.lg-toggle:focus-visible,
+.lg-submit:focus-visible {
+    outline: 3px solid var(--lg-primary);
+    outline-offset: 2px;
 }
 
 .lg-hint {
@@ -953,7 +921,6 @@ body.dark .text-slate-400 {
     line-height: 1.45;
 }
 
-/* Tombol kirim */
 .lg-submit {
     display: flex;
     align-items: center;
@@ -999,14 +966,13 @@ body.dark .text-slate-400 {
     display: inline-block;
 }
 
-/* Bantuan */
 .lg-help {
     display: grid;
-    gap: 0.5rem;
-    margin-top: 1.75rem;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
     padding-top: 1.25rem;
     border-top: 1px solid #e2e8f0;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     line-height: 1.5;
     color: var(--lg-muted);
 }
@@ -1021,12 +987,14 @@ body.dark .text-slate-400 {
 }
 
 .lg-copy {
-    margin: 1.5rem 0 0;
+    margin: 1rem 0 0;
+    text-align: center;
     font-size: 0.8125rem;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
 }
 
-@keyframes lg-photo-in {
+@keyframes lg-bg-in {
     from { opacity: 0; }
     to { opacity: 1; }
 }
@@ -1035,57 +1003,56 @@ body.dark .text-slate-400 {
     to { transform: rotate(360deg); }
 }
 
-/* ---------- Mobile / tablet kecil: foto jadi strip di atas ---------- */
+/* Mobile / tablet kecil: sambutan ringkas di atas, kartu di bawah */
 @media (max-width: 899px) {
     .lg-shell {
-        display: flex;
         flex-direction: column;
+        justify-content: center;
+        gap: 1.25rem;
+        padding: 1.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
     }
 
-    .lg-photo {
-        flex: none;
-        height: 168px;
+    .lg-shade {
+        background: rgba(8, 20, 55, 0.62);
     }
 
-    .lg-brand {
-        padding: 1rem 1.25rem 2.25rem;
-        gap: 0.75rem;
+    .lg-intro {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        width: 100%;
+        max-width: 25rem;
     }
 
     .lg-logo {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
+        flex: none;
+        width: 52px;
+        height: 52px;
+        margin: 0;
+        padding: 5px;
+        border-radius: 14px;
     }
 
-    .lg-school {
-        font-size: 1.0625rem;
+    .lg-heading {
+        font-size: 1.125rem;
+        line-height: 1.25;
     }
 
-    .lg-tagline {
+    .lg-school,
+    .lg-desc {
         display: none;
     }
 
-    .lg-panel {
-        flex: 1;
-        align-items: flex-start;
-        position: relative;
-        margin-top: -20px;
-        padding: 1.75rem 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px));
-        border-radius: 22px 22px 0 0;
-    }
-
-    .lg-form-wrap {
-        max-width: 26rem;
+    .lg-card {
+        padding: 1.5rem 1.25rem;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .lg-photo-img {
+    .lg-bg {
         animation: none;
     }
 
-    .lg-role,
     .lg-input,
     .lg-submit {
         transition: none;

@@ -116,25 +116,21 @@
 
     <div id="view-login" class="view-section active fixed inset-0 z-50 min-h-screen flex overflow-y-auto">
         <div class="lg-shell">
+            <img class="lg-bg" src="assets/img/background-sekolah.jpg" alt="" fetchpriority="high" decoding="async"
+                onerror="this.style.display='none'">
+            <div class="lg-shade"></div>
 
-            <aside class="lg-photo" aria-label="SMP Negeri 1 Talaga Jaya">
-                <img class="lg-photo-img" src="assets/img/background-sekolah.jpg" alt="" width="1600" height="1067"
-                    fetchpriority="high" decoding="async" onerror="this.style.display='none'">
-                <div class="lg-photo-shade"></div>
-                <div class="lg-brand">
-                    <img class="lg-logo" src="assets/img/logo-sekolah.png" alt="Logo SMP Negeri 1 Talaga Jaya"
-                        width="64" height="64">
-                    <div>
-                        <p class="lg-school">SMP Negeri 1 Talaga Jaya</p>
-                        <p class="lg-tagline">Presensi, 7 Kebiasaan Hebat, hafalan, dan pembinaan siswa dalam satu tempat.</p>
-                    </div>
-                </div>
-            </aside>
+            <section class="lg-intro">
+                <img class="lg-logo" src="assets/img/logo-sekolah.png" alt="Logo SMP Negeri 1 Talaga Jaya" width="72"
+                    height="72">
+                <h1 class="lg-heading">Selamat Datang di Aplikasi Anak Wali</h1>
+                <p class="lg-school">SMP Negeri 1 Talaga Jaya</p>
+                <p class="lg-desc">Pantau presensi, 7 Kebiasaan Hebat, hafalan, dan pembinaan siswa dalam satu tempat.</p>
+            </section>
 
-            <main class="lg-panel">
-                <div class="lg-form-wrap">
-                    <h1 class="lg-title">Masuk</h1>
-                    <p class="lg-sub">Gunakan akun yang diberikan sekolah.</p>
+            <main class="lg-side">
+                <div class="lg-card">
+                    <h2 class="lg-title">Masuk</h2>
 
                     <p class="lg-notice" id="login-offline" role="status" hidden>
                         Tidak ada koneksi internet. Masuk butuh internet.
@@ -142,22 +138,13 @@
 
                     <form id="form-login" onsubmit="handleAppLogin(event)" novalidate>
                         <div class="lg-field">
-                            <span class="lg-label" id="login-role-label">Masuk sebagai</span>
-                            <div class="lg-roles" role="radiogroup" aria-labelledby="login-role-label">
-                                <button type="button" id="role-btn-siswa" class="lg-role" role="radio"
-                                    aria-checked="false" tabindex="-1" onclick="selectLoginRole('siswa')">
-                                    <i class="fas fa-user-graduate" aria-hidden="true"></i><span>Siswa</span>
-                                </button>
-                                <button type="button" id="role-btn-guru" class="lg-role" role="radio"
-                                    aria-checked="false" tabindex="-1" onclick="selectLoginRole('guru')">
-                                    <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i><span>Guru</span>
-                                </button>
-                                <button type="button" id="role-btn-admin" class="lg-role" role="radio"
-                                    aria-checked="false" tabindex="-1" onclick="selectLoginRole('admin')">
-                                    <i class="fas fa-user-shield" aria-hidden="true"></i><span>Admin</span>
-                                </button>
-                            </div>
-                            <input type="hidden" id="login-role" value="">
+                            <label class="lg-label" for="login-role">Jenis pengguna</label>
+                            <select class="lg-input lg-select" id="login-role" name="role" aria-describedby="login-error">
+                                <option value="">Pilih jenis pengguna</option>
+                                <option value="siswa">Siswa</option>
+                                <option value="guru">Guru</option>
+                                <option value="admin">Admin</option>
+                            </select>
                         </div>
 
                         <div class="lg-field">
@@ -188,13 +175,12 @@
                     </form>
 
                     <div class="lg-help">
-                        <p><strong>Orang tua?</strong> Buka tautan akses dari wali kelas. Tautan berlaku 15 menit, tanpa akun.</p>
+                        <p><strong>Orang tua?</strong> Buka tautan akses dari wali kelas (berlaku 15 menit, tanpa akun).</p>
                         <p><strong>Lupa kata sandi?</strong> Hubungi admin sekolah.</p>
                     </div>
-                    <p class="lg-copy">© 2026 SMP Negeri 1 Talaga Jaya</p>
                 </div>
+                <p class="lg-copy">© 2026 SMP Negeri 1 Talaga Jaya</p>
             </main>
-
         </div>
     </div>
 

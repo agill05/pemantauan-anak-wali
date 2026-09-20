@@ -1,38 +1,13 @@
 const LOGIN_ROLE_KEY = "login_last_role";
-const LOGIN_ROLES = ["siswa", "guru", "admin"];
 const LOGIN_ROLE_LABEL = { siswa: "Siswa", guru: "Guru", admin: "Admin" };
+const LOGIN_FIELD_IDS = ["login-role", "login-username", "login-password"];
 let loginInFlight = false;
-
-function selectLoginRole(role, { focus = false } = {}) {
-    if (!LOGIN_ROLES.includes(role)) return;
-    const roleInput = document.getElementById("login-role");
-    if (roleInput) roleInput.value = role;
-
-    LOGIN_ROLES.forEach(r => {
-        const btn = document.getElementById(`role-btn-${r}`);
-        if (!btn) return;
-        const active = r === role;
-        btn.setAttribute("aria-checked", active ? "true" : "false");
-        btn.tabIndex = active ? 0 : -1; // roving tabindex: satu tab stop, panah untuk pindah
-        if (active && focus) btn.focus();
-    });
-    clearLoginError();
-}
-
-function onLoginRoleKeydown(e) {
-    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (!step) return;
-    e.preventDefault();
-    const current = LOGIN_ROLES.indexOf(document.getElementById("login-role").value);
-    const next = LOGIN_ROLES[(current + step + LOGIN_ROLES.length) % LOGIN_ROLES.length];
-    selectLoginRole(next, { focus: true });
-}
 
 function showLoginError(message, invalidIds = []) {
     const box = document.getElementById("login-error");
     if (!box) return;
     box.textContent = message;
-    ["login-username", "login-password"].forEach(id => {
+    LOGIN_FIELD_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         if (invalidIds.includes(id)) el.setAttribute("aria-invalid", "true");
@@ -43,9 +18,7 @@ function showLoginError(message, invalidIds = []) {
 function clearLoginError() {
     const box = document.getElementById("login-error");
     if (box) box.textContent = "";
-    ["login-username", "login-password"].forEach(id => {
-        document.getElementById(id)?.removeAttribute("aria-invalid");
-    });
+    LOGIN_FIELD_IDS.forEach(id => document.getElementById(id)?.removeAttribute("aria-invalid"));
 }
 
 function setLoginBusy(busy) {
@@ -71,17 +44,18 @@ async function handleAppLogin(e) {
     e.preventDefault();
     if (loginInFlight) return;
 
-    const role = document.getElementById("login-role")?.value || "";
+    const roleEl = document.getElementById("login-role");
     const usernameEl = document.getElementById("login-username");
     const passwordEl = document.getElementById("login-password");
+    const role = roleEl ? roleEl.value : "";
     const username = usernameEl.value.trim();
     const password = passwordEl.value;
 
     clearLoginError();
 
     if (!role) {
-        showLoginError("Pilih peran: Siswa, Guru, atau Admin.");
-        document.getElementById("role-btn-siswa")?.focus();
+        showLoginError("Pilih jenis pengguna: Siswa, Guru, atau Admin.", ["login-role"]);
+        roleEl?.focus();
         return;
     }
     if (!username) {
@@ -131,7 +105,7 @@ async function handleAppLogin(e) {
 
     if (res) {
         showLoginError(
-            res.message || `Username atau kata sandi salah. Cek juga peran yang dipilih (${LOGIN_ROLE_LABEL[role]}).`,
+            res.message || `Username atau kata sandi salah. Cek juga jenis pengguna yang dipilih (${LOGIN_ROLE_LABEL[role]}).`,
             ["login-username", "login-password"]
         );
         passwordEl.value = "";
@@ -146,12 +120,11 @@ function initLoginForm() {
     if (!form || form.dataset.ready) return;
     form.dataset.ready = "1";
 
-    // Peran terakhir dipakai ulang; default Siswa. Tidak ada langkah wajib.
+    // Jenis pengguna terakhir dipakai ulang; kosong kalau belum pernah masuk.
     let saved = null;
     try { saved = localStorage.getItem(LOGIN_ROLE_KEY); } catch (_) { /* abaikan */ }
-    selectLoginRole(LOGIN_ROLES.includes(saved) ? saved : "siswa");
-
-    document.querySelector(".lg-roles")?.addEventListener("keydown", onLoginRoleKeydown);
+    const roleEl = document.getElementById("login-role");
+    if (roleEl && LOGIN_ROLE_LABEL[saved]) roleEl.value = saved;
 
     // Peringatan Caps Lock
     const pwd = document.getElementById("login-password");
@@ -163,9 +136,11 @@ function initLoginForm() {
     pwd?.addEventListener("keyup", updateCaps);
     pwd?.addEventListener("blur", () => { if (caps) caps.hidden = true; });
 
-    // Error hilang saat pengguna mulai mengetik ulang
-    ["login-username", "login-password"].forEach(id => {
-        document.getElementById(id)?.addEventListener("input", clearLoginError);
+    // Error hilang saat pengguna mengubah isian
+    LOGIN_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        el?.addEventListener("input", clearLoginError);
+        el?.addEventListener("change", clearLoginError);
     });
 
     // Login butuh internet; setupNetworkStatusListeners() baru jalan setelah login
