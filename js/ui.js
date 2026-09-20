@@ -96,17 +96,24 @@ function formatTimeAgo(timestamp) {
     return `${hours} jam lalu`;
 }
 
+let loadingTimer = null;
+
 function showLoading(text = "Memproses...") {
     const loader = document.getElementById("loading-overlay");
     const txt = document.getElementById("loading-text");
     if (txt) txt.innerText = text;
-    if (loader) {
-        loader.classList.remove("hidden");
-        loader.classList.add("flex");
-    }
+
+    clearTimeout(loadingTimer);
+    loadingTimer = setTimeout(() => {
+        if (loader) {
+            loader.classList.remove("hidden");
+            loader.classList.add("flex");
+        }
+    }, 200);
 }
 
 function hideLoading() {
+    clearTimeout(loadingTimer);
     const loader = document.getElementById("loading-overlay");
     if (loader) {
         loader.classList.add("hidden");
