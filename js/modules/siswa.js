@@ -1,3 +1,4 @@
+
 function switchTabSiswa(tabName, btnEl) {
     document.querySelectorAll('.prof-tab-btn').forEach(btn => {
         btn.classList.remove('active', 'border-b-2', 'border-blue-600', 'text-blue-600', 'font-bold');
@@ -696,6 +697,7 @@ async function saveSiswaForm(e, id) {
         await fetchAllAppData(true);
         renderSiswaView();
         renderAdminSiswa();
+        _refreshAllSiswaDropdowns();
     } else {
         if (btn) {
             btn.disabled = false;
@@ -719,6 +721,7 @@ async function deleteSiswa(id) {
             await fetchAllAppData(true);
             renderSiswaView();
             renderAdminSiswa();
+            _refreshAllSiswaDropdowns();
         } else {
             Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data siswa.', confirmButtonColor: '#2563eb' });
         }

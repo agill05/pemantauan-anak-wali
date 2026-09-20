@@ -1,3 +1,4 @@
+
 const LOGIN_ROLE_KEY = "login_last_role";
 const LOGIN_ROLE_LABEL = { siswa: "Siswa", guru: "Guru", admin: "Admin" };
 const LOGIN_FIELD_IDS = ["login-role", "login-username", "login-password"];
@@ -526,7 +527,6 @@ function handleLogout(force = false) {
         localStorage.removeItem("session_anak_wali");
         localStorage.removeItem("cache_appState_full");
         localStorage.removeItem("notif_ditangani_cache");
-        localStorage.removeItem("dismissed_notifications_map");
         localStorage.removeItem("login_last_role");
         appState = { token: null, user: null, kelas: [], guru: [], siswa: [], myStudents: [] };
         location.reload();

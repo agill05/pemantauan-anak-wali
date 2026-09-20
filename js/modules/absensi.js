@@ -1,3 +1,4 @@
+
 async function loadAbsensiData(forceRefresh = false) {
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
@@ -40,7 +41,7 @@ function renderAbsensiView() {
 
     const filteredSiswa = sortSiswa(rawFiltered);
     const totalSiswa = filteredSiswa.length;
-    let countH = 0, countS = 0, countI = 0, countA = 0;
+    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0;
 
     filteredSiswa.forEach(s => {
         const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id));
@@ -48,6 +49,7 @@ function renderAbsensiView() {
         if (st === 'H') countH++;
         else if (st === 'S') countS++;
         else if (st === 'I') countI++;
+        else if (st === 'T') countT++;
         else countA++;
     });
 
@@ -96,7 +98,7 @@ function renderAbsensiView() {
                     <div id="absensi-progress-bar" class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: ${persenHadir}%"></div>
                 </div>
 
-                <div class="grid grid-cols-4 gap-2 pt-1 border-t border-slate-700/60 text-center">
+                <div class="grid grid-cols-5 gap-1.5 pt-1 border-t border-slate-700/60 text-center">
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                         <span class="block text-xs text-slate-400 font-bold">Hadir</span>
                         <span id="stat-count-h" class="text-xs font-extrabold text-emerald-400">${countH}</span>
@@ -108,6 +110,10 @@ function renderAbsensiView() {
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                         <span class="block text-xs text-slate-400 font-bold">Izin</span>
                         <span id="stat-count-i" class="text-xs font-extrabold text-amber-400">${countI}</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
+                        <span class="block text-xs text-slate-400 font-bold">Telat</span>
+                        <span id="stat-count-t" class="text-xs font-extrabold text-orange-400">${countT}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
                         <span class="block text-xs text-slate-400 font-bold">Alpa</span>
@@ -235,13 +241,14 @@ function updateLiveAbsensiStats() {
     if (!selects || selects.length === 0) return;
 
     const total = selects.length;
-    let countH = 0, countS = 0, countI = 0, countA = 0;
+    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0;
 
     selects.forEach(sel => {
         const val = sel.value;
         if (val === 'H') countH++;
         else if (val === 'S') countS++;
         else if (val === 'I') countI++;
+        else if (val === 'T') countT++;
         else countA++;
     });
 
@@ -253,6 +260,7 @@ function updateLiveAbsensiStats() {
     const statH = document.getElementById("stat-count-h");
     const statS = document.getElementById("stat-count-s");
     const statI = document.getElementById("stat-count-i");
+    const statT = document.getElementById("stat-count-t");
     const statA = document.getElementById("stat-count-a");
 
     if (persenEl) persenEl.innerHTML = `${persen}% <span class="text-xs font-normal text-slate-300">Hadir</span>`;
@@ -261,5 +269,6 @@ function updateLiveAbsensiStats() {
     if (statH) statH.innerText = countH;
     if (statS) statS.innerText = countS;
     if (statI) statI.innerText = countI;
+    if (statT) statT.innerText = countT;
     if (statA) statA.innerText = countA;
 }

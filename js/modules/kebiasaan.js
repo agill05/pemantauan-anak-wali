@@ -1,23 +1,5 @@
-function populateSiswaSelectForRole(selectEl, options = {}) {
-    if (!selectEl || !appState.user) return;
-    const includeAllOption = !!options.includeAllOption;
-    const isSiswaRole = appState.user.role === 'siswa';
 
-    if (isSiswaRole) {
-        selectEl.innerHTML = `<option value="${appState.user.id}" selected>${escapeHtml(appState.user.nama)}</option>`;
-        selectEl.value = appState.user.id;
-        selectEl.disabled = true;
-        return;
-    }
-
-    const prevValue = selectEl.value;
-    selectEl.disabled = false;
-    const siswaOptions = (appState.siswa || []).map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
-    const allOption = includeAllOption ? `<option value="ALL">Semua Siswa</option>` : "";
-    selectEl.innerHTML = `<option value="" disabled selected>-- Pilih Siswa --</option>` + allOption + siswaOptions;
-
-    if (prevValue && prevValue !== "") selectEl.value = prevValue;
-}
+// populateSiswaSelectForRole() dipindah ke js/state.js — dulu terduplikasi persis di sini.
 
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");

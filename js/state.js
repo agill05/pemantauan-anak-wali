@@ -1,3 +1,4 @@
+
 let lastFetchTimes = {
     bootstrap: 0,
     absensi: 0,

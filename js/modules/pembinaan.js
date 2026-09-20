@@ -1,3 +1,4 @@
+
 function getPembinaanStatusBadge(status) {
     const s = String(status || '').trim().toLowerCase();
     if (s === 'pemantauan') return 'bg-sky-50 text-sky-700 border-sky-200';
@@ -216,7 +217,8 @@ async function deletePembinaan(id) {
         saveAppStateToLocal();
         renderPembinaanView();
         showToast("Pembinaan dihapus");
-        apiCall("deletePembinaan", { id }, false);
+        await apiCall("deletePembinaan", { id }, false);
+        checkStudentNotifications();
     }
 }
 

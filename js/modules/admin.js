@@ -1,3 +1,4 @@
+
 function renderAdminManage() { switchAdminTab("guru"); }
 
 function switchAdminTab(tab) {
@@ -215,6 +216,7 @@ async function saveGuruForm(e, id) {
         showToast("Data Guru diperbarui!");
         await fetchAllAppData(true);
         renderAdminGuru();
+        _refreshAllSiswaDropdowns();
     } else {
         if (btn) {
             btn.disabled = false;
@@ -232,6 +234,7 @@ async function deleteGuru(id) {
         if (res && res.status === "success") {
             await fetchAllAppData(true);
             renderAdminGuru();
+            _refreshAllSiswaDropdowns();
         } else {
             Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data guru.', confirmButtonColor: '#2563eb' });
         }
@@ -291,6 +294,7 @@ async function saveKelasForm(e, id) {
         showToast("Data kelas diperbarui!");
         await fetchAllAppData(true);
         renderAdminKelas();
+        _refreshAllSiswaDropdowns();
     } else {
         if (btn) {
             btn.disabled = false;
@@ -308,6 +312,7 @@ async function deleteKelas(id) {
         if (res && res.status === "success") {
             await fetchAllAppData(true);
             renderAdminKelas();
+            _refreshAllSiswaDropdowns();
         } else {
             Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data kelas.', confirmButtonColor: '#2563eb' });
         }
