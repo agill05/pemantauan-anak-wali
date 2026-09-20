@@ -133,7 +133,7 @@ function buildLaporanRekapHtml(data) {
                     <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase;">Pemerintah Kabupaten Gorontalo</h4>
                     <h3 style="margin: 2px 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Dinas Pendidikan dan Kebudayaan</h3>
                     <h2 style="margin: 2px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">SMP NEGERI 1 TALAGA JAYA</h2>
-                    <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Jl. Pelabuhan II, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
+                    <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Buhu, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
                 </div>
                 <img src="https://www.e-ujian.com/smpntalagajaya/logo" alt="Logo SMPN 1 Talaga Jaya" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;">
             </div>
@@ -167,12 +167,12 @@ function buildLaporanRekapHtml(data) {
                 <div style="text-align: center; width: 220px;">
                     <p style="margin-bottom: 60px;">Mengetahui,<br>Kepala SMPN 1 Talaga Jaya</p>
                     <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '( ............................................ )')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP. ${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP.${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
                 </div>
                 <div style="text-align: center; width: 220px;">
                     <p style="margin-bottom: 60px;">Talaga Jaya, ${formattedDate}<br>Guru Pemantau / Wali Kelas</p>
                     <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Guru Pemantau')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP. ${escapeHtml(getGuruNip())}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP.${escapeHtml(getGuruNip())}</p>
                 </div>
             </div>
         </div>

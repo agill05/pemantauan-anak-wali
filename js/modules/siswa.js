@@ -361,7 +361,7 @@ function printProfilSiswa() {
                 <p>Mengetahui,<br>Kepala Sekolah</p>
                 <br><br><br>
                 <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '............................................')}</p>
-                <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
+                <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP.${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
             </div>
 
             <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 12px;">
@@ -374,7 +374,7 @@ function printProfilSiswa() {
                     <p>Wali Kelas</p>
                     <br><br><br>
                     <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ${escapeHtml(getGuruNip())}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP.${escapeHtml(getGuruNip())}</p>
                 </div>
             </div>
         </div>
