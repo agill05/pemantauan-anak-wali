@@ -743,13 +743,11 @@ body.dark .text-slate-400 {
 
 .lg-logo {
     display: block;
-    width: 72px;
-    height: 72px;
-    margin-bottom: 1.5rem;
-    padding: 7px;
+    width: 128px;
+    height: 128px;
+    margin-bottom: 1.25rem;
     object-fit: contain;
-    background: #ffffff;
-    border-radius: 18px;
+    filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.4));
 }
 
 .lg-heading {
@@ -853,27 +851,39 @@ body.dark .text-slate-400 {
 }
 
 .lg-pass .lg-input {
-    padding-right: 7.5rem;
+    padding-right: 3.25rem;
 }
 
 .lg-toggle {
     position: absolute;
     top: 50%;
-    right: 0.35rem;
+    right: 0.25rem;
     transform: translateY(-50%);
-    min-height: 40px;
-    padding: 0 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
     border: 0;
-    border-radius: 9px;
+    border-radius: 10px;
     background: transparent;
-    color: var(--lg-primary);
-    font-size: 0.875rem;
-    font-weight: 600;
+    color: var(--lg-muted);
     cursor: pointer;
 }
 
 .lg-toggle:hover {
+    color: var(--lg-primary);
     background: var(--primary-light, #eff6ff);
+}
+
+.lg-toggle .lg-eye-off,
+.lg-toggle.is-shown .lg-eye {
+    display: none;
+}
+
+.lg-toggle.is-shown .lg-eye-off {
+    display: block;
 }
 
 .lg-toggle:focus-visible,
@@ -966,26 +976,6 @@ body.dark .text-slate-400 {
     display: inline-block;
 }
 
-.lg-help {
-    display: grid;
-    gap: 0.4rem;
-    margin-top: 1.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid #e2e8f0;
-    font-size: 0.8125rem;
-    line-height: 1.5;
-    color: var(--lg-muted);
-}
-
-.lg-help p {
-    margin: 0;
-}
-
-.lg-help strong {
-    font-weight: 700;
-    color: var(--lg-ink);
-}
-
 .lg-copy {
     margin: 1rem 0 0;
     text-align: center;
@@ -1026,11 +1016,9 @@ body.dark .text-slate-400 {
 
     .lg-logo {
         flex: none;
-        width: 52px;
-        height: 52px;
+        width: 72px;
+        height: 72px;
         margin: 0;
-        padding: 5px;
-        border-radius: 14px;
     }
 
     .lg-heading {
