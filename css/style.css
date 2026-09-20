@@ -317,6 +317,10 @@ a:focus-visible {
     color: #b7c3e0 !important;
 }
 
+.sidebar-nav-item i {
+    color: #9fb0dc !important;
+}
+
 .sidebar-nav-item:hover {
     background: rgba(255, 255, 255, 0.07) !important;
     color: #ffffff !important;
@@ -330,6 +334,35 @@ a:focus-visible {
 
 #app-sidebar .sidebar-nav-item.active i {
     color: #ffffff !important;
+}
+
+.sidebar-school {
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    color: #8fa2d6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-nav-item {
+    position: relative;
+}
+
+#app-sidebar .sidebar-nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    width: 4px;
+    height: 60%;
+    transform: translateY(-50%);
+    background: #93c5fd;
+    border-radius: 0 4px 4px 0;
 }
 
 #app-sidebar button[onclick="handleLogout()"] {
