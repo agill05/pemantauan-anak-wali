@@ -53,6 +53,15 @@ function getTimeWITA24() {
     return new Intl.DateTimeFormat('id-ID', options).format(now).replace('.', ':');
 }
 
+// NIP asli guru (appState.user.nip). Fallback cari di appState.guru kalau kosong di session.
+// JANGAN pakai appState.user.id — itu ID login (format GRU-xxxx), bukan NIP.
+function getGuruNip() {
+    if (!appState.user) return '........................................';
+    if (appState.user.nip) return appState.user.nip;
+    const g = (appState.guru || []).find(x => String(x.id) === String(appState.user.id));
+    return (g && g.nip) ? g.nip : '........................................';
+}
+
 function getDateWITA() {
     const now = new Date();
     const options = { timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' };

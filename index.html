@@ -531,13 +531,13 @@
                         class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
                         <i class="fas fa-file-excel"></i> Excel
                     </button>
-                    <button onclick="exportLaporanDocs()"
+                    <button onclick="printLaporanRekap()"
                         class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-                        <i class="fas fa-file-word"></i> Ekspor Docs
+                        <i class="fas fa-print"></i> Cetak PDF
                     </button>
                     <button onclick="exportLaporanPDF()"
                         class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-                        <i class="fas fa-file-pdf"></i> Ekspor PDF
+                        <i class="fas fa-file-pdf"></i> Eksport PDF
                     </button>
                 </div>
             </div>
@@ -568,6 +568,8 @@
                     class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Siswa</button>
                 <button onclick="switchAdminTab('kelas')" id="btn-admin-tab-kelas"
                     class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Kelas</button>
+                <button onclick="switchAdminTab('sekolah')" id="btn-admin-tab-sekolah"
+                    class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Sekolah</button>
             </div>
 
             <div id="admin-tab-guru" class="admin-tab-content space-y-3">
@@ -601,6 +603,21 @@
                             class="fas fa-plus mr-1"></i> Kelas</button>
                 </div>
                 <div id="admin-kelas-list" class="space-y-2"></div>
+            </div>
+
+            <div id="admin-tab-sekolah" class="admin-tab-content space-y-3 hidden">
+                <p class="text-xs text-slate-500">Data Kepala Sekolah berlaku untuk seluruh sekolah (1 data, dipakai di semua laporan/rapor) — bukan diisi per-siswa.</p>
+                <form onsubmit="saveSekolahForm(event)" class="space-y-3 bg-white p-3.5 rounded-2xl border border-slate-100">
+                    <div>
+                        <label for="m-skl-kepsek" class="block text-xs font-bold text-slate-500 mb-1">NAMA KEPALA SEKOLAH</label>
+                        <input type="text" id="m-skl-kepsek" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="Contoh: Drs. Ahmad, M.Pd.">
+                    </div>
+                    <div>
+                        <label for="m-skl-nip-kepsek" class="block text-xs font-bold text-slate-500 mb-1">NIP KEPALA SEKOLAH</label>
+                        <input type="text" id="m-skl-nip-kepsek" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="19xxxxxxxxxxxxxxxx">
+                    </div>
+                    <button type="submit" id="btn-save-sekolah" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Data Kepala Sekolah</button>
+                </form>
             </div>
         </div>
 

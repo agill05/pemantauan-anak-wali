@@ -166,6 +166,7 @@ async function continueSessionSetup() {
         appState.guru = resBootstrap.data.initial.guru || [];
         appState.siswa = resBootstrap.data.initial.siswa || [];
         appState.myStudents = resBootstrap.data.initial.siswa || [];
+        appState.pengaturan = resBootstrap.data.initial.pengaturan || { nama_kepsek: "", nip_kepsek: "" };
         saveAppStateToLocal();
     }
 

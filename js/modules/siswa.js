@@ -69,7 +69,7 @@ async function openProfilSiswa(siswaTarget) {
             <div>
                 <h3 class="font-bold text-base text-slate-800">${escapeHtml(siswa.nama)}</h3>
                 <p class="text-xs text-slate-400">NISN: ${escapeHtml(siswa.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
-                <p class="text-xs text-slate-400">Ortu/Wali: ${escapeHtml(siswa.no_hp_ortu || '-')}</p>
+                <p class="text-xs text-slate-400">Ortu/Wali: ${escapeHtml(siswa.nama_ortu || siswa.no_hp_ortu || '-')}</p>
             </div>
         </div>
 
@@ -279,7 +279,8 @@ function printProfilSiswa() {
                 <tr><td style="width: 120px; font-weight: bold;">Nama Siswa</td><td>: ${escapeHtml(siswa.nama)}</td></tr>
                 <tr><td style="font-weight: bold;">NISN</td><td>: ${escapeHtml(siswa.nisn || '-')}</td></tr>
                 <tr><td style="font-weight: bold;">Kelas</td><td>: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</td></tr>
-                <tr><td style="font-weight: bold;">Orang Tua / Wali</td><td>: ${escapeHtml(siswa.no_hp_ortu || '-')}</td></tr>
+                <tr><td style="font-weight: bold;">Nama Orang Tua / Wali</td><td>: ${escapeHtml(siswa.nama_ortu || '-')}</td></tr>
+                <tr><td style="font-weight: bold;">No. WA Orang Tua / Wali</td><td>: ${escapeHtml(siswa.no_hp_ortu || '-')}</td></tr>
             </table>
 
             <h4 style="font-size: 14px; margin-bottom: 5px;">1. Rekapitulasi Presensi</h4>
@@ -352,16 +353,24 @@ function printProfilSiswa() {
                 </tbody>
             </table>
 
-            <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px;">
+            <div style="margin-top: 30px; text-align: center; font-size: 12px;">
+                <p>Mengetahui,<br>Kepala Sekolah</p>
+                <br><br><br>
+                <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '............................................')}</p>
+                <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 12px;">
                 <div style="text-align: center; width: 200px;">
                     <p>Orang Tua / Wali Siswa</p>
                     <br><br><br>
-                    <p>( .................................... )</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(siswa.nama_ortu || '............................................')}</p>
                 </div>
                 <div style="text-align: center; width: 200px;">
                     <p>Wali Kelas</p>
                     <br><br><br>
-                    <p><b>${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</b></p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ${escapeHtml(getGuruNip())}</p>
                 </div>
             </div>
         </div>
@@ -641,6 +650,10 @@ function openModalSiswa(id = null) {
                 </p>
             </div>
             <div>
+                <label for="m-ssw-nama-ortu" class="block text-xs font-bold text-slate-500 mb-1">NAMA ORANG TUA / WALI</label>
+                <input type="text" id="m-ssw-nama-ortu" value="${escapeHtml(s?.nama_ortu || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="Nama lengkap orang tua/wali">
+            </div>
+            <div>
                 <label for="m-ssw-ortu" class="block text-xs font-bold text-slate-500 mb-1">NO. WA ORANG TUA / WALI</label>
                 <input type="text" id="m-ssw-ortu" value="${escapeHtml(s?.no_hp_ortu || '')}" oninput="validatePhoneField(this, 'm-ssw-ortu-error')" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="08xxxxxxxxxx">
                 <p id="m-ssw-ortu-error" class="hidden text-[10px] text-rose-500 mt-1 font-semibold"><i class="fas fa-circle-exclamation"></i> Format nomor tidak valid. Gunakan 08xxxxxxxxxx (10-14 digit).</p>
@@ -677,6 +690,7 @@ async function saveSiswaForm(e, id) {
         nisn: document.getElementById("m-ssw-nisn").value,
         kelas_id: document.getElementById("m-ssw-kelas").value,
         no_hp_ortu: document.getElementById("m-ssw-ortu").value,
+        nama_ortu: document.getElementById("m-ssw-nama-ortu").value,
     };
 
     const res = await apiCall("saveSiswa", payload, true);

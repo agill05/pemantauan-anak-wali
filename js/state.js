@@ -30,7 +30,8 @@ let appState = {
     activeSiswaDetail: null,
     laporanRekap: [],
     currentNotifications: [],
-    handledNotifications: []
+    handledNotifications: [],
+    pengaturan: { nama_kepsek: "", nip_kepsek: "" }
 };
 
 function populateSiswaSelectForRole(selectEl, options = {}) {
@@ -71,6 +72,7 @@ function saveAppStateToLocal() {
             prestasi: appState.prestasi,
             pembinaan: appState.pembinaan,
             laporanRekap: appState.laporanRekap,
+            pengaturan: appState.pengaturan,
             lastFetchTimes: lastFetchTimes
         }));
     } catch (e) { }

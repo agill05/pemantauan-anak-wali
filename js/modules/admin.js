@@ -19,6 +19,46 @@ function switchAdminTab(tab) {
     if (tab === "guru") renderAdminGuru();
     if (tab === "siswa") renderAdminSiswa();
     if (tab === "kelas") renderAdminKelas();
+    if (tab === "sekolah") renderAdminSekolah();
+}
+
+// Tab "Sekolah" — data Kepala Sekolah bersifat global (1 sekolah = 1 kepsek), dipakai
+// di semua laporan/rapor. Bukan per-siswa, biar tidak diulang & rawan typo tiap form.
+function renderAdminSekolah() {
+    const nama = document.getElementById("m-skl-kepsek");
+    const nip = document.getElementById("m-skl-nip-kepsek");
+    if (nama) nama.value = appState.pengaturan?.nama_kepsek || "";
+    if (nip) nip.value = appState.pengaturan?.nip_kepsek || "";
+}
+
+async function saveSekolahForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById("btn-save-sekolah");
+    const originalHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    }
+
+    const payload = {
+        nama_kepsek: document.getElementById("m-skl-kepsek").value,
+        nip_kepsek: document.getElementById("m-skl-nip-kepsek").value,
+    };
+
+    const res = await apiCall("savePengaturan", payload, true);
+
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+
+    if (res && res.status === "success") {
+        appState.pengaturan = { ...appState.pengaturan, ...payload };
+        saveAppStateToLocal();
+        showToast("Data Kepala Sekolah tersimpan!");
+    } else {
+        Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: res?.message || 'Terjadi kesalahan.', confirmButtonColor: '#2563eb' });
+    }
 }
 
 function renderAdminGuru() {

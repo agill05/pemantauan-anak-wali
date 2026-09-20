@@ -162,24 +162,25 @@ function buildLaporanRekapHtml(data) {
             <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; page-break-inside: avoid;">
                 <div style="text-align: center; width: 220px;">
                     <p style="margin-bottom: 60px;">Mengetahui,<br>Kepala SMPN 1 Talaga Jaya</p>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">( ............................................ )</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ........................................</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '( ............................................ )')}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
                 </div>
                 <div style="text-align: center; width: 220px;">
                     <p style="margin-bottom: 60px;">Talaga Jaya, ${formattedDate}<br>Guru Pemantau / Wali Kelas</p>
                     <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Guru Pemantau')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP/ID: ${escapeHtml(appState.user ? appState.user.id : '-')}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP. ${escapeHtml(getGuruNip())}</p>
                 </div>
             </div>
         </div>
     `;
 }
 
-// "Ekspor PDF" — render ke area cetak lalu buka dialog Print (user pilih "Save as PDF").
-function exportLaporanPDF() {
+// "Cetak PDF" — render ke area cetak lalu buka dialog Print (user pilih printer fisik
+// atau "Save as PDF" manual di dialog browser).
+function printLaporanRekap() {
     const data = getFilteredLaporanData();
     if (data.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk diekspor.', confirmButtonColor: '#2563eb' });
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk dicetak.', confirmButtonColor: '#2563eb' });
         return;
     }
 
@@ -194,36 +195,44 @@ function exportLaporanPDF() {
     }, 150);
 }
 
-// "Ekspor Docs" — bungkus HTML laporan jadi file .doc yang bisa dibuka Microsoft Word / Google Docs.
-function exportLaporanDocs() {
+// "Eksport PDF" — render ke elemen tersembunyi lalu convert jadi file .pdf beneran
+// pakai html2pdf.js, langsung terunduh tanpa dialog Print.
+function exportLaporanPDF() {
     const data = getFilteredLaporanData();
     if (data.length === 0) {
         Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk diekspor.', confirmButtonColor: '#2563eb' });
         return;
     }
 
-    const contentHtml = buildLaporanRekapHtml(data);
-    const docHtml = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="utf-8"><title>Laporan Rekapitulasi Pemantauan Anak Wali</title></head>
-<body>${contentHtml}</body></html>`;
+    if (typeof html2pdf === 'undefined') {
+        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Komponen eksport PDF gagal dimuat. Coba muat ulang halaman.', confirmButtonColor: '#2563eb' });
+        return;
+    }
 
-    const blob = new Blob(['\ufeff', docHtml], { type: "application/msword;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Laporan_Rekap_Anak_Wali_${getDateWITA()}.doc`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const source = document.createElement("div");
+    source.innerHTML = buildLaporanRekapHtml(data);
+    source.style.width = "1000px";
 
-    showToast("File Docs berhasil diunduh!");
-}
+    showLoading("Membuat file PDF...");
 
-// Alias — kompatibel dengan tombol lama "Cetak PDF / Print" kalau belum sempat diganti di index.html.
-function printLaporanRekap() {
-    exportLaporanPDF();
+    html2pdf()
+        .set({
+            margin: 10,
+            filename: `Laporan_Rekap_Anak_Wali_${getDateWITA()}.pdf`,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
+        })
+        .from(source)
+        .save()
+        .then(() => {
+            hideLoading();
+            showToast("File PDF berhasil diunduh!");
+        })
+        .catch(() => {
+            hideLoading();
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal membuat file PDF.', confirmButtonColor: '#2563eb' });
+        });
 }
 
 function exportRekapCSV() {
