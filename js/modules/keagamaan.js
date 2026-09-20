@@ -16,11 +16,19 @@ function getHafalanProgressStats(hafalanList = []) {
 
 async function loadKeagamaanData(forceRefresh = false) {
     const filterSelect = document.getElementById("karakter-siswa-filter");
-    if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
-        filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+    if (filterSelect && filterSelect.options.length === 0) {
+        populateSiswaSelectForRole(filterSelect, { includeAllOption: true });
     }
 
-    const selectedSiswaId = filterSelect ? filterSelect.value : null;
+    const rawSelectedSiswaId = filterSelect ? filterSelect.value : "";
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+
+    if (isAdminOrGuru && rawSelectedSiswaId === "") {
+        renderKeagamaanView();
+        return;
+    }
+
+    const selectedSiswaId = rawSelectedSiswaId === "ALL" ? null : rawSelectedSiswaId;
     const isStale = (Date.now() - (lastFetchTimes.keagamaan || 0)) > CACHE_TTL;
 
     if (appState.keagamaan && appState.keagamaan.length > 0) {
@@ -44,8 +52,16 @@ function renderKeagamaanView() {
     const container = document.getElementById("keagamaan-container");
     if (!container) return;
 
-    const filterSiswaId = document.getElementById("karakter-siswa-filter")?.value || "";
-    const filteredHafalan = filterSiswaId
+    const selectEl = document.getElementById("karakter-siswa-filter");
+    const filterSiswaId = selectEl ? selectEl.value : "";
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+
+    if (isAdminOrGuru && filterSiswaId === "") {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
+        return;
+    }
+
+    const filteredHafalan = (filterSiswaId && filterSiswaId !== "ALL")
         ? appState.keagamaan.filter(h => String(h.siswa_id) === String(filterSiswaId))
         : appState.keagamaan;
 
@@ -90,7 +106,7 @@ function renderKeagamaanView() {
         return;
     }
 
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuruItem = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     const cardsHtml = filteredHafalan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
@@ -109,7 +125,7 @@ function renderKeagamaanView() {
                     <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(item.status)}</span>
                 </div>
                 ${item.catatan ? `<p class="text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-slate-600 italic">"${escapeHtml(item.catatan)}"</p>` : ''}
-                ${isAdminOrGuru ? `
+                ${isAdminOrGuruItem ? `
                 <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
                     <button onclick="openModalKeagamaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
                     <button onclick="deleteKeagamaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>

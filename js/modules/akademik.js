@@ -20,15 +20,22 @@ function switchAkademikTab(tab) {
 
 async function loadAkademikData(forceRefresh = false) {
     const filterSelect = document.getElementById("akademik-siswa-filter");
-    if (filterSelect && appState.siswa.length > 0 && filterSelect.options.length <= 1) {
-        filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+    if (filterSelect && filterSelect.options.length === 0) {
+        populateSiswaSelectForRole(filterSelect, { includeAllOption: true });
     }
 
-    const selectedSiswaId = filterSelect ? filterSelect.value : null;
-    const isStale = (Date.now() - (lastFetchTimes.akademik || 0)) > CACHE_TTL;
-
+    const rawSelectedSiswaId = filterSelect ? filterSelect.value : "";
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
     const isPrestasiActive = !document.getElementById("akd-tab-prestasi")?.classList.contains("hidden");
     const currentTab = isPrestasiActive ? 'prestasi' : 'nilai';
+
+    if (isAdminOrGuru && rawSelectedSiswaId === "") {
+        switchAkademikTab(currentTab);
+        return;
+    }
+
+    const selectedSiswaId = rawSelectedSiswaId === "ALL" ? null : rawSelectedSiswaId;
+    const isStale = (Date.now() - (lastFetchTimes.akademik || 0)) > CACHE_TTL;
 
     if (appState.akademik && appState.akademik.length > 0) {
         switchAkademikTab(currentTab);
@@ -56,8 +63,16 @@ function renderAkademikNilai() {
     const container = document.getElementById("akademik-list-container");
     if (!container) return;
 
-    const filterSiswaId = document.getElementById("akademik-siswa-filter")?.value || "";
-    const filteredAkademik = filterSiswaId
+    const selectEl = document.getElementById("akademik-siswa-filter");
+    const filterSiswaId = selectEl ? selectEl.value : "";
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+
+    if (isAdminOrGuru && filterSiswaId === "") {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-indigo-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
+        return;
+    }
+
+    const filteredAkademik = (filterSiswaId && filterSiswaId !== "ALL")
         ? (appState.akademik || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
         : (appState.akademik || []);
 
@@ -66,7 +81,7 @@ function renderAkademikNilai() {
         return;
     }
 
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuruItem = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     container.innerHTML = filteredAkademik.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
@@ -83,7 +98,7 @@ function renderAkademikNilai() {
                     <span class="text-xs font-black px-2.5 py-1 rounded-xl border ${badgeColor}">
                         ${item.nilai_akhir} ${isBelowKKTP ? '⚠️' : '✅'}
                     </span>
-                    ${isAdminOrGuru ? `
+                    ${isAdminOrGuruItem ? `
                     <div class="flex gap-1">
                         <button onclick="openModalAkademik('${escapeHtml(item.id)}')" class="p-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit nilai akademik"><i class="fas fa-edit"></i></button>
                         <button onclick="deleteAkademik('${escapeHtml(item.id)}')" class="p-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus nilai akademik"><i class="fas fa-trash"></i></button>
@@ -98,8 +113,16 @@ function renderAkademikPrestasi() {
     const container = document.getElementById("prestasi-list-container");
     if (!container) return;
 
-    const filterSiswaId = document.getElementById("akademik-siswa-filter")?.value || "";
-    const filteredPrestasi = filterSiswaId
+    const selectEl = document.getElementById("akademik-siswa-filter");
+    const filterSiswaId = selectEl ? selectEl.value : "";
+    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+
+    if (isAdminOrGuru && filterSiswaId === "") {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-amber-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
+        return;
+    }
+
+    const filteredPrestasi = (filterSiswaId && filterSiswaId !== "ALL")
         ? (appState.prestasi || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
         : (appState.prestasi || []);
 
@@ -108,7 +131,7 @@ function renderAkademikPrestasi() {
         return;
     }
 
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuruItem = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
 
     container.innerHTML = filteredPrestasi.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
@@ -125,7 +148,7 @@ function renderAkademikPrestasi() {
                     </div>
                     <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">${escapeHtml(item.tingkat)}</span>
                 </div>
-                ${isAdminOrGuru ? `
+                ${isAdminOrGuruItem ? `
                 <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
                     <button onclick="openModalPrestasi('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
                     <button onclick="deletePrestasi('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>

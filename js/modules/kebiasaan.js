@@ -1,11 +1,32 @@
+function populateSiswaSelectForRole(selectEl, options = {}) {
+    if (!selectEl || !appState.user) return;
+    const includeAllOption = !!options.includeAllOption;
+    const isSiswaRole = appState.user.role === 'siswa';
+
+    if (isSiswaRole) {
+        selectEl.innerHTML = `<option value="${appState.user.id}" selected>${escapeHtml(appState.user.nama)}</option>`;
+        selectEl.value = appState.user.id;
+        selectEl.disabled = true;
+        return;
+    }
+
+    const prevValue = selectEl.value;
+    selectEl.disabled = false;
+    const siswaOptions = (appState.siswa || []).map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+    const allOption = includeAllOption ? `<option value="ALL">Semua Siswa</option>` : "";
+    selectEl.innerHTML = `<option value="" disabled selected>-- Pilih Siswa --</option>` + allOption + siswaOptions;
+
+    if (prevValue && prevValue !== "") selectEl.value = prevValue;
+}
+
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
     const tanggal = dateInput ? (dateInput.value || getDateWITA()) : getDateWITA();
     if (dateInput) dateInput.value = tanggal;
 
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
-    if (selectSiswa && appState.siswa.length > 0 && selectSiswa.options.length === 0) {
-        selectSiswa.innerHTML = appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+    if (selectSiswa && selectSiswa.options.length === 0) {
+        populateSiswaSelectForRole(selectSiswa);
     }
 
     const isStale = (Date.now() - (lastFetchTimes.kebiasaan || 0)) > CACHE_TTL;
@@ -32,9 +53,14 @@ function renderKebiasaanView() {
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
     if (!container || !selectSiswa) return;
 
-    const selectedSiswaId = selectSiswa.value || (appState.siswa[0] ? appState.siswa[0].id : null);
-    if (!selectedSiswaId) {
+    if (!appState.siswa || appState.siswa.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-user-slash text-2xl mb-2"></i><p class="text-xs text-slate-500">Belum ada data siswa untuk dipantau kebiasaannya.</p></div>`;
+        return;
+    }
+
+    const selectedSiswaId = selectSiswa.value;
+    if (!selectedSiswaId) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
         return;
     }
 
@@ -43,7 +69,7 @@ function renderKebiasaanView() {
     const studentRecords = appState.kebiasaan.filter(k => String(k.siswa_id) === String(selectedSiswaId));
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
-    
+
     const todayRecords = studentRecords.filter(k => String(k.tanggal) === String(tanggal));
     const completedToday = todayRecords.filter(k => k.status === 'Sudah').length;
     const persenTuntas = Math.round((completedToday / 7) * 100);

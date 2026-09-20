@@ -33,34 +33,21 @@ function switchView(viewId) {
 
 function _refreshAllSiswaDropdowns() {
     const siswaList = appState.siswa || [];
-    const siswaOptions = siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
 
     const selKebiasaan = document.getElementById("kebiasaan-siswa-select");
-    if (selKebiasaan) {
-        const prev = selKebiasaan.value;
-        selKebiasaan.innerHTML = siswaOptions;
-        if (prev) selKebiasaan.value = prev;
-    }
+    if (selKebiasaan && siswaList.length > 0) populateSiswaSelectForRole(selKebiasaan);
 
     const selKarakter = document.getElementById("karakter-siswa-filter");
-    if (selKarakter && siswaList.length > 0) {
-        const prev = selKarakter.value;
-        selKarakter.innerHTML = siswaOptions;
-        if (prev) selKarakter.value = prev;
-    }
+    if (selKarakter && siswaList.length > 0) populateSiswaSelectForRole(selKarakter, { includeAllOption: true });
 
     const selAkademik = document.getElementById("akademik-siswa-filter");
-    if (selAkademik && siswaList.length > 0) {
-        const prev = selAkademik.value;
-        selAkademik.innerHTML = siswaOptions;
-        if (prev) selAkademik.value = prev;
-    }
+    if (selAkademik && siswaList.length > 0) populateSiswaSelectForRole(selAkademik, { includeAllOption: true });
 
     const selPembinaan = document.getElementById("pembinaan-siswa-filter");
     if (selPembinaan && siswaList.length > 0) {
         const prev = selPembinaan.value;
-        const allOption = `<option value="">-- Semua Siswa --</option>`;
-        selPembinaan.innerHTML = allOption + siswaOptions;
+        const siswaOptions = siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+        selPembinaan.innerHTML = `<option value="">-- Semua Siswa --</option>` + siswaOptions;
         if (prev) selPembinaan.value = prev;
     }
 
@@ -70,6 +57,7 @@ function _refreshAllSiswaDropdowns() {
         if (viewId === "absensi") renderAbsensiView();
         else if (viewId === "kebiasaan") renderKebiasaanView();
         else if (viewId === "karakter") renderKeagamaanView();
+        else if (viewId === "akademik") { renderAkademikNilai(); renderAkademikPrestasi(); }
         else if (viewId === "pembinaan") renderPembinaanView();
         else if (viewId === "siswa") renderSiswaView();
     }
