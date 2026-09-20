@@ -40,6 +40,18 @@ function shakeLoginForm() {
     form.addEventListener("animationend", () => form.classList.remove("is-shaking"), { once: true });
 }
 
+function showPostLoginSplash(text) {
+    const el = document.getElementById("post-login-splash");
+    const txt = document.getElementById("splash-text");
+    if (txt && text) txt.textContent = text;
+    if (el) { el.classList.remove("hidden"); el.classList.add("flex"); }
+}
+
+function hidePostLoginSplash() {
+    const el = document.getElementById("post-login-splash");
+    if (el) { el.classList.add("hidden"); el.classList.remove("flex"); }
+}
+
 function toggleLoginPassword() {
     const input = document.getElementById("login-password");
     const btn = document.getElementById("login-toggle");
@@ -98,10 +110,12 @@ async function handleAppLogin(e) {
         appState.token = res.token;
         appState.user = res.user;
         localStorage.setItem("session_anak_wali", JSON.stringify({ token: res.token, user: res.user }));
+        showPostLoginSplash("Login Berhasil, Mengalihkan...");
         try {
             await setupAppSession();
         } catch (err) {
             console.error("setupAppSession gagal:", err);
+            hidePostLoginSplash();
             loginInFlight = false;
             setLoginBusy(false);
             showLoginError("Berhasil masuk, tetapi aplikasi gagal dimuat. Coba masuk lagi.");
@@ -277,6 +291,7 @@ async function continueSessionSetup() {
     const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
     switchView(targetView);
 
+    showPostLoginSplash("Memuat data sekolah...");
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
@@ -296,6 +311,8 @@ async function continueSessionSetup() {
     startRealtimeNotificationPolling();
     startDataPolling();
     checkStudentNotifications();
+
+    hidePostLoginSplash();
 }
 
 function startHeaderDateTimeClock() {

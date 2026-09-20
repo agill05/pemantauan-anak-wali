@@ -1171,3 +1171,18 @@ body.dark .text-slate-400 {
         animation-duration: 1.6s;
     }
 }
+
+
+#splash-bar {
+    animation: splash-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes splash-slide {
+    0% {
+        transform: translateX(-120%);
+    }
+
+    100% {
+        transform: translateX(220%);
+    }
+}
