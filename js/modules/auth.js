@@ -119,8 +119,8 @@ function startSplashTips() {
 
 function showSplashFallback(message) {
     if (!splashActive) return;
-    clearInterval(splashProgressTimer);
-    splashProgressTimer = null;
+    // Timer progres TIDAK dihentikan: proses background tetap jalan,
+    // fallback cuma opsi ekstra kalau user mau nyerah nunggu.
     const box = document.getElementById("splash-fallback");
     const text = document.getElementById("splash-fallback-text");
     if (text && message) text.textContent = message;
@@ -170,7 +170,7 @@ function showPostLoginSplash(text) {
     clearTimeout(splashTimeoutTimer);
     splashTimeoutTimer = setTimeout(() => {
         showSplashFallback(navigator.onLine
-            ? "Proses lebih lama dari biasanya. Server mungkin sibuk."
+            ? "Masih diproses, lebih lama dari biasanya. Bisa tunggu, atau coba lagi."
             : "Koneksi internet terputus. Sambungkan lagi, lalu tekan Coba lagi.");
     }, SPLASH_TIMEOUT_MS);
 
