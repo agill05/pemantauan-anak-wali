@@ -292,6 +292,7 @@ async function continueSessionSetup() {
     switchView(targetView);
 
     showPostLoginSplash("Memuat data sekolah...");
+    const splashStartedAt = Date.now();
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
@@ -312,6 +313,11 @@ async function continueSessionSetup() {
     startDataPolling();
     checkStudentNotifications();
 
+    const elapsed = Date.now() - splashStartedAt;
+    const MIN_SPLASH_MS = 900;
+    if (elapsed < MIN_SPLASH_MS) {
+        await new Promise(resolve => setTimeout(resolve, MIN_SPLASH_MS - elapsed));
+    }
     hidePostLoginSplash();
 }
 
