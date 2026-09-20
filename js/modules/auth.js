@@ -31,13 +31,21 @@ function setLoginBusy(busy) {
     if (label) label.textContent = busy ? "Memeriksa…" : "Masuk";
 }
 
+function shakeLoginForm() {
+    const form = document.getElementById("form-login");
+    if (!form) return;
+    form.classList.remove("is-shaking");
+    void form.offsetWidth; // paksa reflow supaya animasi bisa diulang
+    form.classList.add("is-shaking");
+    form.addEventListener("animationend", () => form.classList.remove("is-shaking"), { once: true });
+}
+
 function toggleLoginPassword() {
     const input = document.getElementById("login-password");
     const btn = document.getElementById("login-toggle");
     if (!input || !btn) return;
     const show = input.type === "password";
     input.type = show ? "text" : "password";
-    btn.classList.toggle("is-shown", show);
     btn.setAttribute("aria-label", show ? "Sembunyikan kata sandi" : "Tampilkan kata sandi");
 }
 
@@ -111,6 +119,7 @@ async function handleAppLogin(e) {
         );
         passwordEl.value = "";
         passwordEl.focus();
+        shakeLoginForm();
     } else {
         showLoginError("Tidak bisa terhubung ke server. Periksa internet, lalu coba lagi.");
     }
