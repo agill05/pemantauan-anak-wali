@@ -127,11 +127,15 @@ function buildLaporanRekapHtml(data) {
 
     return `
         <div style="font-family: 'Times New Roman', Times, serif; color: #0f172a; padding: 10px;">
-            <div style="text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 16px;">
-                <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase;">Pemerintah Kabupaten Gorontalo</h4>
-                <h3 style="margin: 2px 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Dinas Pendidikan dan Kebudayaan</h3>
-                <h2 style="margin: 2px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">SMP NEGERI 1 TALAGA JAYA</h2>
-                <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Jl. Pelabuhan II, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 14px; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 16px;">
+                <img src="https://zonalogo.com/assets/tut-wuri-handayani.webp" alt="Logo Tut Wuri Handayani" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;">
+                <div style="text-align: center; flex: 1;">
+                    <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase;">Pemerintah Kabupaten Gorontalo</h4>
+                    <h3 style="margin: 2px 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Dinas Pendidikan dan Kebudayaan</h3>
+                    <h2 style="margin: 2px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">SMP NEGERI 1 TALAGA JAYA</h2>
+                    <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Jl. Pelabuhan II, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
+                </div>
+                <img src="https://www.e-ujian.com/smpntalagajaya/logo" alt="Logo SMPN 1 Talaga Jaya" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;">
             </div>
 
             <div style="text-align: center; margin-bottom: 16px;">

@@ -269,10 +269,14 @@ function printProfilSiswa() {
 
     printArea.innerHTML = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
-            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">LAPORAN PEMANTAUAN ANAK WALI</h2>
-                <h3 style="margin: 5px 0 0 0; font-size: 16px;">SMP NEGERI 1 TALAGA JAYA</h3>
-                <p style="margin: 2px 0 0 0; font-size: 12px; color: #555;">Tahun Ajaran 2025/2026</p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 14px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+                <img src="https://zonalogo.com/assets/tut-wuri-handayani.webp" alt="Logo Tut Wuri Handayani" style="width: 60px; height: 60px; object-fit: contain; flex-shrink: 0;">
+                <div style="text-align: center; flex: 1;">
+                    <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">LAPORAN PEMANTAUAN ANAK WALI</h2>
+                    <h3 style="margin: 5px 0 0 0; font-size: 16px;">SMP NEGERI 1 TALAGA JAYA</h3>
+                    <p style="margin: 2px 0 0 0; font-size: 12px; color: #555;">Tahun Ajaran 2025/2026</p>
+                </div>
+                <img src="https://www.e-ujian.com/smpntalagajaya/logo" alt="Logo SMPN 1 Talaga Jaya" style="width: 60px; height: 60px; object-fit: contain; flex-shrink: 0;">
             </div>
 
             <table style="width: 100%; font-size: 12px; margin-bottom: 20px;">
