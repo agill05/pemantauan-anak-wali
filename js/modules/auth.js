@@ -738,13 +738,13 @@ function openUserSettingsModal() {
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>
                 <div class="relative">
                     <input type="password" id="m-pwd-old" placeholder="Kata sandi lama" aria-label="Kata sandi lama" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required>
-                    <button type="button" onclick="togglePasswordVisibility('m-pwd-old', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
+                    <button type="button" onclick="togglePasswordVisibility('m-pwd-old', this)" class="pwd-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
                 <div class="relative">
                     <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" aria-label="Kata sandi baru" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required minlength="6">
-                    <button type="button" onclick="togglePasswordVisibility('m-pwd-new', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
+                    <button type="button" onclick="togglePasswordVisibility('m-pwd-new', this)" class="pwd-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
