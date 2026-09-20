@@ -360,7 +360,7 @@ function printProfilSiswa() {
             <div style="margin-top: 30px; text-align: center; font-size: 12px;">
                 <p>Mengetahui,<br>Kepala Sekolah</p>
                 <br><br><br>
-                <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '............................................')}</p>
+                <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: 1px;">${escapeHtml(appState.pengaturan?.nama_kepsek || '............................................')}</p>
                 <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP.${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
             </div>
 
@@ -368,12 +368,12 @@ function printProfilSiswa() {
                 <div style="text-align: center; width: 200px;">
                     <p>Orang Tua / Wali Siswa</p>
                     <br><br><br>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(siswa.nama_ortu || '............................................')}</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: 1px;">${escapeHtml(siswa.nama_ortu || '............................................')}</p>
                 </div>
                 <div style="text-align: center; width: 200px;">
                     <p>Wali Kelas</p>
                     <br><br><br>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</p>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline; text-underline-offset: 1px;">${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</p>
                     <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP.${escapeHtml(getGuruNip())}</p>
                 </div>
             </div>
