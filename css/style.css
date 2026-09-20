@@ -846,6 +846,15 @@ body.dark .text-slate-400 {
     background-position: right 0.9rem center;
 }
 
+/* Placeholder (opsi disabled) tampil redup; pilihan asli tampil normal */
+.lg-select:required:invalid {
+    color: #64748b;
+}
+
+.lg-select option {
+    color: var(--lg-ink);
+}
+
 .lg-pass {
     position: relative;
 }

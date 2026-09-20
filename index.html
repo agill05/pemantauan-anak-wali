@@ -139,8 +139,8 @@
                     <form id="form-login" onsubmit="handleAppLogin(event)" novalidate>
                         <div class="lg-field">
                             <label class="lg-label" for="login-role">Jenis pengguna</label>
-                            <select class="lg-input lg-select" id="login-role" name="role" aria-describedby="login-error">
-                                <option value="">Pilih jenis pengguna</option>
+                            <select class="lg-input lg-select" id="login-role" name="role" required aria-describedby="login-error">
+                                <option value="" disabled selected>Pilih jenis pengguna</option>
                                 <option value="siswa">Siswa</option>
                                 <option value="guru">Guru</option>
                                 <option value="admin">Admin</option>
