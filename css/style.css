@@ -1172,7 +1172,6 @@ body.dark .text-slate-400 {
     }
 }
 
-
 #splash-bar {
-    transition: width 0.35s ease-out;
+    transition: width 0.15s linear;
 }

@@ -40,6 +40,9 @@ function shakeLoginForm() {
     form.addEventListener("animationend", () => form.classList.remove("is-shaking"), { once: true });
 }
 
+let splashProgressTimer = null;
+let splashProgressValue = 0;
+
 function showPostLoginSplash(text) {
     const el = document.getElementById("post-login-splash");
     const txt = document.getElementById("splash-text");
@@ -49,14 +52,34 @@ function showPostLoginSplash(text) {
     if (el) { el.classList.remove("hidden"); el.classList.add("flex"); }
 }
 
-function setSplashProgress(percent, text) {
-    const bar = document.getElementById("splash-bar");
+function setSplashText(text) {
     const txt = document.getElementById("splash-text");
-    if (bar) bar.style.width = Math.max(0, Math.min(100, percent)) + "%";
     if (txt && text) txt.textContent = text;
 }
 
+function startSplashAutoProgress() {
+    const bar = document.getElementById("splash-bar");
+    splashProgressValue = 0;
+    if (bar) bar.style.width = "0%";
+    clearInterval(splashProgressTimer);
+    splashProgressTimer = setInterval(() => {
+        const remaining = 90 - splashProgressValue;
+        const step = Math.max(0.3, remaining * 0.05);
+        splashProgressValue = Math.min(90, splashProgressValue + step);
+        if (bar) bar.style.width = splashProgressValue + "%";
+    }, 120);
+}
+
+function finishSplashProgress() {
+    clearInterval(splashProgressTimer);
+    splashProgressTimer = null;
+    const bar = document.getElementById("splash-bar");
+    if (bar) bar.style.width = "100%";
+}
+
 function hidePostLoginSplash() {
+    clearInterval(splashProgressTimer);
+    splashProgressTimer = null;
     const el = document.getElementById("post-login-splash");
     if (el) { el.classList.add("hidden"); el.classList.remove("flex"); }
 }
@@ -120,7 +143,7 @@ async function handleAppLogin(e) {
         appState.user = res.user;
         localStorage.setItem("session_anak_wali", JSON.stringify({ token: res.token, user: res.user }));
         showPostLoginSplash("Login Berhasil, Mengalihkan...");
-        setSplashProgress(15);
+        startSplashAutoProgress();
         try {
             await setupAppSession();
         } catch (err) {
@@ -301,11 +324,11 @@ async function continueSessionSetup() {
     const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
     switchView(targetView);
 
-    setSplashProgress(30, "Menyiapkan sesi...");
+    setSplashText("Menyiapkan sesi...");
 
-    setSplashProgress(50, "Memuat data sekolah...");
+    setSplashText("Memuat data sekolah...");
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
-    setSplashProgress(85, "Menyusun data...");
+    setSplashText("Menyusun data...");
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
         appState.guru = resBootstrap.data.initial.guru || [];
@@ -325,7 +348,8 @@ async function continueSessionSetup() {
     startDataPolling();
     checkStudentNotifications();
 
-    setSplashProgress(100, "Selesai!");
+    finishSplashProgress();
+    setSplashText("Selesai!");
     await new Promise(resolve => setTimeout(resolve, 250));
     hidePostLoginSplash();
 }
