@@ -43,8 +43,17 @@ function shakeLoginForm() {
 function showPostLoginSplash(text) {
     const el = document.getElementById("post-login-splash");
     const txt = document.getElementById("splash-text");
+    const bar = document.getElementById("splash-bar");
     if (txt && text) txt.textContent = text;
+    if (bar) bar.style.width = "0%";
     if (el) { el.classList.remove("hidden"); el.classList.add("flex"); }
+}
+
+function setSplashProgress(percent, text) {
+    const bar = document.getElementById("splash-bar");
+    const txt = document.getElementById("splash-text");
+    if (bar) bar.style.width = Math.max(0, Math.min(100, percent)) + "%";
+    if (txt && text) txt.textContent = text;
 }
 
 function hidePostLoginSplash() {
@@ -111,6 +120,7 @@ async function handleAppLogin(e) {
         appState.user = res.user;
         localStorage.setItem("session_anak_wali", JSON.stringify({ token: res.token, user: res.user }));
         showPostLoginSplash("Login Berhasil, Mengalihkan...");
+        setSplashProgress(15);
         try {
             await setupAppSession();
         } catch (err) {
@@ -291,9 +301,11 @@ async function continueSessionSetup() {
     const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
     switchView(targetView);
 
-    showPostLoginSplash("Memuat data sekolah...");
-    const splashStartedAt = Date.now();
+    setSplashProgress(30, "Menyiapkan sesi...");
+
+    setSplashProgress(50, "Memuat data sekolah...");
     const resBootstrap = await apiCall("getBootstrapData", {}, false);
+    setSplashProgress(85, "Menyusun data...");
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
         appState.guru = resBootstrap.data.initial.guru || [];
@@ -313,11 +325,8 @@ async function continueSessionSetup() {
     startDataPolling();
     checkStudentNotifications();
 
-    const elapsed = Date.now() - splashStartedAt;
-    const MIN_SPLASH_MS = 900;
-    if (elapsed < MIN_SPLASH_MS) {
-        await new Promise(resolve => setTimeout(resolve, MIN_SPLASH_MS - elapsed));
-    }
+    setSplashProgress(100, "Selesai!");
+    await new Promise(resolve => setTimeout(resolve, 250));
     hidePostLoginSplash();
 }
 
