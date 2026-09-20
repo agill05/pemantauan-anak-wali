@@ -53,8 +53,6 @@ function getTimeWITA24() {
     return new Intl.DateTimeFormat('id-ID', options).format(now).replace('.', ':');
 }
 
-// NIP asli guru (appState.user.nip). Fallback cari di appState.guru kalau kosong di session.
-// JANGAN pakai appState.user.id — itu ID login (format GRU-xxxx), bukan NIP.
 function getGuruNip() {
     if (!appState.user) return '........................................';
     if (appState.user.nip) return appState.user.nip;
@@ -116,11 +114,6 @@ function hideLoading() {
     }
 }
 
-/**
- * Generate avatar inisial secara lokal (SVG data-URI) — pengganti ui-avatars.com.
- * Menghindari network request eksternal tiap kartu siswa/guru dirender.
- * Warna latar konsisten per nama (hash sederhana), supaya tiap orang punya warna tetap.
- */
 function getInitialsAvatar(nama) {
     const name = (nama || "User").trim();
     const initials = name.split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase() || "U";

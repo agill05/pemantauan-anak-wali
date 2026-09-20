@@ -387,13 +387,6 @@ function printProfilSiswa() {
     }, 150);
 }
 
-// Catatan perbaikan: versi lama fungsi ini (di dashboard.js) menghitung rekap H/S/I/A dari
-// appState.absensi — array itu isinya snapshot presensi HARI INI SAJA untuk semua siswa
-// (lihat handleGetAbsensi di backend), bukan histori lengkap. Akibatnya rekap yang dikirim
-// ke WhatsApp orang tua ("Laporan Perkembangan Lengkap" & "Laporan Khusus Presensi &
-// Kehadiran") selalu salah/nyaris nol. Versi ini pakai histori lengkap per siswa dari
-// getDetailSiswa (appState.activeSiswaDetail atau fetch baru), sama seperti yang dipakai
-// halaman Profil Siswa & Cetak Rapor — jadi angkanya konsisten dan benar.
 async function hubungiOrtu(siswaId) {
     const sBasic = appState.siswa.find(x => String(x.id) === String(siswaId)) || (appState.activeSiswaDetail?.siswa?.id == siswaId ? appState.activeSiswaDetail.siswa : null) || appState.user;
     if (!sBasic) return;
@@ -417,7 +410,6 @@ async function hubungiOrtu(siswaId) {
         return;
     }
 
-    // Ambil histori lengkap (bukan snapshot harian) supaya rekap presensi akurat.
     let detail = (appState.activeSiswaDetail && String(appState.activeSiswaDetail.siswa.id) === String(siswaId))
         ? appState.activeSiswaDetail
         : null;

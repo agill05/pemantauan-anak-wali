@@ -184,7 +184,7 @@ async function dismissNotification(notifId) {
         title: 'Tandai Sudah Ditangani?',
         text: `${n.siswa.nama} — ${n.title}`,
         input: 'text',
-        inputPlaceholder: 'Catatan singkat (opsional), mis. sudah menghubungi ortu',
+        inputPlaceholder: 'Catatan singkat (opsional)',
         inputAttributes: { maxlength: 300 },
         showCancelButton: true,
         confirmButtonText: 'Ya, Tandai',

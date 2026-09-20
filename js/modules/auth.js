@@ -35,7 +35,7 @@ function shakeLoginForm() {
     const form = document.getElementById("form-login");
     if (!form) return;
     form.classList.remove("is-shaking");
-    void form.offsetWidth; // paksa reflow supaya animasi bisa diulang
+    void form.offsetWidth;
     form.classList.add("is-shaking");
     form.addEventListener("animationend", () => form.classList.remove("is-shaking"), { once: true });
 }
@@ -144,14 +144,12 @@ function initLoginForm() {
     pwd?.addEventListener("keyup", updateCaps);
     pwd?.addEventListener("blur", () => { if (caps) caps.hidden = true; });
 
-    // Error hilang saat pengguna mengubah isian
     LOGIN_FIELD_IDS.forEach(id => {
         const el = document.getElementById(id);
         el?.addEventListener("input", clearLoginError);
         el?.addEventListener("change", clearLoginError);
     });
 
-    // Login butuh internet; setupNetworkStatusListeners() baru jalan setelah login
     const notice = document.getElementById("login-offline");
     const syncOnline = () => { if (notice) notice.hidden = navigator.onLine; };
     window.addEventListener("online", syncOnline);

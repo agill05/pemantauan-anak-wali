@@ -13,7 +13,6 @@ async function loadPembinaanData(forceRefresh = false) {
 
     if (filterSelect) {
         if (isSiswa) {
-            // Siswa hanya boleh melihat catatan miliknya sendiri: kunci, jangan bisa pilih siswa lain.
             filterSelect.innerHTML = `<option value="${appState.user.id}">${escapeHtml(appState.user.nama || 'Saya')}</option>`;
             filterSelect.value = appState.user.id;
             filterSelect.disabled = true;
@@ -30,9 +29,6 @@ async function loadPembinaanData(forceRefresh = false) {
         renderSkeleton("pembinaan-list-container", 3);
     }
 
-    // Data pembinaan sensitif & sering diubah guru (status/hapus) — selalu ambil data
-    // terbaru dari server tiap kali view ini dibuka, jangan andalkan cache lokal basi
-    // (guru & siswa beda device, cache 5 menit bikin perubahan guru tidak langsung terlihat siswa).
     const res = await apiCall("getPembinaan", { siswa_id: selectedSiswaId }, false);
     if (res && res.data) {
         appState.pembinaan = res.data;
