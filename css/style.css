@@ -876,9 +876,8 @@ body.dark .text-slate-400 {
 
 .lg-toggle {
     position: absolute;
-    top: 50%;
+    top: 2px; /* (48px input - 44px tombol) / 2; tanpa transform supaya tidak ikut animasi tekan */
     right: 0.25rem;
-    transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -895,6 +894,11 @@ body.dark .text-slate-400 {
 .lg-toggle:hover {
     color: var(--lg-primary);
     background: var(--primary-light, #eff6ff);
+}
+
+/* Timpa button:active global (scale 0.97): tombol mata diam saat ditekan */
+.lg-toggle:active {
+    transform: none;
 }
 
 /* Tombol "lihat sandi" bawaan Edge disembunyikan supaya tidak ada dua ikon mata */
