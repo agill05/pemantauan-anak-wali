@@ -901,6 +901,16 @@ body.dark .text-slate-400 {
     transform: none;
 }
 
+/* Sandi terlihat: ikon mata bergaris. Ganti ikon saja, tanpa animasi. */
+.lg-toggle .lg-eye-off,
+.lg-toggle.is-shown .lg-eye {
+    display: none;
+}
+
+.lg-toggle.is-shown .lg-eye-off {
+    display: block;
+}
+
 /* Tombol "lihat sandi" bawaan Edge disembunyikan supaya tidak ada dua ikon mata */
 .lg-input::-ms-reveal,
 .lg-input::-ms-clear {

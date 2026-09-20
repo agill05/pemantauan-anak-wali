@@ -46,6 +46,7 @@ function toggleLoginPassword() {
     if (!input || !btn) return;
     const show = input.type === "password";
     input.type = show ? "text" : "password";
+    btn.classList.toggle("is-shown", show);
     btn.setAttribute("aria-label", show ? "Sembunyikan kata sandi" : "Tampilkan kata sandi");
 }
 
