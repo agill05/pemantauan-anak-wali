@@ -1,4 +1,3 @@
-
 async function loadAbsensiData(forceRefresh = false) {
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
@@ -271,4 +270,88 @@ function updateLiveAbsensiStats() {
     if (statI) statI.innerText = countI;
     if (statT) statT.innerText = countT;
     if (statA) statA.innerText = countA;
+}
+function cetakPDFAbsensi() {
+    if (!appState.siswa || appState.siswa.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data siswa untuk dicetak.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const inputDate = document.getElementById("absensi-date");
+    const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
+    const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
+
+    const rawFiltered = selectedKelas
+        ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
+        : appState.siswa;
+    const filteredSiswa = sortSiswa(rawFiltered);
+
+    if (filteredSiswa.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada siswa pada kelas yang dipilih.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const kls = selectedKelas ? appState.kelas.find(k => String(k.id) === String(selectedKelas)) : null;
+    const namaKelas = kls ? kls.nama_kelas : "Semua Kelas";
+
+    const labelMap = { 'H': 'Hadir', 'I': 'Izin', 'S': 'Sakit', 'A': 'Alpa', 'T': 'Terlambat' };
+    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0;
+
+    const rowsHtml = filteredSiswa.map((s, idx) => {
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id));
+        const st = rec ? (rec.status || 'H') : 'H';
+        if (st === 'H') countH++; else if (st === 'S') countS++; else if (st === 'I') countI++; else if (st === 'T') countT++; else countA++;
+
+        return `
+            <tr>
+                <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
+                <td style="padding: 6px 4px; text-align: center;">${escapeHtml(s.no_absen || '-')}</td>
+                <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(s.nama)}</td>
+                <td style="padding: 6px 6px; text-align: center;">${escapeHtml(labelMap[st] || st)}</td>
+                <td style="padding: 6px 6px; text-align: center;">${rec && rec.waktu_masuk ? escapeHtml(formatDisplayTime(rec.waktu_masuk)) : '-'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const contentHtml = `
+        <p style="margin: 0 0 8px 0; font-size: 12px;">Kelas: <b>${escapeHtml(namaKelas)}</b> &nbsp;|&nbsp; Tanggal Presensi: <b>${escapeHtml(tanggal)}</b></p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;" border="1" borderColor="#94a3b8">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                    <th style="padding: 8px 4px; width: 30px;">No</th>
+                    <th style="padding: 8px 4px; width: 60px;">No. Absen</th>
+                    <th style="padding: 8px 6px; text-align: left;">Nama Siswa</th>
+                    <th style="padding: 8px 6px; width: 90px;">Status</th>
+                    <th style="padding: 8px 6px; width: 90px;">Waktu Masuk</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;" border="1" borderColor="#94a3b8">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                    <th style="padding: 6px;">Hadir</th>
+                    <th style="padding: 6px;">Sakit</th>
+                    <th style="padding: 6px;">Izin</th>
+                    <th style="padding: 6px;">Terlambat</th>
+                    <th style="padding: 6px;">Alpa</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="text-align: center; font-weight: bold;">
+                    <td style="padding: 6px;">${countH}</td>
+                    <td style="padding: 6px;">${countS}</td>
+                    <td style="padding: 6px;">${countI}</td>
+                    <td style="padding: 6px;">${countT}</td>
+                    <td style="padding: 6px;">${countA}</td>
+                </tr>
+            </tbody>
+        </table>
+    `;
+
+    exportFeaturePDF(
+        `REKAPITULASI PRESENSI KEHADIRAN - KELAS ${namaKelas.toUpperCase()}`,
+        contentHtml,
+        `Rekap_Presensi_${namaKelas}_${tanggal}.pdf`
+    );
 }

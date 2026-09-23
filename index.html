@@ -372,8 +372,13 @@
                 <div class="flex justify-between items-center">
                     <h2 class="text-sm font-bold text-slate-800"><i
                             class="fas fa-calendar-check text-primary mr-2"></i>Presensi Kehadiran</h2>
-                    <input type="date" id="absensi-date" onchange="loadAbsensiData(true)"
-                        class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary">
+                    <div class="flex items-center gap-1.5">
+                        <input type="date" id="absensi-date" onchange="loadAbsensiData(true)"
+                            class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary">
+                        <button onclick="cetakPDFAbsensi()" title="Cetak PDF Rekapitulasi Presensi"
+                            class="bg-slate-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                                class="fas fa-file-pdf"></i></button>
+                    </div>
                 </div>
             </div>
             <div id="absensi-list-container" class="space-y-2"></div>
@@ -389,6 +394,9 @@
                             class="hidden text-xs font-bold px-2.5 py-1 rounded-lg transition-all duration-200"></span>
                         <input type="date" id="kebiasaan-date" onchange="loadKebiasaanData(true)"
                             class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-accent">
+                        <button onclick="cetakPDFKebiasaan()" title="Cetak PDF Ringkasan Kebiasaan"
+                            class="bg-slate-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                                class="fas fa-file-pdf"></i></button>
                     </div>
                 </div>
                 <div>
@@ -407,10 +415,15 @@
                         Keagamaan</h2>
                     <p class="text-xs text-slate-400">Monitoring 114 Surah Al-Qur'an</p>
                 </div>
-                <button data-role-visible="admin,guru" onclick="openModalKeagamaan()"
-                    class="bg-secondary hover:bg-emerald-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
-                    <i class="fas fa-plus"></i> Catat Hafalan
-                </button>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="cetakPDFKeagamaan()" title="Cetak PDF Jurnal Hafalan"
+                        class="bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs font-bold"><i
+                            class="fas fa-file-pdf"></i></button>
+                    <button data-role-visible="admin,guru" onclick="openModalKeagamaan()"
+                        class="bg-secondary hover:bg-emerald-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
+                        <i class="fas fa-plus"></i> Catat Hafalan
+                    </button>
+                </div>
             </div>
             <div class="bg-surface p-3 rounded-2xl border border-slate-100 shadow-sm">
                 <select id="karakter-siswa-filter" onchange="loadKeagamaanData(true)"
@@ -431,11 +444,14 @@
                     Siswa</button>
             </div>
 
-            <div class="bg-surface p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+            <div class="bg-surface p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-2">
                 <select id="akademik-siswa-filter" onchange="loadAkademikData(true)"
-                    class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700">
+                    class="flex-1 bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
+                <button onclick="cetakPDFAkademik()" title="Cetak PDF Transkrip Nilai & Prestasi"
+                    class="bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs font-bold shrink-0"><i
+                        class="fas fa-file-pdf"></i></button>
             </div>
 
             <div id="akd-tab-nilai" class="akd-tab-content space-y-3">
@@ -466,10 +482,15 @@
                             class="fas fa-user-edit text-rose-500 mr-2"></i>Catatan Pembinaan</h2>
                     <p class="text-xs text-slate-400">Monitoring Masalah & Tindak Lanjut</p>
                 </div>
-                <button data-role-visible="admin,guru" onclick="openModalPembinaan()"
-                    class="bg-rose-500 hover:bg-rose-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
-                    <i class="fas fa-plus"></i> Tambah Catatan
-                </button>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="cetakPDFPembinaan()" title="Cetak PDF Lembar Rekam Pembinaan"
+                        class="bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs font-bold"><i
+                            class="fas fa-file-pdf"></i></button>
+                    <button data-role-visible="admin,guru" onclick="openModalPembinaan()"
+                        class="bg-rose-500 hover:bg-rose-600 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
+                        <i class="fas fa-plus"></i> Tambah Catatan
+                    </button>
+                </div>
             </div>
             <div class="bg-surface p-3 rounded-2xl border border-slate-100 shadow-sm">
                 <select id="pembinaan-siswa-filter" onchange="loadPembinaanData(true)"
@@ -584,6 +605,18 @@
                         class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i
                             class="fas fa-plus mr-1"></i> Guru</button>
                 </div>
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+                    <button onclick="downloadTemplateGuruCSV()"
+                        class="whitespace-nowrap bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-download"></i> Template CSV</button>
+                    <button onclick="triggerImportGuru()"
+                        class="whitespace-nowrap bg-blue-50 text-blue-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-import"></i> Import CSV</button>
+                    <button onclick="exportGuruCSV()"
+                        class="whitespace-nowrap bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-export"></i> Ekspor CSV/Excel</button>
+                    <input type="file" id="import-guru-file" accept=".csv" class="hidden" onchange="handleImportGuruFile(event)">
+                </div>
                 <div id="admin-guru-list" class="space-y-2"></div>
             </div>
 
@@ -595,6 +628,18 @@
                     <button onclick="openModalSiswa()"
                         class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i
                             class="fas fa-plus mr-1"></i> Siswa</button>
+                </div>
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+                    <button onclick="downloadTemplateSiswaCSV()"
+                        class="whitespace-nowrap bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-download"></i> Template CSV</button>
+                    <button onclick="triggerImportSiswa()"
+                        class="whitespace-nowrap bg-blue-50 text-blue-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-import"></i> Import CSV</button>
+                    <button onclick="exportSiswaCSV()"
+                        class="whitespace-nowrap bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-export"></i> Ekspor CSV/Excel</button>
+                    <input type="file" id="import-siswa-file" accept=".csv" class="hidden" onchange="handleImportSiswaFile(event)">
                 </div>
                 <div id="admin-siswa-list" class="space-y-2"></div>
             </div>

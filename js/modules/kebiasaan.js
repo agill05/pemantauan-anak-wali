@@ -1,4 +1,3 @@
-
 // populateSiswaSelectForRole() dipindah ke js/state.js — dulu terduplikasi persis di sini.
 
 async function loadKebiasaanData(forceRefresh = false) {
@@ -224,4 +223,63 @@ function updateKebiasaanSaveStatus(state) {
             if (pendingKebiasaanQueue.size === 0) badge.classList.add("hidden");
         }, 3000);
     }
+}
+function cetakPDFKebiasaan() {
+    const selectSiswa = document.getElementById("kebiasaan-siswa-select");
+    const selectedSiswaId = selectSiswa ? selectSiswa.value : "";
+    if (!selectedSiswaId) {
+        Swal.fire({ icon: 'warning', title: 'Pilih Siswa', text: 'Silakan pilih siswa terlebih dahulu sebelum mencetak.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const siswa = appState.siswa.find(s => String(s.id) === String(selectedSiswaId));
+    const kls = siswa ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
+    const studentRecords = (appState.kebiasaan || []).filter(k => String(k.siswa_id) === String(selectedSiswaId));
+
+    const tanggalInput = document.getElementById("kebiasaan-date");
+    const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
+    const todayRecords = studentRecords.filter(k => String(k.tanggal) === String(tanggal));
+
+    const rowsHtml = MASTER_KEBIASAAN.map((k, idx) => {
+        const recToday = todayRecords.find(item => String(item.kebiasaan_id) === String(k.id));
+        const statusToday = recToday ? recToday.status : 'Belum';
+        const totalSudah = studentRecords.filter(item => String(item.kebiasaan_id) === String(k.id) && item.status === 'Sudah').length;
+
+        return `
+            <tr>
+                <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
+                <td style="padding: 6px 8px; text-align: left;">${escapeHtml(k.nama)}</td>
+                <td style="padding: 6px 6px; text-align: center; font-weight: bold;">${escapeHtml(statusToday)}</td>
+                <td style="padding: 6px 6px; text-align: center; font-weight: bold;">${totalSudah} hari</td>
+            </tr>
+        `;
+    }).join('');
+
+    const completedToday = todayRecords.filter(k => k.status === 'Sudah').length;
+    const persenTuntas = Math.round((completedToday / 7) * 100);
+
+    const contentHtml = `
+        <p style="margin: 0 0 8px 0; font-size: 12px;">
+            Nama Siswa: <b>${escapeHtml(siswa ? siswa.nama : '-')}</b> &nbsp;|&nbsp;
+            Kelas: <b>${kls ? escapeHtml(kls.nama_kelas) : '-'}</b> &nbsp;|&nbsp;
+            Ketercapaian Hari Ini: <b>${completedToday}/7 (${persenTuntas}%)</b>
+        </p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;" border="1" borderColor="#94a3b8">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                    <th style="padding: 8px 4px; width: 30px;">No</th>
+                    <th style="padding: 8px 6px; text-align: left;">Kebiasaan</th>
+                    <th style="padding: 8px 6px; width: 100px;">Status Hari Ini</th>
+                    <th style="padding: 8px 6px; width: 100px;">Total Tercapai</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
+    `;
+
+    exportFeaturePDF(
+        "RINGKASAN CAPAIAN 7 KEBIASAAN HEBAT SISWA",
+        contentHtml,
+        `Rekap_Kebiasaan_${siswa ? siswa.nama.replace(/\s+/g, '_') : selectedSiswaId}_${tanggal}.pdf`
+    );
 }

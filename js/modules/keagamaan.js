@@ -216,3 +216,72 @@ async function deleteKeagamaan(id) {
         apiCall("deleteKeagamaan", { id }, false);
     }
 }
+function cetakPDFKeagamaan() {
+    const selectEl = document.getElementById("karakter-siswa-filter");
+    const filterSiswaId = selectEl ? selectEl.value : "";
+    if (!filterSiswaId || filterSiswaId === "ALL" || filterSiswaId === "") {
+        Swal.fire({ icon: 'warning', title: 'Pilih Siswa', text: 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const siswa = appState.siswa.find(s => String(s.id) === String(filterSiswaId)) || appState.user;
+    const kls = siswa ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
+    const filteredHafalan = (appState.keagamaan || []).filter(h => String(h.siswa_id) === String(filterSiswaId));
+
+    if (filteredHafalan.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada catatan hafalan Al-Qur\'an untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const stats = getHafalanProgressStats(filteredHafalan);
+
+    const sortedHafalan = [...filteredHafalan].sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)));
+    const rowsHtml = sortedHafalan.map((item, idx) => `
+        <tr>
+            <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
+            <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tanggal)}</td>
+            <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.nama_surat)}</td>
+            <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.status)}</td>
+            <td style="padding: 6px 8px; text-align: left;">${item.catatan ? escapeHtml(item.catatan) : '-'}</td>
+        </tr>
+    `).join('');
+
+    const contentHtml = `
+        <p style="margin: 0 0 8px 0; font-size: 12px;">
+            Nama Siswa: <b>${escapeHtml(siswa ? siswa.nama : '-')}</b> &nbsp;|&nbsp;
+            Kelas: <b>${kls ? escapeHtml(kls.nama_kelas) : '-'}</b>
+        </p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;" border="1" borderColor="#94a3b8">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                    <th style="padding: 6px;">Progres Juz 30 (Juz Amma)</th>
+                    <th style="padding: 6px;">Progres Total 114 Surah</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="text-align: center; font-weight: bold;">
+                    <td style="padding: 6px;">${stats.juz30.count}/${stats.juz30.total} Surah (${stats.juz30.percent}%)</td>
+                    <td style="padding: 6px;">${stats.total.count}/${stats.total.total} Surah (${stats.total.percent}%)</td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;" border="1" borderColor="#94a3b8">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                    <th style="padding: 8px 4px; width: 30px;">No</th>
+                    <th style="padding: 8px 6px; width: 90px;">Tanggal</th>
+                    <th style="padding: 8px 6px; text-align: left;">Nama Surah</th>
+                    <th style="padding: 8px 6px; width: 90px;">Status</th>
+                    <th style="padding: 8px 6px; text-align: left;">Catatan</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
+    `;
+
+    exportFeaturePDF(
+        "JURNAL & PROGRES HAFALAN AL-QUR'AN",
+        contentHtml,
+        `Jurnal_Hafalan_${siswa ? siswa.nama.replace(/\s+/g, '_') : filterSiswaId}_${getDateWITA()}.pdf`
+    );
+}

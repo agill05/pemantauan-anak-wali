@@ -1,4 +1,3 @@
-
 function switchTabSiswa(tabName, btnEl) {
     document.querySelectorAll('.prof-tab-btn').forEach(btn => {
         btn.classList.remove('active', 'border-b-2', 'border-blue-600', 'text-blue-600', 'font-bold');
@@ -718,8 +717,104 @@ async function saveSiswaForm(e, id) {
     }
 }
 
+/* ==========================================================
+   IMPORT / EKSPOR CSV — MASTER SISWA (metode UPSERT)
+   ========================================================== */
+
+function downloadTemplateSiswaCSV() {
+    const csvContent = "\uFEFF" + "username,nama,no_absen,nisn,nama_kelas,no_hp_ortu,nama_ortu,password\n" +
+        "siswa01,Contoh Nama Siswa,1,0012345678,VII A,081234567890,Contoh Nama Orang Tua,\n";
+    _downloadCSVString(csvContent, "Template_Import_Siswa.csv");
+    showToast("Template CSV Siswa berhasil diunduh!");
+}
+
+function exportSiswaCSV() {
+    if (!appState.siswa || appState.siswa.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data siswa untuk diekspor.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+    const rows = sortSiswa(appState.siswa).map(s => {
+        const kls = appState.kelas.find(k => String(k.id) === String(s.kelas_id));
+        return {
+            username: s.username || "",
+            nama: s.nama || "",
+            no_absen: s.no_absen || "",
+            nisn: s.nisn || "",
+            nama_kelas: kls ? kls.nama_kelas : "",
+            no_hp_ortu: s.no_hp_ortu || "",
+            nama_ortu: s.nama_ortu || "",
+            password: "" // password/hash tidak diekspor demi keamanan
+        };
+    });
+    const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "no_absen", "nisn", "nama_kelas", "no_hp_ortu", "nama_ortu", "password"] });
+    _downloadCSVString(csvContent, `Data_Siswa_SMPN1TalagaJaya_${getDateWITA()}.csv`);
+    showToast("Data Siswa berhasil diekspor ke CSV!");
+}
+
+function triggerImportSiswa() {
+    const input = document.getElementById("import-siswa-file");
+    if (input) {
+        input.value = "";
+        input.click();
+    }
+}
+
+function handleImportSiswaFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => h.trim().toLowerCase(),
+        complete: async (results) => {
+            const rows = (results.data || []).filter(r => r.username && r.nama);
+            if (rows.length === 0) {
+                Swal.fire({ icon: 'warning', title: 'File Kosong', text: 'Tidak ditemukan baris data valid (username & nama wajib diisi) pada file CSV.', confirmButtonColor: '#2563eb' });
+                return;
+            }
+
+            const confirm = await Swal.fire({
+                title: `Import ${rows.length} Data Siswa?`,
+                text: 'Data dengan username yang sudah ada akan diperbarui (UPSERT). Data baru akan ditambahkan dengan password default "siswa123" jika kolom password kosong.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'Ya, Import Sekarang',
+                cancelButtonText: 'Batal'
+            });
+            if (!confirm.isConfirmed) return;
+
+            showLoading("Mengimpor data siswa...");
+            const res = await apiCall("importSiswaBatch", { rows }, true);
+            hideLoading();
+
+            if (res && res.status === "success") {
+                await fetchAllAppData(true);
+                renderSiswaView();
+                renderAdminSiswa();
+                _refreshAllSiswaDropdowns();
+                Swal.fire({ icon: 'success', title: 'Import Selesai', text: res.message, confirmButtonColor: '#2563eb' });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Gagal Import', text: res?.message || 'Terjadi kesalahan saat import data siswa.', confirmButtonColor: '#2563eb' });
+            }
+        },
+        error: () => {
+            Swal.fire({ icon: 'error', title: 'Gagal Membaca File', text: 'Pastikan file berformat CSV yang valid.', confirmButtonColor: '#2563eb' });
+        }
+    });
+}
+
 async function deleteSiswa(id) {
-    const confirm = await Swal.fire({ title: 'Hapus Siswa?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+    const confirm = await Swal.fire({
+        title: 'Hapus Siswa?',
+        html: 'Tindakan ini akan <b>menghapus permanen</b> seluruh riwayat siswa ini secara otomatis, termasuk data:<br><b>Kehadiran, 7 Kebiasaan, Hafalan, Akademik, Prestasi, Pembinaan,</b> dan notifikasi terkait.<br><br>Data yang sudah dihapus <b>tidak dapat dikembalikan</b>.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Ya, Hapus Semua Data',
+        cancelButtonText: 'Batal'
+    });
     if (confirm.isConfirmed) {
         const res = await apiCall("deleteSiswa", { id }, true);
         if (res && res.status === "success") {

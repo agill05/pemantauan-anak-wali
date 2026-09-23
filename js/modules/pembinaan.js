@@ -1,4 +1,3 @@
-
 function getPembinaanStatusBadge(status) {
     const s = String(status || '').trim().toLowerCase();
     if (s === 'pemantauan') return 'bg-sky-50 text-sky-700 border-sky-200';
@@ -232,4 +231,59 @@ function openQuickPembinaan(siswaId, defaultMasalah, notifId = "") {
         if (siswaSelect) siswaSelect.value = siswaId;
         if (masalahInput) masalahInput.value = defaultMasalah || "";
     }, 150);
+}
+function cetakPDFPembinaan() {
+    const filterSiswaId = document.getElementById("pembinaan-siswa-filter")?.value || "";
+    if (!filterSiswaId) {
+        Swal.fire({ icon: 'warning', title: 'Pilih Siswa', text: 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const siswa = appState.siswa.find(s => String(s.id) === String(filterSiswaId)) || appState.user;
+    const kls = siswa ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
+    const filteredPembinaan = (appState.pembinaan || []).filter(item => String(item.siswa_id) === String(filterSiswaId));
+
+    if (filteredPembinaan.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada catatan pembinaan untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const sortedPembinaan = [...filteredPembinaan].sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)));
+    const rowsHtml = sortedPembinaan.map((item, idx) => `
+        <tr>
+            <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
+            <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tanggal)}</td>
+            <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.jenis || 'Pembinaan')}</td>
+            <td style="padding: 6px 8px; text-align: left;">${escapeHtml(item.permasalahan)}</td>
+            <td style="padding: 6px 6px; text-align: center; font-weight: bold;">${escapeHtml(item.status)}</td>
+            <td style="padding: 6px 6px; text-align: center;">${item.jadwal_pantau ? escapeHtml(item.jadwal_pantau) : '-'}</td>
+        </tr>
+    `).join('');
+
+    const contentHtml = `
+        <p style="margin: 0 0 8px 0; font-size: 12px;">
+            Nama Siswa: <b>${escapeHtml(siswa ? siswa.nama : '-')}</b> &nbsp;|&nbsp;
+            Kelas: <b>${kls ? escapeHtml(kls.nama_kelas) : '-'}</b>
+        </p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;" border="1" borderColor="#94a3b8">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                    <th style="padding: 8px 4px; width: 30px;">No</th>
+                    <th style="padding: 8px 6px; width: 90px;">Tanggal</th>
+                    <th style="padding: 8px 6px; width: 90px;">Jenis</th>
+                    <th style="padding: 8px 6px; text-align: left;">Permasalahan</th>
+                    <th style="padding: 8px 6px; width: 100px;">Status</th>
+                    <th style="padding: 8px 6px; width: 90px;">Jadwal Pantau</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
+    `;
+
+    exportFeaturePDF(
+        "LEMBAR REKAM PEMBINAAN & KONSELING SISWA",
+        contentHtml,
+        `Rekam_Pembinaan_${siswa ? siswa.nama.replace(/\s+/g, '_') : filterSiswaId}_${getDateWITA()}.pdf`,
+        { labelKanan: "Guru BK / Wali Kelas" }
+    );
 }

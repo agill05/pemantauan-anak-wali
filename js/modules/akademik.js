@@ -323,3 +323,84 @@ async function deletePrestasi(id) {
         apiCall("deletePrestasi", { id }, false);
     }
 }
+function cetakPDFAkademik() {
+    const selectEl = document.getElementById("akademik-siswa-filter");
+    const filterSiswaId = selectEl ? selectEl.value : "";
+    if (!filterSiswaId || filterSiswaId === "ALL" || filterSiswaId === "") {
+        Swal.fire({ icon: 'warning', title: 'Pilih Siswa', text: 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const siswa = appState.siswa.find(s => String(s.id) === String(filterSiswaId)) || appState.user;
+    const kls = siswa ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
+    const filteredAkademik = (appState.akademik || []).filter(item => String(item.siswa_id) === String(filterSiswaId));
+    const filteredPrestasi = (appState.prestasi || []).filter(item => String(item.siswa_id) === String(filterSiswaId));
+
+    if (filteredAkademik.length === 0 && filteredPrestasi.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada data nilai maupun prestasi untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const nilaiRowsHtml = filteredAkademik.length > 0 ? filteredAkademik.map((item, idx) => {
+        const isBelowKKTP = Number(item.nilai_akhir) < Number(item.kktp);
+        const statusText = isBelowKKTP ? 'Belum Tuntas' : 'Tuntas';
+        return `
+            <tr>
+                <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
+                <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.mapel)}</td>
+                <td style="padding: 6px 6px; text-align: center;">${escapeHtml(String(item.kktp))}</td>
+                <td style="padding: 6px 6px; text-align: center; font-weight: bold;">${escapeHtml(String(item.nilai_akhir))}</td>
+                <td style="padding: 6px 6px; text-align: center; font-weight: bold; color: ${isBelowKKTP ? '#dc2626' : '#16a34a'};">${statusText}</td>
+            </tr>
+        `;
+    }).join('') : `<tr><td colspan="5" style="padding: 10px; text-align: center; color: #64748b;">Belum ada data nilai mapel.</td></tr>`;
+
+    const prestasiRowsHtml = filteredPrestasi.length > 0 ? filteredPrestasi.map((item, idx) => `
+        <tr>
+            <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
+            <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tanggal)}</td>
+            <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.nama_prestasi)}</td>
+            <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tingkat)}</td>
+        </tr>
+    `).join('') : `<tr><td colspan="4" style="padding: 10px; text-align: center; color: #64748b;">Belum ada catatan prestasi.</td></tr>`;
+
+    const contentHtml = `
+        <p style="margin: 0 0 8px 0; font-size: 12px;">
+            Nama Siswa: <b>${escapeHtml(siswa ? siswa.nama : '-')}</b> &nbsp;|&nbsp;
+            Kelas: <b>${kls ? escapeHtml(kls.nama_kelas) : '-'}</b>
+        </p>
+
+        <h4 style="font-size: 12px; margin: 0 0 6px 0; text-decoration: underline;">A. Transkrip Nilai Mapel (Evaluasi KKTP)</h4>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px;" border="1" borderColor="#94a3b8">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                    <th style="padding: 8px 4px; width: 30px;">No</th>
+                    <th style="padding: 8px 6px; text-align: left;">Mata Pelajaran</th>
+                    <th style="padding: 8px 6px; width: 60px;">KKTP</th>
+                    <th style="padding: 8px 6px; width: 70px;">Nilai Akhir</th>
+                    <th style="padding: 8px 6px; width: 90px;">Evaluasi</th>
+                </tr>
+            </thead>
+            <tbody>${nilaiRowsHtml}</tbody>
+        </table>
+
+        <h4 style="font-size: 12px; margin: 0 0 6px 0; text-decoration: underline;">B. Catatan Prestasi Siswa</h4>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;" border="1" borderColor="#94a3b8">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
+                    <th style="padding: 8px 4px; width: 30px;">No</th>
+                    <th style="padding: 8px 6px; width: 90px;">Tanggal</th>
+                    <th style="padding: 8px 6px; text-align: left;">Nama Prestasi</th>
+                    <th style="padding: 8px 6px; width: 90px;">Tingkat</th>
+                </tr>
+            </thead>
+            <tbody>${prestasiRowsHtml}</tbody>
+        </table>
+    `;
+
+    exportFeaturePDF(
+        "TRANSKRIP NILAI & CATATAN PRESTASI SISWA",
+        contentHtml,
+        `Transkrip_Akademik_${siswa ? siswa.nama.replace(/\s+/g, '_') : filterSiswaId}_${getDateWITA()}.pdf`
+    );
+}

@@ -1,4 +1,3 @@
-
 function escapeHtml(str) {
     if (str === null || str === undefined) return "";
     return String(str)
@@ -263,4 +262,94 @@ function sendWebPushNotification(title, body) {
             new Notification(title, { body: body });
         }
     }
+}
+/* ==========================================================
+   MODUL LAPORAN & EKSPOR PDF GENERIK PER-FITUR (KOP SURAT RESMI)
+   ========================================================== */
+
+function buildKopSuratHeaderHtml(judul, formattedDate) {
+    return `
+    <div style="display: flex; align-items: center; justify-content: center; gap: 14px; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 16px;">
+        <img src="https://zonalogo.com/assets/tut-wuri-handayani.webp" alt="Logo Tut Wuri Handayani" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;">
+        <div style="text-align: center; flex: 1;">
+            <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase;">Pemerintah Kabupaten Gorontalo</h4>
+            <h3 style="margin: 2px 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Dinas Pendidikan dan Kebudayaan</h3>
+            <h2 style="margin: 2px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">SMP NEGERI 1 TALAGA JAYA</h2>
+            <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Buhu, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
+        </div>
+        <img src="https://www.e-ujian.com/smpntalagajaya/logo" alt="Logo SMPN 1 Talaga Jaya" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;">
+    </div>
+    <div style="text-align: center; margin-bottom: 16px;">
+        <h3 style="margin: 0 0 4px 0; font-size: 14px; text-transform: uppercase; text-decoration: underline; font-weight: bold;">${escapeHtml(judul)}</h3>
+        <p style="margin: 0; font-size: 11px; color: #475569;">Tanggal Cetak: ${formattedDate} | Dicetak Oleh: <b>${escapeHtml(appState.user ? appState.user.nama : 'User')}</b> (${escapeHtml(appState.user ? appState.user.role.toUpperCase() : '')})</p>
+    </div>
+    `;
+}
+
+function buildTandaTanganHtml(formattedDate, labelKanan = "Guru Pemantau / Wali Kelas") {
+    return `
+    <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; page-break-inside: avoid;">
+        <div style="text-align: center; width: 220px;">
+            <p style="margin-bottom: 60px;">Mengetahui,<br>Kepala SMPN 1 Talaga Jaya</p>
+            <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '( ............................................ )')}</p>
+            <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP.${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
+        </div>
+        <div style="text-align: center; width: 220px;">
+            <p style="margin-bottom: 60px;">Talaga Jaya, ${formattedDate}<br>${escapeHtml(labelKanan)}</p>
+            <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Guru Pemantau')}</p>
+            <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP.${escapeHtml(getGuruNip())}</p>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Fungsi generik ekspor PDF ber-Kop Surat Resmi Sekolah untuk seluruh modul fitur.
+ * @param {string} title - Judul dokumen (dipakai di kop surat).
+ * @param {string} contentHtml - HTML isi laporan (tabel dsb), tanpa kop surat/ttd.
+ * @param {string} filename - Nama file PDF yang diunduh.
+ * @param {object} [options] - { orientation: 'portrait'|'landscape', labelKanan: string }
+ */
+function exportFeaturePDF(title, contentHtml, filename, options = {}) {
+    if (typeof html2pdf === 'undefined') {
+        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Komponen eksport PDF gagal dimuat. Coba muat ulang halaman.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const formattedDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const labelKanan = options.labelKanan || "Guru Pemantau / Wali Kelas";
+    const orientation = options.orientation || "portrait";
+
+    const fullHtml = `
+        <div style="font-family: 'Times New Roman', Times, serif; color: #0f172a; padding: 10px;">
+            ${buildKopSuratHeaderHtml(title, formattedDate)}
+            ${contentHtml}
+            ${buildTandaTanganHtml(formattedDate, labelKanan)}
+        </div>
+    `;
+
+    const source = document.createElement("div");
+    source.innerHTML = fullHtml;
+    source.style.width = "1000px";
+
+    showLoading("Membuat file PDF...");
+
+    html2pdf()
+        .set({
+            margin: 10,
+            filename: filename,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: "mm", format: "a4", orientation: orientation }
+        })
+        .from(source)
+        .save()
+        .then(() => {
+            hideLoading();
+            showToast("File PDF berhasil diunduh!");
+        })
+        .catch(() => {
+            hideLoading();
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal membuat file PDF.', confirmButtonColor: '#2563eb' });
+        });
 }

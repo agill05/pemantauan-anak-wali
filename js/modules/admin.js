@@ -1,4 +1,3 @@
-
 function renderAdminManage() { switchAdminTab("guru"); }
 
 function switchAdminTab(tab) {
@@ -322,4 +321,97 @@ async function deleteKelas(id) {
             Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data kelas.', confirmButtonColor: '#2563eb' });
         }
     }
+}
+
+/* ==========================================================
+   IMPORT / EKSPOR CSV — MASTER GURU (metode UPSERT)
+   ========================================================== */
+
+function downloadTemplateGuruCSV() {
+    const csvContent = "\uFEFF" + "username,nama,nip,no_hp,password\n" +
+        "guru01,Contoh Nama Guru,196501011990031001,081234567890,\n";
+    _downloadCSVString(csvContent, "Template_Import_Guru.csv");
+    showToast("Template CSV Guru berhasil diunduh!");
+}
+
+function exportGuruCSV() {
+    if (!appState.guru || appState.guru.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data guru untuk diekspor.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+    const rows = appState.guru.map(g => ({
+        username: g.username || "",
+        nama: g.nama || "",
+        nip: g.nip || "",
+        no_hp: g.no_hp || "",
+        password: "" // password/hash tidak diekspor demi keamanan
+    }));
+    const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "nip", "no_hp", "password"] });
+    _downloadCSVString(csvContent, `Data_Guru_SMPN1TalagaJaya_${getDateWITA()}.csv`);
+    showToast("Data Guru berhasil diekspor ke CSV!");
+}
+
+function triggerImportGuru() {
+    const input = document.getElementById("import-guru-file");
+    if (input) {
+        input.value = "";
+        input.click();
+    }
+}
+
+function handleImportGuruFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => h.trim().toLowerCase(),
+        complete: async (results) => {
+            const rows = (results.data || []).filter(r => r.username && r.nama);
+            if (rows.length === 0) {
+                Swal.fire({ icon: 'warning', title: 'File Kosong', text: 'Tidak ditemukan baris data valid (username & nama wajib diisi) pada file CSV.', confirmButtonColor: '#2563eb' });
+                return;
+            }
+
+            const confirm = await Swal.fire({
+                title: `Import ${rows.length} Data Guru?`,
+                text: 'Data dengan username yang sudah ada akan diperbarui (UPSERT). Data baru akan ditambahkan dengan password default "guru123" jika kolom password kosong.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'Ya, Import Sekarang',
+                cancelButtonText: 'Batal'
+            });
+            if (!confirm.isConfirmed) return;
+
+            showLoading("Mengimpor data guru...");
+            const res = await apiCall("importGuruBatch", { rows }, true);
+            hideLoading();
+
+            if (res && res.status === "success") {
+                await fetchAllAppData(true);
+                renderAdminGuru();
+                _refreshAllSiswaDropdowns();
+                Swal.fire({ icon: 'success', title: 'Import Selesai', text: res.message, confirmButtonColor: '#2563eb' });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Gagal Import', text: res?.message || 'Terjadi kesalahan saat import data guru.', confirmButtonColor: '#2563eb' });
+            }
+        },
+        error: () => {
+            Swal.fire({ icon: 'error', title: 'Gagal Membaca File', text: 'Pastikan file berformat CSV yang valid.', confirmButtonColor: '#2563eb' });
+        }
+    });
+}
+
+function _downloadCSVString(csvContent, filename) {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
