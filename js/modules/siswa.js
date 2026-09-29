@@ -263,128 +263,67 @@ function printProfilSiswa() {
     if (!appState.activeSiswaDetail) return;
     const { siswa, absensi, akademik, hafalan, prestasi = [], pembinaan = [] } = appState.activeSiswaDetail;
     const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
+    const e = escapeHtml;
+    const hitung = st => absensi.filter(a => a.status === st).length;
 
-    const printArea = document.getElementById("printable-area");
-    if (!printArea) return;
+    const tabel = (heads, rows, emptyText) => `
+        <table>
+            <thead><tr>${heads.map(h => `<th${h.w ? ` style="width: ${h.w}px;"` : ""}>${e(h.t)}</th>`).join("")}</tr></thead>
+            <tbody>${rows.length === 0
+                ? `<tr><td colspan="${heads.length}" style="text-align: center;">${e(emptyText)}</td></tr>`
+                : rows.join("")}</tbody>
+        </table>`;
+    const c = v => `<td style="text-align: center;">${e(v)}</td>`;
+    const l = v => `<td style="text-align: left;">${e(v)}</td>`;
 
-    printArea.innerHTML = `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 14px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
-                <img src="https://zonalogo.com/assets/tut-wuri-handayani.webp" alt="Logo Tut Wuri Handayani" style="width: 60px; height: 60px; object-fit: contain; flex-shrink: 0;">
-                <div style="text-align: center; flex: 1;">
-                    <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">LAPORAN PEMANTAUAN ANAK WALI</h2>
-                    <h3 style="margin: 5px 0 0 0; font-size: 16px;">SMP NEGERI 1 TALAGA JAYA</h3>
-                    <p style="margin: 2px 0 0 0; font-size: 12px; color: #555;">Tahun Ajaran 2025/2026</p>
-                </div>
-                <img src="https://www.e-ujian.com/smpntalagajaya/logo" alt="Logo SMPN 1 Talaga Jaya" style="width: 60px; height: 60px; object-fit: contain; flex-shrink: 0;">
-            </div>
+    const biodata = [
+        ["Nama Siswa", siswa.nama],
+        ["NISN", siswa.nisn || "-"],
+        ["Kelas", kls ? kls.nama_kelas : "-"],
+        ["Nama Orang Tua / Wali", siswa.nama_ortu || "-"],
+        ["No. WA Orang Tua / Wali", siswa.no_hp_ortu || "-"]
+    ].map(([k, v]) => `<tr><td style="width: 170px; font-weight: bold;">${e(k)}</td><td>: ${e(v)}</td></tr>`).join("");
 
-            <table style="width: 100%; font-size: 12px; margin-bottom: 20px;">
-                <tr><td style="width: 120px; font-weight: bold;">Nama Siswa</td><td>: ${escapeHtml(siswa.nama)}</td></tr>
-                <tr><td style="font-weight: bold;">NISN</td><td>: ${escapeHtml(siswa.nisn || '-')}</td></tr>
-                <tr><td style="font-weight: bold;">Kelas</td><td>: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</td></tr>
-                <tr><td style="font-weight: bold;">Nama Orang Tua / Wali</td><td>: ${escapeHtml(siswa.nama_ortu || '-')}</td></tr>
-                <tr><td style="font-weight: bold;">No. WA Orang Tua / Wali</td><td>: ${escapeHtml(siswa.no_hp_ortu || '-')}</td></tr>
-            </table>
+    const html = `
+        <table data-plain="1"><tbody>${biodata}</tbody></table>
 
-            <h4 style="font-size: 14px; margin-bottom: 5px;">1. Rekapitulasi Presensi</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px;" border="1">
-                <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Hadir</th><th style="padding: 6px;">Sakit</th><th style="padding: 6px;">Izin</th><th style="padding: 6px;">Alpa</th></tr></thead>
-                <tbody>
-                    <tr style="text-align: center;">
-                        <td style="padding: 6px;">${absensi.filter(a => a.status === 'H').length} hari</td>
-                        <td style="padding: 6px;">${absensi.filter(a => a.status === 'S').length} hari</td>
-                        <td style="padding: 6px;">${absensi.filter(a => a.status === 'I').length} hari</td>
-                        <td style="padding: 6px;">${absensi.filter(a => a.status === 'A').length} hari</td>
-                    </tr>
-                </tbody>
-            </table>
+        <h4>1. Rekapitulasi Presensi</h4>
+        ${tabel([{ t: "Hadir" }, { t: "Sakit" }, { t: "Izin" }, { t: "Alpa" }], [
+            `<tr>${c(hitung("H") + " hari")}${c(hitung("S") + " hari")}${c(hitung("I") + " hari")}${c(hitung("A") + " hari")}</tr>`
+        ], "")}
 
-            <h4 style="font-size: 14px; margin-bottom: 5px;">2. Hasil Belajar Akademik</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px;" border="1">
-                <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Mata Pelajaran</th><th style="padding: 6px;">Nilai Akhir</th><th style="padding: 6px;">KKTP</th><th style="padding: 6px;">Keterangan</th></tr></thead>
-                <tbody>
-                    ${akademik.length === 0 ? '<tr><td colspan="4" style="text-align: center; padding: 6px;">Belum ada data nilai</td></tr>' : akademik.map(a => `
-                        <tr>
-                            <td style="padding: 6px;">${escapeHtml(a.mapel)}</td>
-                            <td style="padding: 6px; text-align: center;">${escapeHtml(a.nilai_akhir)}</td>
-                            <td style="padding: 6px; text-align: center;">${escapeHtml(a.kktp)}</td>
-                            <td style="padding: 6px; text-align: center;">${Number(a.nilai_akhir) >= Number(a.kktp) ? 'Tuntas' : 'Perlu Bimbingan'}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+        <h4>2. Hasil Belajar Akademik</h4>
+        ${tabel([{ t: "Mata Pelajaran" }, { t: "Nilai Akhir", w: 90 }, { t: "KKTP", w: 70 }, { t: "Keterangan", w: 130 }],
+            akademik.map(a => `<tr>${l(a.mapel)}${c(a.nilai_akhir)}${c(a.kktp)}${c(Number(a.nilai_akhir) >= Number(a.kktp) ? "Tuntas" : "Perlu Bimbingan")}</tr>`),
+            "Belum ada data nilai")}
 
-            <h4 style="font-size: 14px; margin-bottom: 5px;">3. Hafalan Al-Qur'an</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;" border="1">
-                <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Nama Surah</th><th style="padding: 6px;">Status</th><th style="padding: 6px;">Catatan Guru</th></tr></thead>
-                <tbody>
-                    ${hafalan.length === 0 ? '<tr><td colspan="3" style="text-align: center; padding: 6px;">Belum ada data hafalan</td></tr>' : hafalan.map(h => `
-                        <tr>
-                            <td style="padding: 6px;">${escapeHtml(h.nama_surat)}</td>
-                            <td style="padding: 6px; text-align: center;">${escapeHtml(h.status)}</td>
-                            <td style="padding: 6px;">${escapeHtml(h.catatan || '-')}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+        <h4>3. Hafalan Al-Qur'an</h4>
+        ${tabel([{ t: "Nama Surah" }, { t: "Status", w: 100 }, { t: "Catatan Guru" }],
+            hafalan.map(h => `<tr>${l(h.nama_surat)}${c(h.status)}${l(h.catatan || "-")}</tr>`),
+            "Belum ada data hafalan")}
 
-            <h4 style="font-size: 14px; margin-bottom: 5px;">4. Catatan Prestasi</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px;" border="1">
-                <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Nama Prestasi / Juara</th><th style="padding: 6px;">Tingkat</th><th style="padding: 6px;">Tanggal</th></tr></thead>
-                <tbody>
-                    ${prestasi.length === 0 ? '<tr><td colspan="3" style="text-align: center; padding: 6px;">Belum ada catatan prestasi</td></tr>' : prestasi.map(p => `
-                        <tr>
-                            <td style="padding: 6px;">${escapeHtml(p.nama_prestasi)}</td>
-                            <td style="padding: 6px; text-align: center;">${escapeHtml(p.tingkat)}</td>
-                            <td style="padding: 6px; text-align: center;">${escapeHtml(p.tanggal)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+        <h4>4. Catatan Prestasi</h4>
+        ${tabel([{ t: "Nama Prestasi / Juara" }, { t: "Tingkat", w: 100 }, { t: "Tanggal", w: 100 }],
+            prestasi.map(p => `<tr>${l(p.nama_prestasi)}${c(p.tingkat)}${c(p.tanggal)}</tr>`),
+            "Belum ada catatan prestasi")}
 
-            <h4 style="font-size: 14px; margin-bottom: 5px;">5. Catatan Pembinaan</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;" border="1">
-                <thead><tr style="background: #f0f0f0;"><th style="padding: 6px;">Permasalahan</th><th style="padding: 6px;">Status</th><th style="padding: 6px;">Tanggal</th></tr></thead>
-                <tbody>
-                    ${pembinaan.length === 0 ? '<tr><td colspan="3" style="text-align: center; padding: 6px;">Tidak ada catatan pembinaan</td></tr>' : pembinaan.map(p => `
-                        <tr>
-                            <td style="padding: 6px;">${escapeHtml(p.permasalahan)}</td>
-                            <td style="padding: 6px; text-align: center;">${escapeHtml(p.status)}</td>
-                            <td style="padding: 6px; text-align: center;">${escapeHtml(p.tanggal)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-
-            <div style="margin-top: 30px; text-align: center; font-size: 12px;">
-                <p>Mengetahui,<br>Kepala Sekolah</p>
-                <br><br><br>
-                <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '............................................')}</p>
-                <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP.${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
-            </div>
-
-            <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 12px;">
-                <div style="text-align: center; width: 200px;">
-                    <p>Orang Tua / Wali Siswa</p>
-                    <br><br><br>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(siswa.nama_ortu || '............................................')}</p>
-                </div>
-                <div style="text-align: center; width: 200px;">
-                    <p>Wali Kelas</p>
-                    <br><br><br>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Wali Kelas')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #64748b;">NIP.${escapeHtml(getGuruNip())}</p>
-                </div>
-            </div>
-        </div>
+        <h4>5. Catatan Pembinaan</h4>
+        ${tabel([{ t: "Permasalahan" }, { t: "Status", w: 100 }, { t: "Tanggal", w: 100 }],
+            pembinaan.map(p => `<tr>${l(p.permasalahan)}${c(p.status)}${c(p.tanggal)}</tr>`),
+            "Tidak ada catatan pembinaan")}
     `;
 
-    printArea.classList.remove("hidden");
-    setTimeout(() => {
-        window.print();
-        printArea.classList.add("hidden");
-    }, 150);
+    const kepsek = (appState.pengaturan && appState.pengaturan.nama_kepsek) || "............................................";
+    const nipKepsek = (appState.pengaturan && appState.pengaturan.nip_kepsek) || "........................................";
+
+    printFeaturePDF("LAPORAN PEMANTAUAN ANAK WALI", html, {
+        orientation: "portrait",
+        signatures: [
+            { lines: ["Orang Tua / Wali Siswa"], name: siswa.nama_ortu || "............................................" },
+            { lines: ["Mengetahui,", "Kepala SMPN 1 Talaga Jaya"], name: kepsek, nip: nipKepsek },
+            { lines: ["Talaga Jaya, {tanggal}", "Wali Kelas"], name: appState.user ? appState.user.nama : "Wali Kelas", nip: getGuruNip() }
+        ]
+    });
 }
 
 async function hubungiOrtu(siswaId) {

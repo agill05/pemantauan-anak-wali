@@ -218,19 +218,20 @@ function pdfDrawTable(doc, tableEl, y, usableW) {
         columnStyles[i] = w === null ? { cellWidth: "auto" } : { cellWidth: w * factor };
     });
 
+    const plain = tableEl.hasAttribute("data-plain");
     doc.autoTable({
         startY: y,
         head,
         body,
-        theme: "grid",
+        theme: plain ? "plain" : "grid",
         tableWidth: usableW,
         margin: { top: PDF_MARGIN, left: PDF_MARGIN, right: PDF_MARGIN, bottom: 18 },
         showHead: "everyPage",
         rowPageBreak: "avoid",
         columnStyles,
         styles: {
-            font: PDF_FONT, fontSize: 10, cellPadding: 2,
-            lineColor: [148, 163, 184], lineWidth: 0.2,
+            font: PDF_FONT, fontSize: 10, cellPadding: plain ? 1 : 2,
+            lineColor: [148, 163, 184], lineWidth: plain ? 0 : 0.2,
             textColor: [15, 23, 42], valign: "middle", overflow: "linebreak"
         },
         headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", halign: "center" }
@@ -238,25 +239,29 @@ function pdfDrawTable(doc, tableEl, y, usableW) {
     return doc.lastAutoTable.finalY + 5;
 }
 
-function pdfDrawSignatureBlock(doc, cx, y, lines, name, nip) {
+function pdfDrawSignatureBlock(doc, cx, y, lines, name, nip, maxW, lineCount) {
     doc.setFont(PDF_FONT, "normal");
     doc.setFontSize(11);
-    lines.forEach((ln, i) => doc.text(ln, cx, y + i * 5, { align: "center" }));
-    let ny = y + lines.length * 5 + 20;
+    const pad = (lineCount - lines.length) * 5;
+    lines.forEach((ln, i) => doc.text(ln, cx, y + pad + i * 5, { align: "center" }));
+    let ny = y + lineCount * 5 + 20;
     doc.setFont(PDF_FONT, "bold");
-    doc.splitTextToSize(name, 66).forEach(line => {
+    doc.splitTextToSize(name, maxW).forEach(line => {
         doc.text(line, cx, ny, { align: "center" });
         const w = doc.getTextWidth(line);
         doc.setLineWidth(0.25);
         doc.line(cx - w / 2, ny + 1, cx + w / 2, ny + 1);
         ny += 5;
     });
-    doc.setFont(PDF_FONT, "normal");
-    doc.setFontSize(10);
-    doc.text(`NIP.${nip}`, cx, ny, { align: "center" });
+    if (nip !== undefined && nip !== null) {
+        doc.setFont(PDF_FONT, "normal");
+        doc.setFontSize(10);
+        doc.text(`NIP.${nip}`, cx, ny, { align: "center" });
+    }
 }
 
-function pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan) {
+/* custom = [{ lines: [...], name, nip? }, ...]. "{tanggal}" di lines diganti tanggal cetak. */
+function pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan, custom) {
     if (y + 50 > pageH - 15) {
         doc.addPage();
         y = PDF_MARGIN + 5;
@@ -266,10 +271,21 @@ function pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan) {
     const kepsek = (appState.pengaturan && appState.pengaturan.nama_kepsek) || "( ............................................ )";
     const nipKepsek = (appState.pengaturan && appState.pengaturan.nip_kepsek) || "........................................";
     const guru = appState.user ? appState.user.nama : "Guru Pemantau";
-    pdfDrawSignatureBlock(doc, PDF_MARGIN + 33, y,
-        ["Mengetahui,", "Kepala SMPN 1 Talaga Jaya"], kepsek, nipKepsek);
-    pdfDrawSignatureBlock(doc, pageW - PDF_MARGIN - 33, y,
-        [`Talaga Jaya, ${dateStr}`, labelKanan], guru, getGuruNip());
+    const blocks = (custom && custom.length) ? custom : [
+        { lines: ["Mengetahui,", "Kepala SMPN 1 Talaga Jaya"], name: kepsek, nip: nipKepsek },
+        { lines: [`Talaga Jaya, {tanggal}`, labelKanan], name: guru, nip: getGuruNip() }
+    ];
+    const n = blocks.length;
+    const usableW = pageW - 2 * PDF_MARGIN;
+    const blockW = n === 2 ? 66 : usableW / n;
+    const lineCount = Math.max(...blocks.map(b => b.lines.length));
+    blocks.forEach((b, i) => {
+        const cx = n === 2
+            ? (i === 0 ? PDF_MARGIN + 33 : pageW - PDF_MARGIN - 33)
+            : PDF_MARGIN + blockW * (i + 0.5);
+        const lines = b.lines.map(l => l.replace("{tanggal}", dateStr));
+        pdfDrawSignatureBlock(doc, cx, y, lines, b.name, b.nip, blockW - 4, lineCount);
+    });
 }
 
 async function buildOfficialPdf(title, contentHtml, options = {}) {
@@ -315,7 +331,7 @@ async function buildOfficialPdf(title, contentHtml, options = {}) {
         }
     });
 
-    pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan);
+    pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan, options.signatures);
 
     const total = doc.internal.getNumberOfPages();
     for (let i = 1; i <= total; i++) {
@@ -339,7 +355,9 @@ function pdfLibReady() {
  * @param {string} title - judul dokumen
  * @param {string} contentHtml - HTML isi: <p>, <h4>, <table> (thead/tbody). Tanpa kop dan tanda tangan.
  * @param {string} filename - nama file
- * @param {object} [options] - { orientation: 'portrait'|'landscape', labelKanan: string }
+ * @param {object} [options] - { orientation: 'portrait'|'landscape', labelKanan: string,
+ *   signatures: [{ lines: [..], name, nip? }] (opsional, 1-4 blok; "{tanggal}" diganti tanggal cetak) }
+ * Tabel dengan atribut data-plain = tanpa garis (untuk blok biodata).
  */
 async function exportFeaturePDF(title, contentHtml, filename, options = {}) {
     if (!pdfLibReady()) return;

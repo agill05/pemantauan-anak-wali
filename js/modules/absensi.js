@@ -284,7 +284,15 @@ function cetakPDFAbsensi() {
     const rawFiltered = selectedKelas
         ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
         : appState.siswa;
+    const showKelas = !selectedKelas;
+    const kelasNama = id => {
+        const k = appState.kelas.find(x => String(x.id) === String(id));
+        return k ? k.nama_kelas : "-";
+    };
     const filteredSiswa = sortSiswa(rawFiltered);
+    if (showKelas) {
+        filteredSiswa.sort((a, b) => kelasNama(a.kelas_id).localeCompare(kelasNama(b.kelas_id), "id", { numeric: true }));
+    }
 
     if (filteredSiswa.length === 0) {
         Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada siswa pada kelas yang dipilih.', confirmButtonColor: '#2563eb' });
@@ -307,6 +315,7 @@ function cetakPDFAbsensi() {
                 <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
                 <td style="padding: 6px 4px; text-align: center;">${escapeHtml(s.no_absen || '-')}</td>
                 <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(s.nama)}</td>
+                ${showKelas ? `<td style="padding: 6px 6px; text-align: center;">${escapeHtml(kelasNama(s.kelas_id))}</td>` : ''}
                 <td style="padding: 6px 6px; text-align: center;">${escapeHtml(labelMap[st] || st)}</td>
                 <td style="padding: 6px 6px; text-align: center;">${rec && rec.waktu_masuk ? escapeHtml(formatDisplayTime(rec.waktu_masuk)) : '-'}</td>
             </tr>
@@ -321,6 +330,7 @@ function cetakPDFAbsensi() {
                     <th style="padding: 8px 4px; width: 30px;">No</th>
                     <th style="padding: 8px 4px; width: 60px;">No. Absen</th>
                     <th style="padding: 8px 6px; text-align: left;">Nama Siswa</th>
+                    ${showKelas ? '<th style="padding: 8px 6px; width: 60px;">Kelas</th>' : ''}
                     <th style="padding: 8px 6px; width: 90px;">Status</th>
                     <th style="padding: 8px 6px; width: 90px;">Waktu Masuk</th>
                 </tr>
