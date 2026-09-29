@@ -1,9 +1,10 @@
-const CACHE_NAME = "anak-wali-pwa-v20";
+const CACHE_NAME = "anak-wali-pwa-v21";
 
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",
     "./css/style.css",
+    "./css/tailwind.css",
     "./js/config.js",
     "./js/state.js",
     "./js/api.js",
@@ -21,7 +22,6 @@ const ASSETS_TO_CACHE = [
     "./js/modules/admin.js",
     "./js/modules/magiclink.js",
     "./js/main.js",
-    "https://cdn.tailwindcss.com",
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
     "https://cdn.jsdelivr.net/npm/chart.js",
     "https://cdn.jsdelivr.net/npm/sweetalert2@11",

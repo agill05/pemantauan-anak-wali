@@ -81,7 +81,6 @@ function setSplashText(text) {
     if (txt && text) txt.textContent = text;
 }
 
-// Tandai satu tahap aktif, naikkan plafon progres, centang tahap sebelumnya.
 function setSplashStage(key) {
     const stage = SPLASH_STAGES[key];
     if (!stage) return;
@@ -119,8 +118,6 @@ function startSplashTips() {
 
 function showSplashFallback(message) {
     if (!splashActive) return;
-    // Timer progres TIDAK dihentikan: proses background tetap jalan,
-    // fallback cuma opsi ekstra kalau user mau nyerah nunggu.
     const box = document.getElementById("splash-fallback");
     const text = document.getElementById("splash-fallback-text");
     if (text && message) text.textContent = message;

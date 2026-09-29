@@ -656,10 +656,6 @@ async function saveSiswaForm(e, id) {
     }
 }
 
-/* ==========================================================
-   IMPORT / EKSPOR CSV — MASTER SISWA (metode UPSERT)
-   ========================================================== */
-
 function downloadTemplateSiswaCSV() {
     const csvContent = "\uFEFF" + "username,nama,no_absen,nisn,nama_kelas,no_hp_ortu,nama_ortu,password\n" +
         "siswa01,Contoh Nama Siswa,1,0012345678,VII A,081234567890,Contoh Nama Orang Tua,\n";
@@ -682,7 +678,7 @@ function exportSiswaCSV() {
             nama_kelas: kls ? kls.nama_kelas : "",
             no_hp_ortu: s.no_hp_ortu || "",
             nama_ortu: s.nama_ortu || "",
-            password: "" // password/hash tidak diekspor demi keamanan
+            password: ""
         };
     });
     const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "no_absen", "nisn", "nama_kelas", "no_hp_ortu", "nama_ortu", "password"] });

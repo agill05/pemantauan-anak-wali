@@ -323,10 +323,6 @@ async function deleteKelas(id) {
     }
 }
 
-/* ==========================================================
-   IMPORT / EKSPOR CSV — MASTER GURU (metode UPSERT)
-   ========================================================== */
-
 function downloadTemplateGuruCSV() {
     const csvContent = "\uFEFF" + "username,nama,nip,no_hp,password\n" +
         "guru01,Contoh Nama Guru,196501011990031001,081234567890,\n";
@@ -344,7 +340,7 @@ function exportGuruCSV() {
         nama: g.nama || "",
         nip: g.nip || "",
         no_hp: g.no_hp || "",
-        password: "" // password/hash tidak diekspor demi keamanan
+        password: ""
     }));
     const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "nip", "no_hp", "password"] });
     _downloadCSVString(csvContent, `Data_Guru_SMPN1TalagaJaya_${getDateWITA()}.csv`);

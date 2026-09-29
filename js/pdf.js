@@ -1,8 +1,3 @@
-/* ==========================================================
-   PDF RESMI (KOP SURAT) - jsPDF + jspdf-autotable
-   Dipakai semua laporan lewat exportFeaturePDF() / printFeaturePDF().
-   API lama tidak berubah: (title, contentHtml, filename, options).
-   ========================================================== */
 
 const PDF_FONT = "times";
 const PDF_MARGIN = 15;
@@ -76,7 +71,6 @@ function pdfSegments(node) {
     return out;
 }
 
-/* Gambar teks campuran tebal/normal dengan word-wrap. Return y setelah baris terakhir. */
 function pdfDrawRich(doc, segs, x, y, maxW, fontSize, lineH, align) {
     doc.setFontSize(fontSize);
     const lines = [[]];
@@ -260,7 +254,6 @@ function pdfDrawSignatureBlock(doc, cx, y, lines, name, nip, maxW, lineCount) {
     }
 }
 
-/* custom = [{ lines: [...], name, nip? }, ...]. "{tanggal}" di lines diganti tanggal cetak. */
 function pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan, custom) {
     if (y + 50 > pageH - 15) {
         doc.addPage();
@@ -350,15 +343,6 @@ function pdfLibReady() {
     return false;
 }
 
-/**
- * Ekspor PDF ber-kop surat.
- * @param {string} title - judul dokumen
- * @param {string} contentHtml - HTML isi: <p>, <h4>, <table> (thead/tbody). Tanpa kop dan tanda tangan.
- * @param {string} filename - nama file
- * @param {object} [options] - { orientation: 'portrait'|'landscape', labelKanan: string,
- *   signatures: [{ lines: [..], name, nip? }] (opsional, 1-4 blok; "{tanggal}" diganti tanggal cetak) }
- * Tabel dengan atribut data-plain = tanpa garis (untuk blok biodata).
- */
 async function exportFeaturePDF(title, contentHtml, filename, options = {}) {
     if (!pdfLibReady()) return;
     showLoading("Membuat file PDF...");
@@ -374,7 +358,6 @@ async function exportFeaturePDF(title, contentHtml, filename, options = {}) {
     }
 }
 
-/* Cetak lewat dialog print browser, dengan layout PDF yang sama. */
 async function printFeaturePDF(title, contentHtml, options = {}) {
     if (!pdfLibReady()) return;
     showLoading("Menyiapkan cetak...");

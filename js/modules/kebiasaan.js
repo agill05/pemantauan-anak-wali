@@ -1,4 +1,3 @@
-// populateSiswaSelectForRole() dipindah ke js/state.js — dulu terduplikasi persis di sini.
 
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
