@@ -100,9 +100,7 @@ function renderLaporanRekapView() {
     }).join("");
 }
 
-function buildLaporanRekapHtml(data) {
-    const formattedDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
+function buildLaporanRekapContent(data) {
     const rowsHtml = data.map((item, index) => {
         const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(item.kelas_id)) : null;
         const isPerhatian = (item.presensi.alpa >= 3 || item.dibawah_kktp >= 2);
@@ -111,73 +109,42 @@ function buildLaporanRekapHtml(data) {
 
         return `
             <tr>
-                <td style="padding: 6px 4px; text-align: center;">${index + 1}</td>
-                <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.nisn || '-')}</td>
-                <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.nama)}</td>
-                <td style="padding: 6px 4px; text-align: center;">${kls ? escapeHtml(kls.nama_kelas) : '-'}</td>
-                <td style="padding: 6px 4px; text-align: center; color: #16a34a; font-weight: bold;">${item.presensi.hadir}</td>
-                <td style="padding: 6px 4px; text-align: center;">${item.presensi.sakit}</td>
-                <td style="padding: 6px 4px; text-align: center;">${item.presensi.izin}</td>
-                <td style="padding: 6px 4px; text-align: center; font-weight: bold; color: ${item.presensi.alpa > 0 ? '#dc2626' : 'inherit'};">${item.presensi.alpa}</td>
-                <td style="padding: 6px 6px; text-align: center; font-weight: bold; color: ${item.dibawah_kktp > 0 ? '#dc2626' : 'inherit'};">${item.dibawah_kktp} Mapel</td>
-                <td style="padding: 6px 6px; text-align: center; font-weight: bold; color: ${statusColor};">${statusText}</td>
+                <td style="text-align: center;">${index + 1}</td>
+                <td style="text-align: center;">${escapeHtml(item.nisn || '-')}</td>
+                <td style="text-align: left; font-weight: bold;">${escapeHtml(item.nama)}</td>
+                <td style="text-align: center;">${kls ? escapeHtml(kls.nama_kelas) : '-'}</td>
+                <td style="text-align: center; color: #16a34a; font-weight: bold;">${item.presensi.hadir}</td>
+                <td style="text-align: center;">${item.presensi.sakit}</td>
+                <td style="text-align: center;">${item.presensi.izin}</td>
+                <td style="text-align: center; font-weight: bold; ${item.presensi.alpa > 0 ? 'color: #dc2626;' : ''}">${item.presensi.alpa}</td>
+                <td style="text-align: center; font-weight: bold; ${item.dibawah_kktp > 0 ? 'color: #dc2626;' : ''}">${item.dibawah_kktp} Mapel</td>
+                <td style="text-align: center; font-weight: bold; color: ${statusColor};">${statusText}</td>
             </tr>
         `;
     }).join('');
 
     return `
-        <div style="font-family: 'Times New Roman', Times, serif; color: #0f172a; padding: 10px;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 14px; border-bottom: 3px double #0f172a; padding-bottom: 10px; margin-bottom: 16px;">
-                <img src="https://zonalogo.com/assets/tut-wuri-handayani.webp" alt="Logo Tut Wuri Handayani" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;">
-                <div style="text-align: center; flex: 1;">
-                    <h4 style="margin: 0; font-size: 13px; font-weight: normal; text-transform: uppercase;">Pemerintah Kabupaten Gorontalo</h4>
-                    <h3 style="margin: 2px 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Dinas Pendidikan dan Kebudayaan</h3>
-                    <h2 style="margin: 2px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">SMP NEGERI 1 TALAGA JAYA</h2>
-                    <p style="margin: 0; font-size: 11px; font-style: italic; color: #334155;">Buhu, Kec. Talaga Jaya, Kab. Gorontalo, Gorontalo 96181</p>
-                </div>
-                <img src="https://www.e-ujian.com/smpntalagajaya/logo" alt="Logo SMPN 1 Talaga Jaya" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;">
-            </div>
-
-            <div style="text-align: center; margin-bottom: 16px;">
-                <h3 style="margin: 0 0 4px 0; font-size: 14px; text-transform: uppercase; text-decoration: underline; font-weight: bold;">LAPORAN REKAPITULASI PEMANTAUAN ANAK WALI</h3>
-                <p style="margin: 0; font-size: 11px; color: #475569;">Tanggal Cetak: ${formattedDate} | Dicetak Oleh: <b>${escapeHtml(appState.user ? appState.user.nama : 'User')}</b> (${escapeHtml(appState.user ? appState.user.role.toUpperCase() : '')})</p>
-            </div>
-
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;" border="1" borderColor="#94a3b8">
-                <thead>
-                    <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
-                        <th style="padding: 8px 4px; width: 30px;">No</th>
-                        <th style="padding: 8px 6px; width: 90px;">NISN</th>
-                        <th style="padding: 8px 6px; text-align: left;">Nama Siswa</th>
-                        <th style="padding: 8px 4px; width: 55px;">Kelas</th>
-                        <th style="padding: 8px 4px; width: 45px;">Hadir</th>
-                        <th style="padding: 8px 4px; width: 45px;">Sakit</th>
-                        <th style="padding: 8px 4px; width: 45px;">Izin</th>
-                        <th style="padding: 8px 4px; width: 45px;">Alpa</th>
-                        <th style="padding: 8px 6px; width: 80px;">< KKTP</th>
-                        <th style="padding: 8px 6px; width: 105px;">Evaluasi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rowsHtml}
-                </tbody>
-            </table>
-
-            <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; page-break-inside: avoid;">
-                <div style="text-align: center; width: 220px;">
-                    <p style="margin-bottom: 60px;">Mengetahui,<br>Kepala SMPN 1 Talaga Jaya</p>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.pengaturan?.nama_kepsek || '( ............................................ )')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP.${escapeHtml(appState.pengaturan?.nip_kepsek || '........................................')}</p>
-                </div>
-                <div style="text-align: center; width: 220px;">
-                    <p style="margin-bottom: 60px;">Talaga Jaya, ${formattedDate}<br>Guru Pemantau / Wali Kelas</p>
-                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${escapeHtml(appState.user ? appState.user.nama : 'Guru Pemantau')}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #000000;">NIP.${escapeHtml(getGuruNip())}</p>
-                </div>
-            </div>
-        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 30px;">No</th>
+                    <th style="width: 90px;">NISN</th>
+                    <th style="text-align: left;">Nama Siswa</th>
+                    <th style="width: 55px;">Kelas</th>
+                    <th style="width: 45px;">Hadir</th>
+                    <th style="width: 45px;">Sakit</th>
+                    <th style="width: 45px;">Izin</th>
+                    <th style="width: 45px;">Alpa</th>
+                    <th style="width: 80px;">&lt; KKTP</th>
+                    <th style="width: 105px;">Evaluasi</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
     `;
 }
+
+const LAPORAN_REKAP_TITLE = "LAPORAN REKAPITULASI PEMANTAUAN ANAK WALI";
 
 function printLaporanRekap() {
     const data = getFilteredLaporanData();
@@ -185,16 +152,7 @@ function printLaporanRekap() {
         Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk dicetak.', confirmButtonColor: '#2563eb' });
         return;
     }
-
-    const printArea = document.getElementById("printable-area");
-    if (!printArea) return;
-
-    printArea.innerHTML = buildLaporanRekapHtml(data);
-    printArea.classList.remove("hidden");
-    setTimeout(() => {
-        window.print();
-        printArea.classList.add("hidden");
-    }, 150);
+    printFeaturePDF(LAPORAN_REKAP_TITLE, buildLaporanRekapContent(data), { orientation: "landscape" });
 }
 
 function exportLaporanPDF() {
@@ -203,36 +161,12 @@ function exportLaporanPDF() {
         Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk diekspor.', confirmButtonColor: '#2563eb' });
         return;
     }
-
-    if (typeof html2pdf === 'undefined') {
-        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Komponen eksport PDF gagal dimuat. Coba muat ulang halaman.', confirmButtonColor: '#2563eb' });
-        return;
-    }
-
-    const source = document.createElement("div");
-    source.innerHTML = buildLaporanRekapHtml(data);
-    source.style.width = "1000px";
-
-    showLoading("Membuat file PDF...");
-
-    html2pdf()
-        .set({
-            margin: 10,
-            filename: `Laporan_Rekap_Anak_Wali_${getDateWITA()}.pdf`,
-            image: { type: "jpeg", quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
-        })
-        .from(source)
-        .save()
-        .then(() => {
-            hideLoading();
-            showToast("File PDF berhasil diunduh!");
-        })
-        .catch(() => {
-            hideLoading();
-            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal membuat file PDF.', confirmButtonColor: '#2563eb' });
-        });
+    exportFeaturePDF(
+        LAPORAN_REKAP_TITLE,
+        buildLaporanRekapContent(data),
+        `Laporan_Rekap_Anak_Wali_${getDateWITA()}.pdf`,
+        { orientation: "landscape" }
+    );
 }
 
 function exportRekapCSV() {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v18";
+const CACHE_NAME = "anak-wali-pwa-v19";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -8,6 +8,7 @@ const ASSETS_TO_CACHE = [
     "./js/state.js",
     "./js/api.js",
     "./js/ui.js",
+    "./js/pdf.js",
     "./js/modules/auth.js",
     "./js/modules/absensi.js",
     "./js/modules/kebiasaan.js",
@@ -25,7 +26,8 @@ const ASSETS_TO_CACHE = [
     "https://cdn.jsdelivr.net/npm/chart.js",
     "https://cdn.jsdelivr.net/npm/sweetalert2@11",
     "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+    "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",
+    "https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"
 ];
 
 self.addEventListener("install", (event) => {
