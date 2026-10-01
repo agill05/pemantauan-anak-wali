@@ -127,45 +127,6 @@ function hideLoading() {
     }
 }
 
-function setHeaderText({ greeting = "", title = "", subtitle = "", titleFull = "" } = {}) {
-    const elGreeting = document.getElementById("header-greeting");
-    const elTitle = document.getElementById("header-title");
-    const elSubtitle = document.getElementById("header-subtitle");
-
-    if (elGreeting) {
-        elGreeting.innerText = greeting;
-        elGreeting.classList.toggle("hidden", !greeting);
-    }
-    if (elTitle) {
-        elTitle.innerText = title;
-        elTitle.title = titleFull || title;
-    }
-    if (elSubtitle) {
-        elSubtitle.innerText = subtitle;
-        elSubtitle.title = subtitle;
-    }
-}
-
-function updateHeaderUser() {
-    const user = appState.user;
-    if (!user) return;
-
-    const nama = user.nama || "Pengguna";
-    const role = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "";
-
-    setHeaderText({
-        greeting: "Selamat Datang,",
-        title: nama,
-        subtitle: role ? `${role} • SMPN 1 Talaga Jaya` : "SMPN 1 Talaga Jaya"
-    });
-
-    const sbNama = document.getElementById("sidebar-nama");
-    if (sbNama) {
-        sbNama.innerText = nama;
-        sbNama.title = nama;
-    }
-}
-
 function getInitialsAvatar(nama) {
     const name = (nama || "User").trim();
     const initials = name.split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase() || "U";

@@ -101,10 +101,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("bottom-nav")?.classList.add("hidden");
             document.getElementById("btn-back-profil")?.classList.add("hidden");
 
-            setHeaderText({
-                title: "Pemantauan Anak Wali",
-                subtitle: "Mode Akses Orang Tua (Kedaluwarsa 15 Menit)"
-            });
+            const headerTitle = document.getElementById("header-title");
+            const headerSubtitle = document.getElementById("header-subtitle");
+            if (headerTitle) headerTitle.innerText = "Pemantauan Anak Wali";
+            if (headerSubtitle) headerSubtitle.innerText = "Mode Akses Orang Tua (Kedaluwarsa 15 Menit)";
 
             appState.user = { role: 'ortu', nama: 'Orang Tua / Wali' };
             applyRoleUI('ortu');

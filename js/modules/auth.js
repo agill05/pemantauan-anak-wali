@@ -437,14 +437,19 @@ async function continueSessionSetup() {
     if (bottomNav) bottomNav.classList.remove("hidden");
 
     const userAvatar = document.getElementById("user-avatar");
+    const headerTitle = document.getElementById("header-title");
+    const headerSubtitle = document.getElementById("header-subtitle");
 
     if (userAvatar) userAvatar.src = appState.user.foto || (getInitialsAvatar(appState.user.nama));
-    updateHeaderUser();
+    if (headerTitle) headerTitle.innerText = `Selamat Datang, ${appState.user.nama}`;
+    if (headerSubtitle) headerSubtitle.innerText = `${appState.user.role.charAt(0).toUpperCase() + appState.user.role.slice(1)} • SMPN 1 Talaga Jaya`;
     startHeaderDateTimeClock();
 
     const sbAvatar = document.getElementById("sidebar-avatar");
+    const sbNama = document.getElementById("sidebar-nama");
     const sbRole = document.getElementById("sidebar-role-badge");
     if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
+    if (sbNama) sbNama.innerText = appState.user.nama;
     if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
     renderSidebarMenu(appState.user.role);
 
@@ -1008,10 +1013,11 @@ async function saveSelfProfileForm(e) {
 
         const userAvatar = document.getElementById("user-avatar");
         const sbAvatar = document.getElementById("sidebar-avatar");
+        const headerTitle = document.getElementById("header-title");
 
         if (userAvatar) userAvatar.src = appState.user.foto;
         if (sbAvatar) sbAvatar.src = appState.user.foto;
-        updateHeaderUser();
+        if (headerTitle) headerTitle.innerText = `Selamat Datang, ${appState.user.nama}`;
 
         showToast("Profil berhasil diperbarui!");
     } else {

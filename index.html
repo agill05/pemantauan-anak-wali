@@ -178,8 +178,8 @@
 
     <header id="main-header"
         class="bg-primary text-white shadow-md fixed top-0 w-full z-20 transition-all duration-300 hidden no-print">
-        <div id="header-default" class="flex justify-between items-center gap-2 px-4 py-2 min-h-16">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div id="header-default" class="flex justify-between items-center px-4 py-3 h-16">
+            <div class="flex items-center gap-3">
                 <button id="btn-toggle-sidebar" onclick="toggleSidebar(true)"
                     class="touch-btn -ml-1 hover:bg-white/10 rounded-xl transition" aria-label="Buka menu navigasi">
                     <i class="fas fa-bars text-lg"></i>
@@ -188,16 +188,15 @@
                     class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden border border-white/30 shrink-0">
                     <img id="user-avatar" src="" alt="Avatar" class="w-full h-full object-cover rounded-full">
                 </div>
-                <div class="flex items-start gap-2 min-w-0 flex-1">
+                <div class="flex items-start gap-2">
                     <span class="hidden lg:inline text-2xl leading-none" aria-hidden="true">👋</span>
-                    <div class="min-w-0 flex-1">
-                        <p id="header-greeting" class="hidden text-xs text-blue-100 font-medium leading-tight truncate"></p>
-                        <h1 id="header-title" class="text-base font-bold leading-tight truncate">Anak Wali</h1>
-                        <p id="header-subtitle" class="text-xs text-blue-100 font-medium truncate">Memuat data...</p>
+                    <div>
+                        <h1 id="header-title" class="text-base font-bold leading-tight">Anak Wali</h1>
+                        <p id="header-subtitle" class="text-xs text-blue-100 font-medium">Memuat data...</p>
                     </div>
                 </div>
             </div>
-            <div class="flex items-center gap-3 shrink-0">
+            <div class="flex items-center gap-3">
                 <div id="header-desktime"
                     class="hidden lg:flex items-center gap-2 pr-3 mr-1 border-r border-slate-200 text-slate-500">
                     <i class="fas fa-calendar-alt text-primary"></i>
