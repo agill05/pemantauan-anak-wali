@@ -428,6 +428,11 @@ a:focus-visible {
         display: none !important;
     }
 
+    #header-greeting {
+        color: #64748b !important;
+        font-size: 0.8rem;
+    }
+
     #header-title {
         font-size: 1.375rem;
         font-weight: 800;
