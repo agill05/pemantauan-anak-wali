@@ -1,20 +1,24 @@
+let absensiLoadedTanggal = null;
+
 async function loadAbsensiData(forceRefresh = false) {
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
     if (inputDate) inputDate.value = tanggal;
 
     const isStale = (Date.now() - (lastFetchTimes.absensi || 0)) > CACHE_TTL;
+    const sameDate = absensiLoadedTanggal === tanggal;
 
-    if (appState.absensi && appState.absensi.length > 0) {
+    if (sameDate && appState.absensi && appState.absensi.length > 0) {
         renderAbsensiView();
     } else {
         renderSkeleton("absensi-list-container", 4);
     }
 
-    if (forceRefresh || isStale || !appState.absensi || appState.absensi.length === 0) {
+    if (forceRefresh || isStale || !sameDate || !appState.absensi || appState.absensi.length === 0) {
         const res = await apiCall("getAbsensi", { tanggal }, false);
         if (res && res.data) {
             appState.absensi = res.data;
+            absensiLoadedTanggal = tanggal;
             lastFetchTimes.absensi = Date.now();
             saveAppStateToLocal();
             renderAbsensiView();
@@ -31,7 +35,10 @@ function renderAbsensiView() {
         return;
     }
 
-    const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const tanggalInputEl = document.getElementById("absensi-date");
+    const tanggalAktif = tanggalInputEl ? (tanggalInputEl.value || getDateWITA()) : getDateWITA();
+    const lockState = getDateLockState(tanggalAktif);
+    const isEditable = !!(appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru') && lockState.editable);
     const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
 
     const rawFiltered = selectedKelas
@@ -59,6 +66,7 @@ function renderAbsensiView() {
 
     container.innerHTML = `
         <div class="space-y-3">
+            ${renderDateLockBanner(lockState, 'absensi')}
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-2 justify-between sm:items-center">
                 <div class="flex-1">
                     <label for="absensi-kelas-filter" class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
@@ -140,7 +148,7 @@ function renderAbsensiView() {
                                     </span>
                                 </div>
                                 <div>
-                                    <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700" ${!isEditable ? 'disabled' : ''}>
+                                    <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" ${isEditable ? '' : 'disabled'} class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700" ${!isEditable ? 'disabled' : ''}>
                                         <option value="H" ${currentStatus === 'H' ? 'selected' : ''}>Hadir (H)</option>
                                         <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>Izin (I)</option>
                                         <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>Sakit (S)</option>
@@ -166,12 +174,19 @@ function renderAbsensiView() {
 
 async function saveBatchAbsensiForm(event) {
     if (event) event.preventDefault();
+
+    const inputDate = document.getElementById("absensi-date");
+    const tanggalTarget = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
+    const lockState = getDateLockState(tanggalTarget);
+    if (!lockState.editable) {
+        showDateLockedAlert(lockState);
+        return;
+    }
+
     showLoading("Menyimpan presensi...");
 
     const selectElements = document.querySelectorAll(".absensi-select-item");
     const payloadAbsensi = [];
-    const inputDate = document.getElementById("absensi-date");
-    const tanggalTarget = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
 
     selectElements.forEach(select => {
         const siswaId = select.getAttribute("data-siswa-id");
@@ -222,6 +237,13 @@ async function saveBatchAbsensiForm(event) {
 }
 
 function setAllAbsensiStatus(targetStatus) {
+    const inputDate = document.getElementById("absensi-date");
+    const lockState = getDateLockState(inputDate ? (inputDate.value || getDateWITA()) : getDateWITA());
+    if (!lockState.editable) {
+        showDateLockedAlert(lockState);
+        return;
+    }
+
     const selects = document.querySelectorAll(".absensi-select-item");
     if (!selects || selects.length === 0) return;
 

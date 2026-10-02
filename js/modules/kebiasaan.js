@@ -1,3 +1,4 @@
+let kebiasaanLoadedTanggal = null;
 
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
@@ -10,17 +11,19 @@ async function loadKebiasaanData(forceRefresh = false) {
     }
 
     const isStale = (Date.now() - (lastFetchTimes.kebiasaan || 0)) > CACHE_TTL;
+    const sameDate = kebiasaanLoadedTanggal === tanggal;
 
-    if (appState.kebiasaan && appState.kebiasaan.length > 0) {
+    if (sameDate && appState.kebiasaan && appState.kebiasaan.length > 0) {
         renderKebiasaanView();
     } else {
         renderSkeleton("kebiasaan-list-container", 4);
     }
 
-    if (forceRefresh || isStale || !appState.kebiasaan || appState.kebiasaan.length === 0) {
+    if (forceRefresh || isStale || !sameDate || !appState.kebiasaan || appState.kebiasaan.length === 0) {
         const res = await apiCall("getKebiasaan", { tanggal }, false);
         if (res && res.data) {
             appState.kebiasaan = res.data;
+            kebiasaanLoadedTanggal = tanggal;
             lastFetchTimes.kebiasaan = Date.now();
             saveAppStateToLocal();
             renderKebiasaanView();
@@ -44,11 +47,13 @@ function renderKebiasaanView() {
         return;
     }
 
-    const isEditable = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
-
-    const studentRecords = appState.kebiasaan.filter(k => String(k.siswa_id) === String(selectedSiswaId));
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
+    const lockState = getDateLockState(tanggal);
+    const roleAllowed = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
+    const isEditable = !!(roleAllowed && lockState.editable);
+
+    const studentRecords = appState.kebiasaan.filter(k => String(k.siswa_id) === String(selectedSiswaId));
 
     const todayRecords = studentRecords.filter(k => String(k.tanggal) === String(tanggal));
     const completedToday = todayRecords.filter(k => k.status === 'Sudah').length;
@@ -136,7 +141,7 @@ function renderKebiasaanView() {
                 { val: 'Belum', label: 'Belum', cls: 'bg-slate-700 text-white' }
             ].map(st => `
                         <button ${isEditable ? `onclick="saveKebiasaanItem('${escapeHtml(selectedSiswaId)}', '${k.id}', '${st.val}')"` : 'disabled'}
-                                class="px-2.5 py-1 rounded-lg text-xs font-bold ${rec.status === st.val ? st.cls : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} transition">
+                                class="px-2.5 py-1 rounded-lg text-xs font-bold ${rec.status === st.val ? st.cls : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} ${isEditable ? '' : 'opacity-60 cursor-not-allowed'} transition">
                             ${st.label}
                         </button>
                     `).join('')}
@@ -147,6 +152,7 @@ function renderKebiasaanView() {
 
     container.innerHTML = `
         <div class="space-y-3">
+            ${renderDateLockBanner(lockState, 'kebiasaan')}
             ${gamificationCard}
             ${itemsHtml}
         </div>
@@ -156,6 +162,12 @@ function renderKebiasaanView() {
 function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
+
+    const lockState = getDateLockState(tanggal);
+    if (!lockState.editable) {
+        showDateLockedAlert(lockState);
+        return;
+    }
 
     const existingIndex = appState.kebiasaan.findIndex(k =>
         String(k.siswa_id) === String(siswa_id) &&
@@ -192,12 +204,23 @@ async function flushKebiasaanQueue() {
     if (pendingKebiasaanQueue.size === 0) return;
 
     const entriesToSave = Array.from(pendingKebiasaanQueue.entries());
+    let lockedRejected = "";
 
     for (const [key, item] of entriesToSave) {
         const res = await apiCall("saveKebiasaan", item, false);
         if (res && res.status === "success") {
             pendingKebiasaanQueue.delete(key);
+        } else if (res && res.status === "error" && (res.code === "DATE_LOCKED" || res.code === "DATE_FUTURE")) {
+            pendingKebiasaanQueue.delete(key);
+            lockedRejected = res.message;
         }
+    }
+
+    if (lockedRejected) {
+        updateKebiasaanSaveStatus('saved');
+        Swal.fire({ icon: 'warning', title: 'Data Tidak Tersimpan', text: lockedRejected, confirmButtonColor: '#2563eb' });
+        loadKebiasaanData(true);
+        return;
     }
 
     if (pendingKebiasaanQueue.size === 0) {

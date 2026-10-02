@@ -52,12 +52,26 @@ function setupNetworkStatusListeners() {
             if (offlineData) {
                 try {
                     const parsed = JSON.parse(offlineData);
-                    showLoading("Menyinkronkan data presensi offline...");
-                    const res = await apiCall("saveAbsensi", parsed, false);
-                    hideLoading();
-                    if (res && res.status === "success") {
+                    const isAdmin = appState.user && appState.user.role === "admin";
+                    if (parsed.tanggal && parsed.tanggal !== getDateWITA() && !isAdmin) {
                         localStorage.removeItem("offline_absensi_queue");
-                        showToast("Data presensi offline berhasil disinkronkan ke server!");
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Presensi Tidak Terkirim",
+                            text: `Presensi tanggal ${formatTanggalLabel(parsed.tanggal)} tidak sempat terkirim sebelum hari berganti dan sudah terkunci. Hubungi admin untuk koreksi.`,
+                            confirmButtonColor: "#2563eb"
+                        });
+                    } else {
+                        showLoading("Menyinkronkan data presensi offline...");
+                        const res = await apiCall("saveAbsensi", parsed, false);
+                        hideLoading();
+                        if (res && res.status === "success") {
+                            localStorage.removeItem("offline_absensi_queue");
+                            showToast("Data presensi offline berhasil disinkronkan ke server!");
+                        } else if (res && res.status === "error" && (res.code === "DATE_LOCKED" || res.code === "DATE_FUTURE")) {
+                            localStorage.removeItem("offline_absensi_queue");
+                            Swal.fire({ icon: "warning", title: "Presensi Tidak Terkirim", text: res.message, confirmButtonColor: "#2563eb" });
+                        }
                     }
                 } catch (e) { }
             }

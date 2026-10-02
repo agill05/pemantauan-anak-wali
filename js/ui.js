@@ -307,3 +307,74 @@ function setHeaderText(titleText, subtitleText) {
     if (title) title.title = titleText;
     if (sub) { sub.textContent = subtitleText; sub.title = subtitleText; }
 }
+
+function formatTanggalLabel(tanggal) {
+    const d = new Date(`${tanggal}T00:00:00Z`);
+    if (isNaN(d.getTime())) return String(tanggal);
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+}
+
+// Aturan tanggal isian: hanya hari ini (WITA) yang bisa diisi. Admin boleh mengoreksi tanggal lampau. Tanggal depan terkunci untuk semua.
+function getDateLockState(tanggal) {
+    const today = getDateWITA();
+    const role = appState.user ? appState.user.role : "";
+    const label = formatTanggalLabel(tanggal);
+
+    if (!tanggal || tanggal === today) return { editable: true, kind: "today", message: "" };
+    if (tanggal > today) {
+        return {
+            editable: false, kind: "future",
+            message: `Belum waktunya diisi. Data tanggal ${label} baru bisa diisi pada harinya.`
+        };
+    }
+    if (role === "admin") {
+        return {
+            editable: true, kind: "admin-past",
+            message: `Mode koreksi admin. Anda sedang mengubah data tanggal ${label} yang sudah lewat.`
+        };
+    }
+    return {
+        editable: false, kind: "past",
+        message: `Data tanggal ${label} hanya bisa dilihat. Data hari yang sudah lewat tidak dapat diubah. Hubungi admin jika perlu koreksi.`
+    };
+}
+
+function renderDateLockBanner(state, target) {
+    if (!state || state.kind === "today") return "";
+    const styles = {
+        future: { box: "bg-sky-50 border-sky-200 text-sky-800", icon: "fa-clock" },
+        past: { box: "bg-amber-50 border-amber-200 text-amber-800", icon: "fa-lock" },
+        "admin-past": { box: "bg-indigo-50 border-indigo-200 text-indigo-800", icon: "fa-pen-to-square" }
+    };
+    const st = styles[state.kind];
+    return `
+        <div class="${st.box} border rounded-2xl p-3 flex items-start gap-2.5 text-xs" role="status">
+            <i class="fas ${st.icon} mt-0.5 shrink-0"></i>
+            <p class="flex-1 min-w-0 font-semibold leading-relaxed">${escapeHtml(state.message)}</p>
+            <button type="button" onclick="kembaliKeHariIni('${target}')" class="shrink-0 font-bold underline underline-offset-2 whitespace-nowrap">Ke hari ini</button>
+        </div>`;
+}
+
+function kembaliKeHariIni(target) {
+    if (target === "absensi") {
+        const el = document.getElementById("absensi-date");
+        if (el) el.value = getDateWITA();
+        loadAbsensiData(true);
+    } else if (target === "kebiasaan") {
+        const el = document.getElementById("kebiasaan-date");
+        if (el) el.value = getDateWITA();
+        loadKebiasaanData(true);
+    }
+}
+
+function showDateLockedAlert(state) {
+    if (!state || state.editable) return;
+    if (typeof Swal !== "undefined") {
+        Swal.fire({
+            icon: state.kind === "future" ? "info" : "warning",
+            title: state.kind === "future" ? "Belum Waktunya" : "Data Terkunci",
+            text: state.message,
+            confirmButtonColor: "#2563eb"
+        });
+    }
+}
