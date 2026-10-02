@@ -13,6 +13,36 @@ function formatCapaianKeagamaan(h) {
     return nama;
 }
 
+const DOA_LAINNYA_VALUE = "__lainnya__";
+const DOA_NAMA_MAX = 60;
+
+function normalizeNamaDoa(str) {
+    return String(str || "").replace(/\s+/g, " ").trim();
+}
+
+function cariDoaStandar(nama) {
+    const key = normalizeNamaDoa(nama).toLowerCase();
+    if (!key) return null;
+    const found = MASTER_DOA.find(d => d.nama.toLowerCase() === key)
+        || MASTER_DOA.find(d => d.nama.toLowerCase() === `doa ${key}`);
+    return found ? found.nama : null;
+}
+
+// Rapikan doa ketikan sendiri. Jika sama dengan doa standar, kembalikan nama standarnya.
+function resolveNamaDoa(input) {
+    const norm = normalizeNamaDoa(input);
+    if (!norm) return "";
+    const standar = cariDoaStandar(norm);
+    if (standar) return standar;
+    const titled = norm.toLowerCase().replace(/(^|\s)(\S)/g, (m, sp, ch) => sp + ch.toUpperCase());
+    const withPrefix = /^doa(\s|$)/i.test(titled) ? titled : `Doa ${titled}`;
+    return cariDoaStandar(withPrefix) || withPrefix;
+}
+
+function isDoaStandar(nama) {
+    return MASTER_DOA.some(d => d.nama === nama);
+}
+
 function getHafalanProgressStats(hafalanList = []) {
     const lancar = hafalanList.filter(h => h.status === "Lancar");
     const lancarSet = (kat) => new Set(lancar.filter(h => getKategoriHafalan(h) === kat).map(h => h.nama_surat));
@@ -25,20 +55,21 @@ function getHafalanProgressStats(hafalanList = []) {
     const totalSurahLancar = MASTER_SURAHS.filter(s => surahLancar.has(s.nama)).length;
     const iqroCount = MASTER_IQRO.filter(i => iqroLancar.has(i.nama)).length;
     const doaCount = MASTER_DOA.filter(d => doaLancar.has(d.nama)).length;
+    const doaTambahan = Array.from(doaLancar).filter(n => !isDoaStandar(n)).length;
     const pct = (a, b) => b ? Math.round((a / b) * 100) : 0;
 
     return {
         juz30: { count: juz30Lancar, total: juz30Surahs.length, percent: pct(juz30Lancar, juz30Surahs.length) },
         total: { count: totalSurahLancar, total: 114, percent: pct(totalSurahLancar, 114) },
         iqro: { count: iqroCount, total: MASTER_IQRO.length, percent: pct(iqroCount, MASTER_IQRO.length) },
-        doa: { count: doaCount, total: MASTER_DOA.length, percent: pct(doaCount, MASTER_DOA.length) }
+        doa: { count: doaCount, total: MASTER_DOA.length, percent: pct(doaCount, MASTER_DOA.length), tambahan: doaTambahan }
     };
 }
 
-// Skor radar keagamaan (0-100). Poin: 1 surah lancar = 1, 1 doa lancar = 1, 1 jilid Iqro selesai = 2. Target 10 poin = 100.
+// Skor radar keagamaan (0-100). Poin: 1 surah lancar = 1, 1 doa lancar (standar atau tambahan) = 1, 1 jilid Iqro selesai = 2. Target 10 poin = 100.
 function hitungSkorKeagamaan(hafalanList = []) {
     const s = getHafalanProgressStats(hafalanList);
-    const poin = s.total.count + s.doa.count + (s.iqro.count * 2);
+    const poin = s.total.count + s.doa.count + s.doa.tambahan + (s.iqro.count * 2);
     return Math.min(100, Math.round((poin / 10) * 100));
 }
 
@@ -104,7 +135,8 @@ function _kagProgressHeader(stats, kat) {
     const barSurah = _kagBar("Capaian Juz 30 (Juz Amma)", `${stats.juz30.percent}%`, stats.juz30.percent, "bg-amber-300")
         + _kagBar("Keseluruhan 114 Surah", `${stats.total.percent}%`, stats.total.percent, "bg-emerald-300");
     const barIqro = _kagBar(`Jilid Selesai (${stats.iqro.count}/${stats.iqro.total})`, `${stats.iqro.percent}%`, stats.iqro.percent, "bg-amber-300");
-    const barDoa = _kagBar(`Doa Dihafal (${stats.doa.count}/${stats.doa.total})`, `${stats.doa.percent}%`, stats.doa.percent, "bg-sky-300");
+    const doaExtra = stats.doa.tambahan > 0 ? ` +${stats.doa.tambahan} tambahan` : "";
+    const barDoa = _kagBar(`Doa Dihafal (${stats.doa.count}/${stats.doa.total}${doaExtra})`, `${stats.doa.percent}%`, stats.doa.percent, "bg-sky-300");
 
     if (kat === "surah") {
         judul = "Progres Hafalan Al-Qur'an"; sub = "Capaian Juz 30 & Total 114 Surah";
@@ -114,7 +146,7 @@ function _kagProgressHeader(stats, kat) {
         chip = `${stats.iqro.count}/${stats.iqro.total} Jilid`; bars = barIqro;
     } else if (kat === "doa") {
         judul = "Progres Hafalan Doa"; sub = "Doa-doa harian";
-        chip = `${stats.doa.count}/${stats.doa.total} Doa`; bars = barDoa;
+        chip = `${stats.doa.count}/${stats.doa.total} Doa${stats.doa.tambahan > 0 ? ` +${stats.doa.tambahan}` : ""}`; bars = barDoa;
     } else {
         judul = "Progres Keagamaan"; sub = "Al-Qur'an, Iqro & Doa Harian";
         chip = `${stats.juz30.count}/${stats.juz30.total} Surah (Juz 30)`; bars = barSurah + barIqro + barDoa;
@@ -201,7 +233,9 @@ function _kagItemOptions(kat, selected) {
         return MASTER_IQRO.map(i => `<option value="${i.nama}" ${selected === i.nama ? 'selected' : ''}>${i.nama}</option>`).join("");
     }
     if (kat === "doa") {
-        return MASTER_DOA.map(d => `<option value="${d.nama}" ${selected === d.nama ? 'selected' : ''}>${d.no}. ${d.nama}</option>`).join("");
+        const isCustom = !!selected && !isDoaStandar(selected);
+        return MASTER_DOA.map(d => `<option value="${d.nama}" ${selected === d.nama ? 'selected' : ''}>${d.no}. ${d.nama}</option>`).join("")
+            + `<option value="${DOA_LAINNYA_VALUE}" ${isCustom ? 'selected' : ''}>Lainnya (ketik sendiri)</option>`;
     }
     return MASTER_SURAHS.map(s => `<option value="${s.nama}" ${selected === s.nama ? 'selected' : ''}>${s.no}. Surah ${s.nama} (Juz ${s.juz})</option>`).join("");
 }
@@ -214,11 +248,27 @@ function onKeagamaanKategoriChange(selected = "") {
     const hint = document.getElementById("m-kag-hint");
 
     itemSel.innerHTML = _kagItemOptions(kat, selected);
+    const customInput = document.getElementById("m-kag-doa-custom");
+    if (customInput) customInput.value = (kat === "doa" && selected && !isDoaStandar(selected)) ? selected : "";
+    onKeagamaanItemChange();
     itemLabel.textContent = kat === "iqro" ? "JILID IQRO" : (kat === "doa" ? "DOA" : "SURAH AL-QUR'AN");
     halWrap.classList.toggle("hidden", kat !== "iqro");
     hint.textContent = kat === "iqro"
         ? "Lancar = jilid sudah selesai. Pilih Mengulang atau Belum Mulai jika masih berjalan, lalu isi halaman terakhir."
-        : "Lancar = sudah hafal dan lancar.";
+        : (kat === "doa"
+            ? "Lancar = sudah hafal dan lancar. Doa di luar daftar bisa dicatat lewat pilihan Lainnya."
+            : "Lancar = sudah hafal dan lancar.");
+}
+
+function onKeagamaanItemChange() {
+    const kat = document.getElementById("m-kag-kategori")?.value;
+    const sel = document.getElementById("m-kag-surah");
+    const wrap = document.getElementById("m-kag-doa-custom-wrap");
+    const input = document.getElementById("m-kag-doa-custom");
+    if (!wrap || !input || !sel) return;
+    const show = kat === "doa" && sel.value === DOA_LAINNYA_VALUE;
+    wrap.classList.toggle("hidden", !show);
+    input.required = show;
 }
 
 function openModalKeagamaan(id = null) {
@@ -246,7 +296,11 @@ function openModalKeagamaan(id = null) {
             </div>
             <div>
                 <label id="m-kag-item-label" for="m-kag-surah" class="block text-xs font-bold text-slate-500 mb-1">SURAH AL-QUR'AN</label>
-                <select id="m-kag-surah" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required></select>
+                <select id="m-kag-surah" onchange="onKeagamaanItemChange()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required></select>
+            </div>
+            <div id="m-kag-doa-custom-wrap" class="hidden">
+                <label for="m-kag-doa-custom" class="block text-xs font-bold text-slate-500 mb-1">NAMA DOA</label>
+                <input type="text" id="m-kag-doa-custom" maxlength="${DOA_NAMA_MAX}" placeholder="Contoh: Doa Bersin" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
             </div>
             <div id="m-kag-halaman-wrap" class="hidden">
                 <label for="m-kag-halaman" class="block text-xs font-bold text-slate-500 mb-1">HALAMAN TERAKHIR (OPSIONAL)</label>
@@ -282,11 +336,22 @@ async function saveKeagamaanForm(e, id) {
     e.preventDefault();
     const kategori = document.getElementById("m-kag-kategori").value;
     const halRaw = document.getElementById("m-kag-halaman").value;
+    let namaItem = document.getElementById("m-kag-surah").value;
+
+    if (kategori === "doa" && namaItem === DOA_LAINNYA_VALUE) {
+        namaItem = resolveNamaDoa(document.getElementById("m-kag-doa-custom").value);
+        if (!namaItem) {
+            Swal.fire({ icon: 'warning', title: 'Nama Doa Kosong', text: 'Silakan ketik nama doa terlebih dahulu.', confirmButtonColor: '#2563eb' });
+            return;
+        }
+        namaItem = namaItem.substring(0, DOA_NAMA_MAX);
+    }
+
     const payload = {
         id: id || ("HFL-" + Date.now()),
         siswa_id: document.getElementById("m-kag-siswa").value,
         kategori,
-        nama_surat: document.getElementById("m-kag-surah").value,
+        nama_surat: namaItem,
         halaman: kategori === "iqro" ? halRaw : "",
         tanggal: document.getElementById("m-kag-tanggal").value,
         status: document.getElementById("m-kag-status").value,
@@ -366,7 +431,7 @@ function cetakPDFKeagamaan() {
                     <td style="padding: 6px;">${stats.juz30.count}/${stats.juz30.total} (${stats.juz30.percent}%)</td>
                     <td style="padding: 6px;">${stats.total.count}/${stats.total.total} (${stats.total.percent}%)</td>
                     <td style="padding: 6px;">${stats.iqro.count}/${stats.iqro.total} (${stats.iqro.percent}%)</td>
-                    <td style="padding: 6px;">${stats.doa.count}/${stats.doa.total} (${stats.doa.percent}%)</td>
+                    <td style="padding: 6px;">${stats.doa.count}/${stats.doa.total} (${stats.doa.percent}%)${stats.doa.tambahan > 0 ? ` +${stats.doa.tambahan} tambahan` : ''}</td>
                 </tr>
             </tbody>
         </table>
