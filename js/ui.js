@@ -263,3 +263,47 @@ function sendWebPushNotification(title, body) {
         }
     }
 }
+
+function getRoleLabel(role) {
+    const map = { admin: "Admin", guru: "Guru", siswa: "Siswa", ortu: "Orang Tua" };
+    return map[role] || (role ? role.charAt(0).toUpperCase() + role.slice(1) : "");
+}
+
+function getFirstName(nama) {
+    const parts = String(nama || "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "";
+    const w = parts[0];
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+}
+
+function updateHeaderUser() {
+    if (!appState.user) return;
+    const nama = appState.user.nama || "";
+    const greeting = document.getElementById("header-greeting");
+    const welcome = document.getElementById("header-welcome");
+    const namaEl = document.getElementById("header-nama");
+    const title = document.getElementById("header-title");
+    const sub = document.getElementById("header-subtitle");
+
+    if (greeting) { greeting.textContent = "Selamat Datang,"; greeting.classList.remove("hidden"); }
+    if (welcome) welcome.textContent = "Selamat Datang, ";
+    if (namaEl) namaEl.textContent = nama;
+    if (title) title.title = nama;
+    if (sub) {
+        sub.textContent = `${getRoleLabel(appState.user.role)} • SMPN 1 Talaga Jaya`;
+        sub.title = sub.textContent;
+    }
+}
+
+function setHeaderText(titleText, subtitleText) {
+    const greeting = document.getElementById("header-greeting");
+    const welcome = document.getElementById("header-welcome");
+    const namaEl = document.getElementById("header-nama");
+    const title = document.getElementById("header-title");
+    const sub = document.getElementById("header-subtitle");
+    if (greeting) greeting.classList.add("hidden");
+    if (welcome) welcome.textContent = "";
+    if (namaEl) namaEl.textContent = titleText;
+    if (title) title.title = titleText;
+    if (sub) { sub.textContent = subtitleText; sub.title = subtitleText; }
+}

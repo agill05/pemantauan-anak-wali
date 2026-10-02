@@ -1,7 +1,22 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbz8WLqtMzAeipR1D1JTAJopTWmC8TaMjAHjMA0Ufp7B--_TYY4M7WN9BQlQgBHxqwC9/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzx1_THAFrYmOalV-yUh2Ki9Xx7kXdtZ-xVm0ORt6rQRyTkl7uLpaI7LoY0BQZTQpaPYQ/exec";
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SNOOZE_24H_MS = 24 * 60 * 60 * 1000;
+
+const KEAGAMAAN_KATEGORI = {
+    surah: { label: "Surah", icon: "fa-quran", judul: "Hafalan Al-Qur'an", warna: "emerald" },
+    iqro: { label: "Iqro", icon: "fa-book-open-reader", judul: "Bacaan Iqro", warna: "amber" },
+    doa: { label: "Doa", icon: "fa-hands-praying", judul: "Hafalan Doa", warna: "sky" }
+};
+
+const MASTER_IQRO = [1, 2, 3, 4, 5, 6].map(n => ({ no: n, nama: `Iqro ${n}` }));
+
+const MASTER_DOA = [
+    "Doa Bangun Tidur", "Doa Sebelum Tidur", "Doa Sebelum Makan", "Doa Sesudah Makan",
+    "Doa Masuk Kamar Mandi", "Doa Keluar Kamar Mandi", "Doa Sebelum Wudhu", "Doa Sesudah Wudhu",
+    "Doa Setelah Adzan", "Doa Masuk Masjid", "Doa Keluar Masjid", "Doa Sebelum Belajar",
+    "Doa Berpakaian", "Doa Naik Kendaraan", "Doa untuk Kedua Orang Tua"
+].map((nama, i) => ({ no: i + 1, nama }));
 
 const MASTER_SURAHS = [
     { no: 1, nama: "Al-Fatihah", juz: 1 }, { no: 2, nama: "Al-Baqarah", juz: 1 }, { no: 3, nama: "Ali 'Imran", juz: 3 },
@@ -49,7 +64,7 @@ const MASTER_KEBIASAAN = [
     { id: "K2", nama: "Beribadah / Shalat", icon: "fa-pray", color: "text-emerald-500 bg-emerald-50" },
     { id: "K3", nama: "Berolahraga", icon: "fa-running", color: "text-blue-500 bg-blue-50" },
     { id: "K4", nama: "Makan Sehat & Bergizi", icon: "fa-apple-alt", color: "text-rose-500 bg-rose-50" },
-    { id: "K5", nama: "Gemar Membaca & Belajar", icon: "fa-book-reader", color: "text-indigo-500 bg-indigo-50" },
+    { id: "K5", nama: "Gemar Membaca & Belajar", icon: "fa-book-open-reader", color: "text-indigo-500 bg-indigo-50" },
     { id: "K6", nama: "Bermasyarakat / Gotong Royong", icon: "fa-hands-helping", color: "text-purple-500 bg-purple-50" },
     { id: "K7", nama: "Tidur Cepat & Teratur", icon: "fa-moon", color: "text-slate-600 bg-slate-100" }
 ];

@@ -131,8 +131,8 @@ async function openProfilSiswa(siswaTarget) {
 
             <div id="tab-siswa-keagamaan" class="prof-tab-content space-y-4 hidden">
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-quran text-emerald-500 mr-1.5"></i>Capaian Hafalan Al-Qur'an</h4>
-                    ${hafalan.length === 0 ? '<p class="text-xs text-slate-400 italic">Belum ada data hafalan.</p>' : `
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-quran text-emerald-500 mr-1.5"></i>Capaian Keagamaan <span class="normal-case font-medium text-slate-400">(Surah, Iqro & Doa)</span></h4>
+                    ${hafalan.length === 0 ? '<p class="text-xs text-slate-400 italic">Belum ada data keagamaan.</p>' : `
                         <div class="space-y-2">
                             ${hafalan.map(h => {
         const statusBadge = h.status === 'Lancar'
@@ -143,7 +143,7 @@ async function openProfilSiswa(siswaTarget) {
         return `
                                     <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
                                         <div class="flex justify-between items-center font-bold text-slate-800">
-                                            <span>Surah ${escapeHtml(h.nama_surat)}</span>
+                                            <span class="min-w-0 truncate"><span class="text-[10px] font-bold uppercase text-slate-400 mr-1">${KEAGAMAAN_KATEGORI[getKategoriHafalan(h)].label}</span>${escapeHtml(formatCapaianKeagamaan(h))}</span>
                                             <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(h.status)}</span>
                                         </div>
                                         ${h.catatan ? `<p class="text-xs text-slate-500 italic font-medium">"${escapeHtml(h.catatan)}"</p>` : ''}
@@ -225,7 +225,7 @@ function renderRadarChartSiswa(detailData) {
     const totalAbsen = absensi.length || 1;
     const skorHadir = Math.round((absensi.filter(a => a.status === 'H').length / totalAbsen) * 100);
     const skorKebiasaan = Math.round((kebiasaan.filter(k => k.status === 'Sudah').length / 7) * 100);
-    const skorKeagamaan = Math.min(100, (hafalan.filter(h => h.status === 'Lancar').length / 10) * 100);
+    const skorKeagamaan = hitungSkorKeagamaan(hafalan);
     const totalNilai = akademik.reduce((acc, curr) => acc + Number(curr.nilai_akhir), 0);
     const skorAkademik = akademik.length > 0 ? Math.round(totalNilai / akademik.length) : 0;
     const skorKedisiplinan = Math.max(0, 100 - (pembinaan.length * 20));
@@ -297,10 +297,10 @@ function printProfilSiswa() {
             akademik.map(a => `<tr>${l(a.mapel)}${c(a.nilai_akhir)}${c(a.kktp)}${c(Number(a.nilai_akhir) >= Number(a.kktp) ? "Tuntas" : "Perlu Bimbingan")}</tr>`),
             "Belum ada data nilai")}
 
-        <h4>3. Hafalan Al-Qur'an</h4>
-        ${tabel([{ t: "Nama Surah" }, { t: "Status", w: 100 }, { t: "Catatan Guru" }],
-            hafalan.map(h => `<tr>${l(h.nama_surat)}${c(h.status)}${l(h.catatan || "-")}</tr>`),
-            "Belum ada data hafalan")}
+        <h4>3. Capaian Keagamaan (Surah, Iqro & Doa)</h4>
+        ${tabel([{ t: "Kategori", w: 70 }, { t: "Capaian" }, { t: "Status", w: 100 }, { t: "Catatan Guru" }],
+            hafalan.map(h => `<tr>${c(KEAGAMAAN_KATEGORI[getKategoriHafalan(h)].label)}${l(formatCapaianKeagamaan(h))}${c(h.status)}${l(h.catatan || "-")}</tr>`),
+            "Belum ada data keagamaan")}
 
         <h4>4. Catatan Prestasi</h4>
         ${tabel([{ t: "Nama Prestasi / Juara" }, { t: "Tingkat", w: 100 }, { t: "Tanggal", w: 100 }],

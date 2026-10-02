@@ -18,7 +18,7 @@ async function renderDashboard() {
                     <div class="min-w-0 flex-1">
                         <p class="text-xs font-bold text-slate-500">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</p>
                         <p class="text-2xl font-black text-slate-800 leading-tight">${totalSiswaCount}</p>
-                        <p class="text-[11px] text-slate-400">Total anak wali yang dibina</p>
+                        <p class="text-[11px] text-slate-400">${role === 'admin' ? 'Total siswa yang terdaftar' : 'Total anak wali yang dibina'}</p>
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
@@ -27,7 +27,7 @@ async function renderDashboard() {
                     <div class="min-w-0 flex-1">
                         <p class="text-xs font-bold text-emerald-600">Hadir Hari Ini</p>
                         <p class="text-2xl font-black text-emerald-600 leading-tight">${appState.absensi.filter(a => a.status === 'H').length}</p>
-                        <p class="text-[11px] text-slate-400">Dari ${totalSiswaCount} anak wali</p>
+                        <p class="text-[11px] text-slate-400">Dari ${totalSiswaCount} ${role === 'admin' ? 'siswa' : 'anak wali'}</p>
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
@@ -35,31 +35,121 @@ async function renderDashboard() {
                     <span class="w-11 h-11 shrink-0 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-base"><i class="fas fa-triangle-exclamation"></i></span>
                     <div class="min-w-0 flex-1">
                         <p class="text-xs font-bold text-rose-500">Perlu Perhatian</p>
-                        <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 leading-tight">${appState.currentNotifications ? appState.currentNotifications.length : 0}</p>
-                        <p class="text-[11px] text-slate-400">Anak wali yang perlu perhatian</p>
+                        <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 leading-tight">${getAttentionStudentCount()}</p>
+                        <p class="text-[11px] text-slate-400">${role === 'admin' ? 'Siswa' : 'Anak wali'} yang perlu perhatian</p>
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
             `;
         } else {
-            statsContainer.innerHTML = `
-                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between col-span-3">
-                    <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Status Pemantauan Saya</span>
-                    <p class="text-sm font-bold text-slate-700 mt-1">
-                      ${(appState.currentNotifications && appState.currentNotifications.length > 0) ? '⚠️ Memerlukan Tindak Lanjut' : '✅ Perkembangan Baik'}
-                    </p>
-                </div>
-            `;
+            renderSiswaStatusCard();
         }
     }
 
+    applyDashboardRoleTexts();
+    if (role === "siswa") renderSiswaDashboardParts();
+
     apiCall("getDashboardData", {}, false).then(res => {
         if (res && res.status === "success") {
-            renderPrioritySection(res.data.priority_list);
+            if (role !== "siswa") renderPrioritySection(res.data.priority_list);
             renderAgendaSection(res.data.agenda_list);
             checkStudentNotifications();
         }
     });
+}
+
+function getAttentionStudentCount() {
+    const list = appState.currentNotifications || [];
+    return new Set(list.map(n => String(n.siswa && n.siswa.id))).size;
+}
+
+function applyDashboardRoleTexts() {
+    const isSiswa = appState.user && appState.user.role === "siswa";
+    const title = document.getElementById("dash-bottom-title");
+    const sub = document.getElementById("dash-bottom-subtitle");
+    const link = document.getElementById("dash-priority-link");
+    if (title) title.textContent = isSiswa ? "Perlu Perhatian Saya" : "Perlu Perhatian Khusus";
+    if (sub) sub.classList.toggle("lg:block", !isSiswa);
+    if (link) link.setAttribute("onclick", isSiswa ? "openNotificationModal()" : "switchView('siswa')");
+}
+
+function renderSiswaDashboardParts() {
+    renderSiswaStatusCard();
+    renderPrioritySectionSiswa();
+}
+
+function renderSiswaStatusCard() {
+    const statsContainer = document.getElementById("dash-stats-container");
+    if (!statsContainer || !appState.user || appState.user.role !== "siswa") return;
+
+    let label;
+    if (!appState.notificationsReady) {
+        label = '<span class="text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Memeriksa status...</span>';
+    } else {
+        const n = (appState.currentNotifications || []).length;
+        label = n > 0
+            ? `⚠️ Memerlukan Tindak Lanjut <span class="text-xs font-semibold text-slate-400">(${n} indikator)</span>`
+            : '✅ Perkembangan Baik';
+    }
+
+    statsContainer.innerHTML = `
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between col-span-3">
+            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Status Pemantauan Saya</span>
+            <p class="text-sm font-bold text-slate-700 mt-1">${label}</p>
+        </div>
+    `;
+}
+
+function renderPrioritySectionSiswa() {
+    const container = document.getElementById("dash-priority-container");
+    if (!container || !appState.user || appState.user.role !== "siswa") return;
+
+    if (!appState.notificationsReady) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-circle-notch fa-spin text-slate-300 text-xl mb-2"></i>
+            <p class="text-xs text-slate-400">Memeriksa data kamu...</p>
+          </div>`;
+        return;
+    }
+
+    const list = appState.currentNotifications || [];
+    const namaDepan = escapeHtml(getFirstName(appState.user.nama) || "Kamu");
+
+    if (list.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-check-circle text-emerald-500 text-2xl mb-2"></i>
+            <p class="text-xs text-slate-500"><b class="text-slate-700">${namaDepan}</b>, kondisimu baik. Tidak ada indikator perhatian aktif.</p>
+          </div>`;
+        return;
+    }
+
+    const levelStyle = {
+        kritis: { border: "border-rose-100", badge: "bg-rose-600 text-white", text: "KRITIS", icon: "text-rose-500" },
+        sedang: { border: "border-amber-100", badge: "bg-amber-500 text-white", text: "SEDANG", icon: "text-amber-500" },
+        rendah: { border: "border-blue-100", badge: "bg-blue-500 text-white", text: "PENGAWASAN", icon: "text-blue-500" }
+    };
+    const MAX_SHOWN = 4;
+    const shown = list.slice(0, MAX_SHOWN);
+
+    let html = shown.map(n => {
+        const st = levelStyle[n.level] || levelStyle.rendah;
+        return `
+          <button type="button" onclick="openNotificationModal()" class="w-full text-left bg-white p-3.5 rounded-2xl border ${st.border} shadow-sm space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">${escapeHtml(n.category || "")}</span>
+              <span class="px-2 py-0.5 text-[10px] font-black uppercase rounded shrink-0 ${st.badge}">${st.text}</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-800 flex items-start gap-1.5"><i class="fas fa-exclamation-triangle mt-0.5 ${st.icon}"></i><span class="min-w-0">${escapeHtml(n.title)}</span></h4>
+            <p class="text-xs text-slate-500 leading-relaxed">${escapeHtml(n.desc)}</p>
+          </button>`;
+    }).join("");
+
+    if (list.length > MAX_SHOWN) {
+        html += `<p class="text-center text-xs text-slate-400 pt-1">+${list.length - MAX_SHOWN} indikator lainnya. Tekan "Lihat Semua".</p>`;
+    }
+    container.innerHTML = html;
 }
 
 function renderPrioritySection(priorityList) {
@@ -373,9 +463,9 @@ async function checkStudentNotifications() {
                         siswa: { id: s.id, nama: s.nama },
                         level: 'sedang',
                         category: 'Keagamaan',
-                        title: 'Hafalan Perlu Perbaikan',
-                        desc: `Surah ${h.nama_surat} untuk ${isSiswa ? 'kamu' : s.nama} perlu diulang kembali (${h.catatan || 'Perhatikan kelancaran'}).`,
-                        defaultPembinaan: `Bimbingan hafalan Al-Qur'an: Surah ${h.nama_surat}`
+                        title: ({ surah: 'Hafalan Perlu Perbaikan', iqro: 'Bacaan Iqro Perlu Perbaikan', doa: 'Hafalan Doa Perlu Perbaikan' })[getKategoriHafalan(h)],
+                        desc: `${formatCapaianKeagamaan(h)} untuk ${isSiswa ? 'kamu' : s.nama} perlu diulang kembali (${h.catatan || 'Perhatikan kelancaran'}).`,
+                        defaultPembinaan: `Bimbingan ${KEAGAMAAN_KATEGORI[getKategoriHafalan(h)].judul}: ${formatCapaianKeagamaan(h)}`
                     });
                 }
             }
@@ -427,10 +517,14 @@ async function checkStudentNotifications() {
 
     updateSidebarBadge();
 
+    appState.notificationsReady = true;
+
     const statCount = document.getElementById("dash-stat-perhatian-count");
     if (statCount) {
-        statCount.innerText = activeList.length;
+        statCount.innerText = getAttentionStudentCount();
     }
+
+    if (isSiswa) renderSiswaDashboardParts();
 
     if (!isSiswa && activeList.length > prevCount) {
         const kritisCount = activeList.filter(n => n.level === 'kritis').length;

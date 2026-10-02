@@ -1,17 +1,55 @@
+let keagamaanKategoriFilter = "semua";
+
+function getKategoriHafalan(h) {
+    const k = String((h && h.kategori) || "").toLowerCase();
+    return KEAGAMAAN_KATEGORI[k] ? k : "surah";
+}
+
+function formatCapaianKeagamaan(h) {
+    const kat = getKategoriHafalan(h);
+    const nama = h.nama_surat || "";
+    if (kat === "surah") return `Surah ${nama}`;
+    if (kat === "iqro") return h.halaman ? `${nama} • hal. ${h.halaman}` : nama;
+    return nama;
+}
+
 function getHafalanProgressStats(hafalanList = []) {
-    const lancarSurahs = hafalanList.filter(h => h.status === 'Lancar').map(h => h.nama_surat);
+    const lancar = hafalanList.filter(h => h.status === "Lancar");
+    const lancarSet = (kat) => new Set(lancar.filter(h => getKategoriHafalan(h) === kat).map(h => h.nama_surat));
+    const surahLancar = lancarSet("surah");
+    const iqroLancar = lancarSet("iqro");
+    const doaLancar = lancarSet("doa");
 
     const juz30Surahs = MASTER_SURAHS.filter(s => s.juz === 30);
-    const juz30Lancar = juz30Surahs.filter(s => lancarSurahs.includes(s.nama)).length;
-    const juz30Percent = Math.round((juz30Lancar / juz30Surahs.length) * 100);
-
-    const totalLancar = MASTER_SURAHS.filter(s => lancarSurahs.includes(s.nama)).length;
-    const totalPercent = Math.round((totalLancar / 114) * 100);
+    const juz30Lancar = juz30Surahs.filter(s => surahLancar.has(s.nama)).length;
+    const totalSurahLancar = MASTER_SURAHS.filter(s => surahLancar.has(s.nama)).length;
+    const iqroCount = MASTER_IQRO.filter(i => iqroLancar.has(i.nama)).length;
+    const doaCount = MASTER_DOA.filter(d => doaLancar.has(d.nama)).length;
+    const pct = (a, b) => b ? Math.round((a / b) * 100) : 0;
 
     return {
-        juz30: { count: juz30Lancar, total: juz30Surahs.length, percent: juz30Percent },
-        total: { count: totalLancar, total: 114, percent: totalPercent }
+        juz30: { count: juz30Lancar, total: juz30Surahs.length, percent: pct(juz30Lancar, juz30Surahs.length) },
+        total: { count: totalSurahLancar, total: 114, percent: pct(totalSurahLancar, 114) },
+        iqro: { count: iqroCount, total: MASTER_IQRO.length, percent: pct(iqroCount, MASTER_IQRO.length) },
+        doa: { count: doaCount, total: MASTER_DOA.length, percent: pct(doaCount, MASTER_DOA.length) }
     };
+}
+
+// Skor radar keagamaan (0-100). Poin: 1 surah lancar = 1, 1 doa lancar = 1, 1 jilid Iqro selesai = 2. Target 10 poin = 100.
+function hitungSkorKeagamaan(hafalanList = []) {
+    const s = getHafalanProgressStats(hafalanList);
+    const poin = s.total.count + s.doa.count + (s.iqro.count * 2);
+    return Math.min(100, Math.round((poin / 10) * 100));
+}
+
+function setKeagamaanKategori(kat) {
+    keagamaanKategoriFilter = (kat === "semua" || KEAGAMAAN_KATEGORI[kat]) ? kat : "semua";
+    document.querySelectorAll("#keagamaan-kategori-tabs .kag-tab-btn").forEach(btn => {
+        const on = btn.getAttribute("data-kat") === keagamaanKategoriFilter;
+        ["bg-surface", "text-primary", "shadow-sm"].forEach(c => btn.classList.toggle(c, on));
+        btn.classList.toggle("text-slate-600", !on);
+    });
+    renderKeagamaanView();
 }
 
 async function loadKeagamaanData(forceRefresh = false) {
@@ -48,6 +86,53 @@ async function loadKeagamaanData(forceRefresh = false) {
     }
 }
 
+function _kagBar(label, valueText, percent, barClass) {
+    return `
+        <div class="space-y-1">
+            <div class="flex justify-between text-xs font-semibold">
+                <span>${label}</span>
+                <span>${valueText}</span>
+            </div>
+            <div class="w-full bg-black/20 h-2.5 rounded-full overflow-hidden">
+                <div class="${barClass} h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+            </div>
+        </div>`;
+}
+
+function _kagProgressHeader(stats, kat) {
+    let judul, sub, chip, bars;
+    const barSurah = _kagBar("Capaian Juz 30 (Juz Amma)", `${stats.juz30.percent}%`, stats.juz30.percent, "bg-amber-300")
+        + _kagBar("Keseluruhan 114 Surah", `${stats.total.percent}%`, stats.total.percent, "bg-emerald-300");
+    const barIqro = _kagBar(`Jilid Selesai (${stats.iqro.count}/${stats.iqro.total})`, `${stats.iqro.percent}%`, stats.iqro.percent, "bg-amber-300");
+    const barDoa = _kagBar(`Doa Dihafal (${stats.doa.count}/${stats.doa.total})`, `${stats.doa.percent}%`, stats.doa.percent, "bg-sky-300");
+
+    if (kat === "surah") {
+        judul = "Progres Hafalan Al-Qur'an"; sub = "Capaian Juz 30 & Total 114 Surah";
+        chip = `${stats.juz30.count}/${stats.juz30.total} Surah (Juz 30)`; bars = barSurah;
+    } else if (kat === "iqro") {
+        judul = "Progres Iqro"; sub = "Capaian jilid Iqro 1 sampai 6";
+        chip = `${stats.iqro.count}/${stats.iqro.total} Jilid`; bars = barIqro;
+    } else if (kat === "doa") {
+        judul = "Progres Hafalan Doa"; sub = "Doa-doa harian";
+        chip = `${stats.doa.count}/${stats.doa.total} Doa`; bars = barDoa;
+    } else {
+        judul = "Progres Keagamaan"; sub = "Al-Qur'an, Iqro & Doa Harian";
+        chip = `${stats.juz30.count}/${stats.juz30.total} Surah (Juz 30)`; bars = barSurah + barIqro + barDoa;
+    }
+
+    return `
+    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-4 rounded-2xl shadow-sm space-y-3 mb-4">
+        <div class="flex justify-between items-center gap-2">
+            <div class="min-w-0">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-100">${judul}</h3>
+                <p class="text-xs text-emerald-200">${sub}</p>
+            </div>
+            <span class="bg-white/20 px-2.5 py-1 rounded-xl text-xs font-extrabold backdrop-blur-sm shrink-0">${chip}</span>
+        </div>
+        ${bars}
+    </div>`;
+}
+
 function renderKeagamaanView() {
     const container = document.getElementById("keagamaan-container");
     if (!container) return;
@@ -61,68 +146,42 @@ function renderKeagamaanView() {
         return;
     }
 
-    const filteredHafalan = (filterSiswaId && filterSiswaId !== "ALL")
+    const perSiswa = (filterSiswaId && filterSiswaId !== "ALL")
         ? appState.keagamaan.filter(h => String(h.siswa_id) === String(filterSiswaId))
         : appState.keagamaan;
 
-    const stats = getHafalanProgressStats(filteredHafalan);
+    const kat = keagamaanKategoriFilter;
+    const filteredHafalan = kat === "semua" ? perSiswa : perSiswa.filter(h => getKategoriHafalan(h) === kat);
 
-    const progressHeaderHtml = `
-    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-4 rounded-2xl shadow-sm space-y-3 mb-4">
-        <div class="flex justify-between items-center">
-            <div>
-                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-100">Progres Hafalan Al-Qur'an</h3>
-                <p class="text-xs text-emerald-200">Capaian Juz 30 & Total 114 Surah</p>
-            </div>
-            <span class="bg-white/20 px-2.5 py-1 rounded-xl text-xs font-extrabold backdrop-blur-sm">
-                ${stats.juz30.count}/${stats.juz30.total} Surah (Juz 30)
-            </span>
-        </div>
-
-        <div class="space-y-1">
-            <div class="flex justify-between text-xs font-semibold">
-                <span>Capaian Juz 30 (Juz Amma)</span>
-                <span>${stats.juz30.percent}%</span>
-            </div>
-            <div class="w-full bg-black/20 h-2.5 rounded-full overflow-hidden">
-                <div class="bg-amber-300 h-full rounded-full transition-all duration-500" style="width: ${stats.juz30.percent}%"></div>
-            </div>
-        </div>
-
-        <div class="space-y-1">
-            <div class="flex justify-between text-xs font-semibold">
-                <span>Keseluruhan 114 Surah</span>
-                <span>${stats.total.percent}%</span>
-            </div>
-            <div class="w-full bg-black/20 h-2.5 rounded-full overflow-hidden">
-                <div class="bg-emerald-300 h-full rounded-full transition-all duration-500" style="width: ${stats.total.percent}%"></div>
-            </div>
-        </div>
-    </div>
-    `;
+    const progressHeaderHtml = _kagProgressHeader(getHafalanProgressStats(perSiswa), kat);
 
     if (!filteredHafalan || filteredHafalan.length === 0) {
-        container.innerHTML = progressHeaderHtml + `<div class="empty-state"><i class="fas fa-quran text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan hafalan Al-Qur'an.</p></div>`;
+        const emptyLabel = kat === "iqro" ? "bacaan Iqro" : (kat === "doa" ? "hafalan doa" : (kat === "surah" ? "hafalan Al-Qur'an" : "capaian keagamaan"));
+        const emptyIcon = KEAGAMAAN_KATEGORI[kat] ? KEAGAMAAN_KATEGORI[kat].icon : "fa-quran";
+        container.innerHTML = progressHeaderHtml + `<div class="empty-state"><i class="fas ${emptyIcon} text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan ${emptyLabel}.</p></div>`;
         return;
     }
 
-    const isAdminOrGuruItem = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuruItem = isAdminOrGuru;
+    const warnaBox = { emerald: "bg-emerald-50 text-emerald-600", amber: "bg-amber-50 text-amber-600", sky: "bg-sky-50 text-sky-600" };
 
     const cardsHtml = filteredHafalan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
+        const itemKat = getKategoriHafalan(item);
+        const meta = KEAGAMAAN_KATEGORI[itemKat];
         const statusBadge = item.status === 'Lancar' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (item.status === 'Mengulang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200');
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                <div class="flex justify-between items-start">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs"><i class="fas fa-book-open"></i></div>
-                        <div>
-                            <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama_surat)}</h4>
-                            <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • ${escapeHtml(item.tanggal)}</p>
+                <div class="flex justify-between items-start gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-9 h-9 shrink-0 rounded-xl ${warnaBox[meta.warna]} flex items-center justify-center font-bold text-xs"><i class="fas ${meta.icon}"></i></div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(formatCapaianKeagamaan(item))}</h4>
+                            <p class="text-xs text-slate-400 truncate">${meta.label} • ${escapeHtml(s ? s.nama : 'Siswa')} • ${escapeHtml(item.tanggal)}</p>
                         </div>
                     </div>
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(item.status)}</span>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md border shrink-0 ${statusBadge}">${escapeHtml(item.status)}</span>
                 </div>
                 ${item.catatan ? `<p class="text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-slate-600 italic">"${escapeHtml(item.catatan)}"</p>` : ''}
                 ${isAdminOrGuruItem ? `
@@ -137,17 +196,43 @@ function renderKeagamaanView() {
     container.innerHTML = progressHeaderHtml + cardsHtml;
 }
 
+function _kagItemOptions(kat, selected) {
+    if (kat === "iqro") {
+        return MASTER_IQRO.map(i => `<option value="${i.nama}" ${selected === i.nama ? 'selected' : ''}>${i.nama}</option>`).join("");
+    }
+    if (kat === "doa") {
+        return MASTER_DOA.map(d => `<option value="${d.nama}" ${selected === d.nama ? 'selected' : ''}>${d.no}. ${d.nama}</option>`).join("");
+    }
+    return MASTER_SURAHS.map(s => `<option value="${s.nama}" ${selected === s.nama ? 'selected' : ''}>${s.no}. Surah ${s.nama} (Juz ${s.juz})</option>`).join("");
+}
+
+function onKeagamaanKategoriChange(selected = "") {
+    const kat = document.getElementById("m-kag-kategori").value;
+    const itemSel = document.getElementById("m-kag-surah");
+    const itemLabel = document.getElementById("m-kag-item-label");
+    const halWrap = document.getElementById("m-kag-halaman-wrap");
+    const hint = document.getElementById("m-kag-hint");
+
+    itemSel.innerHTML = _kagItemOptions(kat, selected);
+    itemLabel.textContent = kat === "iqro" ? "JILID IQRO" : (kat === "doa" ? "DOA" : "SURAH AL-QUR'AN");
+    halWrap.classList.toggle("hidden", kat !== "iqro");
+    hint.textContent = kat === "iqro"
+        ? "Lancar = jilid sudah selesai. Pilih Mengulang atau Belum Mulai jika masih berjalan, lalu isi halaman terakhir."
+        : "Lancar = sudah hafal dan lancar.";
+}
+
 function openModalKeagamaan(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
     const record = id ? appState.keagamaan.find(x => String(x.id) === String(id)) : null;
     const siswaOptions = appState.siswa.map(s => `<option value="${s.id}" ${record && String(record.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
-    const surahOptions = MASTER_SURAHS.map(s => `<option value="${s.nama}" ${record && record.nama_surat === s.nama ? 'selected' : ''}>${s.no}. Surah ${s.nama} (Juz ${s.juz})</option>`).join("");
+    const kat = record ? getKategoriHafalan(record) : (KEAGAMAAN_KATEGORI[keagamaanKategoriFilter] ? keagamaanKategoriFilter : "surah");
+    const kategoriOptions = Object.keys(KEAGAMAAN_KATEGORI).map(k => `<option value="${k}" ${k === kat ? 'selected' : ''}>${KEAGAMAAN_KATEGORI[k].label}</option>`).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-quran text-emerald-600 mr-1.5"></i>${record ? 'Edit Catatan Hafalan' : 'Catat Hafalan Surah'}</h3>
+            <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-quran text-emerald-600 mr-1.5"></i>${record ? 'Edit Catatan Keagamaan' : 'Catat Capaian Keagamaan'}</h3>
             <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         <form onsubmit="saveKeagamaanForm(event, '${id || ''}')" class="space-y-3">
@@ -156,8 +241,16 @@ function openModalKeagamaan(id = null) {
                 <select id="m-kag-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOptions}</select>
             </div>
             <div>
-                <label for="m-kag-surah" class="block text-xs font-bold text-slate-500 mb-1">SURAH AL-QUR'AN</label>
-                <select id="m-kag-surah" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${surahOptions}</select>
+                <label for="m-kag-kategori" class="block text-xs font-bold text-slate-500 mb-1">KATEGORI</label>
+                <select id="m-kag-kategori" onchange="onKeagamaanKategoriChange()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">${kategoriOptions}</select>
+            </div>
+            <div>
+                <label id="m-kag-item-label" for="m-kag-surah" class="block text-xs font-bold text-slate-500 mb-1">SURAH AL-QUR'AN</label>
+                <select id="m-kag-surah" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required></select>
+            </div>
+            <div id="m-kag-halaman-wrap" class="hidden">
+                <label for="m-kag-halaman" class="block text-xs font-bold text-slate-500 mb-1">HALAMAN TERAKHIR (OPSIONAL)</label>
+                <input type="number" id="m-kag-halaman" min="1" max="60" inputmode="numeric" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" value="${record && record.halaman ? escapeHtml(String(record.halaman)) : ''}" placeholder="Contoh: 14">
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -173,22 +266,28 @@ function openModalKeagamaan(id = null) {
                     </select>
                 </div>
             </div>
+            <p id="m-kag-hint" class="text-[11px] text-slate-400 -mt-1"></p>
             <div>
                 <label for="m-kag-catatan" class="block text-xs font-bold text-slate-500 mb-1">CATATAN GURU</label>
-                <textarea id="m-kag-catatan" rows="2" placeholder="Catatan kelancaran / tajwid..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">${record ? escapeHtml(record.catatan || '') : ''}</textarea>
+                <textarea id="m-kag-catatan" rows="2" placeholder="Catatan kelancaran / tajwid / makhraj..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">${record ? escapeHtml(record.catatan || '') : ''}</textarea>
             </div>
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Hafalan</button>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Capaian</button>
         </form>
     `;
+    onKeagamaanKategoriChange(record ? record.nama_surat : "");
     document.getElementById("modal-container")?.classList.remove("hidden");
 }
 
 async function saveKeagamaanForm(e, id) {
     e.preventDefault();
+    const kategori = document.getElementById("m-kag-kategori").value;
+    const halRaw = document.getElementById("m-kag-halaman").value;
     const payload = {
         id: id || ("HFL-" + Date.now()),
         siswa_id: document.getElementById("m-kag-siswa").value,
+        kategori,
         nama_surat: document.getElementById("m-kag-surah").value,
+        halaman: kategori === "iqro" ? halRaw : "",
         tanggal: document.getElementById("m-kag-tanggal").value,
         status: document.getElementById("m-kag-status").value,
         catatan: document.getElementById("m-kag-catatan").value
@@ -201,21 +300,22 @@ async function saveKeagamaanForm(e, id) {
     saveAppStateToLocal();
     renderKeagamaanView();
     closeModal();
-    showToast("Catatan hafalan tersimpan!");
+    showToast("Catatan keagamaan tersimpan!");
 
     apiCall("saveKeagamaan", payload, false);
 }
 
 async function deleteKeagamaan(id) {
-    const confirm = await Swal.fire({ title: 'Hapus Catatan Hafalan?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+    const confirm = await Swal.fire({ title: 'Hapus Catatan Keagamaan?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
     if (confirm.isConfirmed) {
         appState.keagamaan = appState.keagamaan.filter(x => String(x.id) !== String(id));
         saveAppStateToLocal();
         renderKeagamaanView();
-        showToast("Hafalan dihapus");
+        showToast("Catatan keagamaan dihapus");
         apiCall("deleteKeagamaan", { id }, false);
     }
 }
+
 function cetakPDFKeagamaan() {
     const selectEl = document.getElementById("karakter-siswa-filter");
     const filterSiswaId = selectEl ? selectEl.value : "";
@@ -229,7 +329,7 @@ function cetakPDFKeagamaan() {
     const filteredHafalan = (appState.keagamaan || []).filter(h => String(h.siswa_id) === String(filterSiswaId));
 
     if (filteredHafalan.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada catatan hafalan Al-Qur\'an untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada catatan keagamaan untuk siswa ini.', confirmButtonColor: '#2563eb' });
         return;
     }
 
@@ -240,7 +340,8 @@ function cetakPDFKeagamaan() {
         <tr>
             <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
             <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tanggal)}</td>
-            <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.nama_surat)}</td>
+            <td style="padding: 6px 6px; text-align: center;">${KEAGAMAAN_KATEGORI[getKategoriHafalan(item)].label}</td>
+            <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(formatCapaianKeagamaan(item))}</td>
             <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.status)}</td>
             <td style="padding: 6px 8px; text-align: left;">${item.catatan ? escapeHtml(item.catatan) : '-'}</td>
         </tr>
@@ -254,14 +355,18 @@ function cetakPDFKeagamaan() {
         <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;" border="1" borderColor="#94a3b8">
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
-                    <th style="padding: 6px;">Progres Juz 30 (Juz Amma)</th>
-                    <th style="padding: 6px;">Progres Total 114 Surah</th>
+                    <th style="padding: 6px;">Juz 30 (Juz Amma)</th>
+                    <th style="padding: 6px;">Total 114 Surah</th>
+                    <th style="padding: 6px;">Jilid Iqro Selesai</th>
+                    <th style="padding: 6px;">Doa Dihafal</th>
                 </tr>
             </thead>
             <tbody>
                 <tr style="text-align: center; font-weight: bold;">
-                    <td style="padding: 6px;">${stats.juz30.count}/${stats.juz30.total} Surah (${stats.juz30.percent}%)</td>
-                    <td style="padding: 6px;">${stats.total.count}/${stats.total.total} Surah (${stats.total.percent}%)</td>
+                    <td style="padding: 6px;">${stats.juz30.count}/${stats.juz30.total} (${stats.juz30.percent}%)</td>
+                    <td style="padding: 6px;">${stats.total.count}/${stats.total.total} (${stats.total.percent}%)</td>
+                    <td style="padding: 6px;">${stats.iqro.count}/${stats.iqro.total} (${stats.iqro.percent}%)</td>
+                    <td style="padding: 6px;">${stats.doa.count}/${stats.doa.total} (${stats.doa.percent}%)</td>
                 </tr>
             </tbody>
         </table>
@@ -269,9 +374,10 @@ function cetakPDFKeagamaan() {
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
                     <th style="padding: 8px 4px; width: 30px;">No</th>
-                    <th style="padding: 8px 6px; width: 90px;">Tanggal</th>
-                    <th style="padding: 8px 6px; text-align: left;">Nama Surah</th>
-                    <th style="padding: 8px 6px; width: 90px;">Status</th>
+                    <th style="padding: 8px 6px; width: 80px;">Tanggal</th>
+                    <th style="padding: 8px 6px; width: 60px;">Kategori</th>
+                    <th style="padding: 8px 6px; text-align: left;">Capaian</th>
+                    <th style="padding: 8px 6px; width: 80px;">Status</th>
                     <th style="padding: 8px 6px; text-align: left;">Catatan</th>
                 </tr>
             </thead>
@@ -280,8 +386,8 @@ function cetakPDFKeagamaan() {
     `;
 
     exportFeaturePDF(
-        "JURNAL & PROGRES HAFALAN AL-QUR'AN",
+        "JURNAL & PROGRES KEAGAMAAN",
         contentHtml,
-        `Jurnal_Hafalan_${siswa ? siswa.nama.replace(/\s+/g, '_') : filterSiswaId}_${getDateWITA()}.pdf`
+        `Jurnal_Keagamaan_${siswa ? siswa.nama.replace(/\s+/g, '_') : filterSiswaId}_${getDateWITA()}.pdf`
     );
 }

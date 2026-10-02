@@ -1,4 +1,3 @@
-
 let lastFetchTimes = {
     bootstrap: 0,
     absensi: 0,
@@ -31,6 +30,7 @@ let appState = {
     activeSiswaDetail: null,
     laporanRekap: [],
     currentNotifications: [],
+    notificationsReady: false,
     handledNotifications: [],
     pengaturan: { nama_kepsek: "", nip_kepsek: "" }
 };
