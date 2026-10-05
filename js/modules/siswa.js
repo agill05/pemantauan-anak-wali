@@ -541,7 +541,11 @@ function openModalSiswa(id = null) {
     const s = id ? appState.siswa.find(x => String(x.id) === String(id)) : null;
     const guruMode = isGuruUser();
     const kelasOpts = guruMode
-        ? renderKelasSelectOptions(null)
+        ? (() => {
+            const kw = getKelasWaliId();
+            const kls = (appState.kelas || []).find(k => String(k.id) === String(kw));
+            return kls ? `<option value="${kls.id}" selected>${escapeHtml(kls.nama_kelas)}</option>` : `<option value="" selected>Belum ada kelas wali</option>`;
+        })()
         : getVisibleKelas().map(k => `<option value="${k.id}" ${String(s?.kelas_id) === String(k.id) ? 'selected' : ''}>${escapeHtml(k.nama_kelas)}</option>`).join("");
 
     box.innerHTML = `
@@ -629,7 +633,7 @@ async function saveSiswaForm(e, id) {
         username: document.getElementById("m-ssw-user").value,
         password: document.getElementById("m-ssw-pwd").value,
         nisn: document.getElementById("m-ssw-nisn").value,
-        kelas_id: isGuruUser() ? getEffectiveKelasFilter("") : document.getElementById("m-ssw-kelas").value,
+        kelas_id: isGuruUser() ? (getKelasWaliId() || "") : document.getElementById("m-ssw-kelas").value,
         no_hp_ortu: normalizePhone(document.getElementById("m-ssw-ortu").value),
         nama_ortu: document.getElementById("m-ssw-nama-ortu").value,
     };

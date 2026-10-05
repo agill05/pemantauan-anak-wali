@@ -290,7 +290,8 @@ function updateHeaderUser() {
     if (namaEl) namaEl.textContent = nama;
     if (title) title.title = nama;
     if (sub) {
-        sub.textContent = `${getRoleLabel(appState.user.role)} • SMPN 1 Talaga Jaya`;
+        const peranTeks = isGuruUser() && getPeranTersedia().length > 1 ? ` (${PERAN_LABEL[getPeranAktif()]})` : "";
+        sub.textContent = `${getRoleLabel(appState.user.role)}${peranTeks} • SMPN 1 Talaga Jaya`;
         sub.title = sub.textContent;
     }
 }

@@ -450,6 +450,7 @@ async function submitForcePasswordChange(e) {
 
 async function continueSessionSetup() {
     try {
+        initPeranAktif();
         applyRoleUI(appState.user.role);
         startSilentTokenRefresh();
         setupNetworkStatusListeners();
@@ -475,8 +476,9 @@ async function continueSessionSetup() {
         const sbRole = document.getElementById("sidebar-role-badge");
         if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
         if (sbNama) sbNama.innerText = appState.user.nama;
-        if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
+        if (sbRole) sbRole.innerText = appState.user.role.toUpperCase() + (isGuruUser() && getGuruPeranText() ? " • " + getGuruPeranText().toUpperCase() : "");
         renderSidebarMenu(appState.user.role);
+        renderPeranSwitcher();
 
         document.documentElement.classList.add("has-session");
 
@@ -505,7 +507,8 @@ async function continueSessionSetup() {
         if (bootstrapOk) {
             appState.kelas = resBootstrap.data.initial.kelas || [];
             appState.guru = resBootstrap.data.initial.guru || [];
-            appState.siswa = scopeSiswaForUser(resBootstrap.data.initial.siswa || []);
+            // Simpan gabungan wali + binaan. Tampilan disaring per peran aktif lewat getSiswaPeran().
+            appState.siswa = resBootstrap.data.initial.siswa || [];
             appState.myStudents = appState.siswa;
             appState.pengaturan = resBootstrap.data.initial.pengaturan || { nama_kepsek: "", nip_kepsek: "" };
             saveAppStateToLocal();

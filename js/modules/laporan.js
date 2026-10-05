@@ -35,7 +35,7 @@ function getFilteredLaporanData() {
     const kelasFilter = getEffectiveKelasFilter(document.getElementById("laporan-kelas-filter")?.value || "");
     const statusFilter = document.getElementById("laporan-status-filter")?.value || "";
 
-    return scopeByGuruKelas(appState.laporanRekap, item => item.kelas_id).filter(item => {
+    return scopeBySiswaId(appState.laporanRekap, item => item.id).filter(item => {
         if (kelasFilter && String(item.kelas_id) !== String(kelasFilter)) {
             return false;
         }

@@ -42,8 +42,59 @@ function switchView(viewId) {
     if (viewId === "admin-manage") renderAdminManage();
 }
 
+// ===== Switcher peran guru (Wali Kelas | Mentor | Semua) =====
+function renderPeranSwitcher() {
+    document.getElementById("peran-switcher-sidebar")?.remove();
+    document.getElementById("peran-switcher-header")?.remove();
+    if (!isGuruUser()) return;
+
+    const ada = getPeranTersedia();
+    if (ada.length < 2) return;
+    const aktif = getPeranAktif();
+
+    const nav = document.getElementById("sidebar-menu-items");
+    if (nav) {
+        const wrap = document.createElement("div");
+        wrap.id = "peran-switcher-sidebar";
+        wrap.className = "px-3 pt-3";
+        wrap.innerHTML = `
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Peran Aktif</p>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-xl" role="group" aria-label="Pilih peran aktif">
+                ${ada.map(p => `
+                    <button type="button" onclick="setPeranAktif('${p}')" aria-pressed="${p === aktif}"
+                        class="flex-1 px-2 py-1.5 rounded-lg text-xs font-bold transition ${p === aktif ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
+                        ${PERAN_LABEL[p]}
+                    </button>`).join("")}
+            </div>`;
+        nav.parentNode.insertBefore(wrap, nav);
+    }
+
+    const refreshBtn = document.getElementById("btn-refresh-header");
+    if (refreshBtn) {
+        const sel = document.createElement("select");
+        sel.id = "peran-switcher-header";
+        sel.setAttribute("aria-label", "Peran aktif");
+        sel.className = "bg-white/15 text-white text-xs font-bold rounded-lg px-2 py-1.5 outline-none border border-white/30 max-w-[7.5rem]";
+        sel.innerHTML = ada.map(p => `<option value="${p}" class="text-slate-800" ${p === aktif ? "selected" : ""}>${PERAN_LABEL[p]}</option>`).join("");
+        sel.addEventListener("change", () => setPeranAktif(sel.value));
+        refreshBtn.parentNode.insertBefore(sel, refreshBtn);
+    }
+}
+
+// Dipanggil state.js setelah peran aktif atau flag user berubah.
+function onPeranChanged() {
+    if (!appState.user) return;
+    renderPeranSwitcher();
+    updateHeaderUser();
+    if (typeof _refreshAllSiswaDropdowns === "function") _refreshAllSiswaDropdowns();
+
+    const activeView = document.querySelector(".view-section.active");
+    const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
+    if (viewId !== "login") switchView(viewId);
+}
+
 function _refreshAllSiswaDropdowns() {
-    const siswaList = appState.siswa || [];
+    const siswaList = getSiswaPeran();
 
     const selKebiasaan = document.getElementById("kebiasaan-siswa-select");
     if (selKebiasaan && siswaList.length > 0) populateSiswaSelectForRole(selKebiasaan);
@@ -149,7 +200,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 apiCall("validateSession", {}, false).then(validRes => {
                     if (validRes && validRes.status === "success") {
                         if (validRes.user) {
-                            appState.user = validRes.user;
+                            syncUserFlags(validRes.user);
                         }
                     } else if (validRes && validRes.status === "error") {
                         handleLogout(true);

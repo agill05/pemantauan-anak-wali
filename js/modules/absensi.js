@@ -62,7 +62,7 @@ function renderAbsensiView() {
 
     const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
     const kelasOptions = renderKelasSelectOptions(selectedKelas, { allLabel: "Semua Kelas", prefix: "Kelas " });
-    const kelasDisabledAttr = isGuruUser() ? "disabled" : "";
+    const kelasDisabledAttr = isKelasSelectLocked() ? "disabled" : "";
 
     container.innerHTML = `
         <div class="space-y-3">

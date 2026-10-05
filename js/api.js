@@ -42,6 +42,7 @@ function startSilentTokenRefresh() {
         const res = await apiCall("refreshToken", {}, false);
         if (res && res.status === "success" && res.token) {
             appState.token = res.token;
+            if (res.user) syncUserFlags(res.user);
 
             const savedSession = JSON.parse(localStorage.getItem("session_anak_wali") || "{}");
             savedSession.token = res.token;
@@ -119,7 +120,8 @@ async function fetchAllAppData(force = true) {
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
         appState.guru = resBootstrap.data.initial.guru || [];
-        appState.siswa = scopeSiswaForUser(resBootstrap.data.initial.siswa || []);
+        // Simpan gabungan wali + binaan. Tampilan disaring per peran aktif lewat getSiswaPeran().
+        appState.siswa = resBootstrap.data.initial.siswa || [];
         appState.myStudents = appState.siswa;
         if (resBootstrap.data.initial.pengaturan) appState.pengaturan = resBootstrap.data.initial.pengaturan;
         saveAppStateToLocal();

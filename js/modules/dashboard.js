@@ -562,7 +562,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
     const currentList = activeTab === 'active' ? activeList : handledList;
 
     const kelasOptions = renderKelasSelectOptions(selectedKelasId, { allLabel: "Semua Kelas", prefix: "Kelas " });
-    const kelasDisabledAttr = isGuruUser() ? "disabled" : "";
+    const kelasDisabledAttr = isKelasSelectLocked() ? "disabled" : "";
 
     const getLevelBadge = (level) => {
         if (level === 'kritis') return '<span class="px-2 py-0.5 text-[10px] font-black uppercase rounded bg-rose-600 text-white animate-pulse">KRITIS</span>';
