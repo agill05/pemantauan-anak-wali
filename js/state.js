@@ -1,3 +1,19 @@
+// Normalisasi nomor HP ke format lokal 08xxxxxxxxxx.
+// Menangani angka dari Sheets yang kehilangan 0 di depan (812...), awalan 62 / +62, spasi, dan tanda hubung.
+function normalizePhone(phone) {
+    let p = String(phone === null || phone === undefined ? '' : phone).replace(/[^0-9]/g, '');
+    if (p === '') return '';
+    if (p.startsWith('62')) p = '0' + p.substring(2);
+    else if (p.startsWith('8')) p = '0' + p;
+    return p;
+}
+
+// Format internasional (62xxxxxxxxxx) untuk tautan WhatsApp.
+function toWhatsAppNumber(phone) {
+    const p = normalizePhone(phone);
+    return p.startsWith('0') ? '62' + p.substring(1) : p;
+}
+
 let lastFetchTimes = {
     bootstrap: 0,
     absensi: 0,

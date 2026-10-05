@@ -179,7 +179,7 @@ function openModalGuru(id = null) {
             </div>
             <div>
                 <label for="m-guru-hp" class="block text-xs font-bold text-slate-500 mb-1">NO. TELEPON / WA</label>
-                <input type="text" id="m-guru-hp" value="${escapeHtml(g?.no_hp || '')}" oninput="validatePhoneField(this)" placeholder="08xxxxxxxxxx" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                <input type="text" id="m-guru-hp" value="${escapeHtml(normalizePhone(g?.no_hp))}" oninput="validatePhoneField(this)" placeholder="08xxxxxxxxxx" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 <p id="m-guru-hp-error" class="hidden text-[10px] text-rose-500 mt-1 font-semibold"><i class="fas fa-circle-exclamation"></i> Format nomor tidak valid. Gunakan 08xxxxxxxxxx (10-14 digit).</p>
             </div>
             <button type="submit" id="btn-save-guru" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Guru</button>
@@ -211,7 +211,7 @@ async function saveGuruForm(e, id) {
         username: document.getElementById("m-guru-user").value,
         password: document.getElementById("m-guru-pwd").value,
         nip: document.getElementById("m-guru-nip").value,
-        no_hp: document.getElementById("m-guru-hp").value
+        no_hp: normalizePhone(document.getElementById("m-guru-hp").value)
     };
 
     const res = await apiCall("saveGuru", payload, true);
@@ -339,7 +339,7 @@ function exportGuruCSV() {
         username: g.username || "",
         nama: g.nama || "",
         nip: g.nip || "",
-        no_hp: g.no_hp || "",
+        no_hp: normalizePhone(g.no_hp),
         password: ""
     }));
     const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "nip", "no_hp", "password"] });

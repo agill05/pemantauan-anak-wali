@@ -181,7 +181,7 @@ function renderPrioritySection(priorityList) {
                 <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                 <div>
                   <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
-                  <p class="text-xs text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Ortu: ${escapeHtml(s.no_hp_ortu || '-')}</p>
+                  <p class="text-xs text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Ortu: ${escapeHtml(normalizePhone(s.no_hp_ortu) || '-')}</p>
                 </div>
               </div>
               <div class="flex items-center gap-1">

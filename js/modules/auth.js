@@ -870,7 +870,7 @@ function openEditProfilModal() {
 
             <div>
                 <label for="self-hp" class="block text-xs font-bold text-slate-500 uppercase mb-1">No. WhatsApp / HP</label>
-                <input type="text" id="self-hp" value="${escapeHtml(user.no_hp || user.no_hp_ortu || '')}"
+                <input type="text" id="self-hp" value="${escapeHtml(normalizePhone(user.no_hp || user.no_hp_ortu))}"
                        placeholder="08xxxxxxxxxx" oninput="validatePhoneField(this)"
                        class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:border-blue-500">
                 <p id="self-hp-error" class="hidden text-[10px] text-rose-500 mt-1 font-semibold"><i class="fas fa-circle-exclamation"></i> Format nomor tidak valid. Gunakan 08xxxxxxxxxx (10-14 digit).</p>
@@ -949,8 +949,8 @@ async function hapusFotoProfil() {
 
 function validatePhoneField(input, errorElId) {
     const errorEl = document.getElementById(errorElId || (input.id + "-error"));
-    const value = input.value.trim();
-    const isValid = value === "" || /^08[0-9]{8,12}$/.test(value);
+    const raw = input.value.trim();
+    const isValid = raw === "" || /^08[0-9]{8,12}$/.test(normalizePhone(raw));
 
     if (isValid) {
         input.classList.remove("border-rose-400", "focus:border-rose-500");
@@ -997,7 +997,7 @@ async function saveSelfProfileForm(e) {
     const payload = {
         nama: document.getElementById("self-nama").value,
         username: document.getElementById("self-username").value,
-        no_hp: document.getElementById("self-hp").value,
+        no_hp: normalizePhone(document.getElementById("self-hp").value),
         fileData: base64Photo
     };
 

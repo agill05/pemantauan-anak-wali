@@ -38,11 +38,7 @@ async function generateAndShareMagicLink() {
     const currentUrl = window.location.href.split('?')[0];
     magicUrl = `${currentUrl}?magic_token=${encodeURIComponent(magicToken)}`;
 
-    const phoneRaw = safeStr(siswa.no_hp_ortu || '').replace(/[^0-9]/g, '');
-    let phoneFormatted = phoneRaw;
-    if (phoneFormatted.startsWith('0')) {
-        phoneFormatted = '62' + phoneFormatted.substring(1);
-    }
+    const phoneFormatted = toWhatsAppNumber(siswa.no_hp_ortu);
 
     const waMessage = encodeURIComponent(
         `Assalamu'alaikum Warahmatullahi Wabarakatuh.\n\n` +

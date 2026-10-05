@@ -69,7 +69,7 @@ async function openProfilSiswa(siswaTarget) {
             <div>
                 <h3 class="font-bold text-base text-slate-800">${escapeHtml(siswa.nama)}</h3>
                 <p class="text-xs text-slate-400">NISN: ${escapeHtml(siswa.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
-                <p class="text-xs text-slate-400">Ortu/Wali: ${escapeHtml(siswa.nama_ortu || siswa.no_hp_ortu || '-')}</p>
+                <p class="text-xs text-slate-400">Ortu/Wali: ${escapeHtml(siswa.nama_ortu || normalizePhone(siswa.no_hp_ortu) || '-')}</p>
             </div>
         </div>
 
@@ -281,7 +281,7 @@ function printProfilSiswa() {
         ["NISN", siswa.nisn || "-"],
         ["Kelas", kls ? kls.nama_kelas : "-"],
         ["Nama Orang Tua / Wali", siswa.nama_ortu || "-"],
-        ["No. WA Orang Tua / Wali", siswa.no_hp_ortu || "-"]
+        ["No. WA Orang Tua / Wali", normalizePhone(siswa.no_hp_ortu) || "-"]
     ].map(([k, v]) => `<tr><td style="width: 170px; font-weight: bold;">${e(k)}</td><td>: ${e(v)}</td></tr>`).join("");
 
     const html = `
@@ -330,7 +330,7 @@ async function hubungiOrtu(siswaId) {
     const sBasic = appState.siswa.find(x => String(x.id) === String(siswaId)) || (appState.activeSiswaDetail?.siswa?.id == siswaId ? appState.activeSiswaDetail.siswa : null) || appState.user;
     if (!sBasic) return;
 
-    if (!sBasic.no_hp_ortu) {
+    if (!normalizePhone(sBasic.no_hp_ortu)) {
         Swal.fire({
             icon: 'warning',
             title: 'Nomor Tidak Ada',
@@ -340,8 +340,7 @@ async function hubungiOrtu(siswaId) {
         return;
     }
 
-    let phone = safeStr(sBasic.no_hp_ortu).replace(/[^0-9]/g, '');
-    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+    const phone = toWhatsAppNumber(sBasic.no_hp_ortu);
 
     const box = document.getElementById("modal-content-box");
     if (!box) {
@@ -429,7 +428,7 @@ _Wassalamu'alaikum Wr. Wb._`;
             </div>
             <div class="min-w-0 flex-1">
                 <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(s.nama)}</h4>
-                <p class="text-xs text-emerald-700 font-semibold"><i class="fab fa-whatsapp"></i> ${escapeHtml(s.no_hp_ortu)}</p>
+                <p class="text-xs text-emerald-700 font-semibold"><i class="fab fa-whatsapp"></i> ${escapeHtml(normalizePhone(s.no_hp_ortu))}</p>
             </div>
         </div>
 
@@ -597,7 +596,7 @@ function openModalSiswa(id = null) {
             </div>
             <div>
                 <label for="m-ssw-ortu" class="block text-xs font-bold text-slate-500 mb-1">NO. WA ORANG TUA / WALI</label>
-                <input type="text" id="m-ssw-ortu" value="${escapeHtml(s?.no_hp_ortu || '')}" oninput="validatePhoneField(this, 'm-ssw-ortu-error')" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="08xxxxxxxxxx">
+                <input type="text" id="m-ssw-ortu" value="${escapeHtml(normalizePhone(s?.no_hp_ortu))}" oninput="validatePhoneField(this, 'm-ssw-ortu-error')" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="08xxxxxxxxxx">
                 <p id="m-ssw-ortu-error" class="hidden text-[10px] text-rose-500 mt-1 font-semibold"><i class="fas fa-circle-exclamation"></i> Format nomor tidak valid. Gunakan 08xxxxxxxxxx (10-14 digit).</p>
             </div>
             <button type="submit" id="btn-save-siswa" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Siswa</button>
@@ -631,7 +630,7 @@ async function saveSiswaForm(e, id) {
         password: document.getElementById("m-ssw-pwd").value,
         nisn: document.getElementById("m-ssw-nisn").value,
         kelas_id: isGuruUser() ? getEffectiveKelasFilter("") : document.getElementById("m-ssw-kelas").value,
-        no_hp_ortu: document.getElementById("m-ssw-ortu").value,
+        no_hp_ortu: normalizePhone(document.getElementById("m-ssw-ortu").value),
         nama_ortu: document.getElementById("m-ssw-nama-ortu").value,
     };
 
@@ -679,7 +678,7 @@ function exportSiswaCSV() {
             no_absen: s.no_absen || "",
             nisn: s.nisn || "",
             nama_kelas: kls ? kls.nama_kelas : "",
-            no_hp_ortu: s.no_hp_ortu || "",
+            no_hp_ortu: normalizePhone(s.no_hp_ortu),
             nama_ortu: s.nama_ortu || "",
             password: ""
         };
