@@ -39,11 +39,12 @@ function renderAbsensiView() {
     const tanggalAktif = tanggalInputEl ? (tanggalInputEl.value || getDateWITA()) : getDateWITA();
     const lockState = getDateLockState(tanggalAktif);
     const isEditable = !!(appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru') && lockState.editable);
-    const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
+    const selectedKelas = getEffectiveKelasFilter(document.getElementById("absensi-kelas-filter")?.value || "");
+    const siswaScoped = scopeSiswaForUser(appState.siswa);
 
     const rawFiltered = selectedKelas
-        ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
-        : appState.siswa;
+        ? siswaScoped.filter(s => String(s.kelas_id) === String(selectedKelas))
+        : siswaScoped;
 
     const filteredSiswa = sortSiswa(rawFiltered);
     const totalSiswa = filteredSiswa.length;
@@ -60,9 +61,8 @@ function renderAbsensiView() {
     });
 
     const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
-    const kelasOptions = appState.kelas.map(k =>
-        `<option value="${k.id}" ${String(selectedKelas) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`
-    ).join("");
+    const kelasOptions = renderKelasSelectOptions(selectedKelas, { allLabel: "Semua Kelas", prefix: "Kelas " });
+    const kelasDisabledAttr = isGuruUser() ? "disabled" : "";
 
     container.innerHTML = `
         <div class="space-y-3">
@@ -70,8 +70,7 @@ function renderAbsensiView() {
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-2 justify-between sm:items-center">
                 <div class="flex-1">
                     <label for="absensi-kelas-filter" class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
-                    <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
-                        <option value="">Semua Kelas</option>
+                    <select id="absensi-kelas-filter" onchange="renderAbsensiView()" ${kelasDisabledAttr} class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none disabled:opacity-70 disabled:cursor-not-allowed">
                         ${kelasOptions}
                     </select>
                 </div>
@@ -301,11 +300,12 @@ function cetakPDFAbsensi() {
 
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
-    const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
+    const selectedKelas = getEffectiveKelasFilter(document.getElementById("absensi-kelas-filter")?.value || "");
+    const siswaScoped = scopeSiswaForUser(appState.siswa);
 
     const rawFiltered = selectedKelas
-        ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
-        : appState.siswa;
+        ? siswaScoped.filter(s => String(s.kelas_id) === String(selectedKelas))
+        : siswaScoped;
     const showKelas = !selectedKelas;
     const kelasNama = id => {
         const k = appState.kelas.find(x => String(x.id) === String(id));

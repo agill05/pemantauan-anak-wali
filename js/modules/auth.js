@@ -473,8 +473,8 @@ async function continueSessionSetup() {
         if (resBootstrap && resBootstrap.status === "success") {
             appState.kelas = resBootstrap.data.initial.kelas || [];
             appState.guru = resBootstrap.data.initial.guru || [];
-            appState.siswa = resBootstrap.data.initial.siswa || [];
-            appState.myStudents = resBootstrap.data.initial.siswa || [];
+            appState.siswa = scopeSiswaForUser(resBootstrap.data.initial.siswa || []);
+            appState.myStudents = appState.siswa;
             appState.pengaturan = resBootstrap.data.initial.pengaturan || { nama_kepsek: "", nip_kepsek: "" };
             saveAppStateToLocal();
         }

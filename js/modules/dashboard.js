@@ -546,6 +546,8 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
     let activeList = appState.currentNotifications || [];
     let handledList = appState.handledNotifications || [];
 
+    selectedKelasId = getEffectiveKelasFilter(selectedKelasId);
+
     if (selectedKelasId) {
         activeList = activeList.filter(n => {
             const s = appState.siswa.find(x => String(x.id) === String(n.siswa.id));
@@ -559,9 +561,8 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
 
     const currentList = activeTab === 'active' ? activeList : handledList;
 
-    const kelasOptions = (appState.kelas || []).map(k => `
-        <option value="${k.id}" ${String(selectedKelasId) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>
-    `).join("");
+    const kelasOptions = renderKelasSelectOptions(selectedKelasId, { allLabel: "Semua Kelas", prefix: "Kelas " });
+    const kelasDisabledAttr = isGuruUser() ? "disabled" : "";
 
     const getLevelBadge = (level) => {
         if (level === 'kritis') return '<span class="px-2 py-0.5 text-[10px] font-black uppercase rounded bg-rose-600 text-white animate-pulse">KRITIS</span>';
@@ -595,8 +596,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
         ${isCanManageNotif ? `
         <div class="space-y-2 mb-3">
             <div>
-                <select onchange="openNotificationModal('${activeTab}', this.value)" class="w-full bg-slate-100 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
-                    <option value="">Semua Kelas</option>
+                <select onchange="openNotificationModal('${activeTab}', this.value)" ${kelasDisabledAttr} class="w-full bg-slate-100 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700 disabled:opacity-70 disabled:cursor-not-allowed">
                     ${kelasOptions}
                 </select>
             </div>

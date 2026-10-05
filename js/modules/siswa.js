@@ -492,7 +492,7 @@ function renderSiswaView() {
     const searchInput = document.getElementById("search-siswa-input");
     const query = (searchInput ? searchInput.value : "").toLowerCase();
 
-    const rawFiltered = appState.siswa.filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
+    const rawFiltered = scopeSiswaForUser(appState.siswa).filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
     const filtered = sortSiswa(rawFiltered);
 
     if (filtered.length === 0) {
@@ -540,7 +540,10 @@ function openModalSiswa(id = null) {
     if (!box) return;
 
     const s = id ? appState.siswa.find(x => String(x.id) === String(id)) : null;
-    const kelasOpts = appState.kelas.map(k => `<option value="${k.id}" ${s?.kelas_id === k.id ? 'selected' : ''}>${escapeHtml(k.nama_kelas)}</option>`).join("");
+    const guruMode = isGuruUser();
+    const kelasOpts = guruMode
+        ? renderKelasSelectOptions(null)
+        : getVisibleKelas().map(k => `<option value="${k.id}" ${String(s?.kelas_id) === String(k.id) ? 'selected' : ''}>${escapeHtml(k.nama_kelas)}</option>`).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -569,8 +572,8 @@ function openModalSiswa(id = null) {
                 </div>
                 <div>
                     <label for="m-ssw-kelas" class="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
-                    <select id="m-ssw-kelas" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                        <option value="">Pilih Kelas</option>
+                    <select id="m-ssw-kelas" ${guruMode ? "disabled" : ""} class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none disabled:opacity-70 disabled:cursor-not-allowed">
+                        ${guruMode ? "" : '<option value="">Pilih Kelas</option>'}
                         ${kelasOpts}
                     </select>
                 </div>
@@ -627,7 +630,7 @@ async function saveSiswaForm(e, id) {
         username: document.getElementById("m-ssw-user").value,
         password: document.getElementById("m-ssw-pwd").value,
         nisn: document.getElementById("m-ssw-nisn").value,
-        kelas_id: document.getElementById("m-ssw-kelas").value,
+        kelas_id: isGuruUser() ? getEffectiveKelasFilter("") : document.getElementById("m-ssw-kelas").value,
         no_hp_ortu: document.getElementById("m-ssw-ortu").value,
         nama_ortu: document.getElementById("m-ssw-nama-ortu").value,
     };
@@ -668,7 +671,7 @@ function exportSiswaCSV() {
         Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data siswa untuk diekspor.', confirmButtonColor: '#2563eb' });
         return;
     }
-    const rows = sortSiswa(appState.siswa).map(s => {
+    const rows = sortSiswa(scopeSiswaForUser(appState.siswa)).map(s => {
         const kls = appState.kelas.find(k => String(k.id) === String(s.kelas_id));
         return {
             username: s.username || "",

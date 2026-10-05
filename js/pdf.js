@@ -1,4 +1,3 @@
-
 const PDF_FONT = "times";
 const PDF_MARGIN = 15;
 const PDF_PX_TO_MM = 0.3;

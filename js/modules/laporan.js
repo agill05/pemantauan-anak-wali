@@ -25,17 +25,17 @@ function populateLaporanKelasFilter() {
     if (!select || !appState.kelas || appState.kelas.length === 0) return;
 
     const currentVal = select.value;
-    const opts = appState.kelas.map(k => `<option value="${k.id}" ${String(currentVal) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`).join("");
-    select.innerHTML = `<option value="">Semua Kelas</option>` + opts;
+    select.innerHTML = renderKelasSelectOptions(currentVal, { allLabel: "Semua Kelas", prefix: "Kelas " });
+    applyKelasSelectLock(select);
 }
 
 function getFilteredLaporanData() {
     if (!appState.laporanRekap) return [];
 
-    const kelasFilter = document.getElementById("laporan-kelas-filter")?.value || "";
+    const kelasFilter = getEffectiveKelasFilter(document.getElementById("laporan-kelas-filter")?.value || "");
     const statusFilter = document.getElementById("laporan-status-filter")?.value || "";
 
-    return appState.laporanRekap.filter(item => {
+    return scopeByGuruKelas(appState.laporanRekap, item => item.kelas_id).filter(item => {
         if (kelasFilter && String(item.kelas_id) !== String(kelasFilter)) {
             return false;
         }
