@@ -140,6 +140,10 @@ window.addEventListener("DOMContentLoaded", async () => {
                 appState.token = parsed.token;
                 appState.user = parsed.user;
 
+                if (!parsed.user.mustChangePassword) {
+                    showPostLoginSplash("Memulihkan sesi...");
+                    startSplashAutoProgress();
+                }
                 await setupAppSession();
 
                 apiCall("validateSession", {}, false).then(validRes => {

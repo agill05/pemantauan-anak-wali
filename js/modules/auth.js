@@ -61,6 +61,7 @@ let splashTimeoutTimer = null;
 let splashProgressValue = 0;
 let splashCeiling = 90;
 let splashActive = false;
+let splashBlocked = false;
 
 function setSplashProgress(value) {
     splashProgressValue = Math.max(0, Math.min(100, value));
@@ -122,6 +123,7 @@ function showSplashFallback(message) {
     const text = document.getElementById("splash-fallback-text");
     if (text && message) text.textContent = message;
     if (box) { box.classList.remove("hidden"); box.classList.add("flex"); }
+    document.getElementById("splash-retry-btn")?.focus();
 }
 
 function hideSplashFallback() {
@@ -133,13 +135,18 @@ function handleSplashOffline() {
     showSplashFallback("Koneksi internet terputus. Sambungkan lagi, lalu tekan Coba lagi.");
 }
 
+function handleSplashOnline() {
+    if (!splashActive || splashBlocked) return;
+    hideSplashFallback();
+    setSplashText("Koneksi kembali. Melanjutkan...");
+}
+
 function retrySplash() {
     location.reload();
 }
 
 function exitSplash() {
-    try { localStorage.removeItem("session_anak_wali"); } catch (_) { }
-    location.reload();
+    handleLogout(true);
 }
 
 function showPostLoginSplash(text) {
@@ -147,6 +154,7 @@ function showPostLoginSplash(text) {
     const nama = appState.user && appState.user.nama ? String(appState.user.nama).split(" ")[0] : "";
 
     splashActive = true;
+    splashBlocked = false;
     hideSplashFallback();
     setSplashProgress(0);
     setSplashText(nama ? `Menyiapkan akun untuk ${nama}...` : (text || "Menyiapkan aplikasi..."));
@@ -164,6 +172,7 @@ function showPostLoginSplash(text) {
     }
 
     window.addEventListener("offline", handleSplashOffline);
+    window.addEventListener("online", handleSplashOnline);
     clearTimeout(splashTimeoutTimer);
     splashTimeoutTimer = setTimeout(() => {
         showSplashFallback(navigator.onLine
@@ -185,6 +194,16 @@ function startSplashAutoProgress() {
     }, 120);
 }
 
+function blockSplashWithError(message) {
+    splashBlocked = true;
+    clearInterval(splashProgressTimer);
+    splashProgressTimer = null;
+    clearTimeout(splashTimeoutTimer);
+    splashTimeoutTimer = null;
+    setSplashText("Data belum termuat");
+    showSplashFallback(message);
+}
+
 function finishSplashProgress() {
     clearInterval(splashProgressTimer);
     splashProgressTimer = null;
@@ -198,6 +217,7 @@ function finishSplashProgress() {
 
 function hidePostLoginSplash() {
     splashActive = false;
+    splashBlocked = false;
     clearInterval(splashProgressTimer);
     clearInterval(splashTipTimer);
     clearTimeout(splashTimeoutTimer);
@@ -205,6 +225,7 @@ function hidePostLoginSplash() {
     splashTipTimer = null;
     splashTimeoutTimer = null;
     window.removeEventListener("offline", handleSplashOffline);
+    window.removeEventListener("online", handleSplashOnline);
     hideSplashFallback();
     const el = document.getElementById("post-login-splash");
     if (el) { el.classList.add("hidden"); el.classList.remove("flex", "is-done"); }
@@ -258,7 +279,7 @@ async function handleAppLogin(e) {
 
     let res = null;
     try {
-        res = await apiCall("login", { role, username, password }, false);
+        res = await apiCall("login", { role, username, password }, false, 1, true);
     } catch (err) {
         console.error("Login gagal:", err);
     }
@@ -467,10 +488,21 @@ async function continueSessionSetup() {
         setSplashStage("session");
         setSplashStage("data");
         
-        const resBootstrap = await apiCall("getBootstrapData", {}, false);
-        
+        const resBootstrap = await apiCall("getBootstrapData", {}, false, 3, true);
+        const bootstrapOk = !!(resBootstrap && resBootstrap.status === "success");
+
+        if (!bootstrapOk && !(hasCachedData && (appState.siswa || []).length > 0)) {
+            blockSplashWithError(navigator.onLine
+                ? "Data sekolah gagal dimuat dari server. Tekan Coba lagi."
+                : "Koneksi internet terputus. Sambungkan lagi, lalu tekan Coba lagi.");
+            return;
+        }
+        if (!bootstrapOk) {
+            showToast("Server belum merespons. Memakai data tersimpan di perangkat.", "warning");
+        }
+
         setSplashStage("dashboard");
-        if (resBootstrap && resBootstrap.status === "success") {
+        if (bootstrapOk) {
             appState.kelas = resBootstrap.data.initial.kelas || [];
             appState.guru = resBootstrap.data.initial.guru || [];
             appState.siswa = scopeSiswaForUser(resBootstrap.data.initial.siswa || []);
@@ -495,11 +527,14 @@ async function continueSessionSetup() {
         console.error("Kesalahan saat setup sesi:", error);
         showToast("Beberapa data mungkin gagal dimuat.", "warning");
     } finally {
-        // Blok finally menjamin splash ditutup meskipun ada error
-        finishSplashProgress();
-        setSplashText("Selesai!");
-        await new Promise(resolve => setTimeout(resolve, 250));
-        hidePostLoginSplash();
+        // Splash ditutup meskipun ada error, kecuali data awal gagal dimuat
+        // dan tidak ada cache: pengguna harus memilih Coba lagi / Keluar.
+        if (!splashBlocked) {
+            finishSplashProgress();
+            setSplashText("Selesai!");
+            await new Promise(resolve => setTimeout(resolve, 250));
+            hidePostLoginSplash();
+        }
     }
 }
 

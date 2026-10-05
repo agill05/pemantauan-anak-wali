@@ -1,4 +1,4 @@
-async function apiCall(action, payload = {}, showFullLoader = false, retries = 3) {
+async function apiCall(action, payload = {}, showFullLoader = false, retries = 3, silent = false) {
     if (showFullLoader) showLoading();
 
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -23,7 +23,9 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
             if (attempt === retries) {
                 if (showFullLoader) hideLoading();
                 const isTimeout = err.name === 'AbortError';
-                showToast(isTimeout ? "Koneksi lambat (Timeout). Menyimpan lokal." : "Koneksi terputus. Menyimpan lokal.", "warning");
+                if (!silent) {
+                    showToast(isTimeout ? "Koneksi lambat (Timeout). Menyimpan lokal." : "Koneksi terputus. Menyimpan lokal.", "warning");
+                }
                 return null;
             }
             await new Promise(res => setTimeout(res, 1200)); // Jeda sebelum coba lagi
@@ -48,7 +50,12 @@ function startSilentTokenRefresh() {
     }, 10 * 60 * 1000);
 }
 
+let networkListenersReady = false;
+
 function setupNetworkStatusListeners() {
+    if (networkListenersReady) return;
+    networkListenersReady = true;
+
     const banner = document.getElementById("offline-banner");
 
     const updateStatus = async () => {
@@ -114,6 +121,7 @@ async function fetchAllAppData(force = true) {
         appState.guru = resBootstrap.data.initial.guru || [];
         appState.siswa = scopeSiswaForUser(resBootstrap.data.initial.siswa || []);
         appState.myStudents = appState.siswa;
+        if (resBootstrap.data.initial.pengaturan) appState.pengaturan = resBootstrap.data.initial.pengaturan;
         saveAppStateToLocal();
     }
 }
