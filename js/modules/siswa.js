@@ -58,17 +58,10 @@ async function openProfilSiswa(siswaTarget) {
     const container = document.getElementById("profil-siswa-details");
     if (!container) return;
 
-    const totalTepatHadir = absensi.filter(a => a.status === 'H').length;
-    const totalTelat = absensi.filter(a => a.status === 'T').length;
-    const totalHadirCombined = totalTepatHadir + totalTelat;
+    const totalHadir = absensi.filter(a => a.status === 'H').length;
     const totalSakit = absensi.filter(a => a.status === 'S').length;
     const totalIzin = absensi.filter(a => a.status === 'I').length;
     const totalAlpa = absensi.filter(a => a.status === 'A').length;
-
-    // Ambil tanggal terbaru untuk kebiasaan (bukan record paling lama)
-    const sortedKebiasaan = [...kebiasaan].sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)));
-    const latestDate = sortedKebiasaan.length > 0 ? sortedKebiasaan[0].tanggal : getDateWITA();
-    const latestKebiasaan = sortedKebiasaan.filter(k => String(k.tanggal) === String(latestDate));
 
     container.innerHTML = `
         <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
@@ -100,45 +93,38 @@ async function openProfilSiswa(siswaTarget) {
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-calendar-alt text-blue-500 mr-1.5"></i>Rekapitulasi Kehadiran</h4>
-                    <div class="grid grid-cols-5 gap-1.5 text-center">
-                        <div class="bg-emerald-50 p-2 rounded-2xl border border-emerald-100">
-                            <span class="text-[10px] font-bold text-emerald-600 block">HADIR</span>
-                            <span class="text-base font-black text-emerald-700">${totalHadirCombined}</span>
+                    <div class="grid grid-cols-4 gap-2 text-center">
+                        <div class="bg-emerald-50 p-2.5 rounded-2xl border border-emerald-100">
+                            <span class="text-xs font-bold text-emerald-600 block">HADIR</span>
+                            <span class="text-base font-black text-emerald-700">${totalHadir}</span>
                         </div>
-                        <div class="bg-orange-50 p-2 rounded-2xl border border-orange-100">
-                            <span class="text-[10px] font-bold text-orange-600 block">TELAT</span>
-                            <span class="text-base font-black text-orange-700">${totalTelat}</span>
-                        </div>
-                        <div class="bg-blue-50 p-2 rounded-2xl border border-blue-100">
-                            <span class="text-[10px] font-bold text-blue-600 block">SAKIT</span>
+                        <div class="bg-blue-50 p-2.5 rounded-2xl border border-blue-100">
+                            <span class="text-xs font-bold text-blue-600 block">SAKIT</span>
                             <span class="text-base font-black text-blue-700">${totalSakit}</span>
                         </div>
-                        <div class="bg-amber-50 p-2 rounded-2xl border border-amber-100">
-                            <span class="text-[10px] font-bold text-amber-600 block">IZIN</span>
+                        <div class="bg-amber-50 p-2.5 rounded-2xl border border-amber-100">
+                            <span class="text-xs font-bold text-amber-600 block">IZIN</span>
                             <span class="text-base font-black text-amber-700">${totalIzin}</span>
                         </div>
-                        <div class="bg-rose-50 p-2 rounded-2xl border border-rose-100">
-                            <span class="text-[10px] font-bold text-rose-600 block">ALPA</span>
+                        <div class="bg-rose-50 p-2.5 rounded-2xl border border-rose-100">
+                            <span class="text-xs font-bold text-rose-600 block">ALPA</span>
                             <span class="text-base font-black text-rose-700">${totalAlpa}</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex justify-between items-center">
-                        <span><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat</span>
-                        <span class="text-[10px] font-normal text-slate-400">Pantauan: ${formatTanggalLabel(latestDate)}</span>
-                    </h4>
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat</h4>
                     <div class="divide-y divide-slate-100">
                         ${MASTER_KEBIASAAN.map(k => {
-                            const rec = latestKebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
-                            return `
+        const rec = kebiasaan.find(item => String(item.kebiasaan_id) === String(k.id)) || { status: 'Belum' };
+        return `
                                 <div class="py-2 flex justify-between items-center text-xs">
                                     <span class="font-medium text-slate-700 flex items-center gap-2"><i class="fas ${k.icon} text-slate-400"></i> ${escapeHtml(k.nama)}</span>
                                     <span class="font-bold ${rec.status === 'Sudah' ? 'text-emerald-600' : (rec.status === 'Kadang' ? 'text-amber-600' : 'text-slate-400')}">${rec.status}</span>
                                 </div>
                             `;
-                        }).join('')}
+    }).join('')}
                     </div>
                 </div>
             </div>
@@ -149,12 +135,12 @@ async function openProfilSiswa(siswaTarget) {
                     ${hafalan.length === 0 ? '<p class="text-xs text-slate-400 italic">Belum ada data keagamaan.</p>' : `
                         <div class="space-y-2">
                             ${hafalan.map(h => {
-                                const statusBadge = h.status === 'Lancar'
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                    : (h.status === 'Mengulang'
-                                        ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                        : 'bg-slate-50 text-slate-600 border-slate-200');
-                                return `
+        const statusBadge = h.status === 'Lancar'
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            : (h.status === 'Mengulang'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-slate-50 text-slate-600 border-slate-200');
+        return `
                                     <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
                                         <div class="flex justify-between items-center font-bold text-slate-800">
                                             <span class="min-w-0 truncate"><span class="text-[10px] font-bold uppercase text-slate-400 mr-1">${KEAGAMAAN_KATEGORI[getKategoriHafalan(h)].label}</span>${escapeHtml(formatCapaianKeagamaan(h))}</span>
@@ -163,7 +149,7 @@ async function openProfilSiswa(siswaTarget) {
                                         ${h.catatan ? `<p class="text-xs text-slate-500 italic font-medium">"${escapeHtml(h.catatan)}"</p>` : ''}
                                     </div>
                                 `;
-                            }).join('')}
+    }).join('')}
                         </div>
                     `}
                 </div>
@@ -177,7 +163,7 @@ async function openProfilSiswa(siswaTarget) {
                             ${akademik.map(a => `
                                 <div class="py-2 flex justify-between items-center text-xs">
                                     <span class="font-medium text-slate-700">${escapeHtml(a.mapel)}</span>
-                                    <span class="font-bold ${Number(a.nilai_akhir) < Number(a.kktp || 75) ? 'text-rose-600' : 'text-emerald-600'}">${a.nilai_akhir} (KKTP: ${a.kktp || 75})</span>
+                                    <span class="font-bold ${Number(a.nilai_akhir) < Number(a.kktp) ? 'text-rose-600' : 'text-emerald-600'}">${a.nilai_akhir} (KKTP: ${a.kktp})</span>
                                 </div>
                             `).join('')}
                         </div>
@@ -237,25 +223,12 @@ function renderRadarChartSiswa(detailData) {
     const { absensi = [], kebiasaan = [], hafalan = [], akademik = [], pembinaan = [] } = detailData;
 
     const totalAbsen = absensi.length || 1;
-    const totalHadir = absensi.filter(a => a.status === 'H' || a.status === 'T').length;
-    const skorHadir = Math.round((totalHadir / totalAbsen) * 100);
-
-    // Dapatkan kebiasaan terbaru saja untuk kalkulasi skor radar
-    const sortedKebiasaan = [...kebiasaan].sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)));
-    const latestDate = sortedKebiasaan.length > 0 ? sortedKebiasaan[0].tanggal : getDateWITA();
-    const latestKebiasaan = sortedKebiasaan.filter(k => String(k.tanggal) === String(latestDate));
-    
-    // Pastikan skor tidak pernah melebihi 100
-    const kebiasaanSudahCount = latestKebiasaan.filter(k => k.status === 'Sudah').length;
-    const skorKebiasaan = Math.min(100, Math.max(0, Math.round((kebiasaanSudahCount / 7) * 100)));
-
-    const skorKeagamaan = Math.min(100, Math.max(0, hitungSkorKeagamaan(hafalan)));
+    const skorHadir = Math.round((absensi.filter(a => a.status === 'H').length / totalAbsen) * 100);
+    const skorKebiasaan = Math.round((kebiasaan.filter(k => k.status === 'Sudah').length / 7) * 100);
+    const skorKeagamaan = hitungSkorKeagamaan(hafalan);
     const totalNilai = akademik.reduce((acc, curr) => acc + Number(curr.nilai_akhir), 0);
     const skorAkademik = akademik.length > 0 ? Math.round(totalNilai / akademik.length) : 0;
-    
-    // Kedisiplinan dikurangi berdasarkan kasus aktif yang belum selesai
-    const pembinaanAktif = pembinaan.filter(p => normalizeStatusPembinaan(p.status) !== STATUS_PEMBINAAN.SELESAI).length;
-    const skorKedisiplinan = Math.max(0, 100 - (pembinaanAktif * 20));
+    const skorKedisiplinan = Math.max(0, 100 - (pembinaan.length * 20));
 
     window.activeRadarChartInstance = new Chart(ctx, {
         type: 'radar',
@@ -567,14 +540,7 @@ function openModalSiswa(id = null) {
     if (!box) return;
 
     const s = id ? appState.siswa.find(x => String(x.id) === String(id)) : null;
-    const isGuru = appState.user && appState.user.role === 'guru';
-
-    // Untuk Guru, kunci pilihan kelas ke kelas miliknya saja
-    const availableKelas = isGuru && appState.user.kelas_id
-        ? appState.kelas.filter(k => String(k.id) === String(appState.user.kelas_id))
-        : appState.kelas;
-
-    const kelasOpts = availableKelas.map(k => `<option value="${k.id}" ${(s ? s.kelas_id === k.id : isGuru) ? 'selected' : ''}>${escapeHtml(k.nama_kelas)}</option>`).join("");
+    const kelasOpts = appState.kelas.map(k => `<option value="${k.id}" ${s?.kelas_id === k.id ? 'selected' : ''}>${escapeHtml(k.nama_kelas)}</option>`).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -603,8 +569,8 @@ function openModalSiswa(id = null) {
                 </div>
                 <div>
                     <label for="m-ssw-kelas" class="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
-                    <select id="m-ssw-kelas" ${isGuru ? 'disabled' : ''} class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isGuru ? 'opacity-70 cursor-not-allowed' : ''}">
-                        ${isGuru ? '' : '<option value="">Pilih Kelas</option>'}
+                    <select id="m-ssw-kelas" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                        <option value="">Pilih Kelas</option>
                         ${kelasOpts}
                     </select>
                 </div>

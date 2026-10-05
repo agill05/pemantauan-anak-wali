@@ -35,17 +35,11 @@ function renderAbsensiView() {
         return;
     }
 
-    const isGuru = appState.user && appState.user.role === 'guru';
     const tanggalInputEl = document.getElementById("absensi-date");
     const tanggalAktif = tanggalInputEl ? (tanggalInputEl.value || getDateWITA()) : getDateWITA();
     const lockState = getDateLockState(tanggalAktif);
     const isEditable = !!(appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru') && lockState.editable);
-    
-    // Kunci filter kelas untuk Guru ke kelasnya sendiri
-    let selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
-    if (isGuru && appState.user.kelas_id) {
-        selectedKelas = String(appState.user.kelas_id);
-    }
+    const selectedKelas = document.getElementById("absensi-kelas-filter")?.value || "";
 
     const rawFiltered = selectedKelas
         ? appState.siswa.filter(s => String(s.kelas_id) === String(selectedKelas))
@@ -53,23 +47,19 @@ function renderAbsensiView() {
 
     const filteredSiswa = sortSiswa(rawFiltered);
     const totalSiswa = filteredSiswa.length;
-    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0, countBelum = 0;
+    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0;
 
     filteredSiswa.forEach(s => {
         const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id));
-        const st = rec ? rec.status : '';
+        const st = rec ? rec.status : 'H';
         if (st === 'H') countH++;
         else if (st === 'S') countS++;
         else if (st === 'I') countI++;
         else if (st === 'T') countT++;
-        else if (st === 'A') countA++;
-        else countBelum++;
+        else countA++;
     });
 
-    // Hadir dihitung H + T
-    const totalHadir = countH + countT;
-    const persenHadir = totalSiswa > 0 ? Math.round((totalHadir / totalSiswa) * 100) : 0;
-    
+    const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
     const kelasOptions = appState.kelas.map(k =>
         `<option value="${k.id}" ${String(selectedKelas) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`
     ).join("");
@@ -80,8 +70,8 @@ function renderAbsensiView() {
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-2 justify-between sm:items-center">
                 <div class="flex-1">
                     <label for="absensi-kelas-filter" class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
-                    <select id="absensi-kelas-filter" onchange="renderAbsensiView()" ${isGuru ? 'disabled' : ''} class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none ${isGuru ? 'opacity-70 cursor-not-allowed' : ''}">
-                        ${isGuru ? '' : '<option value="">Semua Kelas</option>'}
+                    <select id="absensi-kelas-filter" onchange="renderAbsensiView()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none">
+                        <option value="">Semua Kelas</option>
                         ${kelasOptions}
                     </select>
                 </div>
@@ -103,11 +93,11 @@ function renderAbsensiView() {
             <div id="absensi-stats-card" class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-md space-y-3">
                 <div class="flex items-center justify-between">
                     <div>
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Tingkat Kehadiran (Hadir + Telat)</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Tingkat Kehadiran</span>
                         <h3 id="absensi-persen-text" class="text-xl font-extrabold text-emerald-400">${persenHadir}% <span class="text-xs font-normal text-slate-300">Hadir</span></h3>
                     </div>
                     <div id="absensi-ratio-badge" class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-500/30">
-                        ${totalHadir}/${totalSiswa}
+                        ${countH}/${totalSiswa}
                     </div>
                 </div>
 
@@ -115,30 +105,26 @@ function renderAbsensiView() {
                     <div id="absensi-progress-bar" class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: ${persenHadir}%"></div>
                 </div>
 
-                <div class="grid grid-cols-6 gap-1 pt-1 border-t border-slate-700/60 text-center">
+                <div class="grid grid-cols-5 gap-1.5 pt-1 border-t border-slate-700/60 text-center">
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[10px] text-slate-400 font-bold">Hadir</span>
+                        <span class="block text-xs text-slate-400 font-bold">Hadir</span>
                         <span id="stat-count-h" class="text-xs font-extrabold text-emerald-400">${countH}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[10px] text-slate-400 font-bold">Telat</span>
-                        <span id="stat-count-t" class="text-xs font-extrabold text-orange-400">${countT}</span>
-                    </div>
-                    <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[10px] text-slate-400 font-bold">Sakit</span>
+                        <span class="block text-xs text-slate-400 font-bold">Sakit</span>
                         <span id="stat-count-s" class="text-xs font-extrabold text-blue-400">${countS}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[10px] text-slate-400 font-bold">Izin</span>
+                        <span class="block text-xs text-slate-400 font-bold">Izin</span>
                         <span id="stat-count-i" class="text-xs font-extrabold text-amber-400">${countI}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[10px] text-slate-400 font-bold">Alpa</span>
-                        <span id="stat-count-a" class="text-xs font-extrabold text-rose-400">${countA}</span>
+                        <span class="block text-xs text-slate-400 font-bold">Telat</span>
+                        <span id="stat-count-t" class="text-xs font-extrabold text-orange-400">${countT}</span>
                     </div>
                     <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
-                        <span class="block text-[10px] text-slate-400 font-bold">Belum</span>
-                        <span id="stat-count-belum" class="text-xs font-extrabold text-slate-400">${countBelum}</span>
+                        <span class="block text-xs text-slate-400 font-bold">Alpa</span>
+                        <span id="stat-count-a" class="text-xs font-extrabold text-rose-400">${countA}</span>
                     </div>
                 </div>
             </div>
@@ -149,31 +135,30 @@ function renderAbsensiView() {
             ` : `
                 <form onsubmit="saveBatchAbsensiForm(event)" class="space-y-2">
                     ${filteredSiswa.map(s => {
-                        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id));
-                        const currentStatus = rec ? (rec.status || '') : '';
-                        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
+        const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
+        const currentStatus = rec.status || 'H';
+        const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
 
-                        return `
+        return `
                             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                                 <div>
                                     <h4 class="font-bold text-xs text-slate-800 flex items-center">${noAbsenBadge}${escapeHtml(s.nama)}</h4>
                                     <span class="text-xs text-slate-400">
-                                        <i class="far fa-clock mr-1"></i>${rec && rec.waktu_masuk ? formatDisplayTime(rec.waktu_masuk) : 'Belum Aben'}
+                                        <i class="far fa-clock mr-1"></i>${rec.waktu_masuk ? formatDisplayTime(rec.waktu_masuk) : 'Belum Absen'}
                                     </span>
                                 </div>
                                 <div>
-                                    <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" ${isEditable ? '' : 'disabled'} class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
-                                        <option value="" ${currentStatus === '' ? 'selected' : ''}>-- Belum Aben --</option>
+                                    <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" ${isEditable ? '' : 'disabled'} class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700" ${!isEditable ? 'disabled' : ''}>
                                         <option value="H" ${currentStatus === 'H' ? 'selected' : ''}>Hadir (H)</option>
-                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>Terlambat (T)</option>
                                         <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>Izin (I)</option>
                                         <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>Sakit (S)</option>
                                         <option value="A" ${currentStatus === 'A' ? 'selected' : ''}>Alpa (A)</option>
+                                        <option value="T" ${currentStatus === 'T' ? 'selected' : ''}>Terlambat (T)</option>
                                     </select>
                                 </div>
                             </div>
                         `;
-                    }).join('')}
+    }).join('')}
 
                     ${isEditable ? `
                     <div class="pt-2">
