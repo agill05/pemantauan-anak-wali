@@ -302,6 +302,6 @@ function cetakPDFPembinaan() {
         "LEMBAR REKAM PEMBINAAN & KONSELING SISWA",
         contentHtml,
         `Rekam_Pembinaan_${siswa ? siswa.nama.replace(/\s+/g, '_') : filterSiswaId}_${getDateWITA()}.pdf`,
-        { labelKanan: "Guru BK / Wali Kelas" }
+        { labelKanan: "Guru BK / " + getPeranTtdText(siswa) }
     );
 }

@@ -275,6 +275,18 @@ function pdfFitOneLine(doc, text, maxW, fontStyle, startSize, minSize) {
     return text;
 }
 
+// Teks peran penanda tangan. Guru: dari akses ke siswa (jika ada), lalu peran aktif.
+// Admin dan lainnya: "Wali Kelas" (perilaku lama).
+function getPeranTtdText(siswaRef) {
+    if (!isGuruUser()) return "Wali Kelas";
+    let t = siswaRef ? getEffectiveAccessType(siswaRef) : null;
+    if (t !== "wali" && t !== "mentor" && t !== "both") {
+        const p = getPeranAktif();
+        t = p === "mentor" ? "mentor" : (p === "wali" ? "wali" : "both");
+    }
+    return t === "mentor" ? "Mentor" : (t === "wali" ? "Wali Kelas" : "Wali & Mentor");
+}
+
 function pdfDrawSignatureBlock(doc, cx, y, lines, name, nip, maxW, lineCount) {
     doc.setFont(PDF_FONT, "normal");
     doc.setFontSize(11);
@@ -326,7 +338,7 @@ function pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan, custom) {
 async function buildOfficialPdf(title, contentHtml, options = {}) {
     const { jsPDF } = window.jspdf;
     const orientation = options.orientation || "portrait";
-    const labelKanan = options.labelKanan || "Guru Pemantau / Wali Kelas";
+    const labelKanan = options.labelKanan || ("Guru Pemantau / " + getPeranTtdText(options.siswa));
     const dateStr = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
     const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });

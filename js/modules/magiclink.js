@@ -12,14 +12,25 @@ async function generateAndShareMagicLink() {
         return;
     }
 
+    // Mentor tidak boleh membuat magic link (hak tulis "magiclink" hanya wali dan admin).
+    if (!canWrite("magiclink", siswa)) {
+        Swal.fire({ icon: 'info', title: 'Tidak Diizinkan', text: 'Magic link orang tua hanya dapat dibuat oleh wali kelas siswa atau admin.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
     showLoading("Membuat Magic Link Orang Tua...");
     let magicToken = null;
     let magicUrl = "";
 
     try {
         const res = await apiCall("createMagicLink", { siswa_id: siswa.id }, false);
-        if (res && res.status === "success" && res.token) {
-            magicToken = res.token;
+        // Backend mengembalikan magic_token. Token lokal darurat tidak lolos validasi backend.
+        if (res && res.status === "success" && (res.magic_token || res.token)) {
+            magicToken = res.magic_token || res.token;
+        } else if (res && res.status === "error") {
+            hideLoading();
+            Swal.fire({ icon: 'error', title: 'Gagal Membuat Link', text: res.message || 'Akses ditolak.', confirmButtonColor: '#2563eb' });
+            return;
         }
     } catch (e) {
         console.warn("Gagal request token dari server, menggunakan token darurat lokal:", e);
@@ -46,7 +57,8 @@ async function generateAndShareMagicLink() {
         `Berikut kami bagikan tautan resmi Pemantauan Anak Wali SMPN 1 Talaga Jaya:\n\n` +
         `${magicUrl}\n\n` +
         `⏱️ *Catatan Keamanan:* Tautan ini bersifat rahasia dan hanya dapat diakses selama *15 menit* sejak dibagikan.\n\n` +
-        `Terima kasih.`
+        `Terima kasih.` +
+        (isGuruUser() && appState.user ? `\n\nHormat kami,\n*${appState.user.nama}*\n${getPeranTtdText(siswa)} SMPN 1 Talaga Jaya` : ``)
     );
 
     const waLink = phoneFormatted ? `https://api.whatsapp.com/send?phone=${phoneFormatted}&text=${waMessage}` : null;

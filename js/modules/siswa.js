@@ -332,7 +332,7 @@ function printProfilSiswa() {
         signatures: [
             { lines: ["Orang Tua / Wali Siswa"], name: siswa.nama_ortu || "............................................" },
             { lines: ["Mengetahui,", "Kepala SMPN 1 Talaga Jaya"], name: kepsek, nip: nipKepsek },
-            { lines: ["Talaga Jaya, {tanggal}", "Wali Kelas"], name: appState.user ? appState.user.nama : "Wali Kelas", nip: getGuruNip() }
+            { lines: ["Talaga Jaya, {tanggal}", getPeranTtdText(siswa)], name: appState.user ? appState.user.nama : getPeranTtdText(siswa), nip: getGuruNip() }
         ]
     });
 }
@@ -596,6 +596,14 @@ function openModalSiswa(id = null) {
                     </select>
                 </div>
             </div>
+            ${isAdminUser() ? `
+            <div>
+                <label for="m-ssw-mentor" class="block text-xs font-bold text-slate-500 mb-1">MENTOR (OPSIONAL)</label>
+                <select id="m-ssw-mentor" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                    <option value="">Tanpa mentor</option>
+                    ${(appState.guru || []).map(g => `<option value="${escapeHtml(g.id)}" ${String(s?.mentor_id || "").trim() === String(g.id) ? 'selected' : ''}>${escapeHtml(g.nama)}</option>`).join("")}
+                </select>
+            </div>` : ""}
             <div>
                 <label for="m-ssw-pwd" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD ${s ? '(Kosongkan jika tidak diganti)' : '(Opsional)'}</label>
                 <div class="relative">
@@ -653,6 +661,13 @@ async function saveSiswaForm(e, id) {
         nama_ortu: document.getElementById("m-ssw-nama-ortu").value,
     };
 
+    // mentor_id hanya admin, dan hanya dikirim jika berubah. Kiriman guru ditolak backend.
+    const mentorSel = document.getElementById("m-ssw-mentor");
+    if (isAdminUser() && mentorSel) {
+        const lama = id ? String((appState.siswa.find(x => String(x.id) === String(id)) || {}).mentor_id || "").trim() : "";
+        if (mentorSel.value !== lama) payload.mentor_id = mentorSel.value;
+    }
+
     const res = await apiCall("saveSiswa", payload, true);
 
     if (res && res.status === "success") {
@@ -678,8 +693,8 @@ async function saveSiswaForm(e, id) {
 }
 
 function downloadTemplateSiswaCSV() {
-    const csvContent = "\uFEFF" + "username,nama,no_absen,nisn,nama_kelas,no_hp_ortu,nama_ortu,password\n" +
-        "siswa01,Contoh Nama Siswa,1,0012345678,VII A,081234567890,Contoh Nama Orang Tua,\n";
+    const csvContent = "\uFEFF" + "username,nama,no_absen,nisn,nama_kelas,no_hp_ortu,nama_ortu,password,mentor_id\n" +
+        "siswa01,Contoh Nama Siswa,1,0012345678,VII A,081234567890,Contoh Nama Orang Tua,,guru01\n";
     _downloadCSVString(csvContent, "Template_Import_Siswa.csv");
     showToast("Template CSV Siswa berhasil diunduh!");
 }
@@ -691,6 +706,8 @@ function exportSiswaCSV() {
     }
     const rows = sortSiswa(scopeSiswaForUser(appState.siswa)).map(s => {
         const kls = appState.kelas.find(k => String(k.id) === String(s.kelas_id));
+        // mentor_id diekspor sebagai username guru. Import menerima ID atau username.
+        const mg = s.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(s.mentor_id)) : null;
         return {
             username: s.username || "",
             nama: s.nama || "",
@@ -699,10 +716,11 @@ function exportSiswaCSV() {
             nama_kelas: kls ? kls.nama_kelas : "",
             no_hp_ortu: normalizePhone(s.no_hp_ortu),
             nama_ortu: s.nama_ortu || "",
-            password: ""
+            password: "",
+            mentor_id: mg ? mg.username : (s.mentor_id || "")
         };
     });
-    const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "no_absen", "nisn", "nama_kelas", "no_hp_ortu", "nama_ortu", "password"] });
+    const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "no_absen", "nisn", "nama_kelas", "no_hp_ortu", "nama_ortu", "password", "mentor_id"] });
     _downloadCSVString(csvContent, `Data_Siswa_SMPN1TalagaJaya_${getDateWITA()}.csv`);
     showToast("Data Siswa berhasil diekspor ke CSV!");
 }

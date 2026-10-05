@@ -590,6 +590,8 @@
                     class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Siswa</button>
                 <button onclick="switchAdminTab('kelas')" id="btn-admin-tab-kelas"
                     class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Kelas</button>
+                <button onclick="switchAdminTab('mentor')" id="btn-admin-tab-mentor"
+                    class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Mentor</button>
                 <button onclick="switchAdminTab('sekolah')" id="btn-admin-tab-sekolah"
                     class="admin-tab-btn flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Sekolah</button>
             </div>
@@ -649,6 +651,14 @@
                             class="fas fa-plus mr-1"></i> Kelas</button>
                 </div>
                 <div id="admin-kelas-list" class="space-y-2"></div>
+            </div>
+
+            <div id="admin-tab-mentor" class="admin-tab-content space-y-3 hidden">
+                <p class="text-xs text-slate-500">Atur anak binaan tiap guru lintas kelas. Satu siswa hanya punya satu mentor. Wali kelas tetap dikelola di tab Kelas.</p>
+                <input type="text" id="search-mentor-input" oninput="renderAdminMentor()" placeholder="Cari guru..."
+                    class="w-full bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                <div id="admin-mentor-summary" class="text-xs text-slate-500"></div>
+                <div id="admin-mentor-list" class="space-y-2"></div>
             </div>
 
             <div id="admin-tab-sekolah" class="admin-tab-content space-y-3 hidden">

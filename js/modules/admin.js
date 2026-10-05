@@ -19,6 +19,7 @@ function switchAdminTab(tab) {
     if (tab === "guru") renderAdminGuru();
     if (tab === "siswa") renderAdminSiswa();
     if (tab === "kelas") renderAdminKelas();
+    if (tab === "mentor") renderAdminMentor();
     if (tab === "sekolah") renderAdminSekolah();
 }
 
@@ -76,6 +77,7 @@ function renderAdminGuru() {
             <div>
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(g.nama)}</h4>
                 <p class="text-xs text-slate-400">Username: ${escapeHtml(g.username)} | NIP: ${escapeHtml(g.nip || '-')}</p>
+                ${renderPeranBadgesGuru(g)}
             </div>
             <div class="flex gap-1">
                 <button onclick="openModalGuru('${escapeHtml(g.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data guru"><i class="fas fa-edit"></i></button>
@@ -83,6 +85,31 @@ function renderAdminGuru() {
             </div>
         </div>
     `).join("");
+}
+
+// ===== Mentor: helper tampilan =====
+function getBinaanCount(guruId) {
+    return (appState.siswa || []).filter(s => String(s.mentor_id || "").trim() === String(guruId)).length;
+}
+
+function getKelasWaliGuru(guruId) {
+    return (appState.kelas || []).find(k => String(k.guru_id) === String(guruId)) || null;
+}
+
+function getNamaMentorSiswa(siswa) {
+    const mid = String(siswa.mentor_id || "").trim();
+    if (!mid) return "Belum ada";
+    const g = (appState.guru || []).find(x => String(x.id) === mid);
+    return g ? g.nama : "(guru tidak ditemukan)";
+}
+
+function renderPeranBadgesGuru(g) {
+    const kls = getKelasWaliGuru(g.id);
+    const n = getBinaanCount(g.id);
+    const badges = [];
+    if (kls) badges.push(`<span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold">Wali ${escapeHtml(kls.nama_kelas)}</span>`);
+    if (n > 0) badges.push(`<span class="px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-700 text-[10px] font-bold">Mentor ${n} siswa</span>`);
+    return badges.length ? `<div class="flex flex-wrap gap-1 mt-1">${badges.join("")}</div>` : "";
 }
 
 function renderAdminSiswa() {
@@ -103,6 +130,7 @@ function renderAdminSiswa() {
             <div>
                 <h4 class="font-bold text-xs text-slate-800">${s.no_absen ? `[${s.no_absen}] ` : ''}${escapeHtml(s.nama)}</h4>
                 <p class="text-xs text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
+                <p class="text-xs text-slate-400">Mentor: ${escapeHtml(getNamaMentorSiswa(s))}</p>
             </div>
             <div class="flex gap-1">
                 <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data siswa"><i class="fas fa-edit"></i></button>
@@ -110,6 +138,191 @@ function renderAdminSiswa() {
             </div>
         </div>
     `).join("");
+}
+
+// ===== Layar Atur Mentor =====
+function renderAdminMentor() {
+    const list = document.getElementById("admin-mentor-list");
+    if (!list) return;
+
+    const query = (document.getElementById("search-mentor-input")?.value || "").toLowerCase();
+    const filtered = (appState.guru || []).filter(g => safeStr(g.nama).toLowerCase().includes(query) || safeStr(g.username).toLowerCase().includes(query));
+
+    const tanpaMentor = (appState.siswa || []).filter(s => !String(s.mentor_id || "").trim()).length;
+    const summary = document.getElementById("admin-mentor-summary");
+    if (summary) summary.textContent = `${(appState.siswa || []).length} siswa, ${tanpaMentor} belum punya mentor.`;
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-chalkboard-teacher text-xl mb-1"></i><p class="text-xs">Guru tidak ditemukan.</p></div>`;
+        return;
+    }
+
+    list.innerHTML = filtered.map(g => {
+        const n = getBinaanCount(g.id);
+        return `
+        <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
+            <div>
+                <h4 class="font-bold text-xs text-slate-800">${escapeHtml(g.nama)}</h4>
+                <p class="text-xs text-slate-400">Anak binaan: ${n} siswa</p>
+                ${renderPeranBadgesGuru(g)}
+            </div>
+            <button onclick="openModalMentor('${escapeHtml(g.id)}')" class="px-3 py-2 bg-violet-50 text-violet-700 rounded-lg text-xs font-bold" aria-label="Atur anak binaan guru">
+                <i class="fas fa-user-tag mr-1"></i> Atur
+            </button>
+        </div>`;
+    }).join("");
+}
+
+// Status modal Atur Mentor: pilihan hidup di Set, daftar bisa difilter tanpa kehilangan centang.
+let _mentorModal = null;
+
+function openModalMentor(guruId) {
+    const box = document.getElementById("modal-content-box");
+    const g = (appState.guru || []).find(x => String(x.id) === String(guruId));
+    if (!box || !g) return;
+
+    const awal = (appState.siswa || []).filter(s => String(s.mentor_id || "").trim() === String(guruId)).map(s => String(s.id));
+    _mentorModal = { guruId: String(guruId), awal: new Set(awal), sel: new Set(awal) };
+
+    const kelasOpts = (appState.kelas || []).map(k => `<option value="${escapeHtml(k.id)}">${escapeHtml(k.nama_kelas)}</option>`).join("");
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-3">
+            <div>
+                <h3 class="text-sm font-bold text-slate-800">Atur Anak Binaan</h3>
+                <p class="text-[11px] text-slate-400">Mentor: ${escapeHtml(g.nama)}</p>
+            </div>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <input type="text" id="m-mentor-search" oninput="renderMentorSiswaList()" placeholder="Cari siswa..." class="bg-slate-50 border p-2 rounded-xl text-xs outline-none">
+            <select id="m-mentor-kelas" onchange="renderMentorSiswaList()" class="bg-slate-50 border p-2 rounded-xl text-xs outline-none">
+                <option value="">Semua Kelas</option>
+                ${kelasOpts}
+            </select>
+        </div>
+        <div class="flex items-center justify-between mb-2 text-xs">
+            <span id="m-mentor-count" class="font-bold text-slate-600"></span>
+            <span class="flex gap-1">
+                <button type="button" onclick="mentorPilihTampil(true)" class="px-2 py-1 bg-slate-100 text-slate-600 rounded-lg font-bold">Pilih tampil</button>
+                <button type="button" onclick="mentorPilihTampil(false)" class="px-2 py-1 bg-slate-100 text-slate-600 rounded-lg font-bold">Lepas tampil</button>
+            </span>
+        </div>
+        <div id="m-mentor-list" class="space-y-1.5 max-h-[50vh] overflow-y-auto pr-1"></div>
+        <button type="button" id="btn-save-mentor" onclick="saveMentorForm()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-3">Simpan Anak Binaan</button>
+    `;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+    renderMentorSiswaList();
+}
+
+function _mentorSiswaTampil() {
+    const q = (document.getElementById("m-mentor-search")?.value || "").toLowerCase();
+    const kid = document.getElementById("m-mentor-kelas")?.value || "";
+    const hasil = (appState.siswa || []).filter(s =>
+        (!kid || String(s.kelas_id) === String(kid)) &&
+        (!q || safeStr(s.nama).toLowerCase().includes(q) || safeStr(s.nisn).toLowerCase().includes(q))
+    );
+    return sortSiswa(hasil);
+}
+
+function renderMentorSiswaList() {
+    const list = document.getElementById("m-mentor-list");
+    if (!list || !_mentorModal) return;
+
+    const tampil = _mentorSiswaTampil();
+    if (tampil.length === 0) {
+        list.innerHTML = `<div class="empty-state"><p class="text-xs">Siswa tidak ditemukan.</p></div>`;
+    } else {
+        list.innerHTML = tampil.map(s => {
+            const sid = String(s.id);
+            const kls = (appState.kelas || []).find(k => String(k.id) === String(s.kelas_id));
+            const mid = String(s.mentor_id || "").trim();
+            const milikLain = mid && mid !== _mentorModal.guruId;
+            const mentorLain = milikLain ? (appState.guru || []).find(x => String(x.id) === mid) : null;
+            const info = milikLain
+                ? `<span class="text-[10px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 font-bold">Mentor: ${escapeHtml(mentorLain ? mentorLain.nama : "?")}</span>`
+                : "";
+            return `
+            <label class="flex items-center gap-2 bg-white border border-slate-100 rounded-xl px-2.5 py-2 cursor-pointer">
+                <input type="checkbox" ${_mentorModal.sel.has(sid) ? "checked" : ""} onchange="toggleMentorSiswa('${escapeHtml(sid)}', this.checked)">
+                <span class="flex-1 min-w-0">
+                    <span class="block text-xs font-bold text-slate-800 truncate">${s.no_absen ? `[${escapeHtml(s.no_absen)}] ` : ""}${escapeHtml(s.nama)}</span>
+                    <span class="block text-[11px] text-slate-400">${kls ? "Kelas " + escapeHtml(kls.nama_kelas) : "Tanpa kelas"}</span>
+                </span>
+                ${info}
+            </label>`;
+        }).join("");
+    }
+    _updateMentorCount();
+}
+
+function _updateMentorCount() {
+    const el = document.getElementById("m-mentor-count");
+    if (el && _mentorModal) el.textContent = `${_mentorModal.sel.size} siswa dipilih`;
+}
+
+function toggleMentorSiswa(sid, checked) {
+    if (!_mentorModal) return;
+    if (checked) _mentorModal.sel.add(String(sid));
+    else _mentorModal.sel.delete(String(sid));
+    _updateMentorCount();
+}
+
+function mentorPilihTampil(pilih) {
+    if (!_mentorModal) return;
+    _mentorSiswaTampil().forEach(s => {
+        if (pilih) _mentorModal.sel.add(String(s.id));
+        else _mentorModal.sel.delete(String(s.id));
+    });
+    renderMentorSiswaList();
+}
+
+async function saveMentorForm() {
+    if (!_mentorModal) return;
+    const { guruId, sel, awal } = _mentorModal;
+
+    const dipindah = [...sel].filter(sid => {
+        const s = (appState.siswa || []).find(x => String(x.id) === sid);
+        const mid = s ? String(s.mentor_id || "").trim() : "";
+        return mid && mid !== guruId;
+    }).length;
+    const dilepas = [...awal].filter(sid => !sel.has(sid)).length;
+
+    if (dipindah > 0 || dilepas > 0) {
+        const parts = [];
+        if (dipindah > 0) parts.push(`${dipindah} siswa dipindah dari mentor lain`);
+        if (dilepas > 0) parts.push(`${dilepas} siswa dilepas dari guru ini`);
+        const c = await Swal.fire({ title: 'Simpan perubahan?', text: parts.join(', ') + '.', icon: 'question', showCancelButton: true, confirmButtonColor: '#2563eb', confirmButtonText: 'Ya, Simpan', cancelButtonText: 'Batal' });
+        if (!c.isConfirmed) return;
+    }
+
+    const btn = document.getElementById("btn-save-mentor");
+    const originalHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-70", "cursor-not-allowed");
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    }
+
+    const res = await apiCall("setMentorBatch", { guru_id: guruId, siswa_ids: [...sel], mode: "replace" }, true);
+
+    if (res && res.status === "success") {
+        closeModal();
+        _mentorModal = null;
+        showToast(res.message || "Anak binaan diperbarui!");
+        await fetchAllAppData(true);
+        renderAdminMentor();
+        renderAdminGuru();
+        renderAdminSiswa();
+        _refreshAllSiswaDropdowns();
+    } else {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove("opacity-70", "cursor-not-allowed");
+            btn.innerHTML = originalHtml;
+        }
+        Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: res?.message || 'Terjadi kesalahan saat mengatur mentor.', confirmButtonColor: '#2563eb' });
+    }
 }
 
 function renderAdminKelas() {
