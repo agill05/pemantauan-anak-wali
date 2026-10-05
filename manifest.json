@@ -21,6 +21,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "assets/img/icon-original.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "related_applications": [
