@@ -14,29 +14,36 @@ async function generateAndShareMagicLink() {
 
     showLoading("Membuat Magic Link Orang Tua...");
     let magicToken = null;
-    let magicUrl = "";
 
     try {
-        const res = await apiCall("createMagicLink", { siswa_id: siswa.id }, false);
-        if (res && res.status === "success" && res.token) {
-            magicToken = res.token;
+        const res = await apiCall("generateMagicLink", { siswa_id: siswa.id }, false);
+        if (res && res.status === "success" && res.magic_token) {
+            magicToken = res.magic_token;
+        } else {
+            hideLoading();
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Membuat Tautan',
+                text: res?.message || 'Gagal memperoleh Magic Link dari server.',
+                confirmButtonColor: '#2563eb'
+            });
+            return;
         }
     } catch (e) {
-        console.warn("Gagal request token dari server, menggunakan token darurat lokal:", e);
+        hideLoading();
+        Swal.fire({
+            icon: 'error',
+            title: 'Kesalahan Koneksi',
+            text: 'Tidak dapat terhubung ke server untuk membuat Magic Link.',
+            confirmButtonColor: '#2563eb'
+        });
+        return;
     }
 
     hideLoading();
 
-    if (!magicToken) {
-        const payload = {
-            sId: siswa.id,
-            exp: Date.now() + (15 * 60 * 1000)
-        };
-        magicToken = btoa(JSON.stringify(payload));
-    }
-
     const currentUrl = window.location.href.split('?')[0];
-    magicUrl = `${currentUrl}?magic_token=${encodeURIComponent(magicToken)}`;
+    const magicUrl = `${currentUrl}?magic_token=${encodeURIComponent(magicToken)}`;
 
     const phoneRaw = safeStr(siswa.no_hp_ortu || '').replace(/[^0-9]/g, '');
     let phoneFormatted = phoneRaw;

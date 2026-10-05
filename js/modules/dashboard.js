@@ -26,8 +26,8 @@ async function renderDashboard() {
                     <span class="w-11 h-11 shrink-0 rounded-xl bg-emerald-50 text-secondary flex items-center justify-center text-base"><i class="fas fa-calendar-check"></i></span>
                     <div class="min-w-0 flex-1">
                         <p class="text-xs font-bold text-emerald-600">Hadir Hari Ini</p>
-                        <p class="text-2xl font-black text-emerald-600 leading-tight">${appState.absensi.filter(a => a.status === 'H').length}</p>
-                        <p class="text-[11px] text-slate-400">Dari ${totalSiswaCount} ${role === 'admin' ? 'siswa' : 'anak wali'}</p>
+                        <p id="dash-stat-hadir-today" class="text-2xl font-black text-emerald-600 leading-tight">...</p>
+                        <p id="dash-stat-hadir-sub" class="text-[11px] text-slate-400">Dari ${totalSiswaCount} ${role === 'admin' ? 'siswa' : 'anak wali'}</p>
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
@@ -51,6 +51,12 @@ async function renderDashboard() {
 
     apiCall("getDashboardData", {}, false).then(res => {
         if (res && res.status === "success") {
+            // Gunakan sumber tunggal dari backend untuk Hadir Hari Ini
+            const hadirEl = document.getElementById("dash-stat-hadir-today");
+            const subEl = document.getElementById("dash-stat-hadir-sub");
+            if (hadirEl) hadirEl.innerText = res.data.hadir_today !== undefined ? res.data.hadir_today : 0;
+            if (subEl) subEl.innerText = `Dari ${res.data.total_siswa || appState.siswa.length} ${role === 'admin' ? 'siswa' : 'anak wali'}`;
+
             if (role !== "siswa") renderPrioritySection(res.data.priority_list);
             renderAgendaSection(res.data.agenda_list);
             checkStudentNotifications();
@@ -346,11 +352,21 @@ async function checkStudentNotifications() {
 
     const isSiswa = appState.user.role === 'siswa';
     const currentUserId = String(appState.user.id);
+    const todayStr = getDateWITA();
 
+    // Mandiri mengambil data kebiasaan & keagamaan jika belum dimuat di state
+    const fetchPromises = [];
     if (!appState.pembinaan || appState.pembinaan.length === 0) {
-        const resPbn = await apiCall("getPembinaan", {}, false);
-        if (resPbn && resPbn.data) appState.pembinaan = resPbn.data;
+        fetchPromises.push(apiCall("getPembinaan", {}, false).then(r => { if (r?.data) appState.pembinaan = r.data; }));
     }
+    if (!appState.kebiasaan || appState.kebiasaan.length === 0) {
+        fetchPromises.push(apiCall("getKebiasaan", { tanggal: todayStr }, false).then(r => { if (r?.data) appState.kebiasaan = r.data; }));
+    }
+    if (!appState.keagamaan || appState.keagamaan.length === 0) {
+        fetchPromises.push(apiCall("getKeagamaan", {}, false).then(r => { if (r?.data) appState.keagamaan = r.data; }));
+    }
+
+    await Promise.all(fetchPromises);
 
     const [resRekap] = await Promise.all([
         apiCall("getLaporanRekap", {}, false),
@@ -360,12 +376,9 @@ async function checkStudentNotifications() {
 
     let activeList = [];
     let handledList = [];
-    const todayStr = getDateWITA();
 
     const processNotifItem = (item) => {
-        if (isSiswa && String(item.siswa.id) !== currentUserId) {
-            return;
-        }
+        if (isSiswa && String(item.siswa.id) !== currentUserId) return;
 
         const rec = getHandledRecord(item.id);
         if (rec) {
@@ -411,7 +424,7 @@ async function checkStudentNotifications() {
                 level: 'kritis',
                 category: 'Akademik',
                 title: 'Nilai di Bawah KKTP',
-                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah standar KKTP.`,
+                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah standar KKTP (75).`,
                 defaultPembinaan: `Bimbingan belajar khusus: ${item.dibawah_kktp} mata pelajaran belum tuntas KKTP.`
             });
         } else if (item.dibawah_kktp === 1) {
@@ -421,7 +434,7 @@ async function checkStudentNotifications() {
                 level: 'sedang',
                 category: 'Akademik',
                 title: 'Peringatan KKTP',
-                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki 1 mata pelajaran yang belum memenuhi KKTP.`,
+                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki 1 mata pelajaran yang belum memenuhi KKTP (75).`,
                 defaultPembinaan: `Bimbingan akademik untuk 1 mapel yang belum tuntas KKTP.`
             });
         }
@@ -434,7 +447,7 @@ async function checkStudentNotifications() {
 
         targetSiswa.forEach(s => {
             const sId = String(s.id);
-            const k2Rec = appState.kebiasaan.find(k => String(k.siswa_id) === sId && String(k.kebiasaan_id) === 'K2' && k.tanggal === todayStr);
+            const k2Rec = appState.kebiasaan.find(k => String(k.siswa_id) === sId && String(k.kebiasaan_id) === 'K2' && String(k.tanggal) === todayStr);
             if (k2Rec && k2Rec.status === 'Belum') {
                 processNotifItem({
                     id: `${sId}_kebiasaan_k2`,
@@ -479,10 +492,10 @@ async function checkStudentNotifications() {
 
         targetPembinaan.forEach(p => {
             const s = appState.siswa.find(x => String(x.id) === String(p.siswa_id)) || (isSiswa ? appState.user : null);
-            if (s && String(p.status).toLowerCase() !== 'selesai') {
-                const stLower = String(p.status).toLowerCase();
+            if (s && normalizeStatusPembinaan(p.status) !== STATUS_PEMBINAAN.SELESAI) {
+                const normSt = normalizeStatusPembinaan(p.status);
                 let lvl = 'sedang';
-                if (stLower === 'perlu tindak lanjut') lvl = 'kritis';
+                if (normSt === STATUS_PEMBINAAN.PERLU_TINDAK_LANJUT) lvl = 'kritis';
 
                 processNotifItem({
                     id: `pbn_${p.id}_aktif`,
@@ -501,7 +514,6 @@ async function checkStudentNotifications() {
     activeList.sort((a, b) => levelOrder[b.level] - levelOrder[a.level]);
     handledList.sort((a, b) => b.dismissedAt - a.dismissedAt);
 
-    const prevCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
     appState.currentNotifications = activeList;
     appState.handledNotifications = handledList;
 
@@ -516,7 +528,6 @@ async function checkStudentNotifications() {
     }
 
     updateSidebarBadge();
-
     appState.notificationsReady = true;
 
     const statCount = document.getElementById("dash-stat-perhatian-count");
@@ -525,16 +536,6 @@ async function checkStudentNotifications() {
     }
 
     if (isSiswa) renderSiswaDashboardParts();
-
-    if (!isSiswa && activeList.length > prevCount) {
-        const kritisCount = activeList.filter(n => n.level === 'kritis').length;
-        if (kritisCount > 0) {
-            sendWebPushNotification(
-                "⚠️ Perhatian Khusus Siswa",
-                `Terdapat ${kritisCount} catatan siswa dengan tingkat keparahan KRITIS membutuhkan tindakan segera.`
-            );
-        }
-    }
 }
 
 function openNotificationModal(activeTab = 'active', selectedKelasId = '') {

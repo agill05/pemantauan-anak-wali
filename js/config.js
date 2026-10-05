@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwPkf1VSwiVz-_zO0Umo5XmcJs4WpBjQDs8tqUCgm2aJEROQ2NreJy5rNkEHHWq6l9muA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyoRqXQewiSKZECdlVncysmPI-pV0X7HqR2yJ91xVoCaWvIswc4St7E6UR5TMYs4cvXnw/exec";
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SNOOZE_24H_MS = 24 * 60 * 60 * 1000;
@@ -68,3 +68,19 @@ const MASTER_KEBIASAAN = [
     { id: "K6", nama: "Bermasyarakat / Gotong Royong", icon: "fa-hands-helping", color: "text-purple-500 bg-purple-50" },
     { id: "K7", nama: "Tidur Cepat & Teratur", icon: "fa-moon", color: "text-slate-600 bg-slate-100" }
 ];
+
+const STATUS_PEMBINAAN = {
+    PEMANTAUAN: "Pemantauan",
+    DALAM_PEMBINAAN: "Dalam Pembinaan",
+    PERLU_TINDAK_LANJUT: "Perlu Tindak Lanjut",
+    SELESAI: "Selesai"
+};
+
+function normalizeStatusPembinaan(status) {
+    const s = String(status || '').trim().toLowerCase();
+    if (s === 'pemantauan') return STATUS_PEMBINAAN.PEMANTAUAN;
+    if (s === 'dalam pembinaan') return STATUS_PEMBINAAN.DALAM_PEMBINAAN;
+    if (s === 'perlu tindak lanjut') return STATUS_PEMBINAAN.PERLU_TINDAK_LANJUT;
+    if (s === 'selesai') return STATUS_PEMBINAAN.SELESAI;
+    return status || STATUS_PEMBINAAN.PEMANTAUAN;
+}

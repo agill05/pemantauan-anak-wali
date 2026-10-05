@@ -1,9 +1,9 @@
 function getPembinaanStatusBadge(status) {
-    const s = String(status || '').trim().toLowerCase();
-    if (s === 'pemantauan') return 'bg-sky-50 text-sky-700 border-sky-200';
-    if (s === 'dalam pembinaan') return 'bg-amber-50 text-amber-700 border-amber-200';
-    if (s === 'perlu tindak lanjut') return 'bg-rose-50 text-rose-700 border-rose-200';
-    if (s === 'selesai') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    const s = normalizeStatusPembinaan(status);
+    if (s === STATUS_PEMBINAAN.PEMANTAUAN) return 'bg-sky-50 text-sky-700 border-sky-200';
+    if (s === STATUS_PEMBINAAN.DALAM_PEMBINAAN) return 'bg-amber-50 text-amber-700 border-amber-200';
+    if (s === STATUS_PEMBINAAN.PERLU_TINDAK_LANJUT) return 'bg-rose-50 text-rose-700 border-rose-200';
+    if (s === STATUS_PEMBINAAN.SELESAI) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     return 'bg-slate-50 text-slate-600 border-slate-200';
 }
 
@@ -89,11 +89,17 @@ function openModalPembinaan(id = null) {
     const rec = id ? appState.pembinaan.find(x => String(x.id) === String(id)) : null;
     const draft = !id ? getFormDraft("pembinaan") : null;
 
-    const siswaOpts = appState.siswa.map(s =>
+    // Untuk Guru, kunci pilihan siswa hanya ke siswa kelasnya
+    const availableSiswa = (appState.user && appState.user.role === 'guru')
+        ? appState.siswa.filter(s => String(s.kelas_id) === String(appState.user.kelas_id || ''))
+        : appState.siswa;
+
+    const siswaOpts = availableSiswa.map(s =>
         `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
     ).join("");
 
     const tanggalPengisian = rec ? rec.tanggal : getDateWITA();
+    const currentStatusNorm = normalizeStatusPembinaan(draft?.['m-pbn-status'] || rec?.status || STATUS_PEMBINAAN.PEMANTAUAN);
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -115,7 +121,7 @@ function openModalPembinaan(id = null) {
                 <div>
                     <label for="m-pbn-status" class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
                     <select id="m-pbn-status" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                        ${['Pemantauan', 'Dalam Pembinaan', 'Perlu Tindak Lanjut', 'Selesai'].map(st => `<option value="${st}" ${String(draft?.['m-pbn-status'] || rec?.status).toLowerCase() === st.toLowerCase() ? 'selected' : ''}>${st}</option>`).join('')}
+                        ${Object.values(STATUS_PEMBINAAN).map(st => `<option value="${st}" ${currentStatusNorm === st ? 'selected' : ''}>${st}</option>`).join('')}
                     </select>
                 </div>
             </div>
@@ -151,7 +157,7 @@ async function savePembinaanForm(e, id) {
 
     const siswaId = document.getElementById("m-pbn-siswa").value;
     const jenis = document.getElementById("m-pbn-jenis").value;
-    const status = document.getElementById("m-pbn-status").value;
+    const status = normalizeStatusPembinaan(document.getElementById("m-pbn-status").value);
     const permasalahan = document.getElementById("m-pbn-masalah").value;
     const tanggal = document.getElementById("m-pbn-tanggal").value || getDateWITA();
     const jadwal_pantau = document.getElementById("m-pbn-pantau").value;
@@ -203,7 +209,7 @@ async function savePembinaanForm(e, id) {
         Swal.fire({
             icon: 'error',
             title: 'Gagal Menyimpan',
-            text: res?.message || 'Terjadi kesalahan saat menyimpan catatan pembinaan ke database spreadsheet.',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan catatan pembinaan ke server.',
             confirmButtonColor: '#2563eb'
         });
     }
@@ -211,13 +217,25 @@ async function savePembinaanForm(e, id) {
 
 async function deletePembinaan(id) {
     const confirm = await Swal.fire({ title: 'Hapus Catatan Pembinaan?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
-    if (confirm.isConfirmed) {
+    if (!confirm.isConfirmed) return;
+
+    showLoading("Menghapus pembinaan...");
+    const res = await apiCall("deletePembinaan", { id }, false);
+    hideLoading();
+
+    if (res && res.status === "success") {
         appState.pembinaan = appState.pembinaan.filter(x => String(x.id) !== String(id));
         saveAppStateToLocal();
         renderPembinaanView();
-        showToast("Pembinaan dihapus");
-        await apiCall("deletePembinaan", { id }, false);
+        showToast("Pembinaan berhasil dihapus");
         checkStudentNotifications();
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menghapus',
+            text: res?.message || 'Terjadi kesalahan saat menghapus catatan pembinaan.',
+            confirmButtonColor: '#2563eb'
+        });
     }
 }
 

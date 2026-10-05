@@ -24,9 +24,19 @@ function populateLaporanKelasFilter() {
     const select = document.getElementById("laporan-kelas-filter");
     if (!select || !appState.kelas || appState.kelas.length === 0) return;
 
+    const isGuru = appState.user && appState.user.role === 'guru';
+    if (isGuru && appState.user.kelas_id) {
+        select.value = String(appState.user.kelas_id);
+        select.disabled = true;
+        select.classList.add("opacity-70", "cursor-not-allowed");
+    } else {
+        select.disabled = false;
+        select.classList.remove("opacity-70", "cursor-not-allowed");
+    }
+
     const currentVal = select.value;
     const opts = appState.kelas.map(k => `<option value="${k.id}" ${String(currentVal) === String(k.id) ? 'selected' : ''}>Kelas ${escapeHtml(k.nama_kelas)}</option>`).join("");
-    select.innerHTML = `<option value="">Semua Kelas</option>` + opts;
+    select.innerHTML = (isGuru ? '' : `<option value="">Semua Kelas</option>`) + opts;
 }
 
 function getFilteredLaporanData() {
@@ -73,6 +83,7 @@ function renderLaporanRekapView() {
     container.innerHTML = data.map(item => {
         const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(item.kelas_id)) : null;
         const isPerhatian = (item.presensi.alpa >= 3 || item.dibawah_kktp >= 2);
+        const totalHadir = (item.presensi.hadir || 0) + (item.presensi.telat || 0);
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3">
@@ -80,12 +91,13 @@ function renderLaporanRekapView() {
                     <div class="flex items-center gap-2 flex-wrap">
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama)}</h4>
                         <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${isPerhatian ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
-                            ${isPerhatian ? '⚠️ Perhatian' : '✅ Tuntas'}
+                            ${isPerhatian ? '⚠️️ Perhatian' : '✅ Tuntas'}
                         </span>
                     </div>
                     <p class="text-xs text-slate-400 mt-0.5">NISN: ${escapeHtml(item.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
                     <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600 mt-1.5 pt-1.5 border-t border-slate-50">
-                        <span class="text-emerald-600 font-semibold"><i class="fas fa-check-circle text-[10px] mr-1"></i>H: ${item.presensi.hadir}</span>
+                        <span class="text-emerald-600 font-semibold"><i class="fas fa-check-circle text-[10px] mr-1"></i>H: ${totalHadir}</span>
+                        <span class="text-orange-600 font-semibold"><i class="fas fa-clock text-[10px] mr-1"></i>T: ${item.presensi.telat || 0}</span>
                         <span class="text-blue-600"><i class="fas fa-notes-medical text-[10px] mr-1"></i>S: ${item.presensi.sakit}</span>
                         <span class="text-amber-600"><i class="fas fa-envelope-open text-[10px] mr-1"></i>I: ${item.presensi.izin}</span>
                         <span class="text-rose-600 font-bold"><i class="fas fa-exclamation-triangle text-[10px] mr-1"></i>A: ${item.presensi.alpa}</span>
@@ -106,6 +118,7 @@ function buildLaporanRekapContent(data) {
         const isPerhatian = (item.presensi.alpa >= 3 || item.dibawah_kktp >= 2);
         const statusText = isPerhatian ? 'Perlu Perhatian' : 'Tuntas / Baik';
         const statusColor = isPerhatian ? '#dc2626' : '#16a34a';
+        const totalHadir = (item.presensi.hadir || 0) + (item.presensi.telat || 0);
 
         return `
             <tr>
@@ -113,7 +126,8 @@ function buildLaporanRekapContent(data) {
                 <td style="text-align: center;">${escapeHtml(item.nisn || '-')}</td>
                 <td style="text-align: left; font-weight: bold;">${escapeHtml(item.nama)}</td>
                 <td style="text-align: center;">${kls ? escapeHtml(kls.nama_kelas) : '-'}</td>
-                <td style="text-align: center; color: #16a34a; font-weight: bold;">${item.presensi.hadir}</td>
+                <td style="text-align: center; color: #16a34a; font-weight: bold;">${totalHadir}</td>
+                <td style="text-align: center; color: #ea580c;">${item.presensi.telat || 0}</td>
                 <td style="text-align: center;">${item.presensi.sakit}</td>
                 <td style="text-align: center;">${item.presensi.izin}</td>
                 <td style="text-align: center; font-weight: bold; ${item.presensi.alpa > 0 ? 'color: #dc2626;' : ''}">${item.presensi.alpa}</td>
@@ -128,15 +142,16 @@ function buildLaporanRekapContent(data) {
             <thead>
                 <tr>
                     <th style="width: 30px;">No</th>
-                    <th style="width: 90px;">NISN</th>
+                    <th style="width: 80px;">NISN</th>
                     <th style="text-align: left;">Nama Siswa</th>
-                    <th style="width: 55px;">Kelas</th>
-                    <th style="width: 45px;">Hadir</th>
-                    <th style="width: 45px;">Sakit</th>
-                    <th style="width: 45px;">Izin</th>
-                    <th style="width: 45px;">Alpa</th>
-                    <th style="width: 80px;">&lt; KKTP</th>
-                    <th style="width: 105px;">Evaluasi</th>
+                    <th style="width: 50px;">Kelas</th>
+                    <th style="width: 40px;">Hadir</th>
+                    <th style="width: 40px;">Telat</th>
+                    <th style="width: 40px;">Sakit</th>
+                    <th style="width: 40px;">Izin</th>
+                    <th style="width: 40px;">Alpa</th>
+                    <th style="width: 75px;">&lt; KKTP</th>
+                    <th style="width: 100px;">Evaluasi</th>
                 </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
@@ -177,15 +192,16 @@ function exportRekapCSV() {
     }
 
     let csvContent = "\uFEFF";
-    csvContent += "No,NISN,Nama Siswa,Kelas,Hadir,Sakit,Izin,Alpa,Mapel_Dibawah_KKTP,Status_Evaluasi\n";
+    csvContent += "No,NISN,Nama Siswa,Kelas,Total_Hadir,Telat,Sakit,Izin,Alpa,Mapel_Dibawah_KKTP,Status_Evaluasi\n";
 
     data.forEach((row, idx) => {
         const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(row.kelas_id)) : null;
         const namaKelas = kls ? kls.nama_kelas : '-';
         const isPerhatian = (row.presensi.alpa >= 3 || row.dibawah_kktp >= 2);
         const statusText = isPerhatian ? 'Perlu Perhatian' : 'Tuntas / Baik';
+        const totalHadir = (row.presensi.hadir || 0) + (row.presensi.telat || 0);
 
-        csvContent += `${idx + 1},"${row.nisn || '-'}","${row.nama.replace(/"/g, '""')}","${namaKelas}",${row.presensi.hadir},${row.presensi.sakit},${row.presensi.izin},${row.presensi.alpa},${row.dibawah_kktp},"${statusText}"\n`;
+        csvContent += `${idx + 1},"${row.nisn || '-'}","${row.nama.replace(/"/g, '""')}","${namaKelas}",${totalHadir},${row.presensi.telat || 0},${row.presensi.sakit},${row.presensi.izin},${row.presensi.alpa},${row.dibawah_kktp},"${statusText}"\n`;
     });
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
