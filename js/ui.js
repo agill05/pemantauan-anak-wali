@@ -276,6 +276,32 @@ function getFirstName(nama) {
     return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
 }
 
+const SAPAAN_WAKTU = {
+    begadang: ["Masih terjaga,", "Wah, begadang ya,", "Jangan lupa istirahat,", "Selamat Begadang,"],
+    pagi: ["Selamat Pagi,", "Semangat Pagi,", "Pagi yang cerah,", "Selamat memulai hari,"],
+    siang: ["Selamat Siang,", "Semangat Siang,", "Siang yang cerah,", "Selamat beraktivitas,"],
+    sore: ["Selamat Sore,", "Sore yang tenang,", "Semangat Sore,", "Sore yang indah,"],
+    malam: ["Selamat Malam,", "Malam yang tenang,", "Semangat Malam,", "Malam yang damai,"]
+};
+
+const _sapaanSeed = Math.floor(Math.random() * 1000);
+
+function getJamWITA() {
+    const jam = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: "Asia/Makassar" }).format(new Date());
+    const n = parseInt(jam, 10);
+    return Number.isNaN(n) ? new Date().getHours() : n;
+}
+
+function getSapaanWaktu(jam = getJamWITA()) {
+    let slot = "malam";
+    if (jam < 4) slot = "begadang";
+    else if (jam < 11) slot = "pagi";
+    else if (jam < 15) slot = "siang";
+    else if (jam < 18) slot = "sore";
+    const daftar = SAPAAN_WAKTU[slot];
+    return daftar[_sapaanSeed % daftar.length];
+}
+
 function updateHeaderUser() {
     if (!appState.user) return;
     const nama = appState.user.nama || "";
@@ -285,8 +311,9 @@ function updateHeaderUser() {
     const title = document.getElementById("header-title");
     const sub = document.getElementById("header-subtitle");
 
-    if (greeting) { greeting.textContent = "Selamat Datang,"; greeting.classList.remove("hidden"); }
-    if (welcome) welcome.textContent = "Selamat Datang, ";
+    const sapaan = getSapaanWaktu();
+    if (greeting) { greeting.textContent = sapaan; greeting.classList.remove("hidden"); }
+    if (welcome) welcome.textContent = sapaan + " ";
     if (namaEl) namaEl.textContent = nama;
     if (title) title.title = nama;
     if (sub) {
