@@ -10,15 +10,18 @@ async function renderDashboard() {
 
     const statsContainer = document.getElementById("dash-stats-container");
     if (statsContainer) {
-        const totalSiswaCount = appState.siswa.length;
+        // Admin: semua siswa. Guru: siswa sesuai peran aktif (wali, mentor, atau semua).
+        const totalSiswaCount = getSiswaPeran().length;
+        const labelSiswa = role === 'admin' ? 'Siswa' : getLabelSiswa();
+        const hadirHariIni = scopeBySiswaId(appState.absensi, a => a.siswa_id).filter(a => a.status === 'H').length;
         if (role === "admin" || role === "guru") {
             statsContainer.innerHTML = `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
                     <span class="w-11 h-11 shrink-0 rounded-xl bg-blue-50 text-primary flex items-center justify-center text-base"><i class="fas fa-users"></i></span>
                     <div class="min-w-0 flex-1">
-                        <p class="text-xs font-bold text-slate-500">${role === 'admin' ? 'Total Siswa' : 'Anak Wali'}</p>
+                        <p class="text-xs font-bold text-slate-500">${role === 'admin' ? 'Total Siswa' : labelSiswa}</p>
                         <p class="text-2xl font-black text-slate-800 leading-tight">${totalSiswaCount}</p>
-                        <p class="text-[11px] text-slate-400">${role === 'admin' ? 'Total siswa yang terdaftar' : 'Total anak wali yang dibina'}</p>
+                        <p class="text-[11px] text-slate-400">${role === 'admin' ? 'Total siswa yang terdaftar' : 'Total ' + labelSiswa.toLowerCase() + ' yang dibina'}</p>
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
@@ -26,8 +29,8 @@ async function renderDashboard() {
                     <span class="w-11 h-11 shrink-0 rounded-xl bg-emerald-50 text-secondary flex items-center justify-center text-base"><i class="fas fa-calendar-check"></i></span>
                     <div class="min-w-0 flex-1">
                         <p class="text-xs font-bold text-emerald-600">Hadir Hari Ini</p>
-                        <p class="text-2xl font-black text-emerald-600 leading-tight">${appState.absensi.filter(a => a.status === 'H').length}</p>
-                        <p class="text-[11px] text-slate-400">Dari ${totalSiswaCount} ${role === 'admin' ? 'siswa' : 'anak wali'}</p>
+                        <p class="text-2xl font-black text-emerald-600 leading-tight">${hadirHariIni}</p>
+                        <p class="text-[11px] text-slate-400">Dari ${totalSiswaCount} ${role === 'admin' ? 'siswa' : labelSiswa.toLowerCase()}</p>
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
@@ -36,7 +39,7 @@ async function renderDashboard() {
                     <div class="min-w-0 flex-1">
                         <p class="text-xs font-bold text-rose-500">Perlu Perhatian</p>
                         <p id="dash-stat-perhatian-count" class="text-2xl font-black text-rose-600 leading-tight">${getAttentionStudentCount()}</p>
-                        <p class="text-[11px] text-slate-400">${role === 'admin' ? 'Siswa' : 'Anak wali'} yang perlu perhatian</p>
+                        <p class="text-[11px] text-slate-400">${labelSiswa} yang perlu perhatian</p>
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
@@ -69,7 +72,13 @@ function applyDashboardRoleTexts() {
     const sub = document.getElementById("dash-bottom-subtitle");
     const link = document.getElementById("dash-priority-link");
     if (title) title.textContent = isSiswa ? "Perlu Perhatian Saya" : "Perlu Perhatian Khusus";
-    if (sub) sub.classList.toggle("lg:block", !isSiswa);
+    if (sub) {
+        sub.classList.toggle("lg:block", !isSiswa);
+        if (!isSiswa) {
+            const nama = appState.user && appState.user.role === "admin" ? "siswa" : getLabelSiswa().toLowerCase();
+            sub.textContent = `Beberapa ${nama} membutuhkan perhatian lebih.`;
+        }
+    }
     if (link) link.setAttribute("onclick", isSiswa ? "openNotificationModal()" : "switchView('siswa')");
 }
 
@@ -156,11 +165,15 @@ function renderPrioritySection(priorityList) {
     const container = document.getElementById("dash-priority-container");
     if (!container) return;
 
-    if (!priorityList || priorityList.length === 0) {
+    // Backend mengirim gabungan wali + binaan. Saring sesuai peran aktif.
+    priorityList = (priorityList || []).filter(item => isSiswaInPeran(item.siswa));
+    const namaSiswa = appState.user && appState.user.role === "admin" ? "siswa" : getLabelSiswa().toLowerCase();
+
+    if (priorityList.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
             <i class="fas fa-check-circle text-emerald-500 text-2xl mb-2"></i>
-            <p class="text-xs text-slate-500">Semua siswa dalam kondisi baik. Tidak ada indikator perhatian aktif.</p>
+            <p class="text-xs text-slate-500">Semua ${namaSiswa} dalam kondisi baik. Tidak ada indikator perhatian aktif.</p>
           </div>
         `;
         return;
@@ -180,7 +193,7 @@ function renderPrioritySection(priorityList) {
               <div class="flex items-center gap-3">
                 <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                 <div>
-                  <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
+                  <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)} <span class="ml-1">${renderPeranChip(s)}</span></h4>
                   <p class="text-xs text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Ortu: ${escapeHtml(normalizePhone(s.no_hp_ortu) || '-')}</p>
                 </div>
               </div>
@@ -204,6 +217,8 @@ function renderPrioritySection(priorityList) {
 function renderAgendaSection(agendaList) {
     const container = document.getElementById("dash-agenda-list");
     if (!container) return;
+
+    agendaList = scopeBySiswaId(agendaList, a => a.siswa_id);
 
     if (!agendaList || agendaList.length === 0) {
         container.innerHTML = `
@@ -291,7 +306,11 @@ async function dismissNotification(notifId) {
     openNotificationModal('active');
 
     if (res && res.status === "success") {
-        showToast("Dipindahkan ke 'Sudah Ditangani'. Jika belum ada catatan pembinaan, akan muncul kembali dalam 24 jam.", "info");
+        const sNotif = (appState.siswa || []).find(x => String(x.id) === String(n.siswa.id));
+        const sebagaiMentor = isGuruUser() && getAccessTypeSiswa(sNotif) === 'mentor';
+        showToast(sebagaiMentor
+            ? "Ditandai oleh Mentor. Wali kelas tetap melihat notifikasi ini. Akan muncul kembali dalam 24 jam jika belum ada catatan pembinaan."
+            : "Dipindahkan ke 'Sudah Ditangani'. Jika belum ada catatan pembinaan, akan muncul kembali dalam 24 jam.", "info");
     } else {
         showToast(res?.message || "Gagal menandai notifikasi. Coba lagi.", "warning");
     }
@@ -329,10 +348,20 @@ async function markNotifHandledByPembinaan(siswaId, pembinaanId) {
 function renderHandledInfo(n) {
     const h = n.handledBy || {};
     const isSelf = String(h.ditangani_oleh_id) === String(appState.user.id);
-    const roleLabel = h.ditangani_oleh_role === 'admin' ? 'Admin' : 'Guru';
+    // Data lama berisi "guru" = wali.
+    const roleLabel = ({ admin: 'Admin', mentor: 'Mentor' })[String(h.ditangani_oleh_role || '').toLowerCase()] || 'Wali';
     const oleh = isSelf ? 'Anda' : `${escapeHtml(h.ditangani_oleh_nama || '-')} (${roleLabel})`;
     const via = h.sumber === 'pembinaan' ? 'Ditindaklanjuti lewat catatan pembinaan' : 'Ditangani';
     return `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fas fa-check text-[9px]"></i> ${via} oleh ${oleh} · ${formatTimeAgo(n.dismissedAt)}</span>`;
+}
+
+// Mentor hanya boleh membuka ulang penanda buatan mentor. Mirror handleRestoreNotifDitangani.
+function canRestoreNotif(n) {
+    if (!appState.user) return false;
+    if (appState.user.role === 'admin') return true;
+    const s = (appState.siswa || []).find(x => String(x.id) === String(n.siswa.id));
+    if (getAccessTypeSiswa(s) !== 'mentor') return true;
+    return String((n.handledBy || {}).ditangani_oleh_role || '').toLowerCase() === 'mentor';
 }
 
 function renderHandledNote(n) {
@@ -362,8 +391,14 @@ async function checkStudentNotifications() {
     let handledList = [];
     const todayStr = getDateWITA();
 
+    // Guru: hanya siswa sesuai peran aktif (wali, mentor, atau semua).
+    const peranIds = isGuruUser() ? new Set(getSiswaPeran().map(s => String(s.id))) : null;
+
     const processNotifItem = (item) => {
         if (isSiswa && String(item.siswa.id) !== currentUserId) {
+            return;
+        }
+        if (peranIds && !peranIds.has(String(item.siswa.id))) {
             return;
         }
 
@@ -633,7 +668,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                                 <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">${escapeHtml(n.category)}</span>
                                 ${activeTab === 'handled' ? renderHandledInfo(n) : ''}
                             </div>
-                            <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)} — <span class="text-slate-700 font-semibold">${escapeHtml(n.title)}</span></h4>
+                            <h4 class="font-bold text-xs text-slate-800">${escapeHtml(n.siswa.nama)} ${renderPeranChip((appState.siswa || []).find(x => String(x.id) === String(n.siswa.id)))} — <span class="text-slate-700 font-semibold">${escapeHtml(n.title)}</span></h4>
                         </div>
 
                         ${isCanManageNotif ? (
@@ -641,11 +676,13 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                                 <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (Snooze 24 Jam)" aria-label="Tandai sudah ditangani" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
                                     <i class="fas fa-check-circle text-lg"></i>
                                 </button>
-                            ` : `
+                            ` : (canRestoreNotif(n) ? `
                                 <button onclick="restoreNotification('${n.id}')" title="Kembalikan ke Daftar Perlu Tindakan" class="text-slate-400 hover:text-blue-600 p-1 shrink-0 flex items-center gap-1 text-xs font-bold">
                                     <i class="fas fa-undo text-sm"></i> Buka Lagi
                                 </button>
-                            `
+                            ` : `
+                                <span class="text-[10px] text-slate-400 shrink-0" title="Ditandai oleh wali kelas atau admin"><i class="fas fa-lock"></i> Dikunci</span>
+                            `)
         ) : ''}
                     </div>
 

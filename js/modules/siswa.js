@@ -58,6 +58,13 @@ async function openProfilSiswa(siswaTarget) {
     const container = document.getElementById("profil-siswa-details");
     if (!container) return;
 
+    // Magic link hanya untuk wali kelas dan admin. Mentor baca saja.
+    document.getElementById("btn-magiclink-profil")?.classList.toggle("hidden", !(isAdminUser() || isGuruUser()) || !canWrite("magiclink", siswa));
+
+    const mentor = siswa.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(siswa.mentor_id)) : null;
+    const staf = isAdminUser() || isGuruUser();
+    const infoMentor = staf ? `<p class="text-xs text-slate-400">Mentor: ${mentor ? escapeHtml(mentor.nama) : (siswa.mentor_id ? '-' : 'Belum ada')} <span class="ml-1">${renderPeranChip(siswa)}</span></p>` : '';
+
     const totalHadir = absensi.filter(a => a.status === 'H').length;
     const totalSakit = absensi.filter(a => a.status === 'S').length;
     const totalIzin = absensi.filter(a => a.status === 'I').length;
@@ -70,6 +77,7 @@ async function openProfilSiswa(siswaTarget) {
                 <h3 class="font-bold text-base text-slate-800">${escapeHtml(siswa.nama)}</h3>
                 <p class="text-xs text-slate-400">NISN: ${escapeHtml(siswa.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
                 <p class="text-xs text-slate-400">Ortu/Wali: ${escapeHtml(siswa.nama_ortu || normalizePhone(siswa.no_hp_ortu) || '-')}</p>
+                ${infoMentor}
             </div>
         </div>
 
@@ -147,6 +155,7 @@ async function openProfilSiswa(siswaTarget) {
                                             <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(h.status)}</span>
                                         </div>
                                         ${h.catatan ? `<p class="text-xs text-slate-500 italic font-medium">"${escapeHtml(h.catatan)}"</p>` : ''}
+                                        ${renderPenulisBadge(h)}
                                     </div>
                                 `;
     }).join('')}
@@ -179,6 +188,7 @@ async function openProfilSiswa(siswaTarget) {
                                     <div>
                                         <h5 class="font-bold text-slate-800">${escapeHtml(p.nama_prestasi)}</h5>
                                         <p class="text-xs text-slate-400">${escapeHtml(p.tingkat)} • ${escapeHtml(p.tanggal)}</p>
+                                        ${renderPenulisBadge(p)}
                                     </div>
                                 </div>
                             `).join('')}
@@ -199,6 +209,7 @@ async function openProfilSiswa(siswaTarget) {
                                         <span class="text-xs font-bold px-2 py-0.5 rounded border ${getPembinaanStatusBadge(p.status)}">${escapeHtml(p.status)}</span>
                                     </div>
                                     <p class="text-xs text-slate-400">Tanggal: ${escapeHtml(p.tanggal)}</p>
+                                    ${renderPenulisBadge(p)}
                                 </div>
                             `).join('')}
                         </div>
@@ -376,6 +387,10 @@ async function hubungiOrtu(siswaId) {
     const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
     const namaKelas = kls ? kls.nama_kelas : '-';
 
+    // Penutup pesan mengikuti peran guru pada siswa ini.
+    const sebagaiMentor = isGuruUser() && getEffectiveAccessType(s) === 'mentor';
+    const penutup = sebagaiMentor ? 'Mentor / Guru SMPN 1 Talaga Jaya' : 'Wali Kelas / Guru SMPN 1 Talaga Jaya';
+
     const templateLengkap = `*LAPORAN PERKEMBANGAN ANAK WALI*
 *SMP NEGERI 1 TALAGA JAYA*
 ----------------------------------------
@@ -396,7 +411,7 @@ Yth. Bapak/Ibu Orang Tua/Wali dari ananda:
 
 Mohon kerja sama Bapak/Ibu untuk terus mendampingi dan memotivasi ananda di rumah. Terima kasih.
 _Wassalamu'alaikum Wr. Wb._
-*Wali Kelas / Guru SMPN 1 Talaga Jaya*`;
+*${penutup}*`;
 
     const templatePresensi = `*PEMBERITAHUAN PRESENSI SISWA*
 *SMP NEGERI 1 TALAGA JAYA*
@@ -441,7 +456,7 @@ _Wassalamu'alaikum Wr. Wb._`;
                 </span>
                 <div>
                     <h5 class="font-bold text-xs text-slate-800">Laporan Perkembangan Lengkap</h5>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Berisi rekap presensi (H/S/I/A), ketercapaian 7 kebiasaan, dan catatan wali kelas.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Berisi rekap presensi (H/S/I/A), ketercapaian 7 kebiasaan, dan catatan guru.</p>
                 </div>
             </button>
 
@@ -461,7 +476,7 @@ _Wassalamu'alaikum Wr. Wb._`;
                 </span>
                 <div>
                     <h5 class="font-bold text-xs text-slate-800">Pesan Sapaan Singkat</h5>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Sapaan awal sopan dari wali kelas untuk memulai obrolan/konsultasi.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Sapaan awal sopan dari guru untuk memulai obrolan/konsultasi.</p>
                 </div>
             </button>
         </div>
@@ -499,10 +514,10 @@ function renderSiswaView() {
         return;
     }
 
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
-
-    container.innerHTML = filtered.map(s => {
+    container.innerHTML = renderReadOnlyBanner('siswa', 'data siswa') + filtered.map(s => {
         const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
+        // Edit/hapus data siswa: admin dan wali kelas. Mentor baca saja.
+        const bisaUbahSiswa = canWrite('siswa', s);
         const noAbsenLabel = s.no_absen ? `No. Absen: ${s.no_absen} | ` : '';
 
         return `
@@ -510,7 +525,7 @@ function renderSiswaView() {
                 <div class="flex items-center gap-3">
                     <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                     <div>
-                        <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
+                        <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)} <span class="ml-1">${renderPeranChip(s)}</span></h4>
                         <p class="text-xs text-slate-400">${noAbsenLabel}NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
                     </div>
                 </div>
@@ -521,7 +536,7 @@ function renderSiswaView() {
                     <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" class="touch-btn bg-emerald-50 text-emerald-600 rounded-lg text-xs">
                         <i class="fab fa-whatsapp"></i>
                     </button>
-                    ${isAdminOrGuru ? `
+                    ${bisaUbahSiswa ? `
                     <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="touch-btn bg-slate-100 text-slate-600 rounded-lg text-xs">
                         <i class="fas fa-edit"></i>
                     </button>

@@ -79,6 +79,7 @@ function renderLaporanRekapView() {
                 <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2 flex-wrap">
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama)}</h4>
+                        ${renderPeranChip((appState.siswa || []).find(x => String(x.id) === String(item.id)))}
                         <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${isPerhatian ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
                             ${isPerhatian ? '⚠️ Perhatian' : '✅ Tuntas'}
                         </span>
@@ -144,7 +145,11 @@ function buildLaporanRekapContent(data) {
     `;
 }
 
-const LAPORAN_REKAP_TITLE = "LAPORAN REKAPITULASI PEMANTAUAN ANAK WALI";
+// Judul mengikuti peran aktif: Anak Wali, Anak Binaan, atau gabungan.
+function getLaporanRekapTitle() {
+    const nama = isGuruUser() ? getLabelSiswa().toUpperCase() : "ANAK WALI";
+    return `LAPORAN REKAPITULASI PEMANTAUAN ${nama}`;
+}
 
 function printLaporanRekap() {
     const data = getFilteredLaporanData();
@@ -152,7 +157,7 @@ function printLaporanRekap() {
         Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk dicetak.', confirmButtonColor: '#2563eb' });
         return;
     }
-    printFeaturePDF(LAPORAN_REKAP_TITLE, buildLaporanRekapContent(data), { orientation: "landscape" });
+    printFeaturePDF(getLaporanRekapTitle(), buildLaporanRekapContent(data), { orientation: "landscape" });
 }
 
 function exportLaporanPDF() {
@@ -162,7 +167,7 @@ function exportLaporanPDF() {
         return;
     }
     exportFeaturePDF(
-        LAPORAN_REKAP_TITLE,
+        getLaporanRekapTitle(),
         buildLaporanRekapContent(data),
         `Laporan_Rekap_Anak_Wali_${getDateWITA()}.pdf`,
         { orientation: "landscape" }

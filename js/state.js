@@ -70,7 +70,8 @@ function populateSiswaSelectForRole(selectEl, options = {}) {
     const allOption = includeAllOption ? `<option value="ALL">Semua Siswa</option>` : "";
     selectEl.innerHTML = `<option value="" disabled selected>-- Pilih Siswa --</option>` + allOption + siswaOptions;
 
-    if (prevValue && prevValue !== "") selectEl.value = prevValue;
+    // Pulihkan pilihan hanya jika siswa masih ada di peran aktif.
+    if (prevValue && Array.from(selectEl.options).some(o => o.value === prevValue)) selectEl.value = prevValue;
 }
 
 let dataPollingInterval = null;
@@ -410,4 +411,33 @@ function renderKelasSelectOptions(selectedId, opts = {}) {
 function applyKelasSelectLock(selectEl) {
     if (!selectEl) return;
     selectEl.disabled = isKelasSelectLocked();
+}
+
+// ===== Penulis catatan dan daftar tulis (tahap 6) =====
+// Peran penulis catatan baru. Mirror getPeranPadaSiswa di backend: siswa "both" dihitung "wali".
+function getPeranPenulis(siswaRef) {
+    const u = appState.user;
+    if (!u) return "";
+    if (u.role === "admin") return "admin";
+    if (u.role !== "guru") return "";
+    const raw = getAccessTypeSiswa(_resolveSiswaRef(siswaRef));
+    if (raw === "mentor") return "mentor";
+    if (raw === "wali" || raw === "both") return "wali";
+    return "";
+}
+
+// Kolom audit untuk record lokal baru, supaya tombol edit/hapus benar sebelum sinkron ulang.
+// Backend tetap sumber kebenaran.
+function buildAuditLocal(siswaRef) {
+    if (!appState.user) return {};
+    return {
+        dibuat_oleh_id: String(appState.user.id),
+        dibuat_sebagai: getPeranPenulis(siswaRef) || appState.user.role
+    };
+}
+
+// Siswa yang boleh ditulis untuk kategori ini, sesuai peran aktif. Untuk dropdown modal input.
+function getSiswaWritable(kategori) {
+    const list = isGuruUser() ? getSiswaPeran() : (appState.siswa || []);
+    return list.filter(s => canWrite(kategori, s));
 }

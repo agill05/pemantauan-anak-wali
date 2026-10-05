@@ -178,9 +178,10 @@ function renderKeagamaanView() {
         return;
     }
 
+    const baseKeagamaan = scopeBySiswaId(appState.keagamaan, h => h.siswa_id);
     const perSiswa = (filterSiswaId && filterSiswaId !== "ALL")
-        ? appState.keagamaan.filter(h => String(h.siswa_id) === String(filterSiswaId))
-        : appState.keagamaan;
+        ? baseKeagamaan.filter(h => String(h.siswa_id) === String(filterSiswaId))
+        : baseKeagamaan;
 
     const kat = keagamaanKategoriFilter;
     const filteredHafalan = kat === "semua" ? perSiswa : perSiswa.filter(h => getKategoriHafalan(h) === kat);
@@ -194,7 +195,6 @@ function renderKeagamaanView() {
         return;
     }
 
-    const isAdminOrGuruItem = isAdminOrGuru;
     const warnaBox = { emerald: "bg-emerald-50 text-emerald-600", amber: "bg-amber-50 text-amber-600", sky: "bg-sky-50 text-sky-600" };
 
     const cardsHtml = filteredHafalan.map(item => {
@@ -202,6 +202,8 @@ function renderKeagamaanView() {
         const itemKat = getKategoriHafalan(item);
         const meta = KEAGAMAAN_KATEGORI[itemKat];
         const statusBadge = item.status === 'Lancar' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (item.status === 'Mengulang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200');
+        const bisaUbah = canEditRecord(item, 'keagamaan');
+        const penanda = renderPenulisBadge(item) + renderPeranChip(s);
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
@@ -216,7 +218,8 @@ function renderKeagamaanView() {
                     <span class="text-xs font-bold px-2 py-0.5 rounded-md border shrink-0 ${statusBadge}">${escapeHtml(item.status)}</span>
                 </div>
                 ${item.catatan ? `<p class="text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-slate-600 italic">"${escapeHtml(item.catatan)}"</p>` : ''}
-                ${isAdminOrGuruItem ? `
+                ${penanda ? `<div class="flex flex-wrap items-center gap-1.5">${penanda}</div>` : ''}
+                ${bisaUbah ? `
                 <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
                     <button onclick="openModalKeagamaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
                     <button onclick="deleteKeagamaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
@@ -275,8 +278,14 @@ function openModalKeagamaan(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
+    const writable = getSiswaWritable('keagamaan');
+    if (!id && writable.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Tidak ada siswa yang dapat Anda isi capaian keagamaannya.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
     const record = id ? appState.keagamaan.find(x => String(x.id) === String(id)) : null;
-    const siswaOptions = appState.siswa.map(s => `<option value="${s.id}" ${record && String(record.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const siswaOptions = sortSiswa(writable).map(s => `<option value="${s.id}" ${record && String(record.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
     const kat = record ? getKategoriHafalan(record) : (KEAGAMAAN_KATEGORI[keagamaanKategoriFilter] ? keagamaanKategoriFilter : "surah");
     const kategoriOptions = Object.keys(KEAGAMAAN_KATEGORI).map(k => `<option value="${k}" ${k === kat ? 'selected' : ''}>${KEAGAMAAN_KATEGORI[k].label}</option>`).join("");
 
@@ -358,16 +367,23 @@ async function saveKeagamaanForm(e, id) {
         catatan: document.getElementById("m-kag-catatan").value
     };
 
+    // Edit: pertahankan penulis asli. Baru: isi penulis dari pengguna saat ini (sama dengan backend).
     const idx = appState.keagamaan.findIndex(x => String(x.id) === String(payload.id));
-    if (idx !== -1) appState.keagamaan[idx] = payload;
-    else appState.keagamaan.push(payload);
+    const base = idx !== -1 ? appState.keagamaan[idx] : buildAuditLocal(payload.siswa_id);
+    const localRec = { ...base, ...payload };
+    if (idx !== -1) appState.keagamaan[idx] = localRec;
+    else appState.keagamaan.push(localRec);
 
     saveAppStateToLocal();
     renderKeagamaanView();
     closeModal();
     showToast("Catatan keagamaan tersimpan!");
 
-    apiCall("saveKeagamaan", payload, false);
+    const res = await apiCall("saveKeagamaan", payload, false);
+    if (res && res.status === "error") {
+        showToast(res.message || "Gagal menyimpan catatan keagamaan.", "warning");
+        loadKeagamaanData(true);
+    }
 }
 
 async function deleteKeagamaan(id) {
@@ -377,7 +393,11 @@ async function deleteKeagamaan(id) {
         saveAppStateToLocal();
         renderKeagamaanView();
         showToast("Catatan keagamaan dihapus");
-        apiCall("deleteKeagamaan", { id }, false);
+        const res = await apiCall("deleteKeagamaan", { id }, false);
+        if (res && res.status === "error") {
+            showToast(res.message || "Gagal menghapus catatan keagamaan.", "warning");
+            loadKeagamaanData(true);
+        }
     }
 }
 

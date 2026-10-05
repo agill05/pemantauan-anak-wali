@@ -36,7 +36,7 @@ function renderKebiasaanView() {
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
     if (!container || !selectSiswa) return;
 
-    if (!appState.siswa || appState.siswa.length === 0) {
+    if (getSiswaPeran().length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-user-slash text-2xl mb-2"></i><p class="text-xs text-slate-500">Belum ada data siswa untuk dipantau kebiasaannya.</p></div>`;
         return;
     }
@@ -50,7 +50,12 @@ function renderKebiasaanView() {
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
     const lockState = getDateLockState(tanggal);
-    const roleAllowed = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru' || (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
+    // Kebiasaan hanya diisi wali kelas atau siswa sendiri. Mentor baca saja.
+    const roleAllowed = !!appState.user && (
+        appState.user.role === 'admin' ||
+        (appState.user.role === 'guru' && canWrite('kebiasaan', selectedSiswaId)) ||
+        (appState.user.role === 'siswa' && String(appState.user.id) === String(selectedSiswaId)));
+    const bacaSaja = isGuruUser() && !canWrite('kebiasaan', selectedSiswaId);
     const isEditable = !!(roleAllowed && lockState.editable);
 
     const studentRecords = appState.kebiasaan.filter(k => String(k.siswa_id) === String(selectedSiswaId));
@@ -153,6 +158,7 @@ function renderKebiasaanView() {
     container.innerHTML = `
         <div class="space-y-3">
             ${renderDateLockBanner(lockState, 'kebiasaan')}
+            ${bacaSaja ? renderBacaSajaBanner('Mode baca saja. Hanya wali kelas yang dapat mengisi kebiasaan anak binaan.') : ''}
             ${gamificationCard}
             ${itemsHtml}
         </div>
@@ -160,6 +166,10 @@ function renderKebiasaanView() {
 }
 
 function saveKebiasaanItem(siswa_id, kebiasaan_id, status) {
+    if (!canWrite('kebiasaan', siswa_id)) {
+        showToast("Anda tidak dapat mengisi kebiasaan siswa ini.", "warning");
+        return;
+    }
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
 

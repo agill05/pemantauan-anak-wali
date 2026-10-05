@@ -72,33 +72,35 @@ function renderAkademikNilai() {
         return;
     }
 
+    // Saring sesuai peran aktif. Nilai mapel hanya ditulis wali kelas, mentor baca saja.
+    const baseAkademik = scopeBySiswaId(appState.akademik, item => item.siswa_id);
     const filteredAkademik = (filterSiswaId && filterSiswaId !== "ALL")
-        ? (appState.akademik || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
-        : (appState.akademik || []);
+        ? baseAkademik.filter(item => String(item.siswa_id) === String(filterSiswaId))
+        : baseAkademik;
+    const bannerBaca = renderReadOnlyBanner('akademik', 'nilai mapel');
 
     if (filteredAkademik.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-graduation-cap text-2xl mb-2 text-indigo-500"></i><p class="text-xs text-slate-500">Belum ada data nilai mata pelajaran untuk siswa ini.</p></div>`;
+        container.innerHTML = bannerBaca + `<div class="empty-state"><i class="fas fa-graduation-cap text-2xl mb-2 text-indigo-500"></i><p class="text-xs text-slate-500">Belum ada data nilai mata pelajaran untuk siswa ini.</p></div>`;
         return;
     }
 
-    const isAdminOrGuruItem = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
-
-    container.innerHTML = filteredAkademik.map(item => {
+    container.innerHTML = bannerBaca + filteredAkademik.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
         const isBelowKKTP = Number(item.nilai_akhir) < Number(item.kktp);
         const badgeColor = isBelowKKTP ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200';
+        const bisaUbah = canEditRecord(item, 'akademik');
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
                 <div>
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.mapel)}</h4>
-                    <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} | KKTP: ${item.kktp}</p>
+                    <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} <span class="ml-1">${renderPeranChip(s)}</span> | KKTP: ${item.kktp}</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="text-xs font-black px-2.5 py-1 rounded-xl border ${badgeColor}">
                         ${item.nilai_akhir} ${isBelowKKTP ? '⚠️' : '✅'}
                     </span>
-                    ${isAdminOrGuruItem ? `
+                    ${bisaUbah ? `
                     <div class="flex gap-1">
                         <button onclick="openModalAkademik('${escapeHtml(item.id)}')" class="p-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit nilai akademik"><i class="fas fa-edit"></i></button>
                         <button onclick="deleteAkademik('${escapeHtml(item.id)}')" class="p-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus nilai akademik"><i class="fas fa-trash"></i></button>
@@ -122,19 +124,20 @@ function renderAkademikPrestasi() {
         return;
     }
 
+    const basePrestasi = scopeBySiswaId(appState.prestasi, item => item.siswa_id);
     const filteredPrestasi = (filterSiswaId && filterSiswaId !== "ALL")
-        ? (appState.prestasi || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
-        : (appState.prestasi || []);
+        ? basePrestasi.filter(item => String(item.siswa_id) === String(filterSiswaId))
+        : basePrestasi;
 
     if (filteredPrestasi.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-trophy text-2xl mb-2 text-amber-500"></i><p class="text-xs text-slate-500">Belum ada data catatan prestasi untuk siswa ini.</p></div>`;
         return;
     }
 
-    const isAdminOrGuruItem = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
-
     container.innerHTML = filteredPrestasi.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
+        const bisaUbah = canEditRecord(item, 'prestasi');
+        const penanda = renderPenulisBadge(item) + renderPeranChip(s);
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
@@ -148,7 +151,8 @@ function renderAkademikPrestasi() {
                     </div>
                     <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">${escapeHtml(item.tingkat)}</span>
                 </div>
-                ${isAdminOrGuruItem ? `
+                ${penanda ? `<div class="flex flex-wrap items-center gap-1.5">${penanda}</div>` : ''}
+                ${bisaUbah ? `
                 <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
                     <button onclick="openModalPrestasi('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
                     <button onclick="deletePrestasi('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
@@ -162,8 +166,14 @@ function openModalAkademik(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
+    const writable = getSiswaWritable('akademik');
+    if (!id && writable.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Nilai mapel hanya dapat diisi untuk anak wali.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
     const rec = id ? appState.akademik.find(x => String(x.id) === String(id)) : null;
-    const siswaOpts = appState.siswa.map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const siswaOpts = sortSiswa(writable).map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -236,7 +246,11 @@ async function deleteAkademik(id) {
         saveAppStateToLocal();
         renderAkademikNilai();
         showToast("Nilai dihapus");
-        apiCall("deleteAkademik", { id }, false);
+        const res = await apiCall("deleteAkademik", { id }, false);
+        if (res && res.status === "error") {
+            showToast(res.message || "Gagal menghapus nilai.", "warning");
+            loadAkademikData(true);
+        }
     }
 }
 
@@ -244,8 +258,14 @@ function openModalPrestasi(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
+    const writable = getSiswaWritable('prestasi');
+    if (!id && writable.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Tidak ada siswa yang dapat Anda isi prestasinya.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
     const rec = id ? appState.prestasi.find(x => String(x.id) === String(id)) : null;
-    const siswaOpts = appState.siswa.map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const siswaOpts = sortSiswa(writable).map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -294,8 +314,11 @@ async function savePrestasiForm(e, id) {
     hideLoading();
 
     if (res && res.status === "success") {
-        const savedRecord = { ...payload, id: res.id || id || ("PRS-" + Date.now()) };
-        const idx = appState.prestasi.findIndex(x => String(x.id) === String(savedRecord.id));
+        const newId = res.id || id || ("PRS-" + Date.now());
+        const idx = appState.prestasi.findIndex(x => String(x.id) === String(newId));
+        // Edit: pertahankan penulis asli. Baru: isi penulis dari pengguna saat ini (sama dengan backend).
+        const base = idx !== -1 ? appState.prestasi[idx] : buildAuditLocal(payload.siswa_id);
+        const savedRecord = { ...base, ...payload, id: newId };
         if (idx !== -1) appState.prestasi[idx] = savedRecord;
         else appState.prestasi.push(savedRecord);
 
@@ -320,7 +343,11 @@ async function deletePrestasi(id) {
         saveAppStateToLocal();
         renderAkademikPrestasi();
         showToast("Prestasi dihapus");
-        apiCall("deletePrestasi", { id }, false);
+        const res = await apiCall("deletePrestasi", { id }, false);
+        if (res && res.status === "error") {
+            showToast(res.message || "Gagal menghapus prestasi.", "warning");
+            loadAkademikData(true);
+        }
     }
 }
 function cetakPDFAkademik() {

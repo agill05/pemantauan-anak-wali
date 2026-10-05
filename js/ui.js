@@ -379,3 +379,74 @@ function showDateLockedAlert(state) {
         });
     }
 }
+
+// ===== Peran guru di tampilan (tahap 6) =====
+const PENULIS_LABEL = { wali: "Wali", mentor: "Mentor", admin: "Admin" };
+const PENULIS_STYLE = {
+    wali: "bg-blue-50 text-blue-700 border-blue-100",
+    mentor: "bg-violet-50 text-violet-700 border-violet-100",
+    admin: "bg-slate-100 text-slate-700 border-slate-200"
+};
+
+// Penanda per siswa. Hanya muncul di mode Semua, supaya guru tahu siswa mana anak wali atau binaan.
+function renderPeranChip(siswa) {
+    if (getPeranAktif() !== "semua") return "";
+    const b = getPeranBadgeSiswa(siswa);
+    if (!b) return "";
+    const map = {
+        wali: ["Anak Wali", PENULIS_STYLE.wali],
+        mentor: ["Binaan", PENULIS_STYLE.mentor],
+        both: ["Wali & Binaan", "bg-emerald-50 text-emerald-700 border-emerald-100"]
+    };
+    const [teks, cls] = map[b];
+    return `<span class="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded border ${cls}">${teks}</span>`;
+}
+
+// Penanda penulis catatan. Data lama (dibuat_sebagai kosong) dianggap milik wali.
+// Siswa dan orang tua tidak melihatnya.
+function renderPenulisBadge(rec) {
+    const u = appState.user;
+    if (!rec || !u || (u.role !== "admin" && u.role !== "guru")) return "";
+    const sebagai = String(rec.dibuat_sebagai || "").toLowerCase().trim();
+    const peran = PENULIS_LABEL[sebagai] ? sebagai : "wali";
+    const ownerId = String(rec.dibuat_oleh_id || "").trim();
+    let nama = "";
+    if (ownerId) {
+        if (ownerId === String(u.id)) nama = "Anda";
+        else {
+            const g = (appState.guru || []).find(x => String(x.id) === ownerId);
+            nama = g ? g.nama : "";
+        }
+    }
+    const teks = nama ? `${nama} (${PENULIS_LABEL[peran]})` : PENULIS_LABEL[peran];
+    return `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${PENULIS_STYLE[peran]}" title="Dicatat oleh ${escapeHtml(teks)}"><i class="fas fa-pen-nib text-[9px]"></i> ${escapeHtml(teks)}</span>`;
+}
+
+function renderBacaSajaBanner(teks) {
+    return `<div class="bg-violet-50 border border-violet-200 text-violet-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold flex items-start gap-2" role="note">
+        <i class="fas fa-eye mt-0.5"></i><span>${escapeHtml(teks)}</span>
+    </div>`;
+}
+
+// Banner mode baca saja untuk guru. Kosong jika semua siswa di tampilan boleh ditulis.
+function renderReadOnlyBanner(kategori, modul) {
+    if (!isGuruUser()) return "";
+    const list = getSiswaPeran();
+    if (list.length === 0) return "";
+    const dapat = list.filter(s => canWrite(kategori, s)).length;
+    if (dapat === list.length) return "";
+    return renderBacaSajaBanner(dapat === 0
+        ? `Mode baca saja. Hanya wali kelas yang dapat mengisi ${modul} anak binaan.`
+        : `Siswa berlabel Binaan hanya dapat dibaca. Hanya wali kelas yang dapat mengisi ${modul} mereka.`);
+}
+
+// Tampilkan atau sembunyikan tombol [data-write="kategori"] sesuai hak tulis peran aktif.
+// Tetap menghormati data-role-visible.
+function applyWriteVisibility() {
+    const role = appState.user ? String(appState.user.role).toLowerCase() : "";
+    document.querySelectorAll("[data-write]").forEach(el => {
+        const roles = (el.getAttribute("data-role-visible") || "").split(",").map(r => r.trim().toLowerCase()).filter(Boolean);
+        const roleOk = roles.length === 0 || roles.includes(role);
+        el.classList.toggle("hidden", !(roleOk && canWrite(el.getAttribute("data-write"))));
+    });
+}

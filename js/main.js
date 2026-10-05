@@ -18,6 +18,8 @@ function switchView(viewId) {
         sessionStorage.setItem("app_last_view", viewId);
     }
 
+    applyWriteVisibility();
+
     document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".sidebar-nav-item").forEach(el => el.classList.remove("active", "bg-slate-100", "text-primary"));
@@ -86,7 +88,10 @@ function onPeranChanged() {
     if (!appState.user) return;
     renderPeranSwitcher();
     updateHeaderUser();
+    applyWriteVisibility();
     if (typeof _refreshAllSiswaDropdowns === "function") _refreshAllSiswaDropdowns();
+    // Notifikasi dan badge ikut peran aktif.
+    if (typeof checkStudentNotifications === "function") checkStudentNotifications();
 
     const activeView = document.querySelector(".view-section.active");
     const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
@@ -110,7 +115,7 @@ function _refreshAllSiswaDropdowns() {
         const prev = selPembinaan.value;
         const siswaOptions = siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
         selPembinaan.innerHTML = `<option value="">-- Semua Siswa --</option>` + siswaOptions;
-        if (prev) selPembinaan.value = prev;
+        if (prev && Array.from(selPembinaan.options).some(o => o.value === prev)) selPembinaan.value = prev;
     }
 
     const activeView = document.querySelector(".view-section.active");

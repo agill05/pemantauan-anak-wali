@@ -16,8 +16,8 @@ async function loadPembinaanData(forceRefresh = false) {
             filterSelect.innerHTML = `<option value="${appState.user.id}">${escapeHtml(appState.user.nama || 'Saya')}</option>`;
             filterSelect.value = appState.user.id;
             filterSelect.disabled = true;
-        } else if (appState.siswa.length > 0 && filterSelect.options.length <= 1) {
-            filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + appState.siswa.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+        } else if (getSiswaPeran().length > 0 && filterSelect.options.length <= 1) {
+            filterSelect.innerHTML = `<option value="">Semua Siswa</option>` + getSiswaPeran().map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
         }
     }
 
@@ -43,20 +43,22 @@ function renderPembinaanView() {
     if (!container) return;
 
     const filterSiswaId = document.getElementById("pembinaan-siswa-filter")?.value || "";
+    const basePembinaan = scopeBySiswaId(appState.pembinaan, item => item.siswa_id);
     const filteredPembinaan = filterSiswaId
-        ? (appState.pembinaan || []).filter(item => String(item.siswa_id) === String(filterSiswaId))
-        : (appState.pembinaan || []);
+        ? basePembinaan.filter(item => String(item.siswa_id) === String(filterSiswaId))
+        : basePembinaan;
 
     if (filteredPembinaan.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-user-check text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Tidak ada catatan pembinaan aktif untuk siswa ini.</p></div>`;
         return;
     }
 
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
-
     container.innerHTML = filteredPembinaan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
         const statusBadge = getPembinaanStatusBadge(item.status);
+        // Mentor hanya dapat mengubah catatannya sendiri. Data lama dianggap milik wali.
+        const bisaUbah = canEditRecord(item, 'pembinaan');
+        const penanda = renderPenulisBadge(item) + renderPeranChip(s);
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
@@ -72,7 +74,8 @@ function renderPembinaanView() {
                 <div class="text-xs bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-1.5 text-slate-600 font-medium">
                     <i class="fas fa-clock text-amber-500"></i> Jadwal Pantau: <span class="font-bold text-amber-700">${escapeHtml(item.jadwal_pantau)}</span>
                 </div>` : ''}
-                ${isAdminOrGuru ? `
+                ${penanda ? `<div class="flex flex-wrap items-center gap-1.5">${penanda}</div>` : ''}
+                ${bisaUbah ? `
                 <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
                     <button onclick="openModalPembinaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
                     <button onclick="deletePembinaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
@@ -86,10 +89,16 @@ function openModalPembinaan(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
+    const writable = getSiswaWritable('pembinaan');
+    if (!id && writable.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Tidak ada siswa yang dapat Anda beri catatan pembinaan.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
     const rec = id ? appState.pembinaan.find(x => String(x.id) === String(id)) : null;
     const draft = !id ? getFormDraft("pembinaan") : null;
 
-    const siswaOpts = appState.siswa.map(s =>
+    const siswaOpts = sortSiswa(writable).map(s =>
         `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
     ).join("");
 
@@ -184,6 +193,11 @@ async function savePembinaanForm(e, id) {
         };
 
         const idx = appState.pembinaan.findIndex(x => String(x.id) === String(recordId) || (id && String(x.id) === String(id)));
+        // Edit: pertahankan penulis asli. Baru: isi penulis dari pengguna saat ini (sama dengan backend).
+        const audit = idx !== -1
+            ? { dibuat_oleh_id: appState.pembinaan[idx].dibuat_oleh_id, dibuat_sebagai: appState.pembinaan[idx].dibuat_sebagai }
+            : buildAuditLocal(siswaId);
+        Object.assign(savedRecord, audit);
         if (idx !== -1) {
             appState.pembinaan[idx] = savedRecord;
         } else {
@@ -216,7 +230,11 @@ async function deletePembinaan(id) {
         saveAppStateToLocal();
         renderPembinaanView();
         showToast("Pembinaan dihapus");
-        await apiCall("deletePembinaan", { id }, false);
+        const res = await apiCall("deletePembinaan", { id }, false);
+        if (res && res.status === "error") {
+            showToast(res.message || "Gagal menghapus catatan pembinaan.", "warning");
+            loadPembinaanData(true);
+        }
         checkStudentNotifications();
     }
 }

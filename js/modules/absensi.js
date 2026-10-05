@@ -30,7 +30,7 @@ function renderAbsensiView() {
     const container = document.getElementById("absensi-list-container");
     if (!container) return;
 
-    if (appState.siswa.length === 0) {
+    if (getSiswaPeran().length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-users-slash text-2xl mb-2"></i><p class="text-xs">Belum ada data siswa.</p></div>`;
         return;
     }
@@ -38,7 +38,7 @@ function renderAbsensiView() {
     const tanggalInputEl = document.getElementById("absensi-date");
     const tanggalAktif = tanggalInputEl ? (tanggalInputEl.value || getDateWITA()) : getDateWITA();
     const lockState = getDateLockState(tanggalAktif);
-    const isEditable = !!(appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru') && lockState.editable);
+    const dateEditable = !!(appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru') && lockState.editable);
     const selectedKelas = getEffectiveKelasFilter(document.getElementById("absensi-kelas-filter")?.value || "");
     const siswaScoped = scopeSiswaForUser(appState.siswa);
 
@@ -48,6 +48,10 @@ function renderAbsensiView() {
 
     const filteredSiswa = sortSiswa(rawFiltered);
     const totalSiswa = filteredSiswa.length;
+    // Presensi hanya diisi wali kelas. Baris anak binaan (mentor) baca saja.
+    const rowEditable = s => dateEditable && canWrite('absensi', s);
+    const editableCount = filteredSiswa.filter(rowEditable).length;
+    const isEditable = editableCount > 0;
     let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0;
 
     filteredSiswa.forEach(s => {
@@ -67,6 +71,7 @@ function renderAbsensiView() {
     container.innerHTML = `
         <div class="space-y-3">
             ${renderDateLockBanner(lockState, 'absensi')}
+            ${renderReadOnlyBanner('absensi', 'presensi')}
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-2 justify-between sm:items-center">
                 <div class="flex-1">
                     <label for="absensi-kelas-filter" class="block text-xs font-bold text-slate-400 uppercase mb-1">Filter Kelas</label>
@@ -74,7 +79,7 @@ function renderAbsensiView() {
                         ${kelasOptions}
                     </select>
                 </div>
-                ${isEditable && filteredSiswa.length > 0 ? `
+                ${isEditable ? `
                 <div class="flex items-center gap-1.5 pt-1 sm:pt-4">
                     <button type="button" onclick="setAllAbsensiStatus('H')" class="touch-btn flex-1 sm:flex-none px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-200 transition flex items-center justify-center gap-1.5 shadow-sm" title="Ubah status seluruh siswa jadi Hadir">
                         <i class="fas fa-check-double text-emerald-600"></i> Set Semua Hadir
@@ -136,18 +141,19 @@ function renderAbsensiView() {
                     ${filteredSiswa.map(s => {
         const rec = appState.absensi.find(a => String(a.siswa_id) === String(s.id)) || { status: 'H', waktu_masuk: '' };
         const currentStatus = rec.status || 'H';
+        const editRow = rowEditable(s);
         const noAbsenBadge = s.no_absen ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${s.no_absen}</span>` : '';
 
         return `
                             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                                 <div>
-                                    <h4 class="font-bold text-xs text-slate-800 flex items-center">${noAbsenBadge}${escapeHtml(s.nama)}</h4>
+                                    <h4 class="font-bold text-xs text-slate-800 flex items-center">${noAbsenBadge}${escapeHtml(s.nama)}<span class="ml-1.5">${renderPeranChip(s)}</span></h4>
                                     <span class="text-xs text-slate-400">
                                         <i class="far fa-clock mr-1"></i>${rec.waktu_masuk ? formatDisplayTime(rec.waktu_masuk) : 'Belum Absen'}
                                     </span>
                                 </div>
                                 <div>
-                                    <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" ${isEditable ? '' : 'disabled'} class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700" ${!isEditable ? 'disabled' : ''}>
+                                    <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" ${editRow ? '' : 'disabled'} class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
                                         <option value="H" ${currentStatus === 'H' ? 'selected' : ''}>Hadir (H)</option>
                                         <option value="I" ${currentStatus === 'I' ? 'selected' : ''}>Izin (I)</option>
                                         <option value="S" ${currentStatus === 'S' ? 'selected' : ''}>Sakit (S)</option>
@@ -162,7 +168,7 @@ function renderAbsensiView() {
                     ${isEditable ? `
                     <div class="pt-2">
                         <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl text-xs shadow-md transition flex items-center justify-center gap-2">
-                            <i class="fas fa-save"></i> Simpan Semua Presensi (${filteredSiswa.length} Siswa)
+                            <i class="fas fa-save"></i> Simpan Semua Presensi (${editableCount} Siswa)
                         </button>
                     </div>` : ''}
                 </form>
@@ -182,9 +188,15 @@ async function saveBatchAbsensiForm(event) {
         return;
     }
 
+    // Baris disabled (anak binaan, baca saja) tidak ikut dikirim.
+    const selectElements = document.querySelectorAll(".absensi-select-item:not([disabled])");
+    if (selectElements.length === 0) {
+        showToast("Tidak ada presensi yang dapat disimpan.", "warning");
+        return;
+    }
+
     showLoading("Menyimpan presensi...");
 
-    const selectElements = document.querySelectorAll(".absensi-select-item");
     const payloadAbsensi = [];
 
     selectElements.forEach(select => {
@@ -243,7 +255,7 @@ function setAllAbsensiStatus(targetStatus) {
         return;
     }
 
-    const selects = document.querySelectorAll(".absensi-select-item");
+    const selects = document.querySelectorAll(".absensi-select-item:not([disabled])");
     if (!selects || selects.length === 0) return;
 
     selects.forEach(sel => {
@@ -253,7 +265,7 @@ function setAllAbsensiStatus(targetStatus) {
     updateLiveAbsensiStats();
 
     const labelMap = { 'H': 'Hadir', 'I': 'Izin', 'S': 'Sakit', 'A': 'Alpa', 'T': 'Terlambat' };
-    showToast(`Semua siswa diatur menjadi: ${labelMap[targetStatus] || targetStatus}`);
+    showToast(`Semua siswa yang dapat diisi diatur menjadi: ${labelMap[targetStatus] || targetStatus}`);
 }
 
 function updateLiveAbsensiStats() {

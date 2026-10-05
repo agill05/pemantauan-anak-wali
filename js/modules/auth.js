@@ -616,6 +616,7 @@ function updateRoleVisibility(role) {
             el.classList.add("hidden");
         }
     });
+    if (typeof applyWriteVisibility === "function") applyWriteVisibility();
 }
 
 function applyRoleUI(role) {
