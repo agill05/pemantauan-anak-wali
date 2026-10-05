@@ -12,7 +12,6 @@ async function generateAndShareMagicLink() {
         return;
     }
 
-    // Mentor tidak boleh membuat magic link (hak tulis "magiclink" hanya wali dan admin).
     if (!canWrite("magiclink", siswa)) {
         Swal.fire({ icon: 'info', title: 'Tidak Diizinkan', text: 'Magic link orang tua hanya dapat dibuat oleh wali kelas siswa atau admin.', confirmButtonColor: '#2563eb' });
         return;
@@ -24,7 +23,6 @@ async function generateAndShareMagicLink() {
 
     try {
         const res = await apiCall("createMagicLink", { siswa_id: siswa.id }, false);
-        // Backend mengembalikan magic_token. Token lokal darurat tidak lolos validasi backend.
         if (res && res.status === "success" && (res.magic_token || res.token)) {
             magicToken = res.magic_token || res.token;
         } else if (res && res.status === "error") {

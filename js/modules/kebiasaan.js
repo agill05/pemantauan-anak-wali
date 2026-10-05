@@ -50,7 +50,6 @@ function renderKebiasaanView() {
     const tanggalInput = document.getElementById("kebiasaan-date");
     const tanggal = tanggalInput ? (tanggalInput.value || getDateWITA()) : getDateWITA();
     const lockState = getDateLockState(tanggal);
-    // Kebiasaan hanya diisi wali kelas atau siswa sendiri. Mentor baca saja.
     const roleAllowed = !!appState.user && (
         appState.user.role === 'admin' ||
         (appState.user.role === 'guru' && canWrite('kebiasaan', selectedSiswaId)) ||

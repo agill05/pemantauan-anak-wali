@@ -44,7 +44,6 @@ function switchView(viewId) {
     if (viewId === "admin-manage") renderAdminManage();
 }
 
-// ===== Switcher peran guru (Wali Kelas | Mentor | Semua) =====
 function renderPeranSwitcher() {
     document.getElementById("peran-switcher-sidebar")?.remove();
     document.getElementById("peran-switcher-header")?.remove();
@@ -83,14 +82,12 @@ function renderPeranSwitcher() {
     }
 }
 
-// Dipanggil state.js setelah peran aktif atau flag user berubah.
 function onPeranChanged() {
     if (!appState.user) return;
     renderPeranSwitcher();
     updateHeaderUser();
     applyWriteVisibility();
     if (typeof _refreshAllSiswaDropdowns === "function") _refreshAllSiswaDropdowns();
-    // Notifikasi dan badge ikut peran aktif.
     if (typeof checkStudentNotifications === "function") checkStudentNotifications();
 
     const activeView = document.querySelector(".view-section.active");

@@ -359,7 +359,7 @@ if (document.readyState === "loading") {
 
 async function setupAppSession() {
     if (appState.user && appState.user.mustChangePassword) {
-        hidePostLoginSplash(); // Matikan splash screen agar modal bisa diklik
+        hidePostLoginSplash();
         showForcePasswordChangeModal();
         return;
     }
@@ -433,7 +433,6 @@ async function submitForcePasswordChange(e) {
 
         showToast("Password berhasil diganti. Selamat datang!");
         
-        // Munculkan lagi splash screen untuk lanjut proses login
         showPostLoginSplash("Menyiapkan aplikasi...");
         startSplashAutoProgress();
         
@@ -507,7 +506,6 @@ async function continueSessionSetup() {
         if (bootstrapOk) {
             appState.kelas = resBootstrap.data.initial.kelas || [];
             appState.guru = resBootstrap.data.initial.guru || [];
-            // Simpan gabungan wali + binaan. Tampilan disaring per peran aktif lewat getSiswaPeran().
             appState.siswa = resBootstrap.data.initial.siswa || [];
             appState.myStudents = appState.siswa;
             appState.pengaturan = resBootstrap.data.initial.pengaturan || { nama_kepsek: "", nip_kepsek: "" };
@@ -530,8 +528,6 @@ async function continueSessionSetup() {
         console.error("Kesalahan saat setup sesi:", error);
         showToast("Beberapa data mungkin gagal dimuat.", "warning");
     } finally {
-        // Splash ditutup meskipun ada error, kecuali data awal gagal dimuat
-        // dan tidak ada cache: pengguna harus memilih Coba lagi / Keluar.
         if (!splashBlocked) {
             finishSplashProgress();
             setSplashText("Selesai!");

@@ -44,7 +44,6 @@ async function precacheOne(cache, url) {
         const response = await fetch(new Request(url, { cache: "reload" }));
         if (isCacheable(response)) await cache.put(url, response);
     } catch (err) {
-        // Gagal diunduh: lewati, jangan simpan apa pun.
     }
 }
 
@@ -78,7 +77,6 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
-                // Hanya respons sukses 200 dari origin sendiri yang disimpan.
                 if (isCacheable(networkResponse) && networkResponse.type === "basic") {
                     const responseToCache = networkResponse.clone();
                     event.waitUntil(

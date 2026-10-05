@@ -72,7 +72,6 @@ function renderAkademikNilai() {
         return;
     }
 
-    // Saring sesuai peran aktif. Nilai mapel hanya ditulis wali kelas, mentor baca saja.
     const baseAkademik = scopeBySiswaId(appState.akademik, item => item.siswa_id);
     const filteredAkademik = (filterSiswaId && filterSiswaId !== "ALL")
         ? baseAkademik.filter(item => String(item.siswa_id) === String(filterSiswaId))
@@ -316,7 +315,6 @@ async function savePrestasiForm(e, id) {
     if (res && res.status === "success") {
         const newId = res.id || id || ("PRS-" + Date.now());
         const idx = appState.prestasi.findIndex(x => String(x.id) === String(newId));
-        // Edit: pertahankan penulis asli. Baru: isi penulis dari pengguna saat ini (sama dengan backend).
         const base = idx !== -1 ? appState.prestasi[idx] : buildAuditLocal(payload.siswa_id);
         const savedRecord = { ...base, ...payload, id: newId };
         if (idx !== -1) appState.prestasi[idx] = savedRecord;

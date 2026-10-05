@@ -3,7 +3,7 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
 
     for (let attempt = 1; attempt <= retries; attempt++) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000); // Batas waktu 25 detik
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
 
         try {
             const response = await fetch(API_URL, {
@@ -28,7 +28,7 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
                 }
                 return null;
             }
-            await new Promise(res => setTimeout(res, 1200)); // Jeda sebelum coba lagi
+            await new Promise(res => setTimeout(res, 1200));
         }
     }
 }
@@ -120,7 +120,6 @@ async function fetchAllAppData(force = true) {
     if (resBootstrap && resBootstrap.status === "success") {
         appState.kelas = resBootstrap.data.initial.kelas || [];
         appState.guru = resBootstrap.data.initial.guru || [];
-        // Simpan gabungan wali + binaan. Tampilan disaring per peran aktif lewat getSiswaPeran().
         appState.siswa = resBootstrap.data.initial.siswa || [];
         appState.myStudents = appState.siswa;
         if (resBootstrap.data.initial.pengaturan) appState.pengaturan = resBootstrap.data.initial.pengaturan;

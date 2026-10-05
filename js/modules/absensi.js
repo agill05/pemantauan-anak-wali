@@ -48,7 +48,6 @@ function renderAbsensiView() {
 
     const filteredSiswa = sortSiswa(rawFiltered);
     const totalSiswa = filteredSiswa.length;
-    // Presensi hanya diisi wali kelas. Baris anak binaan (mentor) baca saja.
     const rowEditable = s => dateEditable && canWrite('absensi', s);
     const editableCount = filteredSiswa.filter(rowEditable).length;
     const isEditable = editableCount > 0;
@@ -188,7 +187,6 @@ async function saveBatchAbsensiForm(event) {
         return;
     }
 
-    // Baris disabled (anak binaan, baca saja) tidak ikut dikirim.
     const selectElements = document.querySelectorAll(".absensi-select-item:not([disabled])");
     if (selectElements.length === 0) {
         showToast("Tidak ada presensi yang dapat disimpan.", "warning");

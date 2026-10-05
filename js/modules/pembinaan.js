@@ -56,7 +56,6 @@ function renderPembinaanView() {
     container.innerHTML = filteredPembinaan.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
         const statusBadge = getPembinaanStatusBadge(item.status);
-        // Mentor hanya dapat mengubah catatannya sendiri. Data lama dianggap milik wali.
         const bisaUbah = canEditRecord(item, 'pembinaan');
         const penanda = renderPenulisBadge(item) + renderPeranChip(s);
 
@@ -193,7 +192,6 @@ async function savePembinaanForm(e, id) {
         };
 
         const idx = appState.pembinaan.findIndex(x => String(x.id) === String(recordId) || (id && String(x.id) === String(id)));
-        // Edit: pertahankan penulis asli. Baru: isi penulis dari pengguna saat ini (sama dengan backend).
         const audit = idx !== -1
             ? { dibuat_oleh_id: appState.pembinaan[idx].dibuat_oleh_id, dibuat_sebagai: appState.pembinaan[idx].dibuat_sebagai }
             : buildAuditLocal(siswaId);

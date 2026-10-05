@@ -87,7 +87,6 @@ function renderAdminGuru() {
     `).join("");
 }
 
-// ===== Mentor: helper tampilan =====
 function getBinaanCount(guruId) {
     return (appState.siswa || []).filter(s => String(s.mentor_id || "").trim() === String(guruId)).length;
 }
@@ -140,7 +139,6 @@ function renderAdminSiswa() {
     `).join("");
 }
 
-// ===== Layar Atur Mentor =====
 function renderAdminMentor() {
     const list = document.getElementById("admin-mentor-list");
     if (!list) return;
@@ -173,7 +171,6 @@ function renderAdminMentor() {
     }).join("");
 }
 
-// Status modal Atur Mentor: pilihan hidup di Set, daftar bisa difilter tanpa kehilangan centang.
 let _mentorModal = null;
 
 function openModalMentor(guruId) {

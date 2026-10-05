@@ -10,7 +10,6 @@ async function renderDashboard() {
 
     const statsContainer = document.getElementById("dash-stats-container");
     if (statsContainer) {
-        // Admin: semua siswa. Guru: siswa sesuai peran aktif (wali, mentor, atau semua).
         const totalSiswaCount = getSiswaPeran().length;
         const labelSiswa = role === 'admin' ? 'Siswa' : getLabelSiswa();
         const hadirHariIni = scopeBySiswaId(appState.absensi, a => a.siswa_id).filter(a => a.status === 'H').length;
@@ -165,7 +164,6 @@ function renderPrioritySection(priorityList) {
     const container = document.getElementById("dash-priority-container");
     if (!container) return;
 
-    // Backend mengirim gabungan wali + binaan. Saring sesuai peran aktif.
     priorityList = (priorityList || []).filter(item => isSiswaInPeran(item.siswa));
     const namaSiswa = appState.user && appState.user.role === "admin" ? "siswa" : getLabelSiswa().toLowerCase();
 
@@ -348,14 +346,12 @@ async function markNotifHandledByPembinaan(siswaId, pembinaanId) {
 function renderHandledInfo(n) {
     const h = n.handledBy || {};
     const isSelf = String(h.ditangani_oleh_id) === String(appState.user.id);
-    // Data lama berisi "guru" = wali.
     const roleLabel = ({ admin: 'Admin', mentor: 'Mentor' })[String(h.ditangani_oleh_role || '').toLowerCase()] || 'Wali';
     const oleh = isSelf ? 'Anda' : `${escapeHtml(h.ditangani_oleh_nama || '-')} (${roleLabel})`;
     const via = h.sumber === 'pembinaan' ? 'Ditindaklanjuti lewat catatan pembinaan' : 'Ditangani';
     return `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fas fa-check text-[9px]"></i> ${via} oleh ${oleh} · ${formatTimeAgo(n.dismissedAt)}</span>`;
 }
 
-// Mentor hanya boleh membuka ulang penanda buatan mentor. Mirror handleRestoreNotifDitangani.
 function canRestoreNotif(n) {
     if (!appState.user) return false;
     if (appState.user.role === 'admin') return true;
@@ -391,7 +387,6 @@ async function checkStudentNotifications() {
     let handledList = [];
     const todayStr = getDateWITA();
 
-    // Guru: hanya siswa sesuai peran aktif (wali, mentor, atau semua).
     const peranIds = isGuruUser() ? new Set(getSiswaPeran().map(s => String(s.id))) : null;
 
     const processNotifItem = (item) => {

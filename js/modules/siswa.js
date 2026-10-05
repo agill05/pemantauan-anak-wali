@@ -58,7 +58,6 @@ async function openProfilSiswa(siswaTarget) {
     const container = document.getElementById("profil-siswa-details");
     if (!container) return;
 
-    // Magic link hanya untuk wali kelas dan admin. Mentor baca saja.
     document.getElementById("btn-magiclink-profil")?.classList.toggle("hidden", !(isAdminUser() || isGuruUser()) || !canWrite("magiclink", siswa));
 
     const mentor = siswa.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(siswa.mentor_id)) : null;
@@ -387,7 +386,6 @@ async function hubungiOrtu(siswaId) {
     const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
     const namaKelas = kls ? kls.nama_kelas : '-';
 
-    // Penutup pesan mengikuti peran guru pada siswa ini.
     const sebagaiMentor = isGuruUser() && getEffectiveAccessType(s) === 'mentor';
     const penutup = sebagaiMentor ? 'Mentor / Guru SMPN 1 Talaga Jaya' : 'Wali Kelas / Guru SMPN 1 Talaga Jaya';
 
@@ -516,7 +514,6 @@ function renderSiswaView() {
 
     container.innerHTML = renderReadOnlyBanner('siswa', 'data siswa') + filtered.map(s => {
         const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
-        // Edit/hapus data siswa: admin dan wali kelas. Mentor baca saja.
         const bisaUbahSiswa = canWrite('siswa', s);
         const noAbsenLabel = s.no_absen ? `No. Absen: ${s.no_absen} | ` : '';
 
@@ -661,7 +658,6 @@ async function saveSiswaForm(e, id) {
         nama_ortu: document.getElementById("m-ssw-nama-ortu").value,
     };
 
-    // mentor_id hanya admin, dan hanya dikirim jika berubah. Kiriman guru ditolak backend.
     const mentorSel = document.getElementById("m-ssw-mentor");
     if (isAdminUser() && mentorSel) {
         const lama = id ? String((appState.siswa.find(x => String(x.id) === String(id)) || {}).mentor_id || "").trim() : "";
@@ -706,7 +702,6 @@ function exportSiswaCSV() {
     }
     const rows = sortSiswa(scopeSiswaForUser(appState.siswa)).map(s => {
         const kls = appState.kelas.find(k => String(k.id) === String(s.kelas_id));
-        // mentor_id diekspor sebagai username guru. Import menerima ID atau username.
         const mg = s.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(s.mentor_id)) : null;
         return {
             username: s.username || "",

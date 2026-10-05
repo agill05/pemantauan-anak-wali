@@ -28,7 +28,6 @@ function cariDoaStandar(nama) {
     return found ? found.nama : null;
 }
 
-// Rapikan doa ketikan sendiri. Jika sama dengan doa standar, kembalikan nama standarnya.
 function resolveNamaDoa(input) {
     const norm = normalizeNamaDoa(input);
     if (!norm) return "";
@@ -66,7 +65,6 @@ function getHafalanProgressStats(hafalanList = []) {
     };
 }
 
-// Skor radar keagamaan (0-100). Poin: 1 surah lancar = 1, 1 doa lancar (standar atau tambahan) = 1, 1 jilid Iqro selesai = 2. Target 10 poin = 100.
 function hitungSkorKeagamaan(hafalanList = []) {
     const s = getHafalanProgressStats(hafalanList);
     const poin = s.total.count + s.doa.count + s.doa.tambahan + (s.iqro.count * 2);
@@ -367,7 +365,6 @@ async function saveKeagamaanForm(e, id) {
         catatan: document.getElementById("m-kag-catatan").value
     };
 
-    // Edit: pertahankan penulis asli. Baru: isi penulis dari pengguna saat ini (sama dengan backend).
     const idx = appState.keagamaan.findIndex(x => String(x.id) === String(payload.id));
     const base = idx !== -1 ? appState.keagamaan[idx] : buildAuditLocal(payload.siswa_id);
     const localRec = { ...base, ...payload };

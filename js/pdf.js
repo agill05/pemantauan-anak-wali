@@ -35,7 +35,6 @@ function pdfLoadImage(url) {
                         const c = document.createElement("canvas");
                         c.width = w; c.height = h;
                         const ctx = c.getContext("2d");
-                        // Ratakan ke putih: area transparan jadi putih, bukan hitam di JPEG.
                         ctx.globalCompositeOperation = "source-over";
                         ctx.fillStyle = "#ffffff";
                         ctx.fillRect(0, 0, w, h);
@@ -59,11 +58,11 @@ async function pdfLoadFirstImage(urls) {
     for (const u of urls) {
         const result = await pdfLoadImage(u);
         if (result && result.w > 0) {
-            _pdfImageCache[key] = result; // simpan hanya jika berhasil
+            _pdfImageCache[key] = result;
             return result;
         }
     }
-    return null; // gagal tidak disimpan, percobaan berikutnya coba lagi
+    return null;
 }
 
 function pdfParseColor(v) {
@@ -267,7 +266,6 @@ function pdfFitOneLine(doc, text, maxW, fontStyle, startSize, minSize) {
         doc.setFontSize(size);
     }
     if (doc.getTextWidth(text) > maxW) {
-        // Tetap lebar di ukuran minimum: potong dengan elipsis, tetap satu baris.
         let t = text;
         while (t.length > 1 && doc.getTextWidth(t + "...") > maxW) t = t.slice(0, -1);
         text = t.trimEnd() + "...";
@@ -275,8 +273,6 @@ function pdfFitOneLine(doc, text, maxW, fontStyle, startSize, minSize) {
     return text;
 }
 
-// Teks peran penanda tangan. Guru: dari akses ke siswa (jika ada), lalu peran aktif.
-// Admin dan lainnya: "Wali Kelas" (perilaku lama).
 function getPeranTtdText(siswaRef) {
     if (!isGuruUser()) return "Wali Kelas";
     let t = siswaRef ? getEffectiveAccessType(siswaRef) : null;
@@ -294,7 +290,6 @@ function pdfDrawSignatureBlock(doc, cx, y, lines, name, nip, maxW, lineCount) {
     lines.forEach((ln, i) => doc.text(ln, cx, y + pad + i * 5, { align: "center" }));
     let ny = y + lineCount * 5 + 20;
 
-    // Nama TTD: satu baris. Rapatkan spasi dan hapus baris baru, lalu kecilkan font sampai muat.
     const cleanName = String(name === undefined || name === null ? "" : name).replace(/\s+/g, " ").trim();
     const fitName = pdfFitOneLine(doc, cleanName, maxW, "bold", 11, 6);
     doc.text(fitName, cx, ny, { align: "center" });

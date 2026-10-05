@@ -1,5 +1,3 @@
-// Normalisasi nomor HP ke format lokal 08xxxxxxxxxx.
-// Menangani angka dari Sheets yang kehilangan 0 di depan (812...), awalan 62 / +62, spasi, dan tanda hubung.
 function normalizePhone(phone) {
     let p = String(phone === null || phone === undefined ? '' : phone).replace(/[^0-9]/g, '');
     if (p === '') return '';
@@ -8,7 +6,6 @@ function normalizePhone(phone) {
     return p;
 }
 
-// Format internasional (62xxxxxxxxxx) untuk tautan WhatsApp.
 function toWhatsAppNumber(phone) {
     const p = normalizePhone(phone);
     return p.startsWith('0') ? '62' + p.substring(1) : p;
@@ -70,7 +67,6 @@ function populateSiswaSelectForRole(selectEl, options = {}) {
     const allOption = includeAllOption ? `<option value="ALL">Semua Siswa</option>` : "";
     selectEl.innerHTML = `<option value="" disabled selected>-- Pilih Siswa --</option>` + allOption + siswaOptions;
 
-    // Pulihkan pilihan hanya jika siswa masih ada di peran aktif.
     if (prevValue && Array.from(selectEl.options).some(o => o.value === prevValue)) selectEl.value = prevValue;
 }
 
@@ -108,8 +104,6 @@ function loadAppStateFromLocal() {
             const ownerRole = data.cacheOwnerRole;
             delete data.cacheOwnerId;
             delete data.cacheOwnerRole;
-            // Cache hanya sah jika milik user yang sedang login.
-            // Cache lama tanpa pemilik juga dibuang.
             if (!appState.user || !ownerId || ownerId !== String(appState.user.id) || ownerRole !== appState.user.role) {
                 localStorage.removeItem("cache_appState_full");
                 return false;
@@ -125,14 +119,9 @@ function loadAppStateFromLocal() {
     return false;
 }
 
-// ===== Peran guru: wali kelas / mentor =====
-// Backend mengirim flag turunan di appState.user: is_wali, is_mentor, kelas_wali_id, jumlah_binaan.
-// appState.siswa berisi gabungan anak wali + anak binaan (sudah disaring backend).
-// appState.peranAktif ("wali" | "mentor" | "semua") hanya menyaring tampilan guru. Admin dan siswa: null.
 const PERAN_LABEL = { wali: "Wali Kelas", mentor: "Mentor", semua: "Semua" };
 const PERAN_STORAGE_PREFIX = "peran_aktif_";
 
-// Cermin WRITE_KATEGORI di Kode.gs. Backend tetap penentu akhir.
 const WRITE_KATEGORI_CLIENT = {
     wali: new Set(["siswa", "absensi", "kebiasaan", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink"]),
     mentor: new Set(["keagamaan", "prestasi", "pembinaan"]),
@@ -147,8 +136,6 @@ function isAdminUser() {
     return !!(appState.user && appState.user.role === 'admin');
 }
 
-// ID kelas yang diwalikan guru, atau null. Memakai flag backend; fallback ke pencarian Kelas.guru_id
-// untuk sesi lama yang belum membawa flag.
 function getKelasWaliId() {
     if (!isGuruUser()) return null;
     const flag = appState.user.kelas_wali_id;
@@ -171,7 +158,6 @@ function isMentorUser() {
     return (appState.siswa || []).some(s => String(s.mentor_id || "").trim() === gid);
 }
 
-// Peran yang boleh dipilih guru, urutan: wali, mentor, semua.
 function getPeranTersedia() {
     if (!isGuruUser()) return [];
     const wali = isWaliUser();
@@ -188,7 +174,6 @@ function getPeranAktif() {
     return ada.length > 1 ? "semua" : ada[0];
 }
 
-// Panggil setelah login, pulih sesi, atau flag user berubah.
 function initPeranAktif() {
     if (!isGuruUser()) {
         appState.peranAktif = null;
@@ -211,7 +196,6 @@ function setPeranAktif(peran) {
     if (typeof onPeranChanged === "function") onPeranChanged();
 }
 
-// Gabungkan flag terbaru dari backend (validateSession, refreshToken) ke sesi berjalan.
 function syncUserFlags(fresh) {
     if (!fresh || !appState.user) return;
     if (fresh.id !== undefined && String(fresh.id) !== String(appState.user.id)) return;
@@ -237,7 +221,6 @@ function syncUserFlags(fresh) {
     if (before !== snapshot() && typeof onPeranChanged === "function") onPeranChanged();
 }
 
-// Teks peran statis untuk badge sidebar: dari flag, bukan dari peran aktif.
 function getGuruPeranText() {
     if (!isGuruUser()) return "";
     const wali = isWaliUser();
@@ -248,8 +231,6 @@ function getGuruPeranText() {
     return "";
 }
 
-// ===== Akses per siswa =====
-// Mirror getAccessMap di backend: "admin" | "self" | "wali" | "mentor" | "both" | null.
 function getAccessTypeSiswa(siswa) {
     if (!siswa || !appState.user) return null;
     const role = appState.user.role;
@@ -265,8 +246,6 @@ function getAccessTypeSiswa(siswa) {
     return null;
 }
 
-// Tipe akses setelah dipersempit peran aktif. Siswa "both" saat peran Mentor dihitung mentor,
-// saat peran Wali dihitung wali. Hanya mempersempit, tidak pernah memperluas hak.
 function getEffectiveAccessType(siswa) {
     const raw = getAccessTypeSiswa(siswa);
     if (raw !== "both") return raw;
@@ -287,13 +266,11 @@ function isSiswaInPeran(siswa) {
     return false;
 }
 
-// Penanda per siswa untuk mode Semua: "wali" | "mentor" | "both" | null.
 function getPeranBadgeSiswa(siswa) {
     const raw = getAccessTypeSiswa(siswa);
     return (raw === "wali" || raw === "mentor" || raw === "both") ? raw : null;
 }
 
-// Siswa sesuai peran aktif. Admin dan siswa: semua yang ada di appState.siswa.
 function getSiswaPeran() {
     return (appState.siswa || []).filter(isSiswaInPeran);
 }
@@ -302,7 +279,6 @@ function scopeSiswaForUser(list) {
     return (list || []).filter(isSiswaInPeran);
 }
 
-// Saring daftar apa pun yang punya siswa_id (laporanRekap memakai item.id).
 function scopeBySiswaId(list, getSiswaId) {
     const arr = list || [];
     if (!isGuruUser()) return arr;
@@ -323,8 +299,6 @@ function _resolveSiswaRef(ref) {
     return (appState.siswa || []).find(s => String(s.id) === String(ref)) || null;
 }
 
-// canWrite("pembinaan")            : boleh menulis kategori ini di peran aktif?
-// canWrite("pembinaan", siswaOrId) : boleh menulis untuk siswa ini?
 function canWrite(kategori, siswaRef) {
     const u = appState.user;
     if (!u) return false;
@@ -342,8 +316,6 @@ function canWrite(kategori, siswaRef) {
     return WRITE_KATEGORI_CLIENT.wali.has(kategori) || WRITE_KATEGORI_CLIENT.mentor.has(kategori);
 }
 
-// Ubah/hapus satu catatan. Mentor hanya catatan buatannya sendiri.
-// Data lama (dibuat_oleh_id kosong) dianggap milik wali.
 function canEditRecord(rec, kategori) {
     if (!rec || !appState.user) return false;
     if (appState.user.role === "admin") return true;
@@ -355,7 +327,6 @@ function canEditRecord(rec, kategori) {
     return owner !== "" && owner === String(appState.user.id).trim();
 }
 
-// ===== Label sesuai peran aktif =====
 function getLabelSiswa() {
     const p = getPeranAktif();
     if (p === "wali") return "Anak Wali";
@@ -364,9 +335,6 @@ function getLabelSiswa() {
     return "Siswa";
 }
 
-// ===== Kelas =====
-// Daftar kelas yang muncul di filter. Admin dan siswa: semua.
-// Guru: kelas wali (jika peran Wali/Semua) + kelas tempat anak binaan berada.
 function getVisibleKelas() {
     const all = appState.kelas || [];
     if (!isGuruUser()) return all;
@@ -378,7 +346,6 @@ function getVisibleKelas() {
     return all.filter(k => ids.has(String(k.id)));
 }
 
-// Guru dengan satu kelas terlihat tidak perlu memilih. Lebih dari satu: bebas memilih.
 function isKelasSelectLocked() {
     return isGuruUser() && getVisibleKelas().length <= 1;
 }
@@ -391,8 +358,6 @@ function getEffectiveKelasFilter(rawValue) {
     return "";
 }
 
-// Isi <select> kelas. Guru dengan satu kelas: satu opsi, terpilih. Guru dengan banyak kelas: seperti admin,
-// tetapi hanya kelas terlihat. opts.allLabel: teks opsi "semua". opts.prefix: awalan nama kelas.
 function renderKelasSelectOptions(selectedId, opts = {}) {
     const allLabel = opts.allLabel || "Semua Kelas";
     const prefix = opts.prefix || "";
@@ -413,8 +378,6 @@ function applyKelasSelectLock(selectEl) {
     selectEl.disabled = isKelasSelectLocked();
 }
 
-// ===== Penulis catatan dan daftar tulis (tahap 6) =====
-// Peran penulis catatan baru. Mirror getPeranPadaSiswa di backend: siswa "both" dihitung "wali".
 function getPeranPenulis(siswaRef) {
     const u = appState.user;
     if (!u) return "";
@@ -426,8 +389,6 @@ function getPeranPenulis(siswaRef) {
     return "";
 }
 
-// Kolom audit untuk record lokal baru, supaya tombol edit/hapus benar sebelum sinkron ulang.
-// Backend tetap sumber kebenaran.
 function buildAuditLocal(siswaRef) {
     if (!appState.user) return {};
     return {
@@ -436,7 +397,6 @@ function buildAuditLocal(siswaRef) {
     };
 }
 
-// Siswa yang boleh ditulis untuk kategori ini, sesuai peran aktif. Untuk dropdown modal input.
 function getSiswaWritable(kategori) {
     const list = isGuruUser() ? getSiswaPeran() : (appState.siswa || []);
     return list.filter(s => canWrite(kategori, s));

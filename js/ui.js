@@ -315,7 +315,6 @@ function formatTanggalLabel(tanggal) {
     return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
-// Aturan tanggal isian: hanya hari ini (WITA) yang bisa diisi. Admin boleh mengoreksi tanggal lampau. Tanggal depan terkunci untuk semua.
 function getDateLockState(tanggal) {
     const today = getDateWITA();
     const role = appState.user ? appState.user.role : "";
@@ -380,7 +379,6 @@ function showDateLockedAlert(state) {
     }
 }
 
-// ===== Peran guru di tampilan (tahap 6) =====
 const PENULIS_LABEL = { wali: "Wali", mentor: "Mentor", admin: "Admin" };
 const PENULIS_STYLE = {
     wali: "bg-blue-50 text-blue-700 border-blue-100",
@@ -388,7 +386,6 @@ const PENULIS_STYLE = {
     admin: "bg-slate-100 text-slate-700 border-slate-200"
 };
 
-// Penanda per siswa. Hanya muncul di mode Semua, supaya guru tahu siswa mana anak wali atau binaan.
 function renderPeranChip(siswa) {
     if (getPeranAktif() !== "semua") return "";
     const b = getPeranBadgeSiswa(siswa);
@@ -402,8 +399,6 @@ function renderPeranChip(siswa) {
     return `<span class="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded border ${cls}">${teks}</span>`;
 }
 
-// Penanda penulis catatan. Data lama (dibuat_sebagai kosong) dianggap milik wali.
-// Siswa dan orang tua tidak melihatnya.
 function renderPenulisBadge(rec) {
     const u = appState.user;
     if (!rec || !u || (u.role !== "admin" && u.role !== "guru")) return "";
@@ -428,7 +423,6 @@ function renderBacaSajaBanner(teks) {
     </div>`;
 }
 
-// Banner mode baca saja untuk guru. Kosong jika semua siswa di tampilan boleh ditulis.
 function renderReadOnlyBanner(kategori, modul) {
     if (!isGuruUser()) return "";
     const list = getSiswaPeran();
@@ -440,8 +434,6 @@ function renderReadOnlyBanner(kategori, modul) {
         : `Siswa berlabel Binaan hanya dapat dibaca. Hanya wali kelas yang dapat mengisi ${modul} mereka.`);
 }
 
-// Tampilkan atau sembunyikan tombol [data-write="kategori"] sesuai hak tulis peran aktif.
-// Tetap menghormati data-role-visible.
 function applyWriteVisibility() {
     const role = appState.user ? String(appState.user.role).toLowerCase() : "";
     document.querySelectorAll("[data-write]").forEach(el => {

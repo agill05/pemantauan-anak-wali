@@ -145,7 +145,6 @@ function buildLaporanRekapContent(data) {
     `;
 }
 
-// Judul mengikuti peran aktif: Anak Wali, Anak Binaan, atau gabungan.
 function getLaporanRekapTitle() {
     const nama = isGuruUser() ? getLabelSiswa().toUpperCase() : "ANAK WALI";
     return `LAPORAN REKAPITULASI PEMANTAUAN ${nama}`;
