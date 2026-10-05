@@ -10,7 +10,24 @@
   "theme_color": "#2563eb",
   "lang": "id",
   "icons": [
-    { "src": "assets/img/logo-sekolah.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "assets/img/logo-sekolah.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
-  ]
+    {
+      "src": "assets/img/logo-sekolah.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/logo-sekolah.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "manifest.json"
+    }
+  ],
+  "prefer_related_applications": false
 }
