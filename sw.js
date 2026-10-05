@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v27";
+const CACHE_NAME = "anak-wali-pwa-v28";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -22,6 +22,10 @@ const ASSETS_TO_CACHE = [
     "./js/modules/admin.js",
     "./js/modules/magiclink.js",
     "./js/main.js",
+    "./assets/img/logo-sekolah.png",
+    "./assets/img/logo-sekolah-login.png",
+    "./assets/img/logo-tutwuri.png",
+    "./assets/img/background-sekolah.jpg",
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
     "https://cdn.jsdelivr.net/npm/chart.js",
     "https://cdn.jsdelivr.net/npm/sweetalert2@11",
@@ -30,11 +34,25 @@ const ASSETS_TO_CACHE = [
     "https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"
 ];
 
+function isCacheable(response) {
+    return !!response && response.ok && response.status === 200 &&
+        (response.type === "basic" || response.type === "cors");
+}
+
+async function precacheOne(cache, url) {
+    try {
+        const response = await fetch(new Request(url, { cache: "reload" }));
+        if (isCacheable(response)) await cache.put(url, response);
+    } catch (err) {
+        // Gagal diunduh: lewati, jangan simpan apa pun.
+    }
+}
+
 self.addEventListener("install", (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return Promise.allSettled(ASSETS_TO_CACHE.map((url) => cache.add(url)));
-        }).then(() => self.skipWaiting())
+        caches.open(CACHE_NAME)
+            .then((cache) => Promise.all(ASSETS_TO_CACHE.map((url) => precacheOne(cache, url))))
+            .then(() => self.skipWaiting())
     );
 });
 
@@ -60,11 +78,14 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
+                // Hanya respons sukses 200 dari origin sendiri yang disimpan.
+                if (isCacheable(networkResponse) && networkResponse.type === "basic") {
                     const responseToCache = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseToCache);
-                    });
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then((cache) => cache.put(event.request, responseToCache))
+                            .catch(() => {})
+                    );
                 }
                 return networkResponse;
             })
@@ -74,8 +95,9 @@ self.addEventListener("fetch", (event) => {
                         return cachedResponse;
                     }
                     if (event.request.headers.get("accept")?.includes("text/html")) {
-                        return caches.match("./index.html");
+                        return caches.match("./index.html").then((r) => r || Response.error());
                     }
+                    return Response.error();
                 });
             })
     );

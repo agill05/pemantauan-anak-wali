@@ -9,50 +9,61 @@ const _pdfImageCache = {};
 
 function pdfLoadImage(url) {
     return new Promise(resolve => {
-        const timer = setTimeout(() => resolve(null), 10000);
-        fetch(url, { cache: "reload", mode: 'cors' })
-            .then(res => res.blob())
+        let done = false;
+        const finish = (val) => { if (!done) { done = true; clearTimeout(timer); resolve(val); } };
+        const timer = setTimeout(() => finish(null), 10000);
+        fetch(url, { cache: "reload", mode: "cors" })
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                return res.blob();
+            })
             .then(blob => {
                 const img = new Image();
                 const objUrl = URL.createObjectURL(blob);
                 img.onload = () => {
-                    clearTimeout(timer);
                     try {
                         const MAX_DIM = 400;
                         let w = img.naturalWidth;
                         let h = img.naturalHeight;
+                        if (!w || !h) { finish(null); return; }
                         if (w > MAX_DIM || h > MAX_DIM) {
                             const scale = Math.min(MAX_DIM / w, MAX_DIM / h);
                             w *= scale; h *= scale;
                         }
+                        w = Math.max(1, Math.round(w));
+                        h = Math.max(1, Math.round(h));
                         const c = document.createElement("canvas");
                         c.width = w; c.height = h;
                         const ctx = c.getContext("2d");
-                        ctx.fillStyle = "#ffffff"; // Latar belakang putih
+                        // Ratakan ke putih: area transparan jadi putih, bukan hitam di JPEG.
+                        ctx.globalCompositeOperation = "source-over";
+                        ctx.fillStyle = "#ffffff";
                         ctx.fillRect(0, 0, w, h);
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = "high";
                         ctx.drawImage(img, 0, 0, w, h);
-                        URL.revokeObjectURL(objUrl);
-                        resolve({ data: c.toDataURL("image/jpeg", 0.9), w: c.width, h: c.height });
-                    } catch (e) { resolve(null); }
+                        finish({ data: c.toDataURL("image/jpeg", 0.92), w, h });
+                    } catch (e) { finish(null); }
+                    URL.revokeObjectURL(objUrl);
                 };
-                img.onerror = () => { clearTimeout(timer); URL.revokeObjectURL(objUrl); resolve(null); };
+                img.onerror = () => { URL.revokeObjectURL(objUrl); finish(null); };
                 img.src = objUrl;
             })
-            .catch(() => { clearTimeout(timer); resolve(null); });
+            .catch(() => finish(null));
     });
 }
 
 async function pdfLoadFirstImage(urls) {
     const key = urls[0];
-    if (key in _pdfImageCache) return _pdfImageCache[key];
-    let result = null;
+    if (_pdfImageCache[key]) return _pdfImageCache[key];
     for (const u of urls) {
-        result = await pdfLoadImage(u);
-        if (result && result.w > 0) break;
-        result = null;
+        const result = await pdfLoadImage(u);
+        if (result && result.w > 0) {
+            _pdfImageCache[key] = result; // simpan hanya jika berhasil
+            return result;
+        }
     }
-    _pdfImageCache[key] = result;
-    return result;
+    return null; // gagal tidak disimpan, percobaan berikutnya coba lagi
 }
 
 function pdfParseColor(v) {
@@ -126,7 +137,7 @@ function pdfDrawLogo(doc, img, boxX, boxY, box) {
     if (!img) return;
     const scale = Math.min(box / img.w, box / img.h);
     const w = img.w * scale, h = img.h * scale;
-    doc.addImage(img.data, "PNG", boxX + (box - w) / 2, boxY + (box - h) / 2, w, h);
+    doc.addImage(img.data, "JPEG", boxX + (box - w) / 2, boxY + (box - h) / 2, w, h);
 }
 
 function pdfDrawKop(doc, pageW, y0, logoL, logoR) {
@@ -247,31 +258,41 @@ function pdfDrawTable(doc, tableEl, y, usableW) {
     return doc.lastAutoTable.finalY + 5;
 }
 
+function pdfFitOneLine(doc, text, maxW, fontStyle, startSize, minSize) {
+    let size = startSize;
+    doc.setFont(PDF_FONT, fontStyle);
+    doc.setFontSize(size);
+    while (doc.getTextWidth(text) > maxW && size > minSize) {
+        size -= 0.25;
+        doc.setFontSize(size);
+    }
+    if (doc.getTextWidth(text) > maxW) {
+        // Tetap lebar di ukuran minimum: potong dengan elipsis, tetap satu baris.
+        let t = text;
+        while (t.length > 1 && doc.getTextWidth(t + "...") > maxW) t = t.slice(0, -1);
+        text = t.trimEnd() + "...";
+    }
+    return text;
+}
+
 function pdfDrawSignatureBlock(doc, cx, y, lines, name, nip, maxW, lineCount) {
     doc.setFont(PDF_FONT, "normal");
     doc.setFontSize(11);
     const pad = (lineCount - lines.length) * 5;
     lines.forEach((ln, i) => doc.text(ln, cx, y + pad + i * 5, { align: "center" }));
     let ny = y + lineCount * 5 + 20;
-    
-    // Auto-shrink font untuk Nama TTD
-    let currentFontSize = 11;
-    doc.setFont(PDF_FONT, "bold");
-    doc.setFontSize(currentFontSize);
-    while (doc.getTextWidth(name) > maxW && currentFontSize > 7) {
-        currentFontSize -= 0.5;
-        doc.setFontSize(currentFontSize);
-    }
-    
-    doc.text(name, cx, ny, { align: "center" });
-    const w = doc.getTextWidth(name);
+
+    // Nama TTD: satu baris. Rapatkan spasi dan hapus baris baru, lalu kecilkan font sampai muat.
+    const cleanName = String(name === undefined || name === null ? "" : name).replace(/\s+/g, " ").trim();
+    const fitName = pdfFitOneLine(doc, cleanName, maxW, "bold", 11, 6);
+    doc.text(fitName, cx, ny, { align: "center" });
+    const w = doc.getTextWidth(fitName);
     doc.setLineWidth(0.25);
     doc.line(cx - w / 2, ny + 1, cx + w / 2, ny + 1);
     ny += 5;
     if (nip !== undefined && nip !== null) {
-        doc.setFont(PDF_FONT, "normal");
-        doc.setFontSize(10);
-        doc.text(`NIP.${nip}`, cx, ny, { align: "center" });
+        const fitNip = pdfFitOneLine(doc, `NIP.${String(nip).replace(/\s+/g, " ").trim()}`, maxW, "normal", 10, 7);
+        doc.text(fitNip, cx, ny, { align: "center" });
     }
 }
 
