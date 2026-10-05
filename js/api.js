@@ -2,23 +2,31 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
     if (showFullLoader) showLoading();
 
     for (let attempt = 1; attempt <= retries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000); // Batas waktu 25 detik
+
         try {
             const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: action, token: appState.token, payload: payload })
+                body: JSON.stringify({ action: action, token: appState.token, payload: payload }),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
             const json = await response.json();
             if (showFullLoader) hideLoading();
             return json;
         } catch (err) {
+            clearTimeout(timeoutId);
             console.error(`Attempt ${attempt} failed:`, err);
+            
             if (attempt === retries) {
                 if (showFullLoader) hideLoading();
-                showToast("Koneksi terputus. Menyimpan lokal.", "warning");
+                const isTimeout = err.name === 'AbortError';
+                showToast(isTimeout ? "Koneksi lambat (Timeout). Menyimpan lokal." : "Koneksi terputus. Menyimpan lokal.", "warning");
                 return null;
             }
-            await new Promise(res => setTimeout(res, 1200));
+            await new Promise(res => setTimeout(res, 1200)); // Jeda sebelum coba lagi
         }
     }
 }

@@ -338,6 +338,7 @@ if (document.readyState === "loading") {
 
 async function setupAppSession() {
     if (appState.user && appState.user.mustChangePassword) {
+        hidePostLoginSplash(); // Matikan splash screen agar modal bisa diklik
         showForcePasswordChangeModal();
         return;
     }
@@ -410,6 +411,11 @@ async function submitForcePasswordChange(e) {
         }
 
         showToast("Password berhasil diganti. Selamat datang!");
+        
+        // Munculkan lagi splash screen untuk lanjut proses login
+        showPostLoginSplash("Menyiapkan aplikasi...");
+        startSplashAutoProgress();
+        
         await continueSessionSetup();
     } else {
         if (btn) {
@@ -422,69 +428,79 @@ async function submitForcePasswordChange(e) {
 }
 
 async function continueSessionSetup() {
-    applyRoleUI(appState.user.role);
-    startSilentTokenRefresh();
-    setupNetworkStatusListeners();
+    try {
+        applyRoleUI(appState.user.role);
+        startSilentTokenRefresh();
+        setupNetworkStatusListeners();
 
-    const loginView = document.getElementById("view-login");
-    const mainHeader = document.getElementById("main-header");
-    const mainContent = document.getElementById("main-content");
-    const bottomNav = document.getElementById("bottom-nav");
+        const loginView = document.getElementById("view-login");
+        const mainHeader = document.getElementById("main-header");
+        const mainContent = document.getElementById("main-content");
+        const bottomNav = document.getElementById("bottom-nav");
 
-    if (loginView) { loginView.classList.remove("active"); loginView.classList.add("hidden"); }
-    if (mainHeader) mainHeader.classList.remove("hidden");
-    if (mainContent) mainContent.classList.remove("hidden");
-    if (bottomNav) bottomNav.classList.remove("hidden");
+        if (loginView) { loginView.classList.remove("active"); loginView.classList.add("hidden"); }
+        if (mainHeader) mainHeader.classList.remove("hidden");
+        if (mainContent) mainContent.classList.remove("hidden");
+        if (bottomNav) bottomNav.classList.remove("hidden");
 
-    const userAvatar = document.getElementById("user-avatar");
+        const userAvatar = document.getElementById("user-avatar");
 
-    if (userAvatar) userAvatar.src = appState.user.foto || (getInitialsAvatar(appState.user.nama));
-    updateHeaderUser();
-    startHeaderDateTimeClock();
+        if (userAvatar) userAvatar.src = appState.user.foto || (getInitialsAvatar(appState.user.nama));
+        updateHeaderUser();
+        startHeaderDateTimeClock();
 
-    const sbAvatar = document.getElementById("sidebar-avatar");
-    const sbNama = document.getElementById("sidebar-nama");
-    const sbRole = document.getElementById("sidebar-role-badge");
-    if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
-    if (sbNama) sbNama.innerText = appState.user.nama;
-    if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
-    renderSidebarMenu(appState.user.role);
+        const sbAvatar = document.getElementById("sidebar-avatar");
+        const sbNama = document.getElementById("sidebar-nama");
+        const sbRole = document.getElementById("sidebar-role-badge");
+        if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
+        if (sbNama) sbNama.innerText = appState.user.nama;
+        if (sbRole) sbRole.innerText = appState.user.role.toUpperCase();
+        renderSidebarMenu(appState.user.role);
 
-    document.documentElement.classList.add("has-session");
+        document.documentElement.classList.add("has-session");
 
-    const hasCachedData = loadAppStateFromLocal();
+        const hasCachedData = loadAppStateFromLocal();
 
-    const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
-    switchView(targetView);
+        const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
+        switchView(targetView);
 
-    setSplashStage("session");
+        setSplashStage("session");
+        setSplashStage("data");
+        
+        const resBootstrap = await apiCall("getBootstrapData", {}, false);
+        
+        setSplashStage("dashboard");
+        if (resBootstrap && resBootstrap.status === "success") {
+            appState.kelas = resBootstrap.data.initial.kelas || [];
+            appState.guru = resBootstrap.data.initial.guru || [];
+            appState.siswa = resBootstrap.data.initial.siswa || [];
+            appState.myStudents = resBootstrap.data.initial.siswa || [];
+            appState.pengaturan = resBootstrap.data.initial.pengaturan || { nama_kepsek: "", nip_kepsek: "" };
+            saveAppStateToLocal();
+        }
 
-    setSplashStage("data");
-    const resBootstrap = await apiCall("getBootstrapData", {}, false);
-    setSplashStage("dashboard");
-    if (resBootstrap && resBootstrap.status === "success") {
-        appState.kelas = resBootstrap.data.initial.kelas || [];
-        appState.guru = resBootstrap.data.initial.guru || [];
-        appState.siswa = resBootstrap.data.initial.siswa || [];
-        appState.myStudents = resBootstrap.data.initial.siswa || [];
-        appState.pengaturan = resBootstrap.data.initial.pengaturan || { nama_kepsek: "", nip_kepsek: "" };
-        saveAppStateToLocal();
+        if (typeof _refreshAllSiswaDropdowns === "function") {
+            _refreshAllSiswaDropdowns();
+        }
+
+        if (targetView === "dashboard") {
+            renderDashboard();
+        }
+
+        startRealtimeNotificationPolling();
+        startDataPolling();
+        checkStudentNotifications();
+
+    } catch (error) {
+        console.error("Kesalahan saat setup sesi:", error);
+        showToast("Beberapa data mungkin gagal dimuat.", "warning");
+    } finally {
+        // Blok finally menjamin splash ditutup meskipun ada error
+        finishSplashProgress();
+        setSplashText("Selesai!");
+        await new Promise(resolve => setTimeout(resolve, 250));
+        hidePostLoginSplash();
     }
-
-    _refreshAllSiswaDropdowns();
-
-    if (targetView === "dashboard") {
-        renderDashboard();
-    }
-
-    startRealtimeNotificationPolling();
-    startDataPolling();
-    checkStudentNotifications();
-
-    finishSplashProgress();
-    setSplashText("Selesai!");
-    await new Promise(resolve => setTimeout(resolve, 250));
-    hidePostLoginSplash();
 }
 
 function startHeaderDateTimeClock() {

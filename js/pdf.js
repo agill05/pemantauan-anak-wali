@@ -10,21 +10,36 @@ const _pdfImageCache = {};
 
 function pdfLoadImage(url) {
     return new Promise(resolve => {
-        const img = new Image();
-        const timer = setTimeout(() => resolve(null), 6000);
-        if (/^https?:/i.test(url)) img.crossOrigin = "anonymous";
-        img.onload = () => {
-            clearTimeout(timer);
-            try {
-                const c = document.createElement("canvas");
-                c.width = img.naturalWidth;
-                c.height = img.naturalHeight;
-                c.getContext("2d").drawImage(img, 0, 0);
-                resolve({ data: c.toDataURL("image/png"), w: c.width, h: c.height });
-            } catch (e) { resolve(null); }
-        };
-        img.onerror = () => { clearTimeout(timer); resolve(null); };
-        img.src = url;
+        const timer = setTimeout(() => resolve(null), 10000);
+        fetch(url, { cache: "reload", mode: 'cors' })
+            .then(res => res.blob())
+            .then(blob => {
+                const img = new Image();
+                const objUrl = URL.createObjectURL(blob);
+                img.onload = () => {
+                    clearTimeout(timer);
+                    try {
+                        const MAX_DIM = 400;
+                        let w = img.naturalWidth;
+                        let h = img.naturalHeight;
+                        if (w > MAX_DIM || h > MAX_DIM) {
+                            const scale = Math.min(MAX_DIM / w, MAX_DIM / h);
+                            w *= scale; h *= scale;
+                        }
+                        const c = document.createElement("canvas");
+                        c.width = w; c.height = h;
+                        const ctx = c.getContext("2d");
+                        ctx.fillStyle = "#ffffff"; // Latar belakang putih
+                        ctx.fillRect(0, 0, w, h);
+                        ctx.drawImage(img, 0, 0, w, h);
+                        URL.revokeObjectURL(objUrl);
+                        resolve({ data: c.toDataURL("image/jpeg", 0.9), w: c.width, h: c.height });
+                    } catch (e) { resolve(null); }
+                };
+                img.onerror = () => { clearTimeout(timer); URL.revokeObjectURL(objUrl); resolve(null); };
+                img.src = objUrl;
+            })
+            .catch(() => { clearTimeout(timer); resolve(null); });
     });
 }
 
@@ -239,14 +254,21 @@ function pdfDrawSignatureBlock(doc, cx, y, lines, name, nip, maxW, lineCount) {
     const pad = (lineCount - lines.length) * 5;
     lines.forEach((ln, i) => doc.text(ln, cx, y + pad + i * 5, { align: "center" }));
     let ny = y + lineCount * 5 + 20;
+    
+    // Auto-shrink font untuk Nama TTD
+    let currentFontSize = 11;
     doc.setFont(PDF_FONT, "bold");
-    doc.splitTextToSize(name, maxW).forEach(line => {
-        doc.text(line, cx, ny, { align: "center" });
-        const w = doc.getTextWidth(line);
-        doc.setLineWidth(0.25);
-        doc.line(cx - w / 2, ny + 1, cx + w / 2, ny + 1);
-        ny += 5;
-    });
+    doc.setFontSize(currentFontSize);
+    while (doc.getTextWidth(name) > maxW && currentFontSize > 7) {
+        currentFontSize -= 0.5;
+        doc.setFontSize(currentFontSize);
+    }
+    
+    doc.text(name, cx, ny, { align: "center" });
+    const w = doc.getTextWidth(name);
+    doc.setLineWidth(0.25);
+    doc.line(cx - w / 2, ny + 1, cx + w / 2, ny + 1);
+    ny += 5;
     if (nip !== undefined && nip !== null) {
         doc.setFont(PDF_FONT, "normal");
         doc.setFontSize(10);

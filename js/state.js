@@ -94,3 +94,9 @@ function loadAppStateFromLocal() {
     }
     return false;
 }
+
+function getGuruKelasId() {
+    if (!appState.user || appState.user.role !== 'guru') return null;
+    const kls = appState.kelas.find(k => String(k.guru_id) === String(appState.user.id));
+    return kls ? kls.id : null;
+}

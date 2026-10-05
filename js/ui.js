@@ -378,3 +378,10 @@ function showDateLockedAlert(state) {
         });
     }
 }
+
+function normalizePhone(phone) {
+    let p = String(phone || '').replace(/[^0-9]/g, '');
+    if (p.startsWith('62')) p = '0' + p.substring(2);
+    else if (p.startsWith('8')) p = '0' + p;
+    return p;
+}
