@@ -3,6 +3,7 @@ const CACHE_NAME = "anak-wali-pwa-v31";
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",
+    "./manifest.json",
     "./css/style.css",
     "./css/tailwind.css",
     "./js/config.js",
@@ -10,6 +11,7 @@ const ASSETS_TO_CACHE = [
     "./js/api.js",
     "./js/ui.js",
     "./js/pdf.js",
+    "./js/install.js",
     "./js/modules/auth.js",
     "./js/modules/absensi.js",
     "./js/modules/kebiasaan.js",

@@ -976,6 +976,36 @@ body.dark .text-slate-400 {
     outline-offset: 2px;
 }
 
+.lg-install {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 46px;
+    margin-top: 0.75rem;
+    border: 1.5px solid var(--lg-primary);
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--lg-primary);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.lg-install:hover {
+    background: #eff6ff;
+}
+
+.lg-install:focus-visible {
+    outline: 3px solid var(--lg-primary);
+    outline-offset: 2px;
+}
+
+.lg-install[hidden] {
+    display: none;
+}
+
 .lg-hint {
     margin: 0.4rem 0 0;
     font-size: 0.8125rem;

@@ -1,0 +1,16 @@
+{
+  "name": "Aplikasi Pemantauan Anak Wali - SMPN 1 Talaga Jaya",
+  "short_name": "Anak Wali",
+  "description": "Pantau presensi, 7 Kebiasaan Hebat, hafalan, dan pembinaan siswa SMP Negeri 1 Talaga Jaya.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "lang": "id",
+  "icons": [
+    { "src": "assets/img/logo-sekolah.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/logo-sekolah.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
