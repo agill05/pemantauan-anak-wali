@@ -37,6 +37,7 @@ let appState = {
     myStudents: [],
     peranAktif: null,
     absensi: [],
+    absensiMentor: [],
     kebiasaan: [],
     jurnal: [],
     keagamaan: [],
@@ -103,7 +104,7 @@ function bersihkanJejakSiswaLokal(daftarId) {
     const idSiswa = r => String(r && (r.siswa_id !== undefined ? r.siswa_id : (r.siswaId !== undefined ? r.siswaId : "")));
     const bukanTerhapus = r => !ids.has(idSiswa(r));
 
-    ["absensi", "kebiasaan", "keagamaan", "akademik", "prestasi", "pembinaan", "jurnal", "currentNotifications", "handledNotifications", "notifDitangani"].forEach(k => {
+    ["absensi", "absensiMentor", "kebiasaan", "keagamaan", "akademik", "prestasi", "pembinaan", "jurnal", "currentNotifications", "handledNotifications", "notifDitangani"].forEach(k => {
         if (Array.isArray(appState[k])) appState[k] = appState[k].filter(bukanTerhapus);
     });
     ["siswa", "myStudents", "laporanRekap"].forEach(k => {
@@ -175,7 +176,7 @@ const PERAN_STORAGE_PREFIX = "peran_aktif_";
 
 const WRITE_KATEGORI_CLIENT = {
     wali: new Set(["siswa", "ambil_siswa", "absensi", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan"]),
-    mentor: new Set(["ambil_siswa", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan"]),
+    mentor: new Set(["ambil_siswa", "absensi_mentor", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan"]),
     self: new Set(["kebiasaan", "jurnal"])
 };
 
