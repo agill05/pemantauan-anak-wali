@@ -1,22 +1,12 @@
-// =====================================================================
-// MODUL KEBIASAAN (Tahap 3)
-// Tab: Hari Ini | Kalender. Status hanya "Sudah" atau "Belum".
-// Setiap kebiasaan punya jam dan detail. Poin, streak, badge dihitung server.
-// Memakai: MASTER_KEBIASAAN, applyKonfigKebiasaan (config.js), canWrite (state.js),
-// getDateLockState (ui.js), apiCall (api.js).
-// =====================================================================
 
 let kebiasaanLoadedTanggal = null;
-let kebiasaanTab = "hari-ini";            // "hari-ini" | "kalender"
+let kebiasaanTab = "hari-ini";
 let kebiasaanKonfigLoaded = false;
-let kebiasaanRingkasan = {};              // siswa_id -> { data, waktu }
-let kebiasaanKalender = { bulan: null, data: {}, siswa: null }; // bulan "yyyy-MM"
+let kebiasaanRingkasan = {};
+let kebiasaanKalender = { bulan: null, data: {}, siswa: null };
 const RINGKASAN_TTL = 60 * 1000;
-const K7_PAGI_IDS = ["K1", "K2", "K3", "K4"]; // rutinitas pagi untuk isi cepat
+const K7_PAGI_IDS = ["K1", "K2", "K3", "K4"];
 
-// ---------------------------------------------------------------------
-// Konfigurasi dari server
-// ---------------------------------------------------------------------
 async function ensureKonfigKebiasaan(force = false) {
     if (kebiasaanKonfigLoaded && !force) return;
     const res = await apiCall("getKonfigKebiasaan", {}, false, 2, true);
@@ -25,7 +15,6 @@ async function ensureKonfigKebiasaan(force = false) {
         kebiasaanKonfigLoaded = true;
         try { localStorage.setItem("cache_konfig_kebiasaan", JSON.stringify(res.data)); } catch (e) { }
     } else if (!kebiasaanKonfigLoaded) {
-        // Offline: pakai salinan terakhir jika ada.
         try {
             const cached = JSON.parse(localStorage.getItem("cache_konfig_kebiasaan") || "null");
             if (Array.isArray(cached) && cached.length > 0) applyKonfigKebiasaan(cached);
@@ -52,9 +41,6 @@ function bisaIsiKebiasaan(siswaId) {
     return false;
 }
 
-// ---------------------------------------------------------------------
-// Muat data
-// ---------------------------------------------------------------------
 async function loadKebiasaanData(forceRefresh = false) {
     const dateInput = document.getElementById("kebiasaan-date");
     const tanggal = dateInput ? (dateInput.value || getDateWITA()) : getDateWITA();
@@ -80,7 +66,6 @@ async function loadKebiasaanData(forceRefresh = false) {
         renderSkeleton("kebiasaan-list-container", 4);
     }
 
-    // Jangan timpa data lokal selama masih ada perubahan yang belum terkirim.
     if (pendingKebiasaanQueue.size > 0) { renderKebiasaanView(); return; }
 
     if (forceRefresh || isStale || !sameDate || !appState.kebiasaan || appState.kebiasaan.length === 0) {
@@ -115,9 +100,6 @@ function onKebiasaanSiswaChange() {
     if (kebiasaanTab === "kalender") loadKalenderKebiasaan();
 }
 
-// ---------------------------------------------------------------------
-// Tab
-// ---------------------------------------------------------------------
 function renderKebiasaanTabs() {
     const wrap = document.getElementById("kebiasaan-tabs");
     if (!wrap) return;
@@ -139,9 +121,6 @@ function setKebiasaanTab(tab) {
     else renderKebiasaanView();
 }
 
-// ---------------------------------------------------------------------
-// Tampilan utama
-// ---------------------------------------------------------------------
 function renderKebiasaanView() {
     if (kebiasaanTab === "kalender") { loadKalenderKebiasaan(); return; }
 
@@ -271,9 +250,6 @@ function renderKebiasaanView() {
         </div>`;
 }
 
-// ---------------------------------------------------------------------
-// Modal isi jam dan detail
-// ---------------------------------------------------------------------
 function bukaModalKebiasaan(siswaId, kebiasaanId) {
     if (!bisaIsiKebiasaan(siswaId)) {
         showToast("Anda tidak dapat mengisi kebiasaan siswa ini.", "warning");
@@ -344,9 +320,6 @@ function simpanKebiasaanModal(siswaId, kebiasaanId, status) {
     simpanKebiasaanItem(siswaId, kebiasaanId, status, jam, detail);
 }
 
-// ---------------------------------------------------------------------
-// Simpan (optimistik + antrean ulang)
-// ---------------------------------------------------------------------
 function simpanKebiasaanItem(siswaId, kebiasaanId, status, jam, detail) {
     if (!bisaIsiKebiasaan(siswaId)) {
         showToast("Anda tidak dapat mengisi kebiasaan siswa ini.", "warning");
@@ -394,11 +367,9 @@ function antrekanKebiasaan(siswaId, tanggal, kebiasaanId, status, jam, detail) {
     kebiasaanDebounceTimer = setTimeout(() => { flushKebiasaanQueue(); }, 600);
 }
 
-// Dipanggil juga dari main.js saat pindah halaman.
 async function flushKebiasaanQueue() {
     if (pendingKebiasaanQueue.size === 0) return;
 
-    // Kelompokkan per siswa dan tanggal agar satu permintaan membawa banyak item.
     const grup = new Map();
     pendingKebiasaanQueue.forEach((item, key) => {
         const g = `${item.siswa_id}|${item.tanggal}`;
@@ -415,12 +386,10 @@ async function flushKebiasaanQueue() {
         if (res && res.status === "success") {
             g.keys.forEach(k => pendingKebiasaanQueue.delete(k));
         } else if (res && res.status === "error") {
-            // Kesalahan permanen: buang dari antrean, jangan diulang.
             g.keys.forEach(k => pendingKebiasaanQueue.delete(k));
             if (res.code === "DATE_LOCKED" || res.code === "DATE_FUTURE") pesanKunci = res.message;
             else pesanGalat = res.message || "Data kebiasaan ditolak server.";
         }
-        // res === null: jaringan putus. Item tetap di antrean untuk dicoba lagi.
     }
 
     if (pesanKunci || pesanGalat) {
@@ -459,9 +428,6 @@ function updateKebiasaanSaveStatus(state) {
     }
 }
 
-// ---------------------------------------------------------------------
-// Isi cepat pagi (satu permintaan batch)
-// ---------------------------------------------------------------------
 async function isiCepatPagi(siswaId) {
     if (!bisaIsiKebiasaan(siswaId)) return;
     const tanggal = getTanggalKebiasaan();
@@ -517,14 +483,10 @@ async function isiCepatPagi(siswaId) {
         Swal.fire({ icon: "warning", title: "Data Tidak Tersimpan", text: res.message || "Ditolak server.", confirmButtonColor: "#2563eb" });
         loadKebiasaanData(true);
     } else {
-        // Jaringan putus: masukkan ke antrean agar dicoba lagi.
         items.forEach(it => antrekanKebiasaan(siswaId, tanggal, it.kebiasaan_id, "Sudah", it.jam, it.detail));
     }
 }
 
-// ---------------------------------------------------------------------
-// Kalender bulanan
-// ---------------------------------------------------------------------
 function bulanSekarang() { return getDateWITA().slice(0, 7); }
 
 function geserBulanKebiasaan(delta) {
@@ -580,7 +542,7 @@ function renderKalenderKebiasaan() {
     const bulan = kebiasaanKalender.bulan || bulanSekarang();
     const [tahun, bln] = bulan.split("-").map(Number);
     const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-    const hariPertama = new Date(Date.UTC(tahun, bln - 1, 1)).getUTCDay(); // 0 = Minggu
+    const hariPertama = new Date(Date.UTC(tahun, bln - 1, 1)).getUTCDay();
     const jumlahHari = new Date(Date.UTC(tahun, bln, 0)).getUTCDate();
     const total = MASTER_KEBIASAAN.length;
     const hariIni = getDateWITA();
@@ -641,9 +603,6 @@ function lompatKeTanggalKebiasaan(tanggal) {
     loadKebiasaanData(true);
 }
 
-// ---------------------------------------------------------------------
-// Cetak PDF ringkasan (laporan lengkap ada di Tahap 4)
-// ---------------------------------------------------------------------
 function cetakPDFKebiasaan() {
     const selectedSiswaId = getSiswaKebiasaanTerpilih();
     if (!selectedSiswaId || selectedSiswaId === "ALL") {

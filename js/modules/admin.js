@@ -625,16 +625,10 @@ function _downloadCSVString(csvContent, filename) {
 }
 
 
-// =====================================================================
-// PENGATURAN KEBIASAAN (Tahap 4, admin)
-// Sumber data: sheet KonfigKebiasaan lewat getKonfigKebiasaan / saveKonfigKebiasaan.
-// Kebiasaan tidak dihapus, hanya dinonaktifkan, supaya riwayat siswa tetap utuh.
-// =====================================================================
 let adminKonfigKebiasaan = [];
 let adminKonfigMemuat = false;
 let adminKonfigMenyimpan = false;
 
-// Literal penuh supaya Tailwind menyertakan kelasnya saat build.
 const PALET_KEBIASAAN = [
     { label: "Kuning", kelas: "text-amber-500 bg-amber-50" },
     { label: "Hijau", kelas: "text-emerald-500 bg-emerald-50" },
@@ -652,7 +646,6 @@ const PALET_KEBIASAAN = [
 
 function terapkanKonfigAdmin(list) {
     adminKonfigKebiasaan = (list || []).slice().sort((a, b) => (a.urutan || 0) - (b.urutan || 0));
-    // Sinkronkan daftar yang dipakai layar kebiasaan di perangkat ini.
     if (typeof applyKonfigKebiasaan === "function") applyKonfigKebiasaan(adminKonfigKebiasaan);
     try { localStorage.setItem("cache_konfig_kebiasaan", JSON.stringify(adminKonfigKebiasaan.filter(k => k.aktif !== false))); } catch (e) { }
     if (typeof kebiasaanKonfigLoaded !== "undefined") kebiasaanKonfigLoaded = true;
@@ -704,7 +697,6 @@ function gambarAdminKebiasaan() {
     }).join("") || `<div class="empty-state"><p class="text-xs text-slate-500">Belum ada kebiasaan.</p></div>`;
 }
 
-// Kirim ke server. Berhasil: ganti daftar lokal dengan hasil server.
 async function kirimKonfigKebiasaan(items) {
     if (adminKonfigMenyimpan) return null;
     adminKonfigMenyimpan = true;
@@ -723,14 +715,13 @@ async function kirimKonfigKebiasaan(items) {
     return null;
 }
 
-// Tukar urutan dua kebiasaan yang bersebelahan. Hanya dua baris yang dikirim.
 async function geserKebiasaan(idx, arah) {
     const a = adminKonfigKebiasaan[idx];
     const b = adminKonfigKebiasaan[idx + arah];
     if (!a || !b) return;
     const urutA = Number(a.urutan) || (idx + 1);
     let urutB = Number(b.urutan) || (idx + arah + 1);
-    if (urutA === urutB) urutB = urutA + arah; // urutan kembar: pisahkan dulu
+    if (urutA === urutB) urutB = urutA + arah;
     const res = await kirimKonfigKebiasaan([
         Object.assign({}, a, { urutan: urutB }),
         Object.assign({}, b, { urutan: urutA })
@@ -852,15 +843,11 @@ async function simpanFormKebiasaan(e, id) {
     }
 }
 
-// =====================================================================
-// TAHAP 5 - ARSIP SEMESTER (halaman admin)
-// Tempel di BAGIAN PALING BAWAH js/modules/admin.js.
-// =====================================================================
 
 let arsipDaftar = [];
 let arsipMemuat = false;
 let arsipSibuk = false;
-let arsipLihat = null; // { nama, jenis, judul, offset, total, q, kelas, headers, seq }
+let arsipLihat = null;
 const ARSIP_PER_HALAMAN = 100;
 
 const ARSIP_KOLOM = {
@@ -948,9 +935,6 @@ function arsipGambarDaftar() {
     }).join("");
 }
 
-// ---------------------------------------------------------------------
-// BUAT ARSIP
-// ---------------------------------------------------------------------
 function arsipBacaForm() {
     const ta = (document.getElementById("arsip-ta")?.value || "").trim();
     const semester = document.getElementById("arsip-semester")?.value || "";
@@ -971,7 +955,6 @@ function arsipBacaForm() {
     return { tahun_ajaran: ta, semester: semester, sampai_tanggal: sampai };
 }
 
-// Panggil archiveSemester. Tanpa retry otomatis (retry bisa menjalankan arsip dua kali). Batas waktu 170 detik.
 async function arsipPanggil(payload, teks) {
     showLoading(teks);
     const res = await apiCall("archiveSemester", payload, false, 1, true, 170000);
@@ -1017,7 +1000,6 @@ async function arsipJalankan() {
     const form = arsipBacaForm();
     if (!form) return;
 
-    // Selalu simulasi dulu, lalu minta konfirmasi dengan angka nyata.
     arsipSibuk = true;
     const sim = await arsipPanggil(Object.assign({ dry_run: true }, form), "Memeriksa data...");
     arsipSibuk = false;
@@ -1072,9 +1054,6 @@ async function arsipJalankan() {
     renderAdminArsip();
 }
 
-// ---------------------------------------------------------------------
-// LIHAT ISI ARSIP
-// ---------------------------------------------------------------------
 function arsipBuka(i) {
     const r = arsipDaftar[i];
     const panel = document.getElementById("arsip-panel-lihat");
@@ -1138,7 +1117,7 @@ async function arsipMuatHalaman() {
     const res = await apiCall("getArsipData", {
         nama_sheet: v.nama, q: v.q, kelas: v.kelas, offset: v.offset, limit: ARSIP_PER_HALAMAN
     }, false);
-    if (arsipLihat !== v || seq !== v.seq) return; // pengguna sudah pindah atau memuat ulang
+    if (arsipLihat !== v || seq !== v.seq) return;
 
     const el = document.getElementById("arsip-lihat-tabel");
     if (!el) return;
@@ -1185,12 +1164,9 @@ async function arsipMuatHalaman() {
     }
 }
 
-// ---------------------------------------------------------------------
-// UNDUH CSV (semua baris sesuai filter aktif)
-// ---------------------------------------------------------------------
 function arsipCsvSel(v) {
     let s = String(v === null || v === undefined ? "" : v);
-    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // cegah formula injection di Excel
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
     return '"' + s.replace(/"/g, '""') + '"';
 }
 

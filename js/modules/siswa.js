@@ -273,7 +273,6 @@ async function printProfilSiswa() {
     if (!appState.activeSiswaDetail) return;
     const { siswa, absensi, akademik, hafalan, prestasi = [], pembinaan = [] } = appState.activeSiswaDetail;
 
-    // Tahap 4: rekap kebiasaan dan jurnal 30 hari terakhir. Jika gagal dimuat, bagian 6 dan 7 dilewati.
     let kj = null;
     const sampaiKj = getDateWITA();
     showLoading("Menyiapkan rapor...");

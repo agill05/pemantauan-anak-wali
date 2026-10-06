@@ -59,8 +59,6 @@ const MASTER_SURAHS = [
     { no: 112, nama: "Al-Ikhlas", juz: 30 }, { no: 113, nama: "Al-Falaq", juz: 30 }, { no: 114, nama: "An-Nas", juz: 30 }
 ];
 
-// Nilai awal. Diganti dari sheet KonfigKebiasaan lewat applyKonfigKebiasaan().
-// Array ini diubah di tempat (splice) supaya modul lain yang membacanya tetap bekerja.
 const MASTER_KEBIASAAN = [
     { id: "K1", nama: "Bangun Pagi", icon: "fa-sun", color: "text-amber-500 bg-amber-50", nama_singkat: "Bangun Pagi", jam_default: "04:30", detail_default: "Bangun pagi segar, wudhu/berdoa dan merapikan tempat tidur", label_jam: "Jam Bangun Pagi (WITA)", label_detail: "Catatan Saat Bangun", placeholder_detail: "Contoh: Bangun jam 04.30 langsung wudhu dan merapikan tempat tidur" },
     { id: "K2", nama: "Beribadah / Shalat", icon: "fa-pray", color: "text-emerald-500 bg-emerald-50", nama_singkat: "Beribadah", jam_default: "05:00", detail_default: "Melaksanakan salat/ibadah tepat waktu sesuai agama", label_jam: "Waktu Ibadah Utama (WITA)", label_detail: "Ibadah yang Dikerjakan", placeholder_detail: "Contoh: Salat Subuh berjamaah & tadarus Al-Qur'an" },
@@ -71,7 +69,6 @@ const MASTER_KEBIASAAN = [
     { id: "K7", nama: "Tidur Cepat & Teratur", icon: "fa-moon", color: "text-slate-600 bg-slate-100", nama_singkat: "Tidur Cepat", jam_default: "21:15", detail_default: "Tidur malam tepat waktu dan mematikan gawai", label_jam: "Jam Tidur Malam (WITA)", label_detail: "Aktivitas Sebelum Tidur", placeholder_detail: "Contoh: Tidur jam 21.15 setelah berdoa dan mematikan gawai" }
 ];
 
-// Terima daftar dari backend (kolom: ikon, warna, aktif, urutan) dan pasang ke MASTER_KEBIASAAN.
 function applyKonfigKebiasaan(list) {
     if (!Array.isArray(list) || list.length === 0) return;
     const aktif = list.filter(k => k.aktif !== false).sort((a, b) => (a.urutan || 0) - (b.urutan || 0));

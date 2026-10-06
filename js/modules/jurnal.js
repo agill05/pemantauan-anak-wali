@@ -1,9 +1,3 @@
-// =====================================================================
-// MODUL JURNAL SISWA (Tahap 3)
-// Siswa menulis satu refleksi per hari (hanya hari ini) dan membaca catatan wali/mentor.
-// Tahap 4: sisi guru (wali/mentor/admin) membaca jurnal siswa dan memberi catatan. Lihat bagian "SISI GURU" di bawah.
-// Memakai: apiCall, getDateWITA, formatTanggalLabel, escapeHtml, showToast (global).
-// =====================================================================
 
 const MOOD_JURNAL = ["😊 Senang", "🌟 Semangat", "😐 Biasa Saja", "😔 Sedih", "😴 Lelah"];
 const JURNAL_MAX_CHAR = 2000;
@@ -69,7 +63,6 @@ function renderJurnalView() {
     const ada = ambilJurnalHariIni();
     const draft = !ada ? (getFormDraft(jurnalDraftKey()) || null) : null;
 
-    // Pertahankan ketikan jika form sudah tampil dan sedang diisi.
     const ketikan = document.getElementById("jurnal-isi");
     const isiAwal = ketikan ? ketikan.value : (ada ? ada.isi : (draft ? draft.isi : ""));
     if (!ketikan) jurnalMoodDipilih = ada ? ada.mood : (draft && draft.mood ? draft.mood : jurnalMoodDipilih);
@@ -120,7 +113,6 @@ function renderJurnalView() {
     container.innerHTML = `<div class="space-y-4">${form}${riwayatHtml}</div>`;
 }
 
-// Dipakai ulang oleh Tahap 4 (tampilan guru) lewat parameter.
 function renderKartuJurnal(j, hariIni) {
     return `
         <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 text-xs">
@@ -207,22 +199,15 @@ async function simpanJurnal() {
 }
 
 
-// =====================================================================
-// SISI GURU (Tahap 4)
-// Wali/mentor/admin membaca jurnal siswa dalam cakupan dan menulis catatan.
-// Server menolak penulisan di luar peran (assertSiswaWrite "jurnal_catatan").
-// Tombol di sini hanya penyesuaian tampilan.
-// =====================================================================
 const JURNAL_CATATAN_MAX = 1000;
 const JURNAL_SLOT_LABEL = { wali: "Wali", mentor: "Mentor" };
 
 let jurnalGuruData = [];
 let jurnalGuruMemuat = false;
-let jurnalGuruTanda = "";      // sidik jari data terakhir, supaya polling tidak menggambar ulang tanpa perubahan
+let jurnalGuruTanda = "";
 let jurnalGuruPeran = null;
 let jurnalGuruMenyimpan = false;
 
-// Slot catatan yang boleh ditulis pengguna untuk siswa tertentu.
 function slotCatatanSiswa(siswa) {
     if (!siswa || !appState.user) return [];
     if (appState.user.role === "admin") return ["wali", "mentor"];
@@ -325,7 +310,6 @@ function renderJurnalGuruPesan(teks) {
 }
 
 function jurnalSudahDicatat(j, slots) {
-    // Dianggap sudah dicatat jika semua slot milik pengguna sudah terisi.
     return slots.length > 0 && slots.every(sl => String((sl === "wali" ? j.catatan_wali : j.catatan_mentor) || "").trim() !== "");
 }
 
@@ -334,7 +318,6 @@ function renderJurnalGuru() {
     if (!list) return;
     const filter = document.getElementById("jg-filter") ? document.getElementById("jg-filter").value : "";
 
-    // Batasi ke siswa dalam peran aktif, simpan indeks asli untuk tombol.
     const items = [];
     jurnalGuruData.forEach((j, idx) => {
         const siswa = cariSiswaJurnal(j.siswa_id);

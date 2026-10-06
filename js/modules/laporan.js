@@ -206,19 +206,12 @@ function exportRekapCSV() {
 }
 
 
-// =====================================================================
-// LAPORAN KEBIASAAN DAN JURNAL (Tahap 4)
-// Tab kedua di halaman Laporan. Data dari aksi getLaporanKebiasaan (server menyaring cakupan guru).
-// Memakai: apiCall, scopeBySiswaId, getEffectiveKelasFilter, renderKelasSelectOptions,
-// printFeaturePDF, exportFeaturePDF (pdf.js), _downloadCSVString (admin.js).
-// =====================================================================
 const LAPORAN_K_MAX_HARI = 93;
 
-let laporanTab = "umum";                 // "umum" | "kebiasaan"
-let laporanKebiasaan = null;             // { kunci, denganJurnal, data }
+let laporanTab = "umum";
+let laporanKebiasaan = null;
 let laporanKebiasaanMemuat = false;
 
-// jsPDF font bawaan tidak punya emoji. Buang agar tidak tercetak sebagai karakter rusak.
 function bersihkanTeksPdf(t) {
     return String(t === null || t === undefined ? "" : t)
         .replace(/[\p{Extended_Pictographic}\u200D\uFE0E\uFE0F\u20E3]/gu, "")
@@ -226,7 +219,6 @@ function bersihkanTeksPdf(t) {
         .trim();
 }
 
-// Nilai sel CSV: kutip, gandakan tanda kutip, dan netralkan awalan rumus (=, +, -, @).
 function csvSel(v) {
     let t = String(v === null || v === undefined ? "" : v).replace(/\r?\n/g, " ");
     if (/^[=+\-@\t]/.test(t)) t = "'" + t;
@@ -284,7 +276,6 @@ function ambilParamLaporanKebiasaan() {
     return { dari, sampai, kelas };
 }
 
-// opsi: { jurnal: ikutkan isi jurnal, force: paksa muat ulang, tampil: gambar daftar di layar }
 async function muatLaporanKebiasaan(opsi = {}) {
     const prm = ambilParamLaporanKebiasaan();
     if (prm.error) {
