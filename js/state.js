@@ -97,6 +97,55 @@ function saveAppStateToLocal() {
     } catch (e) { }
 }
 
+function bersihkanJejakSiswaLokal(daftarId) {
+    const ids = new Set((daftarId || []).map(String).filter(Boolean));
+    if (!ids.size) return;
+    const idSiswa = r => String(r && (r.siswa_id !== undefined ? r.siswa_id : (r.siswaId !== undefined ? r.siswaId : "")));
+    const bukanTerhapus = r => !ids.has(idSiswa(r));
+
+    ["absensi", "kebiasaan", "keagamaan", "akademik", "prestasi", "pembinaan", "jurnal", "currentNotifications", "handledNotifications", "notifDitangani"].forEach(k => {
+        if (Array.isArray(appState[k])) appState[k] = appState[k].filter(bukanTerhapus);
+    });
+    ["siswa", "myStudents", "laporanRekap"].forEach(k => {
+        if (Array.isArray(appState[k])) appState[k] = appState[k].filter(r => !ids.has(String(r && r.id)));
+    });
+    const det = appState.activeSiswaDetail;
+    if (det && det.siswa && ids.has(String(det.siswa.id))) appState.activeSiswaDetail = null;
+
+    saveAppStateToLocal();
+
+    try {
+        const kunci = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key) kunci.push(key);
+        }
+        kunci.forEach(key => {
+            ids.forEach(id => {
+                if (key.indexOf("draft_jurnal_" + id + "_") === 0) localStorage.removeItem(key);
+            });
+        });
+
+        const notif = JSON.parse(localStorage.getItem("notif_ditangani_cache") || "null");
+        if (Array.isArray(notif)) localStorage.setItem("notif_ditangani_cache", JSON.stringify(notif.filter(bukanTerhapus)));
+
+        const antrean = JSON.parse(localStorage.getItem("offline_absensi_queue") || "null");
+        if (antrean && Array.isArray(antrean.items)) {
+            antrean.items = antrean.items.filter(bukanTerhapus);
+            if (antrean.items.length) localStorage.setItem("offline_absensi_queue", JSON.stringify(antrean));
+            else localStorage.removeItem("offline_absensi_queue");
+        }
+    } catch (e) { }
+}
+
+function resetCacheCatatanGuru() {
+    ["jurnal", "pembinaan", "prestasi", "keagamaan"].forEach(k => { appState[k] = []; });
+    ["jurnal", "pembinaan", "keagamaan", "akademik"].forEach(k => { lastFetchTimes[k] = 0; });
+    appState.notifDitangani = [];
+    try { localStorage.removeItem("notif_ditangani_cache"); } catch (e) { }
+    saveAppStateToLocal();
+}
+
 function loadAppStateFromLocal() {
     const cached = localStorage.getItem("cache_appState_full");
     if (cached) {

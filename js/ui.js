@@ -435,6 +435,7 @@ function renderPenulisBadge(rec) {
     let nama = "";
     if (ownerId) {
         if (ownerId === String(u.id)) nama = "Anda";
+        else if (ownerId === "guru-dihapus") nama = "Guru dihapus";
         else {
             const g = (appState.guru || []).find(x => String(x.id) === ownerId);
             nama = g ? g.nama : "";

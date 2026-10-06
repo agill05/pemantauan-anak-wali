@@ -812,7 +812,7 @@ function handleImportSiswaFile(event) {
 async function deleteSiswa(id) {
     const confirm = await Swal.fire({
         title: 'Hapus Siswa?',
-        html: 'Tindakan ini akan <b>menghapus permanen</b> seluruh riwayat siswa ini secara otomatis, termasuk data:<br><b>Kehadiran, 7 Kebiasaan, Hafalan, Akademik, Prestasi, Pembinaan,</b> dan notifikasi terkait.<br><br>Data yang sudah dihapus <b>tidak dapat dikembalikan</b>.',
+        html: 'Tindakan ini akan <b>menghapus permanen</b> seluruh riwayat siswa ini secara otomatis, termasuk data:<br><b>Kehadiran, 7 Kebiasaan, Jurnal, Hafalan, Akademik, Prestasi, Pembinaan,</b> dan notifikasi terkait.<br><br>Data yang sudah dihapus <b>tidak dapat dikembalikan</b>.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
@@ -822,6 +822,7 @@ async function deleteSiswa(id) {
     if (confirm.isConfirmed) {
         const res = await apiCall("deleteSiswa", { id }, true);
         if (res && res.status === "success") {
+            if (typeof bersihkanJejakSiswaLokal === "function") bersihkanJejakSiswaLokal([id]);
             await fetchAllAppData(true);
             renderSiswaView();
             renderAdminSiswa();
