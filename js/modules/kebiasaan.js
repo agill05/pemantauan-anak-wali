@@ -1,4 +1,3 @@
-
 let kebiasaanLoadedTanggal = null;
 let kebiasaanTab = "hari-ini";
 let kebiasaanKonfigLoaded = false;
@@ -37,7 +36,7 @@ function bisaIsiKebiasaan(siswaId) {
     if (!u || !siswaId) return false;
     if (u.role === "admin") return true;
     if (u.role === "siswa") return String(u.id) === String(siswaId);
-    if (u.role === "guru") return canWrite("kebiasaan", siswaId);
+    if (u.role === "guru") return false;
     return false;
 }
 
@@ -142,7 +141,7 @@ function renderKebiasaanView() {
     const tanggal = getTanggalKebiasaan();
     const lockState = getDateLockState(tanggal);
     const roleAllowed = bisaIsiKebiasaan(selectedSiswaId);
-    const bacaSaja = isGuruUser() && !canWrite("kebiasaan", selectedSiswaId);
+    const bacaSaja = isGuruUser();
     const isEditable = !!(roleAllowed && lockState.editable);
 
     const total = MASTER_KEBIASAAN.length;
@@ -242,7 +241,7 @@ function renderKebiasaanView() {
     container.innerHTML = `
         <div class="space-y-3">
             ${renderDateLockBanner(lockState, "kebiasaan")}
-            ${bacaSaja ? renderBacaSajaBanner("Mode baca saja. Hanya wali kelas yang dapat mengisi kebiasaan anak binaan.") : ""}
+            ${bacaSaja ? renderBacaSajaBanner("Mode baca saja, kebiasaan diisi siswa.") : ""}
             ${kartuProgres}
             ${badgeHtml}
             ${tombolPagi}
