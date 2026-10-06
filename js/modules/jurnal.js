@@ -263,6 +263,7 @@ function pastikanKerangkaJurnalGuru(container) {
     const sel = document.getElementById("jg-siswa");
     populateSiswaSelectForRole(sel, { includeAllOption: true });
     sel.value = "ALL";
+    syncSiswaSelect(sel);
 }
 
 async function loadJurnalGuru(forceRefresh = false) {

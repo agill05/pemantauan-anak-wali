@@ -71,6 +71,7 @@ function populateSiswaSelectForRole(selectEl, options = {}) {
     selectEl.innerHTML = `<option value="" disabled selected>-- Pilih Siswa --</option>` + allOption + siswaOptions;
 
     if (prevValue && Array.from(selectEl.options).some(o => o.value === prevValue)) selectEl.value = prevValue;
+        enhanceSiswaSelect(selectEl);
 }
 
 let dataPollingInterval = null;

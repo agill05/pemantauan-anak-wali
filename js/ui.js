@@ -538,3 +538,121 @@ async function konfirmasiHapusBersih(jenis, id) {
     });
     return !!konfirmasi.isConfirmed;
 }
+
+/* ===== Combobox cari siswa ===== */
+function _siswaComboMeta(id) {
+    const s = (appState.siswa || []).find(x => String(x.id) === String(id));
+    if (!s) return null;
+    const k = (appState.kelas || []).find(x => String(x.id) === String(s.kelas_id));
+    const kelas = k ? k.nama_kelas : "";
+    const nisn = String(s.nisn || "");
+    return {
+        sub: [kelas, nisn ? "NISN " + nisn : ""].filter(Boolean).join(" \u2022 "),
+        chip: renderPeranChip(s),
+        hay: (String(s.nama || "") + " " + nisn + " " + kelas).toLowerCase()
+    };
+}
+
+function syncSiswaSelect(sel) {
+    if (sel && sel._comboSync) sel._comboSync();
+}
+
+function enhanceSiswaSelect(sel) {
+    if (!sel) return;
+    if (sel.dataset.combo === "1") { syncSiswaSelect(sel); return; }
+    sel.dataset.combo = "1";
+
+    const wrap = document.createElement("div");
+    wrap.className = "relative min-w-0" + (sel.classList.contains("flex-1") ? " flex-1" : "");
+    sel.parentNode.insertBefore(wrap, sel);
+
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.autocomplete = "off";
+    inp.placeholder = "Ketik nama / NISN...";
+    inp.setAttribute("role", "combobox");
+    inp.setAttribute("aria-expanded", "false");
+    inp.className = (sel.className || "").replace("flex-1", "") + " w-full";
+
+    const list = document.createElement("div");
+    list.className = "hidden absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg";
+
+    sel.tabIndex = -1;
+    sel.setAttribute("aria-hidden", "true");
+    sel.style.cssText = "position:absolute;left:0;bottom:0;width:100%;height:1px;opacity:0;pointer-events:none;";
+    wrap.append(inp, list, sel);
+
+    const label = () => {
+        const o = sel.options[sel.selectedIndex];
+        if (!o || (o.value === "" && o.disabled)) return "";
+        return o.textContent;
+    };
+    const close = () => {
+        list.classList.add("hidden");
+        inp.setAttribute("aria-expanded", "false");
+        inp.value = label();
+    };
+    const render = (q) => {
+        const tokens = String(q || "").toLowerCase().split(/\s+/).filter(Boolean);
+        const rows = Array.from(sel.options).filter(o => !(o.value === "" && o.disabled)).filter(o => {
+            if (!tokens.length) return true;
+            if (o.value === "" || o.value === "ALL") return false;
+            const m = _siswaComboMeta(o.value);
+            const hay = m ? m.hay : o.textContent.toLowerCase();
+            return tokens.every(t => hay.includes(t));
+        });
+        const html = rows.slice(0, 60).map(o => {
+            const m = (o.value && o.value !== "ALL") ? _siswaComboMeta(o.value) : null;
+            const aktif = o.value === sel.value ? " bg-blue-50" : "";
+            return `<button type="button" data-v="${escapeHtml(o.value)}" class="block w-full text-left px-3 py-2 border-b border-slate-50 hover:bg-slate-50${aktif}">
+                <div class="text-xs font-semibold text-slate-700">${escapeHtml(o.textContent)} ${m ? m.chip : ""}</div>
+                ${m && m.sub ? `<div class="text-[10px] text-slate-400">${escapeHtml(m.sub)}</div>` : ""}
+            </button>`;
+        }).join("");
+        list.innerHTML = html || `<div class="px-3 py-2 text-xs text-slate-400">Siswa tidak ditemukan</div>`;
+        if (rows.length > 60) list.insertAdjacentHTML("beforeend", `<div class="px-3 py-1.5 text-[10px] text-slate-400">Ketik lebih spesifik untuk mempersempit...</div>`);
+        list.classList.remove("hidden");
+        inp.setAttribute("aria-expanded", "true");
+    };
+    const pick = (v) => {
+        sel.value = v;
+        inp.value = label();
+        list.classList.add("hidden");
+        inp.setAttribute("aria-expanded", "false");
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+
+    inp.addEventListener("focus", () => { inp.select(); render(""); });
+    inp.addEventListener("input", () => render(inp.value));
+    inp.addEventListener("blur", () => setTimeout(close, 150));
+    inp.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") { inp.blur(); }
+        else if (e.key === "Enter") {
+            e.preventDefault();
+            const b = list.querySelector("button[data-v]");
+            if (b) pick(b.dataset.v);
+        }
+    });
+    list.addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-v]");
+        if (b) pick(b.dataset.v);
+    });
+
+    sel._comboSync = () => {
+        inp.disabled = sel.disabled;
+        inp.classList.toggle("opacity-70", sel.disabled);
+        if (document.activeElement !== inp) inp.value = label();
+    };
+    new MutationObserver(() => sel._comboSync())
+        .observe(sel, { childList: true, attributes: true, attributeFilter: ["disabled"] });
+    sel._comboSync();
+}
+
+/* modal tambah/ubah: otomatis aktif untuk m-akd-siswa, m-prs-siswa, m-kag-siswa, m-pbn-siswa */
+(function () {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+    new MutationObserver(() => {
+        box.querySelectorAll('select[id^="m-"][id$="-siswa"]').forEach(enhanceSiswaSelect);
+    }).observe(box, { childList: true });
+})();

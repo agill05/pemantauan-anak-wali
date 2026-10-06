@@ -115,6 +115,7 @@ function _refreshAllSiswaDropdowns() {
         const siswaOptions = siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
         selPembinaan.innerHTML = `<option value="">-- Semua Siswa --</option>` + siswaOptions;
         if (prev && Array.from(selPembinaan.options).some(o => o.value === prev)) selPembinaan.value = prev;
+                enhanceSiswaSelect(selPembinaan);
     }
 
     const activeView = document.querySelector(".view-section.active");

@@ -21,6 +21,8 @@ async function loadPembinaanData(forceRefresh = false) {
         }
     }
 
+    if (filterSelect && !isSiswa) enhanceSiswaSelect(filterSelect);
+
     const selectedSiswaId = isSiswa ? appState.user.id : (filterSelect ? filterSelect.value : null);
 
     if (appState.pembinaan && appState.pembinaan.length > 0) {
@@ -244,10 +246,11 @@ function openQuickPembinaan(siswaId, defaultMasalah, notifId = "") {
     setTimeout(() => {
         const siswaSelect = document.getElementById("m-pbn-siswa");
         const masalahInput = document.getElementById("m-pbn-masalah");
-        if (siswaSelect) siswaSelect.value = siswaId;
+        if (siswaSelect) { siswaSelect.value = siswaId; syncSiswaSelect(siswaSelect); }
         if (masalahInput) masalahInput.value = defaultMasalah || "";
     }, 150);
 }
+
 function cetakPDFPembinaan() {
     const filterSiswaId = document.getElementById("pembinaan-siswa-filter")?.value || "";
     if (!filterSiswaId) {
