@@ -364,7 +364,10 @@ async function printProfilSiswa() {
 
     printFeaturePDF("LAPORAN PEMANTAUAN ANAK WALI", html, {
         orientation: "portrait",
-        signatures: [
+        signatures: isKepsekUser() ? [
+            { lines: ["Orang Tua / Wali Siswa"], name: siswa.nama_ortu || "............................................" },
+            { lines: ["Talaga Jaya, {tanggal}", "Kepala SMPN 1 Talaga Jaya"], name: kepsek, nip: nipKepsek }
+        ] : [
             { lines: ["Orang Tua / Wali Siswa"], name: siswa.nama_ortu || "............................................" },
             { lines: ["Mengetahui,", "Kepala SMPN 1 Talaga Jaya"], name: kepsek, nip: nipKepsek },
             { lines: ["Talaga Jaya, {tanggal}", getPeranTtdText(siswa)], name: appState.user ? appState.user.nama : getPeranTtdText(siswa), nip: getGuruNip() }

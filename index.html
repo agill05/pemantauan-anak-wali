@@ -772,7 +772,17 @@
                     </div>
                     <button type="submit" id="btn-save-sekolah" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Data Kepala Sekolah</button>
                     <div class="pt-3 mt-1 border-t border-slate-100 space-y-2">
-                        <p class="text-[11px] text-slate-500 leading-relaxed">Akun login Kepala Sekolah dibuat otomatis saat data disimpan. Username: <b>kepsek</b>. Password awal: <b>kepsek123</b> (wajib diganti saat login pertama).</p>
+                        <p class="text-[11px] font-bold text-slate-600 uppercase">Akun Login Kepala Sekolah</p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">Akun dibuat otomatis saat data disimpan. Password awal: <b>kepsek123</b>. Password yang Anda isi di sini bersifat sementara, Kepala Sekolah wajib menggantinya saat login.</p>
+                        <div>
+                            <label for="m-ks-username" class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
+                            <input type="text" id="m-ks-username" autocomplete="off" autocapitalize="none" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="kepsek">
+                        </div>
+                        <div>
+                            <label for="m-ks-password" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD SEMENTARA (OPSIONAL)</label>
+                            <input type="text" id="m-ks-password" autocomplete="off" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="Kosongkan jika tidak diubah (min. 6 karakter)">
+                        </div>
+                        <button type="button" onclick="saveAkunKepsek()" class="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Akun Kepala Sekolah</button>
                         <button type="button" onclick="resetPasswordKepsek()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs">Reset Password Kepala Sekolah</button>
                     </div>
                 </form>

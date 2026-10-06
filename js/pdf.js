@@ -313,16 +313,23 @@ function pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan, custom) {
     const kepsek = (appState.pengaturan && appState.pengaturan.nama_kepsek) || "( ............................................ )";
     const nipKepsek = (appState.pengaturan && appState.pengaturan.nip_kepsek) || "........................................";
     const guru = appState.user ? appState.user.nama : "Guru Pemantau";
-    const blocks = (custom && custom.length) ? custom : [
+    const kepsekLogin = typeof isKepsekUser === "function" && isKepsekUser();
+    const namaKepsekTtd = (appState.pengaturan && appState.pengaturan.nama_kepsek) || (appState.user && appState.user.nama) || "( ............................................ )";
+    const nipKepsekTtd = (appState.pengaturan && appState.pengaturan.nip_kepsek) || (appState.user && appState.user.nip) || "........................................";
+    const blocks = (custom && custom.length) ? custom : (kepsekLogin ? [
+        { lines: [`Talaga Jaya, {tanggal}`, "Kepala SMPN 1 Talaga Jaya"], name: namaKepsekTtd, nip: nipKepsekTtd }
+    ] : [
         { lines: ["Mengetahui,", "Kepala SMPN 1 Talaga Jaya"], name: kepsek, nip: nipKepsek },
         { lines: [`Talaga Jaya, {tanggal}`, labelKanan], name: guru, nip: getGuruNip() }
-    ];
+    ]);
     const n = blocks.length;
     const usableW = pageW - 2 * PDF_MARGIN;
-    const blockW = n === 2 ? 66 : usableW / n;
+    const blockW = n <= 2 ? 66 : usableW / n;
     const lineCount = Math.max(...blocks.map(b => b.lines.length));
     blocks.forEach((b, i) => {
-        const cx = n === 2
+        const cx = n === 1
+            ? pageW - PDF_MARGIN - 33
+            : n === 2
             ? (i === 0 ? PDF_MARGIN + 33 : pageW - PDF_MARGIN - 33)
             : PDF_MARGIN + blockW * (i + 0.5);
         const lines = b.lines.map(l => l.replace("{tanggal}", dateStr));

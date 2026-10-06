@@ -30,6 +30,32 @@ function renderAdminSekolah() {
     const nip = document.getElementById("m-skl-nip-kepsek");
     if (nama) nama.value = appState.pengaturan?.nama_kepsek || "";
     if (nip) nip.value = appState.pengaturan?.nip_kepsek || "";
+    const ksUser = document.getElementById("m-ks-username");
+    const ksPass = document.getElementById("m-ks-password");
+    if (ksPass) ksPass.value = "";
+    if (ksUser) {
+        apiCall("getAkunKepsek", {}, false).then(res => {
+            if (res && res.status === "success") ksUser.value = res.data.username || "";
+        });
+    }
+}
+
+async function saveAkunKepsek() {
+    const username = document.getElementById("m-ks-username").value.trim();
+    const password = document.getElementById("m-ks-password").value;
+    if (!username) {
+        Swal.fire({ icon: "warning", title: "Username kosong", text: "Isi username Kepala Sekolah.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    showLoading("Menyimpan akun...");
+    const res = await apiCall("saveAkunKepsek", { username, password }, true);
+    hideLoading();
+    if (res && res.status === "success") {
+        document.getElementById("m-ks-password").value = "";
+        Swal.fire({ icon: "success", title: "Berhasil", text: res.message, confirmButtonColor: "#2563eb" });
+    } else {
+        Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat menyimpan akun.", confirmButtonColor: "#2563eb" });
+    }
 }
 
 async function resetPasswordKepsek() {
