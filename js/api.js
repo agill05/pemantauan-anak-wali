@@ -1,9 +1,9 @@
-async function apiCall(action, payload = {}, showFullLoader = false, retries = 3, silent = false) {
+async function apiCall(action, payload = {}, showFullLoader = false, retries = 3, silent = false, timeoutMs = 25000) {
     if (showFullLoader) showLoading();
 
     for (let attempt = 1; attempt <= retries; attempt++) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
             const response = await fetch(API_URL, {

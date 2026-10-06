@@ -22,6 +22,7 @@ function switchAdminTab(tab) {
     if (tab === "mentor") renderAdminMentor();
     if (tab === "sekolah") renderAdminSekolah();
     if (tab === "kebiasaan") renderAdminKebiasaan();
+    if (tab === "arsip") renderAdminArsip();
 }
 
 function renderAdminSekolah() {
@@ -848,5 +849,386 @@ async function simpanFormKebiasaan(e, id) {
     } else if (btn) {
         btn.disabled = false;
         btn.classList.remove("opacity-60");
+    }
+}
+
+// =====================================================================
+// TAHAP 5 - ARSIP SEMESTER (halaman admin)
+// Tempel di BAGIAN PALING BAWAH js/modules/admin.js.
+// =====================================================================
+
+let arsipDaftar = [];
+let arsipMemuat = false;
+let arsipSibuk = false;
+let arsipLihat = null; // { nama, jenis, judul, offset, total, q, kelas, headers, seq }
+const ARSIP_PER_HALAMAN = 100;
+
+const ARSIP_KOLOM = {
+    Kebiasaan: ["tanggal", "nama_siswa", "kelas", "kebiasaan_id", "status", "jam", "detail"],
+    Jurnal: ["tanggal", "nama_siswa", "kelas", "mood", "isi", "catatan_wali", "catatan_mentor"]
+};
+const ARSIP_LABEL = {
+    tanggal: "Tanggal", nama_siswa: "Siswa", kelas: "Kelas", kebiasaan_id: "Kebiasaan", status: "Status",
+    jam: "Jam", detail: "Detail", mood: "Mood", isi: "Isi Jurnal", catatan_wali: "Catatan Wali",
+    catatan_mentor: "Catatan Mentor"
+};
+const ARSIP_KOLOM_PANJANG = ["detail", "isi", "catatan_wali", "catatan_mentor"];
+
+function arsipTampilPanel(nama) {
+    const utama = document.getElementById("arsip-panel-utama");
+    const lihat = document.getElementById("arsip-panel-lihat");
+    if (utama) utama.classList.toggle("hidden", nama !== "utama");
+    if (lihat) lihat.classList.toggle("hidden", nama !== "lihat");
+}
+
+function arsipTahunAjaranDefault() {
+    const tgl = String(getDateWITA());
+    const th = Number(tgl.slice(0, 4));
+    const bln = Number(tgl.slice(5, 7));
+    const awal = bln >= 7 ? th : th - 1;
+    return { ta: awal + "/" + (awal + 1), semester: bln >= 7 ? "Ganjil" : "Genap" };
+}
+
+function arsipIsiDefault() {
+    const ta = document.getElementById("arsip-ta");
+    const sem = document.getElementById("arsip-semester");
+    if (!ta || !sem) return;
+    if (!ta.value) {
+        const d = arsipTahunAjaranDefault();
+        ta.value = d.ta;
+        sem.value = d.semester;
+    }
+}
+
+async function renderAdminArsip() {
+    arsipIsiDefault();
+    arsipTampilPanel(arsipLihat ? "lihat" : "utama");
+    const list = document.getElementById("admin-arsip-list");
+    if (!list) return;
+    if (arsipDaftar.length > 0) arsipGambarDaftar();
+    else renderSkeleton("admin-arsip-list", 3);
+    if (arsipMemuat) return;
+
+    arsipMemuat = true;
+    const res = await apiCall("getArsipList", {}, false);
+    arsipMemuat = false;
+    if (res && res.status === "success" && Array.isArray(res.data)) {
+        arsipDaftar = res.data;
+        arsipGambarDaftar();
+    } else if (arsipDaftar.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-wifi text-2xl mb-2"></i><p class="text-xs text-slate-500">${escapeHtml(res?.message || "Daftar arsip gagal dimuat. Periksa koneksi lalu buka tab ini lagi.")}</p></div>`;
+    }
+}
+
+function arsipGambarDaftar() {
+    const list = document.getElementById("admin-arsip-list");
+    if (!list) return;
+    if (arsipDaftar.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-box-archive text-xl mb-1"></i><p class="text-xs">Belum ada arsip.</p></div>`;
+        return;
+    }
+    list.innerHTML = arsipDaftar.map((r, i) => {
+        const ada = r.ada !== false;
+        const warnaJenis = r.jenis === "Jurnal" ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700";
+        return `
+        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3 ${ada ? "" : "opacity-60"}">
+            <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-1 mb-0.5">
+                    <p class="text-xs font-bold text-slate-800">${escapeHtml(r.semester)} ${escapeHtml(r.tahun_ajaran)}</p>
+                    <span class="px-1.5 py-0.5 rounded-md ${warnaJenis} text-[10px] font-bold">${escapeHtml(r.jenis)}</span>
+                    ${ada ? "" : '<span class="px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-bold">Sheet tidak ditemukan</span>'}
+                </div>
+                <p class="text-[11px] text-slate-400">${Number(r.jumlah_baris) || 0} baris, sampai ${escapeHtml(r.sampai_tanggal || "-")}</p>
+                <p class="text-[11px] text-slate-400 truncate">Oleh ${escapeHtml(r.dibuat_oleh_nama || "-")} \u2022 ${escapeHtml(r.dibuat_pada || "-")}</p>
+            </div>
+            <button type="button" onclick="arsipBuka(${i})" ${ada ? "" : "disabled"} class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold disabled:opacity-40" aria-label="Lihat isi arsip">
+                <i class="fas fa-eye mr-1"></i> Lihat
+            </button>
+        </div>`;
+    }).join("");
+}
+
+// ---------------------------------------------------------------------
+// BUAT ARSIP
+// ---------------------------------------------------------------------
+function arsipBacaForm() {
+    const ta = (document.getElementById("arsip-ta")?.value || "").trim();
+    const semester = document.getElementById("arsip-semester")?.value || "";
+    const sampai = document.getElementById("arsip-sampai")?.value || "";
+    const m = ta.match(/^(\d{4})\/(\d{4})$/);
+    if (!m || Number(m[2]) !== Number(m[1]) + 1) {
+        showToast("Tahun ajaran harus berformat 2026/2027.", "warning");
+        return null;
+    }
+    if (!sampai) {
+        showToast("Isi tanggal \"Arsipkan sampai\".", "warning");
+        return null;
+    }
+    if (sampai >= getDateWITA()) {
+        showToast("Tanggal harus sebelum hari ini.", "warning");
+        return null;
+    }
+    return { tahun_ajaran: ta, semester: semester, sampai_tanggal: sampai };
+}
+
+// Panggil archiveSemester. Tanpa retry otomatis (retry bisa menjalankan arsip dua kali). Batas waktu 170 detik.
+async function arsipPanggil(payload, teks) {
+    showLoading(teks);
+    const res = await apiCall("archiveSemester", payload, false, 1, true, 170000);
+    hideLoading();
+    return res;
+}
+
+function arsipHtmlRingkasan(data) {
+    return (data || []).map(r => `
+        <div class="py-1.5 border-b border-slate-100 last:border-0">
+            <div class="flex justify-between gap-2 text-xs">
+                <span class="font-bold text-slate-700">${escapeHtml(r.jenis)}</span>
+                <span class="text-slate-600"><b>${Number(r.diarsipkan) || 0}</b> dipindah \u2022 ${Number(r.tersisa) || 0} tetap</span>
+            </div>
+            <p class="text-[11px] text-slate-400">${r.tanggal_terlama ? escapeHtml(r.tanggal_terlama) + " s.d. " + escapeHtml(r.tanggal_terbaru) : "Tidak ada data"} \u2022 ${escapeHtml(r.nama_sheet)}</p>
+        </div>`).join("");
+}
+
+async function arsipSimulasi(e) {
+    if (e) e.preventDefault();
+    if (arsipSibuk) return;
+    const form = arsipBacaForm();
+    if (!form) return;
+    const box = document.getElementById("arsip-hasil-simulasi");
+    arsipSibuk = true;
+    const res = await arsipPanggil(Object.assign({ dry_run: true }, form), "Menghitung simulasi...");
+    arsipSibuk = false;
+    if (!box) return;
+    box.classList.remove("hidden");
+    if (res && res.status === "success") {
+        box.className = "bg-white p-3.5 rounded-2xl border border-slate-100";
+        box.innerHTML = `
+            <p class="text-xs font-bold text-slate-700 mb-1"><i class="fas fa-flask mr-1 text-blue-500"></i> Hasil simulasi (belum ada data berubah)</p>
+            ${arsipHtmlRingkasan(res.data)}`;
+    } else {
+        box.className = "bg-rose-50 p-3.5 rounded-2xl border border-rose-100";
+        box.innerHTML = `<p class="text-xs font-semibold text-rose-700">${escapeHtml(res?.message || "Koneksi bermasalah. Coba lagi.")}</p>`;
+    }
+}
+
+async function arsipJalankan() {
+    if (arsipSibuk) return;
+    const form = arsipBacaForm();
+    if (!form) return;
+
+    // Selalu simulasi dulu, lalu minta konfirmasi dengan angka nyata.
+    arsipSibuk = true;
+    const sim = await arsipPanggil(Object.assign({ dry_run: true }, form), "Memeriksa data...");
+    arsipSibuk = false;
+    if (!sim || sim.status !== "success") {
+        Swal.fire({ icon: "warning", title: "Tidak Bisa Diarsipkan", text: sim?.message || "Koneksi bermasalah. Coba lagi.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+
+    const konfirm = await Swal.fire({
+        icon: "warning",
+        title: "Arsipkan semester ini?",
+        html: `
+            <div class="text-left text-xs">
+                <p class="mb-2"><b>${escapeHtml(form.semester)} ${escapeHtml(form.tahun_ajaran)}</b>, data sampai <b>${escapeHtml(form.sampai_tanggal)}</b>.</p>
+                ${arsipHtmlRingkasan(sim.data)}
+                <p class="mt-3 text-rose-600 font-semibold">Data dipindah dari sheet aktif. Poin, streak, badge, dan laporan periode ini akan kosong di aplikasi. Cetak laporan semester lebih dulu. Pastikan backup spreadsheet sudah ada.</p>
+            </div>`,
+        input: "text",
+        inputPlaceholder: "Ketik ARSIPKAN",
+        showCancelButton: true,
+        confirmButtonText: "Arsipkan",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#dc2626",
+        preConfirm: (v) => {
+            if (String(v || "").trim().toUpperCase() !== "ARSIPKAN") {
+                Swal.showValidationMessage("Ketik ARSIPKAN untuk melanjutkan.");
+                return false;
+            }
+            return true;
+        }
+    });
+    if (!konfirm.isConfirmed) return;
+
+    arsipSibuk = true;
+    const res = await arsipPanggil(form, "Mengarsipkan dan memverifikasi data. Jangan tutup halaman...");
+    arsipSibuk = false;
+
+    if (res === null) {
+        await Swal.fire({
+            icon: "info",
+            title: "Respons Tidak Diterima",
+            html: "<p class=\"text-xs\">Proses mungkin masih berjalan di server. <b>Jangan ulangi.</b> Tunggu 1 menit, lalu cek Daftar Arsip.</p>",
+            confirmButtonColor: "#2563eb"
+        });
+    } else if (res.status === "success") {
+        document.getElementById("arsip-hasil-simulasi")?.classList.add("hidden");
+        await Swal.fire({ icon: "success", title: "Arsip Selesai", text: res.message, confirmButtonColor: "#2563eb" });
+    } else {
+        await Swal.fire({ icon: "error", title: "Arsip Gagal", text: res.message || "Terjadi kesalahan.", confirmButtonColor: "#2563eb" });
+    }
+    arsipDaftar = [];
+    renderAdminArsip();
+}
+
+// ---------------------------------------------------------------------
+// LIHAT ISI ARSIP
+// ---------------------------------------------------------------------
+function arsipBuka(i) {
+    const r = arsipDaftar[i];
+    const panel = document.getElementById("arsip-panel-lihat");
+    if (!r || !panel) return;
+    arsipLihat = {
+        nama: String(r.nama_sheet), jenis: String(r.jenis),
+        judul: `${r.jenis} \u2022 ${r.semester} ${r.tahun_ajaran}`,
+        offset: 0, total: 0, q: "", kelas: "", headers: [], seq: 0
+    };
+    const kelasOpts = (appState.kelas || []).map(k => `<option value="${escapeHtml(k.nama_kelas)}"></option>`).join("");
+    panel.innerHTML = `
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="arsipKembali()" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600" aria-label="Kembali ke daftar arsip"><i class="fas fa-arrow-left text-xs"></i></button>
+            <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(arsipLihat.judul)}</p>
+                <p id="arsip-lihat-info" class="text-[11px] text-slate-400"></p>
+            </div>
+            <button type="button" onclick="arsipUnduhCsv()" class="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold"><i class="fas fa-download mr-1"></i> CSV</button>
+        </div>
+        <form onsubmit="arsipCari(event)" class="grid grid-cols-2 gap-2">
+            <input type="text" id="arsip-f-q" placeholder="Cari nama siswa..." class="bg-slate-50 border p-2 rounded-xl text-xs outline-none">
+            <input type="text" id="arsip-f-kelas" list="arsip-kelas-list" placeholder="Kelas (mis. VII A)" class="bg-slate-50 border p-2 rounded-xl text-xs outline-none">
+            <datalist id="arsip-kelas-list">${kelasOpts}</datalist>
+            <button type="submit" class="col-span-2 bg-primary text-white font-bold py-2 rounded-xl text-xs">Terapkan Filter</button>
+        </form>
+        <div id="arsip-lihat-tabel" class="bg-white rounded-2xl border border-slate-100 overflow-x-auto"></div>
+        <div id="arsip-lihat-pager" class="flex items-center justify-between text-xs"></div>`;
+    arsipTampilPanel("lihat");
+    arsipMuatHalaman();
+}
+
+function arsipKembali() {
+    arsipLihat = null;
+    arsipTampilPanel("utama");
+}
+
+function arsipCari(e) {
+    if (e) e.preventDefault();
+    if (!arsipLihat) return;
+    arsipLihat.q = (document.getElementById("arsip-f-q")?.value || "").trim();
+    arsipLihat.kelas = (document.getElementById("arsip-f-kelas")?.value || "").trim();
+    arsipLihat.offset = 0;
+    arsipMuatHalaman();
+}
+
+function arsipHalaman(arah) {
+    if (!arsipLihat) return;
+    const baru = arsipLihat.offset + arah * ARSIP_PER_HALAMAN;
+    if (baru < 0 || baru >= arsipLihat.total) return;
+    arsipLihat.offset = baru;
+    arsipMuatHalaman();
+}
+
+async function arsipMuatHalaman() {
+    const v = arsipLihat;
+    if (!v) return;
+    const seq = ++v.seq;
+    const tabel = document.getElementById("arsip-lihat-tabel");
+    if (tabel) tabel.innerHTML = `<div class="p-6 text-center text-xs text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i> Memuat...</div>`;
+
+    const res = await apiCall("getArsipData", {
+        nama_sheet: v.nama, q: v.q, kelas: v.kelas, offset: v.offset, limit: ARSIP_PER_HALAMAN
+    }, false);
+    if (arsipLihat !== v || seq !== v.seq) return; // pengguna sudah pindah atau memuat ulang
+
+    const el = document.getElementById("arsip-lihat-tabel");
+    if (!el) return;
+    if (!res || res.status !== "success") {
+        el.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">${escapeHtml(res?.message || "Gagal memuat arsip. Periksa koneksi.")}</div>`;
+        return;
+    }
+    v.total = Number(res.total) || 0;
+    v.headers = Array.isArray(res.headers) ? res.headers : [];
+
+    const pilihan = (ARSIP_KOLOM[v.jenis] || []).filter(c => v.headers.indexOf(c) !== -1);
+    const kolom = pilihan.length > 0 ? pilihan : v.headers;
+
+    if (res.data.length === 0) {
+        el.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Tidak ada baris yang cocok.</div>`;
+    } else {
+        el.innerHTML = `
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500">
+                    <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap">${escapeHtml(ARSIP_LABEL[c] || c)}</th>`).join("")}</tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    ${res.data.map(row => `<tr>${kolom.map(c => {
+                        const teks = String(row[c] === null || row[c] === undefined ? "" : row[c]);
+                        const panjang = ARSIP_KOLOM_PANJANG.indexOf(c) !== -1;
+                        return `<td class="px-2 py-1.5 align-top text-slate-700 ${panjang ? "min-w-[14rem]" : "whitespace-nowrap"}">${escapeHtml(teks)}</td>`;
+                    }).join("")}</tr>`).join("")}
+                </tbody>
+            </table>`;
+    }
+
+    const dari = v.total === 0 ? 0 : v.offset + 1;
+    const sampai = Math.min(v.offset + ARSIP_PER_HALAMAN, v.total);
+    const info = document.getElementById("arsip-lihat-info");
+    if (info) info.textContent = `${v.total} baris`;
+    const pager = document.getElementById("arsip-lihat-pager");
+    if (pager) {
+        pager.innerHTML = `
+            <span class="text-slate-500">${dari}\u2013${sampai} dari ${v.total}</span>
+            <span class="flex gap-1">
+                <button type="button" onclick="arsipHalaman(-1)" ${v.offset <= 0 ? "disabled" : ""} class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg font-bold disabled:opacity-40">Sebelumnya</button>
+                <button type="button" onclick="arsipHalaman(1)" ${v.offset + ARSIP_PER_HALAMAN >= v.total ? "disabled" : ""} class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg font-bold disabled:opacity-40">Berikutnya</button>
+            </span>`;
+    }
+}
+
+// ---------------------------------------------------------------------
+// UNDUH CSV (semua baris sesuai filter aktif)
+// ---------------------------------------------------------------------
+function arsipCsvSel(v) {
+    let s = String(v === null || v === undefined ? "" : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // cegah formula injection di Excel
+    return '"' + s.replace(/"/g, '""') + '"';
+}
+
+async function arsipUnduhCsv() {
+    const v = arsipLihat;
+    if (!v || arsipSibuk) return;
+    arsipSibuk = true;
+    showLoading("Menyiapkan CSV...");
+    try {
+        let offset = 0, total = Infinity, headers = [], rows = [];
+        while (offset < total) {
+            const res = await apiCall("getArsipData", {
+                nama_sheet: v.nama, q: v.q, kelas: v.kelas, offset: offset, limit: 2000
+            }, false, 2, true);
+            if (!res || res.status !== "success") throw new Error(res?.message || "Koneksi bermasalah.");
+            headers = res.headers || headers;
+            total = Number(res.total) || 0;
+            if (!res.data.length) break;
+            rows = rows.concat(res.data);
+            offset += res.data.length;
+        }
+        if (rows.length === 0) throw new Error("Tidak ada baris untuk diunduh.");
+        const baris = [headers.map(arsipCsvSel).join(";")]
+            .concat(rows.map(r => headers.map(h => arsipCsvSel(r[h])).join(";")));
+        const blob = new Blob(["\ufeff" + baris.join("\r\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = v.nama + ".csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast("CSV diunduh (" + rows.length + " baris).");
+    } catch (err) {
+        Swal.fire({ icon: "error", title: "Unduhan Gagal", text: String(err.message || err), confirmButtonColor: "#2563eb" });
+    } finally {
+        hideLoading();
+        arsipSibuk = false;
     }
 }
