@@ -444,8 +444,7 @@ async function saveGuruForm(e, id) {
 }
 
 async function deleteGuru(id) {
-    const confirm = await Swal.fire({ title: 'Hapus Guru?', html: 'Guru dilepas dari wali kelas dan anak binaan. Catatan yang pernah ditulis (pembinaan, prestasi, hafalan, jurnal) <b>tetap ada</b> dengan penulis "Guru dihapus".<br><br>Data akun guru tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
-    if (confirm.isConfirmed) {
+    if (await konfirmasiHapusBersih("guru", id)) {
         const res = await apiCall("deleteGuru", { id }, true);
         if (res && res.status === "success") {
             if (typeof resetCacheCatatanGuru === "function") resetCacheCatatanGuru();
@@ -523,8 +522,7 @@ async function saveKelasForm(e, id) {
 }
 
 async function deleteKelas(id) {
-    const confirm = await Swal.fire({ title: 'Hapus Kelas?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
-    if (confirm.isConfirmed) {
+    if (await konfirmasiHapusBersih("kelas", id)) {
         const res = await apiCall("deleteKelas", { id }, true);
         if (res && res.status === "success") {
             await fetchAllAppData(true);

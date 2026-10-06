@@ -470,3 +470,71 @@ function applyWriteVisibility() {
         el.classList.toggle("hidden", !(roleOk && canWrite(el.getAttribute("data-write"))));
     });
 }
+
+const LABEL_HAPUS_SISWA = {
+    Kehadiran: "Presensi kelas", KehadiranMentor: "Presensi mentor", Kebiasaan: "Kebiasaan",
+    Jurnal: "Jurnal", Hafalan: "Hafalan", Akademik: "Akademik",
+    Prestasi: "Prestasi", Pembinaan: "Pembinaan", Notif_Ditangani: "Notifikasi"
+};
+
+const LABEL_HAPUS_GURU = {
+    kelas_dilepas: "Kelas dilepas dari wali",
+    binaan_dilepas: "Anak binaan dilepas",
+    jurnal_wali: "Catatan jurnal wali (penulis jadi \"Guru dihapus\")",
+    jurnal_mentor: "Catatan jurnal mentor (penulis jadi \"Guru dihapus\")",
+    kehadiran_mentor: "Presensi binaan (nama mentor dikosongkan)",
+    notif: "Notifikasi yang ditangani",
+    pembinaan: "Catatan pembinaan (tetap ada)",
+    prestasi: "Catatan prestasi (tetap ada)",
+    hafalan: "Catatan hafalan (tetap ada)"
+};
+
+// Hitung dulu (dry run) lalu minta konfirmasi. Mengembalikan true kalau admin setuju hapus.
+async function konfirmasiHapusBersih(jenis, id) {
+    const hitung = await apiCall("hitungHapus", { jenis: jenis, id: id }, true);
+    if (!hitung || hitung.status !== "success") {
+        Swal.fire({ icon: 'error', title: 'Gagal Menghitung Data', text: (hitung && hitung.message) || 'Tidak bisa menghitung data yang akan dihapus. Periksa koneksi lalu coba lagi.', confirmButtonColor: '#2563eb' });
+        return false;
+    }
+
+    const baris = (label, jumlah) => '<li class="flex justify-between gap-3"><span>' + escapeHtml(label) + '</span><b>' + Number(jumlah || 0) + '</b></li>';
+    const nama = escapeHtml(hitung.nama || "");
+    const rincian = hitung.rincian || {};
+    let judul = "Hapus Data?";
+    let intro = "";
+    let daftar = "";
+    let tombol = "Ya, Hapus";
+
+    if (jenis === "siswa") {
+        judul = "Hapus Siswa?";
+        tombol = "Ya, Hapus Semua Data";
+        intro = 'Siswa <b>' + nama + '</b> dan seluruh riwayatnya akan <b>dihapus permanen</b>. Total <b>' + Number(hitung.total || 0) + '</b> baris data:';
+        daftar = Object.keys(LABEL_HAPUS_SISWA).map(k => baris(LABEL_HAPUS_SISWA[k], rincian[k])).join("");
+    } else if (jenis === "guru") {
+        judul = "Hapus Guru?";
+        tombol = "Ya, Hapus Guru";
+        intro = 'Akun guru <b>' + nama + '</b> dihapus. Catatan yang pernah ditulis <b>tetap ada</b>. Dampaknya:';
+        daftar = Object.keys(LABEL_HAPUS_GURU).map(k => baris(LABEL_HAPUS_GURU[k], rincian[k])).join("");
+    } else if (jenis === "kelas") {
+        judul = "Hapus Kelas?";
+        tombol = "Ya, Hapus Kelas";
+        intro = 'Kelas <b>' + nama + '</b> dihapus. Data siswa <b>tidak ikut terhapus</b>.';
+        daftar = baris("Siswa dilepas dari kelas (bisa diambil wali baru)", rincian.siswa_dilepas);
+    }
+
+    const catatan = [];
+    if (hitung.foto) catatan.push("Foto profil di Drive ikut dihapus.");
+    if (jenis === "siswa") catatan.push("Arsip semester tidak ikut dihapus.");
+    catatan.push("Tindakan ini <b>tidak dapat dikembalikan</b>.");
+
+    const konfirmasi = await Swal.fire({
+        title: judul,
+        html: '<div class="text-left text-sm">' + intro + '<ul class="my-3 space-y-1 text-xs">' + daftar + '</ul><div class="text-xs text-slate-500">' + catatan.join(" ") + '</div></div>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: tombol,
+        cancelButtonText: 'Batal'
+    });
+    return !!konfirmasi.isConfirmed;
+}

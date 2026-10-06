@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v45";
+const CACHE_NAME = "anak-wali-pwa-v46";
 
 const ASSETS_TO_CACHE = [
     "./",
