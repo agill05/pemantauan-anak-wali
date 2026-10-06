@@ -609,7 +609,7 @@ function openModalSiswa(id = null) {
         <form onsubmit="saveSiswaForm(event, '${id || ''}')" class="space-y-3">
             <div>
                 <label for="m-ssw-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
-                <input type="text" id="m-ssw-nama" value="${escapeHtml(s?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                <input type="text" id="m-ssw-nama" value="${escapeHtml(s?.nama || '')}" placeholder="Masukkan nama lengkap siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -618,13 +618,13 @@ function openModalSiswa(id = null) {
                 </div>
                 <div>
                     <label for="m-ssw-nisn" class="block text-xs font-bold text-slate-500 mb-1">NISN</label>
-                    <input type="text" id="m-ssw-nisn" value="${escapeHtml(s?.nisn || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                    <input type="text" id="m-ssw-nisn" value="${escapeHtml(s?.nisn || '')}" placeholder="Masukkan NISN" inputmode="numeric" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label for="m-ssw-user" class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
-                    <input type="text" id="m-ssw-user" value="${escapeHtml(s?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                                        <input type="text" id="m-ssw-user" value="${escapeHtml(s?.username || '')}" placeholder="Masukkan username" autocapitalize="none" autocomplete="off" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
                     <label for="m-ssw-kelas" class="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
