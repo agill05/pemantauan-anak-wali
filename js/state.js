@@ -126,7 +126,7 @@ const PERAN_STORAGE_PREFIX = "peran_aktif_";
 
 const WRITE_KATEGORI_CLIENT = {
     wali: new Set(["siswa", "absensi", "kebiasaan", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan"]),
-    mentor: new Set(["keagamaan", "prestasi", "pembinaan", "jurnal_catatan"]),
+    mentor: new Set(["keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan"]),
     self: new Set(["kebiasaan", "jurnal"])
 };
 

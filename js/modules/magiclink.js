@@ -13,35 +13,34 @@ async function generateAndShareMagicLink() {
     }
 
     if (!canWrite("magiclink", siswa)) {
-        Swal.fire({ icon: 'info', title: 'Tidak Diizinkan', text: 'Magic link orang tua hanya dapat dibuat oleh wali kelas siswa atau admin.', confirmButtonColor: '#2563eb' });
+        Swal.fire({ icon: 'info', title: 'Tidak Diizinkan', text: 'Magic link orang tua hanya dapat dibuat oleh wali kelas, mentor siswa, atau admin.', confirmButtonColor: '#2563eb' });
         return;
     }
 
     showLoading("Membuat Magic Link Orang Tua...");
     let magicToken = null;
     let magicUrl = "";
+    let errorMessage = "";
 
     try {
-        const res = await apiCall("createMagicLink", { siswa_id: siswa.id }, false);
+        const res = await apiCall("generateMagicLink", { siswa_id: siswa.id }, false);
         if (res && res.status === "success" && (res.magic_token || res.token)) {
             magicToken = res.magic_token || res.token;
         } else if (res && res.status === "error") {
-            hideLoading();
-            Swal.fire({ icon: 'error', title: 'Gagal Membuat Link', text: res.message || 'Akses ditolak.', confirmButtonColor: '#2563eb' });
-            return;
+            errorMessage = res.message || "Akses ditolak.";
+        } else {
+            errorMessage = "Tidak ada respons dari server. Periksa koneksi internet lalu coba lagi.";
         }
     } catch (e) {
-        console.warn("Gagal request token dari server, menggunakan token darurat lokal:", e);
+        console.error("Gagal request magic link:", e);
+        errorMessage = "Terjadi kesalahan saat menghubungi server. Coba lagi.";
     }
 
     hideLoading();
 
     if (!magicToken) {
-        const payload = {
-            sId: siswa.id,
-            exp: Date.now() + (15 * 60 * 1000)
-        };
-        magicToken = btoa(JSON.stringify(payload));
+        Swal.fire({ icon: 'error', title: 'Gagal Membuat Link', text: errorMessage || 'Magic link tidak dapat dibuat.', confirmButtonColor: '#2563eb' });
+        return;
     }
 
     const currentUrl = window.location.href.split('?')[0];
