@@ -585,6 +585,11 @@ function openModalSiswa(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
+    if (!id && isGuruUser() && !isWaliUser()) {
+        openModalAmbilSiswa();
+        return;
+    }
+
     const s = id ? appState.siswa.find(x => String(x.id) === String(id)) : null;
     const guruMode = isGuruUser();
     const kelasOpts = guruMode
@@ -600,6 +605,7 @@ function openModalSiswa(id = null) {
             <h3 class="text-sm font-bold text-slate-800">${s ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}</h3>
             <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
+        ${!s && guruMode ? _tabsTambahSiswa('baru') : ''}
         <form onsubmit="saveSiswaForm(event, '${id || ''}')" class="space-y-3">
             <div>
                 <label for="m-ssw-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
@@ -821,5 +827,147 @@ async function deleteSiswa(id) {
         } else {
             Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data siswa.', confirmButtonColor: '#2563eb' });
         }
+    }
+}
+
+function _tabsTambahSiswa(aktif) {
+    const cls = (m) => m === aktif ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500';
+    return `
+        <div class="flex bg-slate-200/70 p-1 rounded-xl gap-1 mb-3">
+            <button type="button" onclick="openModalSiswa()" class="flex-1 py-1.5 rounded-lg text-xs font-bold ${cls('baru')}">Siswa Baru</button>
+            <button type="button" onclick="openModalAmbilSiswa()" class="flex-1 py-1.5 rounded-lg text-xs font-bold ${cls('ambil')}">Ambil dari Data Sekolah</button>
+        </div>`;
+}
+
+let _ambilSiswaHasil = [];
+let _ambilSiswaTimer = null;
+let _ambilSiswaSeq = 0;
+
+function _ambilSiswaPeranOpsi() {
+    const opsi = [];
+    if (isWaliUser()) opsi.push({ v: 'wali', t: 'Wali kelas' });
+    opsi.push({ v: 'mentor', t: 'Mentor' });
+    return opsi;
+}
+
+function _ambilSiswaPeranDipilih() {
+    const el = document.querySelector('input[name="ambil-sebagai"]:checked');
+    if (el) return el.value;
+    return _ambilSiswaPeranOpsi()[0].v;
+}
+
+function openModalAmbilSiswa() {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+
+    const opsi = _ambilSiswaPeranOpsi();
+    const awal = (opsi.length > 1 && getPeranAktif() === 'mentor') ? 'mentor' : opsi[0].v;
+    _ambilSiswaHasil = [];
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-slate-800">${isWaliUser() ? 'Tambah Siswa' : 'Ambil Siswa Binaan'}</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        </div>
+        ${isWaliUser() ? _tabsTambahSiswa('ambil') : ''}
+        ${opsi.length > 1 ? `
+        <div class="mb-3">
+            <p class="block text-xs font-bold text-slate-500 mb-1">AMBIL SEBAGAI</p>
+            <div class="flex gap-2">
+                ${opsi.map(o => `
+                <label class="flex-1 flex items-center gap-2 bg-slate-50 border rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                    <input type="radio" name="ambil-sebagai" value="${o.v}" ${o.v === awal ? 'checked' : ''} onchange="_renderHasilAmbilSiswa()"> ${o.t}
+                </label>`).join('')}
+            </div>
+        </div>` : `<input type="radio" name="ambil-sebagai" value="${opsi[0].v}" checked class="hidden">`}
+        <div>
+            <label for="ambil-siswa-q" class="block text-xs font-bold text-slate-500 mb-1">CARI NAMA ATAU NISN</label>
+            <input type="text" id="ambil-siswa-q" oninput="_cariSiswaSekolahDebounce()" placeholder="Minimal 3 huruf" autocomplete="off" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+        </div>
+        <div id="ambil-siswa-hasil" class="mt-3 space-y-2 max-h-72 overflow-y-auto">
+            <p class="text-xs text-slate-400 text-center py-4">Ketik nama atau NISN siswa.</p>
+        </div>
+    `;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+function _cariSiswaSekolahDebounce() {
+    clearTimeout(_ambilSiswaTimer);
+    _ambilSiswaTimer = setTimeout(_cariSiswaSekolah, 400);
+}
+
+async function _cariSiswaSekolah() {
+    const input = document.getElementById("ambil-siswa-q");
+    const wadah = document.getElementById("ambil-siswa-hasil");
+    if (!input || !wadah) return;
+
+    const q = input.value.trim();
+    if (q.length < 3) {
+        _ambilSiswaHasil = [];
+        wadah.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Ketik minimal 3 huruf.</p>';
+        return;
+    }
+
+    const seq = ++_ambilSiswaSeq;
+    wadah.innerHTML = '<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin"></i> Mencari...</p>';
+    const res = await apiCall("cariSiswaSekolah", { q }, false, 1, true);
+    if (seq !== _ambilSiswaSeq) return;
+
+    if (!res || res.status !== "success") {
+        wadah.innerHTML = `<p class="text-xs text-rose-500 text-center py-4">${escapeHtml(res?.message || 'Gagal mencari. Periksa koneksi.')}</p>`;
+        return;
+    }
+    _ambilSiswaHasil = res.data || [];
+    _renderHasilAmbilSiswa();
+}
+
+function _renderHasilAmbilSiswa() {
+    const wadah = document.getElementById("ambil-siswa-hasil");
+    if (!wadah) return;
+    if (_ambilSiswaHasil.length === 0) {
+        wadah.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Siswa tidak ditemukan.</p>';
+        return;
+    }
+
+    const sebagai = _ambilSiswaPeranDipilih();
+    wadah.innerHTML = _ambilSiswaHasil.map(s => {
+        let alasan = "";
+        if (sebagai === 'wali' && s.punya_kelas) {
+            alasan = s.di_kelas_saya ? "Sudah di kelas Anda." : `Sudah di kelas ${s.kelas_nama || 'lain'}, minta admin memindahkan.`;
+        } else if (sebagai === 'mentor' && s.punya_mentor) {
+            alasan = s.binaan_saya ? "Sudah jadi binaan Anda." : "Sudah punya mentor, minta admin memindahkan.";
+        }
+        const aktif = alasan === "";
+        return `
+            <div class="bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between gap-2 ${aktif ? '' : 'opacity-60'}">
+                <div class="min-w-0">
+                    <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(s.nama)}</p>
+                    <p class="text-[11px] text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${escapeHtml(s.kelas_nama || '-')} | Mentor: ${s.punya_mentor ? 'ada' : 'belum'}</p>
+                    ${aktif ? '' : `<p class="text-[11px] text-amber-700 mt-0.5">${escapeHtml(alasan)}</p>`}
+                </div>
+                <button ${aktif ? '' : 'disabled'} onclick="ambilSiswaSekolah('${escapeHtml(s.id)}')" class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold ${aktif ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">Ambil</button>
+            </div>`;
+    }).join("");
+}
+
+async function ambilSiswaSekolah(siswaId) {
+    const sebagai = _ambilSiswaPeranDipilih();
+    const res = await apiCall("ambilSiswa", { siswa_id: siswaId, sebagai }, true);
+
+    if (res && res.status === "success") {
+        if (res.user && typeof syncUserFlags === "function") syncUserFlags(res.user);
+        closeModal();
+        showToast(res.message || "Siswa berhasil diambil.");
+        await fetchAllAppData(true);
+        renderSiswaView();
+        _refreshAllSiswaDropdowns();
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Mengambil Siswa',
+            text: res?.message || 'Koneksi bermasalah. Coba lagi.',
+            confirmButtonColor: '#2563eb'
+        });
+        if (res) _cariSiswaSekolah();
     }
 }

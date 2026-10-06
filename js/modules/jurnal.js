@@ -1,4 +1,3 @@
-
 const MOOD_JURNAL = ["😊 Senang", "🌟 Semangat", "😐 Biasa Saja", "😔 Sedih", "😴 Lelah"];
 const JURNAL_MAX_CHAR = 2000;
 
