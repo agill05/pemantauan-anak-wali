@@ -1,14 +1,92 @@
+const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
+const MAGIC_LINK_KEY = "magic_link_aktif_";
+let magicLinkTimer = null;
+
+function decodeMagicExpiry(token) {
+    try {
+        const b64 = String(token).split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+        const exp = Number(atob(b64).split("|")[1]);
+        return exp > 0 ? exp : 0;
+    } catch (e) { return 0; }
+}
+
+function getActiveMagicLink(siswaId) {
+    try {
+        const raw = JSON.parse(localStorage.getItem(MAGIC_LINK_KEY + siswaId) || "null");
+        if (raw && raw.url && raw.expiry > Date.now()) return raw;
+        localStorage.removeItem(MAGIC_LINK_KEY + siswaId);
+    } catch (e) { }
+    return null;
+}
+
+function saveActiveMagicLink(siswaId, url, expiry) {
+    try { localStorage.setItem(MAGIC_LINK_KEY + siswaId, JSON.stringify({ url, expiry })); } catch (e) { }
+}
+
+function hapusSemuaMagicLinkLokal() {
+    try {
+        Object.keys(localStorage)
+            .filter(k => k.indexOf(MAGIC_LINK_KEY) === 0)
+            .forEach(k => localStorage.removeItem(k));
+    } catch (e) { }
+}
+
+function formatSisaMagic(ms) {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+
+function formatJamWita(ts) {
+    return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Makassar" })
+        .replace(".", ":") + " WITA";
+}
+
+function refreshMagicLinkButton() {
+    clearInterval(magicLinkTimer);
+    magicLinkTimer = null;
+    const btn = document.getElementById("btn-magiclink-profil");
+    const siswa = appState.activeSiswaDetail && appState.activeSiswaDetail.siswa;
+    if (!btn || !siswa) return;
+
+    const setIdle = () => {
+        btn.classList.remove("bg-emerald-600", "hover:bg-emerald-700");
+        btn.classList.add("bg-amber-600", "hover:bg-amber-700");
+        btn.title = "";
+        btn.innerHTML = `<i class="fas fa-magic"></i> Bagikan Magic Link (15 Menit)`;
+    };
+
+    const aktif = getActiveMagicLink(siswa.id);
+    if (!aktif) { setIdle(); return; }
+
+    btn.classList.remove("bg-amber-600", "hover:bg-amber-700");
+    btn.classList.add("bg-emerald-600", "hover:bg-emerald-700");
+    btn.title = "Link masih aktif. Klik untuk melihat atau menyalin. Link baru bisa dibuat setelah waktu habis.";
+
+    const tick = () => {
+        const sisa = aktif.expiry - Date.now();
+        const live = document.getElementById("magic-link-countdown");
+        if (sisa <= 0) {
+            clearInterval(magicLinkTimer);
+            magicLinkTimer = null;
+            try { localStorage.removeItem(MAGIC_LINK_KEY + siswa.id); } catch (e) { }
+            if (live) live.textContent = "Kedaluwarsa";
+            setIdle();
+            return;
+        }
+        const teks = formatSisaMagic(sisa);
+        btn.innerHTML = `<i class="fas fa-hourglass-half"></i> Link aktif • <span class="font-mono">${teks}</span>`;
+        if (live) live.textContent = teks;
+    };
+    tick();
+    magicLinkTimer = setInterval(tick, 1000);
+}
+
 async function generateAndShareMagicLink() {
     const detail = appState.activeSiswaDetail;
     const siswa = detail ? detail.siswa : null;
 
     if (!siswa) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Siswa Belum Dipilih',
-            text: 'Silakan buka detail profil siswa terlebih dahulu.',
-            confirmButtonColor: '#2563eb'
-        });
+        Swal.fire({ icon: 'warning', title: 'Siswa Belum Dipilih', text: 'Silakan buka detail profil siswa terlebih dahulu.', confirmButtonColor: '#2563eb' });
         return;
     }
 
@@ -17,9 +95,14 @@ async function generateAndShareMagicLink() {
         return;
     }
 
+    const aktif = getActiveMagicLink(siswa.id);
+    if (aktif) {
+        tampilkanModalMagicLink(siswa, aktif.url, aktif.expiry);
+        return;
+    }
+
     showLoading("Membuat Magic Link Orang Tua...");
     let magicToken = null;
-    let magicUrl = "";
     let errorMessage = "";
 
     try {
@@ -43,9 +126,20 @@ async function generateAndShareMagicLink() {
         return;
     }
 
-    const currentUrl = window.location.href.split('?')[0];
-    magicUrl = `${currentUrl}?magic_token=${encodeURIComponent(magicToken)}`;
+    const expiry = decodeMagicExpiry(magicToken) || (Date.now() + MAGIC_LINK_TTL_MS);
+    const magicUrl = `${window.location.href.split('?')[0]}?magic_token=${encodeURIComponent(magicToken)}`;
 
+    saveActiveMagicLink(siswa.id, magicUrl, expiry);
+    tampilkanModalMagicLink(siswa, magicUrl, expiry);
+    refreshMagicLinkButton();
+}
+
+function tampilkanModalMagicLink(siswa, magicUrl, expiry) {
+    const modalBox = document.getElementById("modal-content-box");
+    const modalContainer = document.getElementById("modal-container");
+    if (!modalBox || !modalContainer) return;
+
+    const dibuat = expiry - MAGIC_LINK_TTL_MS;
     const phoneFormatted = toWhatsAppNumber(siswa.no_hp_ortu);
 
     const waMessage = encodeURIComponent(
@@ -53,16 +147,12 @@ async function generateAndShareMagicLink() {
         `Yth. Orang Tua / Wali dari ananda *${siswa.nama}*.\n` +
         `Berikut kami bagikan tautan resmi Pemantauan Anak Wali SMPN 1 Talaga Jaya:\n\n` +
         `${magicUrl}\n\n` +
-        `⏱️ *Catatan Keamanan:* Tautan ini bersifat rahasia dan hanya dapat diakses selama *15 menit* sejak dibagikan.\n\n` +
+        `⏱️ *Catatan Keamanan:* Tautan ini bersifat rahasia dan berlaku sampai pukul *${formatJamWita(expiry)}*.\n\n` +
         `Terima kasih.` +
         (isGuruUser() && appState.user ? `\n\nHormat kami,\n*${appState.user.nama}*\n${getPeranTtdText(siswa)} SMPN 1 Talaga Jaya` : ``)
     );
 
     const waLink = phoneFormatted ? `https://api.whatsapp.com/send?phone=${phoneFormatted}&text=${waMessage}` : null;
-
-    const modalBox = document.getElementById("modal-content-box");
-    const modalContainer = document.getElementById("modal-container");
-    if (!modalBox || !modalContainer) return;
 
     modalBox.innerHTML = `
         <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
@@ -80,10 +170,12 @@ async function generateAndShareMagicLink() {
 
         <div class="space-y-4">
             <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 space-y-1.5">
-                <div class="flex items-center gap-1.5 font-bold">
-                    <i class="fas fa-clock text-amber-600"></i>
-                    <span>Kedaluwarsa Otomatis: 15 Menit</span>
+                <div class="flex items-center justify-between gap-2 font-bold">
+                    <span class="flex items-center gap-1.5"><i class="fas fa-clock text-amber-600"></i> Sisa waktu aktif</span>
+                    <span id="magic-link-countdown" class="font-mono text-sm">${formatSisaMagic(expiry - Date.now())}</span>
                 </div>
+                <p class="text-[11px] text-amber-700">Dibuat ${formatJamWita(dibuat)} • Berakhir ${formatJamWita(expiry)}</p>
+                <p class="text-[11px] text-amber-700">Link baru bisa dibuat setelah ${formatJamWita(expiry)}.</p>
                 <p class="text-amber-700 leading-relaxed text-[11px]">
                     Orang tua dapat langsung memantau capaian kehadiran, karakter 7 kebiasaan, keagamaan, dan nilai anak tanpa perlu login akun.
                 </p>

@@ -59,6 +59,7 @@ async function openProfilSiswa(siswaTarget) {
     if (!container) return;
 
     document.getElementById("btn-magiclink-profil")?.classList.toggle("hidden", !(isAdminUser() || isGuruUser()) || !canWrite("magiclink", siswa));
+    if (typeof refreshMagicLinkButton === "function") refreshMagicLinkButton();
 
     const mentor = siswa.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(siswa.mentor_id)) : null;
     const staf = isAdminUser() || isGuruUser();
