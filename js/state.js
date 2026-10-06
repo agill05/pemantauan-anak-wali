@@ -15,6 +15,7 @@ let lastFetchTimes = {
     bootstrap: 0,
     absensi: 0,
     kebiasaan: 0,
+    jurnal: 0,
     keagamaan: 0,
     akademik: 0,
     pembinaan: 0,
@@ -37,6 +38,7 @@ let appState = {
     peranAktif: null,
     absensi: [],
     kebiasaan: [],
+    jurnal: [],
     keagamaan: [],
     akademik: [],
     prestasi: [],
@@ -123,9 +125,9 @@ const PERAN_LABEL = { wali: "Wali Kelas", mentor: "Mentor", semua: "Semua" };
 const PERAN_STORAGE_PREFIX = "peran_aktif_";
 
 const WRITE_KATEGORI_CLIENT = {
-    wali: new Set(["siswa", "absensi", "kebiasaan", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink"]),
-    mentor: new Set(["keagamaan", "prestasi", "pembinaan"]),
-    self: new Set(["kebiasaan"])
+    wali: new Set(["siswa", "absensi", "kebiasaan", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan"]),
+    mentor: new Set(["keagamaan", "prestasi", "pembinaan", "jurnal_catatan"]),
+    self: new Set(["kebiasaan", "jurnal"])
 };
 
 function isGuruUser() {

@@ -452,6 +452,7 @@ async function continueSessionSetup() {
         initPeranAktif();
         applyRoleUI(appState.user.role);
         startSilentTokenRefresh();
+        if (typeof ensureKonfigKebiasaan === "function") ensureKonfigKebiasaan();
         setupNetworkStatusListeners();
 
         const loginView = document.getElementById("view-login");
@@ -630,25 +631,29 @@ function applyRoleUI(role) {
 
     if (role === "siswa") {
         navContainer.innerHTML = `
-            <button onclick="switchView('dashboard')" class="nav-item flex flex-col items-center gap-1 text-slate-400 active" data-target="dashboard">
+            <button onclick="switchView('dashboard')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400 active" data-target="dashboard">
                 <i class="fas fa-home text-lg"></i>
-                <span class="text-xs font-bold">Beranda</span>
+                <span class="text-[11px] font-bold">Beranda</span>
             </button>
-            <button onclick="switchView('kebiasaan')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="kebiasaan">
+            <button onclick="switchView('kebiasaan')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400" data-target="kebiasaan">
                 <i class="fas fa-star text-lg"></i>
-                <span class="text-xs font-bold">Kebiasaan</span>
+                <span class="text-[11px] font-bold">Kebiasaan</span>
             </button>
-            <button onclick="switchView('karakter')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="karakter">
+            <button onclick="switchView('jurnal')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400" data-target="jurnal">
+                <i class="fas fa-book-open text-lg"></i>
+                <span class="text-[11px] font-bold">Jurnal</span>
+            </button>
+            <button onclick="switchView('karakter')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400" data-target="karakter">
                 <i class="fas fa-quran text-lg"></i>
-                <span class="text-xs font-bold">Keagamaan</span>
+                <span class="text-[11px] font-bold">Keagamaan</span>
             </button>
-            <button onclick="switchView('akademik')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="akademik">
+            <button onclick="switchView('akademik')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400" data-target="akademik">
                 <i class="fas fa-graduation-cap text-lg"></i>
-                <span class="text-xs font-bold">Akademik</span>
+                <span class="text-[11px] font-bold">Akademik</span>
             </button>
-            <button onclick="openProfilSiswa('${appState.user ? appState.user.id : ''}')" class="nav-item flex flex-col items-center gap-1 text-slate-400" data-target="profil-siswa">
+            <button onclick="openProfilSiswa('${appState.user ? appState.user.id : ''}')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400" data-target="profil-siswa">
                 <i class="fas fa-user-circle text-lg"></i>
-                <span class="text-xs font-bold">Profil</span>
+                <span class="text-[11px] font-bold">Profil</span>
             </button>
         `;
     } else if (role !== "ortu") {
@@ -696,6 +701,7 @@ function renderSidebarMenu(role) {
     if (role === "siswa") {
         html += section("Pemantauan");
         html += item("kebiasaan", "fa-star", "7 Kebiasaan Hebat");
+        html += item("jurnal", "fa-book-open", "Jurnal Harian");
         html += item("karakter", "fa-quran", "Keagamaan");
         html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
     } else if (role !== "ortu") {

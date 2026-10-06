@@ -128,7 +128,7 @@ async function openProfilSiswa(siswaTarget) {
         return `
                                 <div class="py-2 flex justify-between items-center text-xs">
                                     <span class="font-medium text-slate-700 flex items-center gap-2"><i class="fas ${k.icon} text-slate-400"></i> ${escapeHtml(k.nama)}</span>
-                                    <span class="font-bold ${rec.status === 'Sudah' ? 'text-emerald-600' : (rec.status === 'Kadang' ? 'text-amber-600' : 'text-slate-400')}">${rec.status}</span>
+                                    <span class="font-bold ${rec.status === 'Sudah' ? 'text-emerald-600' : 'text-slate-400'}">${rec.status === 'Sudah' ? 'Sudah' : 'Belum'}</span>
                                 </div>
                             `;
     }).join('')}
@@ -234,7 +234,7 @@ function renderRadarChartSiswa(detailData) {
 
     const totalAbsen = absensi.length || 1;
     const skorHadir = Math.round((absensi.filter(a => a.status === 'H').length / totalAbsen) * 100);
-    const skorKebiasaan = Math.round((kebiasaan.filter(k => k.status === 'Sudah').length / 7) * 100);
+    const skorKebiasaan = Math.round((kebiasaan.filter(k => k.status === 'Sudah').length / Math.max(MASTER_KEBIASAAN.length, 1)) * 100);
     const skorKeagamaan = hitungSkorKeagamaan(hafalan);
     const totalNilai = akademik.reduce((acc, curr) => acc + Number(curr.nilai_akhir), 0);
     const skorAkademik = akademik.length > 0 ? Math.round(totalNilai / akademik.length) : 0;
@@ -405,7 +405,7 @@ Yth. Bapak/Ibu Orang Tua/Wali dari ananda:
 • Alpa: ${countA} hari
 
 ⭐ *Karakter & 7 Kebiasaan Hebat:*
-• Ketercapaian Hari Ini: ${kebiasaanDone}/7 Kebiasaan
+• Ketercapaian Hari Ini: ${kebiasaanDone}/${MASTER_KEBIASAAN.length} Kebiasaan
 
 Mohon kerja sama Bapak/Ibu untuk terus mendampingi dan memotivasi ananda di rumah. Terima kasih.
 _Wassalamu'alaikum Wr. Wb._

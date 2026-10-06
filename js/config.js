@@ -59,15 +59,36 @@ const MASTER_SURAHS = [
     { no: 112, nama: "Al-Ikhlas", juz: 30 }, { no: 113, nama: "Al-Falaq", juz: 30 }, { no: 114, nama: "An-Nas", juz: 30 }
 ];
 
+// Nilai awal. Diganti dari sheet KonfigKebiasaan lewat applyKonfigKebiasaan().
+// Array ini diubah di tempat (splice) supaya modul lain yang membacanya tetap bekerja.
 const MASTER_KEBIASAAN = [
-    { id: "K1", nama: "Bangun Pagi", icon: "fa-sun", color: "text-amber-500 bg-amber-50" },
-    { id: "K2", nama: "Beribadah / Shalat", icon: "fa-pray", color: "text-emerald-500 bg-emerald-50" },
-    { id: "K3", nama: "Berolahraga", icon: "fa-running", color: "text-blue-500 bg-blue-50" },
-    { id: "K4", nama: "Makan Sehat & Bergizi", icon: "fa-apple-alt", color: "text-rose-500 bg-rose-50" },
-    { id: "K5", nama: "Gemar Membaca & Belajar", icon: "fa-book-open-reader", color: "text-indigo-500 bg-indigo-50" },
-    { id: "K6", nama: "Bermasyarakat / Gotong Royong", icon: "fa-hands-helping", color: "text-purple-500 bg-purple-50" },
-    { id: "K7", nama: "Tidur Cepat & Teratur", icon: "fa-moon", color: "text-slate-600 bg-slate-100" }
+    { id: "K1", nama: "Bangun Pagi", icon: "fa-sun", color: "text-amber-500 bg-amber-50", nama_singkat: "Bangun Pagi", jam_default: "04:30", detail_default: "Bangun pagi segar, wudhu/berdoa dan merapikan tempat tidur", label_jam: "Jam Bangun Pagi (WITA)", label_detail: "Catatan Saat Bangun", placeholder_detail: "Contoh: Bangun jam 04.30 langsung wudhu dan merapikan tempat tidur" },
+    { id: "K2", nama: "Beribadah / Shalat", icon: "fa-pray", color: "text-emerald-500 bg-emerald-50", nama_singkat: "Beribadah", jam_default: "05:00", detail_default: "Melaksanakan salat/ibadah tepat waktu sesuai agama", label_jam: "Waktu Ibadah Utama (WITA)", label_detail: "Ibadah yang Dikerjakan", placeholder_detail: "Contoh: Salat Subuh berjamaah & tadarus Al-Qur'an" },
+    { id: "K3", nama: "Berolahraga", icon: "fa-running", color: "text-blue-500 bg-blue-50", nama_singkat: "Berolahraga", jam_default: "06:00", detail_default: "Senam pagi / jalan sehat 15 menit", label_jam: "Waktu Berolahraga (WITA)", label_detail: "Jenis Olahraga & Durasi", placeholder_detail: "Contoh: Senam kesegaran jasmani / lari pagi 20 menit" },
+    { id: "K4", nama: "Makan Sehat & Bergizi", icon: "fa-apple-alt", color: "text-rose-500 bg-rose-50", nama_singkat: "Makan Sehat", jam_default: "06:30", detail_default: "Sarapan menu sehat seimbang dan minum air putih", label_jam: "Waktu Sarapan (WITA)", label_detail: "Menu Makanan & Minuman Sehat", placeholder_detail: "Contoh: Nasi, telur rebus, sayur bayam, dan air putih" },
+    { id: "K5", nama: "Gemar Membaca & Belajar", icon: "fa-book-open-reader", color: "text-indigo-500 bg-indigo-50", nama_singkat: "Gemar Belajar", jam_default: "19:00", detail_default: "Membaca buku pelajaran dan literasi mandiri", label_jam: "Waktu Mulai Belajar (WITA)", label_detail: "Materi / Buku yang Dipelajari", placeholder_detail: "Contoh: Belajar IPA dan membaca buku pengetahuan 30 menit" },
+    { id: "K6", nama: "Bermasyarakat / Gotong Royong", icon: "fa-hands-helping", color: "text-purple-500 bg-purple-50", nama_singkat: "Bermasyarakat", jam_default: "16:00", detail_default: "Membantu orang tua di rumah dan menyapa tetangga", label_jam: "Waktu Beraktivitas (WITA)", label_detail: "Bentuk Kebaikan yang Dilakukan", placeholder_detail: "Contoh: Membantu orang tua membersihkan rumah dan menyapa tetangga" },
+    { id: "K7", nama: "Tidur Cepat & Teratur", icon: "fa-moon", color: "text-slate-600 bg-slate-100", nama_singkat: "Tidur Cepat", jam_default: "21:15", detail_default: "Tidur malam tepat waktu dan mematikan gawai", label_jam: "Jam Tidur Malam (WITA)", label_detail: "Aktivitas Sebelum Tidur", placeholder_detail: "Contoh: Tidur jam 21.15 setelah berdoa dan mematikan gawai" }
 ];
+
+// Terima daftar dari backend (kolom: ikon, warna, aktif, urutan) dan pasang ke MASTER_KEBIASAAN.
+function applyKonfigKebiasaan(list) {
+    if (!Array.isArray(list) || list.length === 0) return;
+    const aktif = list.filter(k => k.aktif !== false).sort((a, b) => (a.urutan || 0) - (b.urutan || 0));
+    if (aktif.length === 0) return;
+    MASTER_KEBIASAAN.splice(0, MASTER_KEBIASAAN.length, ...aktif.map(k => ({
+        id: String(k.id),
+        nama: k.nama,
+        nama_singkat: k.nama_singkat || k.nama,
+        icon: k.ikon || "fa-check",
+        color: k.warna || "text-slate-600 bg-slate-100",
+        jam_default: k.jam_default || "",
+        detail_default: k.detail_default || "",
+        label_jam: k.label_jam || "Jam (WITA)",
+        label_detail: k.label_detail || "Keterangan",
+        placeholder_detail: k.placeholder_detail || ""
+    })));
+}
 
 const STATUS_PEMBINAAN = {
     PEMANTAUAN: "Pemantauan",

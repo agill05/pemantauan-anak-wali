@@ -1,6 +1,7 @@
 function canAccessView(role, viewId) {
     const staffOnly = ["siswa", "laporan"];
     if (viewId === "admin-manage") return role === "admin";
+    if (viewId === "jurnal") return role === "siswa"; // Tahap 4 membuka untuk guru
     if (staffOnly.includes(viewId)) return role === "admin" || role === "guru";
     return true;
 }
@@ -36,6 +37,7 @@ function switchView(viewId) {
     if (viewId === "dashboard") renderDashboard();
     if (viewId === "absensi") loadAbsensiData();
     if (viewId === "kebiasaan") loadKebiasaanData();
+    if (viewId === "jurnal") loadJurnalData();
     if (viewId === "karakter") loadKeagamaanData();
     if (viewId === "akademik") loadAkademikData();
     if (viewId === "pembinaan") loadPembinaanData();
@@ -265,6 +267,7 @@ function startDataPolling() {
                     break;
                 case "absensi": await loadAbsensiData(true); break;
                 case "kebiasaan": await loadKebiasaanData(true); break;
+                case "jurnal": await loadJurnalData(true); break;
                 case "karakter": await loadKeagamaanData(true); break;
                 case "akademik": await loadAkademikData(true); break;
                 case "pembinaan": await loadPembinaanData(true); break;
