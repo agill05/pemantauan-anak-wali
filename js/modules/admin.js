@@ -643,6 +643,24 @@ const PALET_KEBIASAAN = [
     { label: "Hijau Muda", kelas: "text-lime-600 bg-lime-50" }
 ];
 
+const MAKS_KEBIASAAN = 7;
+const KEBIASAAN_BAKU = [
+    { id: "K1", nama: "Bangun Pagi", nama_singkat: "Bangun Pagi" },
+    { id: "K2", nama: "Beribadah", nama_singkat: "Beribadah" },
+    { id: "K3", nama: "Berolahraga", nama_singkat: "Berolahraga" },
+    { id: "K4", nama: "Makan Sehat dan Bergizi", nama_singkat: "Makan Sehat" },
+    { id: "K5", nama: "Gemar Belajar", nama_singkat: "Gemar Belajar" },
+    { id: "K6", nama: "Bermasyarakat", nama_singkat: "Bermasyarakat" },
+    { id: "K7", nama: "Tidur Cepat", nama_singkat: "Tidur Cepat" }
+];
+
+function isiNamaSingkatKebiasaan() {
+    const nama = (document.getElementById("m-kb-nama") || {}).value || "";
+    const b = KEBIASAAN_BAKU.find(x => x.nama === nama);
+    const s = document.getElementById("m-kb-singkat");
+    if (s) s.value = b ? b.nama_singkat : "";
+}
+
 function terapkanKonfigAdmin(list) {
     adminKonfigKebiasaan = (list || []).slice().sort((a, b) => (a.urutan || 0) - (b.urutan || 0));
     if (typeof applyKonfigKebiasaan === "function") applyKonfigKebiasaan(adminKonfigKebiasaan);
@@ -674,7 +692,16 @@ function gambarAdminKebiasaan() {
     const data = adminKonfigKebiasaan;
     const aktif = data.filter(k => k.aktif !== false).length;
     const ringkas = document.getElementById("admin-kebiasaan-ringkas");
-    if (ringkas) ringkas.textContent = `${aktif} aktif dari ${data.length} kebiasaan`;
+    if (ringkas) ringkas.textContent = `${aktif} aktif dari ${data.length} kebiasaan (maks. ${MAKS_KEBIASAAN})`;
+
+    const btnTambah = document.getElementById("btn-tambah-kebiasaan");
+    if (btnTambah) {
+        const penuh = data.length >= MAKS_KEBIASAAN;
+        btnTambah.disabled = penuh;
+        btnTambah.classList.toggle("opacity-60", penuh);
+        btnTambah.classList.toggle("cursor-not-allowed", penuh);
+        btnTambah.title = penuh ? "Maksimal 7 kebiasaan sudah tercapai" : "";
+    }
 
     list.innerHTML = data.map((k, i) => {
         const on = k.aktif !== false;
@@ -731,7 +758,20 @@ async function geserKebiasaan(idx, arah) {
 function openModalKebiasaan(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
+    if (!id && adminKonfigKebiasaan.length >= MAKS_KEBIASAAN) {
+        Swal.fire({ icon: "info", title: "Batas Tercapai", text: "Maksimal 7 kebiasaan. Tidak bisa menambah lagi.", confirmButtonColor: "#2563eb" });
+        return;
+    }
     const k = id ? adminKonfigKebiasaan.find(x => String(x.id) === String(id)) : null;
+    const baku = k ? KEBIASAAN_BAKU.find(b => b.id === String(k.id)) : null;
+    const namaTampil = k ? (baku ? baku.nama : k.nama) : "";
+    const singkatTampil = k ? (baku ? baku.nama_singkat : (k.nama_singkat || k.nama)) : "";
+    const terpakai = new Set(adminKonfigKebiasaan.map(x => String(x.id)));
+    const namaOpts = k
+        ? `<option value="${escapeHtml(namaTampil)}" selected>${escapeHtml(namaTampil)}</option>`
+        : `<option value="">-- Pilih kebiasaan --</option>` +
+            KEBIASAAN_BAKU.filter(b => !terpakai.has(b.id))
+                .map(b => `<option value="${escapeHtml(b.nama)}">${escapeHtml(b.nama)}</option>`).join("");
     const warnaAda = k ? PALET_KEBIASAAN.some(p => p.kelas === k.warna) : true;
     const warnaOpts = PALET_KEBIASAAN.map(p => `<option value="${p.kelas}" ${k && k.warna === p.kelas ? "selected" : ""}>${p.label}</option>`).join("") +
         (!warnaAda ? `<option value="${escapeHtml(k.warna)}" selected>Kustom (tetap dipakai)</option>` : "");
@@ -746,10 +786,11 @@ function openModalKebiasaan(id = null) {
         </div>
         <form onsubmit="simpanFormKebiasaan(event, '${k ? escapeHtml(k.id) : ""}')" class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
             <div><label for="m-kb-nama" class="${lbl}">NAMA KEBIASAAN</label>
-                <input type="text" id="m-kb-nama" maxlength="60" value="${escapeHtml(k ? k.nama : "")}" class="${inp}" required></div>
+                <select id="m-kb-nama" onchange="isiNamaSingkatKebiasaan()" class="${inp}" ${k ? "disabled" : "required"}>${namaOpts}</select>
+                ${k ? `<p class="text-[10px] text-slate-400 mt-0.5">*Nama kebiasaan tetap dan tidak dapat diubah.</p>` : ""}</div>
             <div class="grid grid-cols-2 gap-2">
                 <div><label for="m-kb-singkat" class="${lbl}">NAMA SINGKAT</label>
-                    <input type="text" id="m-kb-singkat" maxlength="30" value="${escapeHtml(k ? k.nama_singkat : "")}" class="${inp}" placeholder="Sama dengan nama"></div>
+                    <input type="text" id="m-kb-singkat" value="${escapeHtml(singkatTampil)}" class="${inp} cursor-not-allowed opacity-75 bg-slate-100" readonly></div>
                 <div><label for="m-kb-jam" class="${lbl}">JAM DEFAULT (WITA)</label>
                     <input type="time" id="m-kb-jam" value="${escapeHtml(k ? k.jam_default : "")}" class="${inp}"></div>
             </div>
