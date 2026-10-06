@@ -840,7 +840,6 @@ function _tabsTambahSiswa(aktif) {
 }
 
 let _ambilSiswaHasil = [];
-let _ambilSiswaTimer = null;
 let _ambilSiswaSeq = 0;
 
 function _ambilSiswaPeranOpsi() {
@@ -882,39 +881,26 @@ function openModalAmbilSiswa() {
         </div>` : `<input type="radio" name="ambil-sebagai" value="${opsi[0].v}" checked class="hidden">`}
         <div>
             <label for="ambil-siswa-q" class="block text-xs font-bold text-slate-500 mb-1">CARI NAMA ATAU NISN</label>
-            <input type="text" id="ambil-siswa-q" oninput="_cariSiswaSekolahDebounce()" placeholder="Minimal 3 huruf" autocomplete="off" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+            <input type="text" id="ambil-siswa-q" oninput="_renderHasilAmbilSiswa()" placeholder="Ketik untuk menyaring daftar" autocomplete="off" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
         </div>
         <div id="ambil-siswa-hasil" class="mt-3 space-y-2 max-h-72 overflow-y-auto">
-            <p class="text-xs text-slate-400 text-center py-4">Ketik nama atau NISN siswa.</p>
+            <p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin"></i> Memuat data siswa...</p>
         </div>
     `;
     document.getElementById("modal-container")?.classList.remove("hidden");
+    _muatSiswaSekolah();
 }
 
-function _cariSiswaSekolahDebounce() {
-    clearTimeout(_ambilSiswaTimer);
-    _ambilSiswaTimer = setTimeout(_cariSiswaSekolah, 400);
-}
-
-async function _cariSiswaSekolah() {
-    const input = document.getElementById("ambil-siswa-q");
+async function _muatSiswaSekolah() {
     const wadah = document.getElementById("ambil-siswa-hasil");
-    if (!input || !wadah) return;
-
-    const q = input.value.trim();
-    if (q.length < 3) {
-        _ambilSiswaHasil = [];
-        wadah.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Ketik minimal 3 huruf.</p>';
-        return;
-    }
+    if (!wadah) return;
 
     const seq = ++_ambilSiswaSeq;
-    wadah.innerHTML = '<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin"></i> Mencari...</p>';
-    const res = await apiCall("cariSiswaSekolah", { q }, false, 1, true);
+    const res = await apiCall("cariSiswaSekolah", { q: "" }, false, 2, true);
     if (seq !== _ambilSiswaSeq) return;
 
     if (!res || res.status !== "success") {
-        wadah.innerHTML = `<p class="text-xs text-rose-500 text-center py-4">${escapeHtml(res?.message || 'Gagal mencari. Periksa koneksi.')}</p>`;
+        wadah.innerHTML = `<p class="text-xs text-rose-500 text-center py-4">${escapeHtml(res?.message || 'Gagal memuat data. Periksa koneksi.')}</p>`;
         return;
     }
     _ambilSiswaHasil = res.data || [];
@@ -924,13 +910,15 @@ async function _cariSiswaSekolah() {
 function _renderHasilAmbilSiswa() {
     const wadah = document.getElementById("ambil-siswa-hasil");
     if (!wadah) return;
-    if (_ambilSiswaHasil.length === 0) {
+    const q = (document.getElementById("ambil-siswa-q")?.value || "").trim().toLowerCase();
+    const daftar = _ambilSiswaHasil.filter(s => !q || String(s.nama || "").toLowerCase().includes(q) || String(s.nisn || "").toLowerCase().includes(q));
+    if (daftar.length === 0) {
         wadah.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Siswa tidak ditemukan.</p>';
         return;
     }
 
     const sebagai = _ambilSiswaPeranDipilih();
-    wadah.innerHTML = _ambilSiswaHasil.map(s => {
+    wadah.innerHTML = daftar.map(s => {
         let alasan = "";
         if (sebagai === 'wali' && s.punya_kelas) {
             alasan = s.di_kelas_saya ? "Sudah di kelas Anda." : `Sudah di kelas ${s.kelas_nama || 'lain'}, minta admin memindahkan.`;
@@ -968,6 +956,6 @@ async function ambilSiswaSekolah(siswaId) {
             text: res?.message || 'Koneksi bermasalah. Coba lagi.',
             confirmButtonColor: '#2563eb'
         });
-        if (res) _cariSiswaSekolah();
+        if (res) _muatSiswaSekolah();
     }
 }
