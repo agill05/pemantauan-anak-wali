@@ -740,6 +740,7 @@ function handleSidebarNav(viewId) {
 }
 
 function openUserSettingsModal() {
+    if (appState.user && appState.user.role === "ortu") return;
     const container = document.getElementById("modal-content-box");
     if (!container) return;
 
@@ -850,6 +851,7 @@ async function changePasswordForm(e) {
 }
 
 function openEditProfilModal() {
+    if (appState.user && appState.user.role === "ortu") return;
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
@@ -1008,6 +1010,7 @@ function validatePhoneField(input, errorElId) {
 
 async function saveSelfProfileForm(e) {
     e.preventDefault();
+    if (appState.user && appState.user.role === "ortu") return;
 
     const hpInput = document.getElementById("self-hp");
     if (hpInput && !validatePhoneField(hpInput)) {

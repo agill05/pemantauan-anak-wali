@@ -224,7 +224,8 @@
                     <span id="notif-badge"
                         class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
                 </button>
-                <button class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()"
+                <button id="btn-settings-header" data-role-visible="admin,guru,siswa"
+                    class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()"
                     aria-label="Buka pengaturan akun">
                     <i class="fas fa-cog text-lg"></i>
                 </button>
