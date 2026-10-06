@@ -588,9 +588,10 @@ function enhanceSiswaSelect(sel) {
         return o.textContent;
     };
     const close = () => {
-        list.classList.add("hidden");
-        inp.setAttribute("aria-expanded", "false");
-        inp.value = label();
+    list.classList.add("hidden");
+    inp.setAttribute("aria-expanded", "false");
+    inp.placeholder = "Ketik nama / NISN...";
+    inp.value = label();
     };
     const render = (q) => {
         const tokens = String(q || "").toLowerCase().split(/\s+/).filter(Boolean);
@@ -619,10 +620,16 @@ function enhanceSiswaSelect(sel) {
         inp.value = label();
         list.classList.add("hidden");
         inp.setAttribute("aria-expanded", "false");
+        inp.blur();
         sel.dispatchEvent(new Event("change", { bubbles: true }));
     };
 
-    inp.addEventListener("focus", () => { inp.select(); render(""); });
+    inp.addEventListener("focus", () => {
+    const terpilih = label();
+    if (terpilih) inp.placeholder = terpilih;
+    inp.value = "";
+    render("");
+    });
     inp.addEventListener("input", () => render(inp.value));
     inp.addEventListener("blur", () => setTimeout(close, 150));
     inp.addEventListener("keydown", (e) => {
