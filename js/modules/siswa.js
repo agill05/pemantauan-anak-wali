@@ -921,7 +921,7 @@ function _renderHasilAmbilSiswa() {
     wadah.innerHTML = daftar.map(s => {
         let alasan = "";
         if (sebagai === 'wali' && s.punya_kelas) {
-            alasan = s.di_kelas_saya ? "Sudah di kelas Anda." : `Sudah di kelas ${s.kelas_nama || 'lain'}${s.wali_nama ? ` (wali: ${s.wali_nama})` : ''}, minta admin memindahkan.`;
+                        alasan = s.di_kelas_saya ? "Sudah di kelas Anda." : `Sudah di kelas ${escapeHtml(s.kelas_nama || 'lain')}${s.wali_nama ? ` (wali: <b>${escapeHtml(s.wali_nama)}</b>)` : ''}, minta admin memindahkan.`;
         } else if (sebagai === 'mentor' && s.punya_mentor) {
             alasan = s.binaan_saya ? "Sudah jadi binaan Anda." : "Sudah punya mentor, minta admin memindahkan.";
         }
@@ -930,8 +930,8 @@ function _renderHasilAmbilSiswa() {
             <div class="bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between gap-2 ${aktif ? '' : 'opacity-60'}">
                 <div class="min-w-0">
                     <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(s.nama)}</p>
-                    <p class="text-[11px] text-slate-400">NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${escapeHtml(s.kelas_nama || '-')}${s.wali_nama ? ` (wali: ${escapeHtml(s.wali_nama)})` : ''} | Mentor: ${s.punya_mentor ? escapeHtml(s.mentor_nama || 'ada') : 'belum'}</p>
-                    ${aktif ? '' : `<p class="text-[11px] text-amber-700 mt-0.5">${escapeHtml(alasan)}</p>`}
+                    <p class="text-[11px] text-slate-400">NISN: <b class="text-slate-600">${escapeHtml(s.nisn || '-')}</b> | Kelas: <b class="text-slate-600">${escapeHtml(s.kelas_nama || '-')}</b>${s.wali_nama ? ` (wali: <b class="text-slate-600">${escapeHtml(s.wali_nama)}</b>)` : ''} | Mentor: <b class="text-slate-600">${s.punya_mentor ? escapeHtml(s.mentor_nama || 'ada') : 'belum ada mentor'}</b></p>
+                    ${aktif ? '' : `<p class="text-[11px] text-amber-700 mt-0.5">${alasan}</p>`}
                 </div>
                 <button ${aktif ? '' : 'disabled'} onclick="ambilSiswaSekolah('${escapeHtml(s.id)}')" class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold ${aktif ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">Ambil</button>
             </div>`;
