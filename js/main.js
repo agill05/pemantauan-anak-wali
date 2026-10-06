@@ -2,7 +2,7 @@ function canAccessView(role, viewId) {
     const staffOnly = ["siswa", "laporan"];
     if (viewId === "admin-manage") return role === "admin";
     if (viewId === "jurnal") return true;
-    if (staffOnly.includes(viewId)) return role === "admin" || role === "guru";
+    if (staffOnly.includes(viewId)) return role === "admin" || role === "guru" || role === "kepsek";
     return true;
 }
 

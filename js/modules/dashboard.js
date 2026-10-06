@@ -1,10 +1,11 @@
 async function renderDashboard() {
     if (!appState.user) return;
-    const role = appState.user.role;
+    const roleAsli = appState.user.role;
+    const role = roleAsli === "kepsek" ? "admin" : roleAsli;
 
     const adminBanner = document.getElementById("dash-admin-banner");
     if (adminBanner) {
-        if (role === "admin") adminBanner.classList.remove("hidden");
+        if (roleAsli === "admin") adminBanner.classList.remove("hidden");
         else adminBanner.classList.add("hidden");
     }
 
@@ -55,6 +56,7 @@ async function renderDashboard() {
         if (res && res.status === "success") {
             if (role !== "siswa") renderPrioritySection(res.data.priority_list);
             renderAgendaSection(res.data.agenda_list);
+            if (roleAsli === "kepsek") renderRingkasanKelas(res.data.per_kelas);
             checkStudentNotifications();
         }
     });
@@ -703,4 +705,30 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
         </div>
     `;
     document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+function renderRingkasanKelas(list) {
+    const box = document.getElementById("dash-kelas-list");
+    if (!box) return;
+    if (!list || list.length === 0) {
+        box.innerHTML = `<p class="text-xs text-slate-400">Belum ada data kelas.</p>`;
+        return;
+    }
+    box.innerHTML = list.map(k => {
+        const pct = k.total > 0 ? Math.round((k.hadir / k.total) * 100) : 0;
+        return `
+        <div class="p-3 rounded-xl border border-slate-100 bg-white">
+            <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                    <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(k.nama_kelas)}</p>
+                    <p class="text-[11px] text-slate-400 truncate">Wali: ${escapeHtml(k.wali || "-")} • ${k.total} siswa</p>
+                </div>
+                <span class="text-sm font-black text-emerald-600 shrink-0">${pct}%</span>
+            </div>
+            <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2">
+                <div class="h-full bg-emerald-500" style="width:${pct}%"></div>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2">Hadir ${k.hadir} • Sakit ${k.sakit} • Izin ${k.izin} • Alpa ${k.alpa} • Belum diisi ${k.belum_diisi}${k.perlu_perhatian ? ` • <b class="text-rose-500">${k.perlu_perhatian} perlu perhatian</b>` : ""}</p>
+        </div>`;
+    }).join("");
 }

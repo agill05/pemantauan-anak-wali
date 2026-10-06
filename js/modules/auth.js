@@ -1,5 +1,5 @@
 const LOGIN_ROLE_KEY = "login_last_role";
-const LOGIN_ROLE_LABEL = { siswa: "Siswa", guru: "Guru", admin: "Admin" };
+const LOGIN_ROLE_LABEL = { siswa: "Siswa", guru: "Guru", kepsek: "Kepala Sekolah", admin: "Admin" };
 const LOGIN_FIELD_IDS = ["login-role", "login-username", "login-password"];
 let loginInFlight = false;
 
@@ -255,7 +255,7 @@ async function handleAppLogin(e) {
     clearLoginError();
 
     if (!role) {
-        showLoginError("Pilih jenis pengguna: Siswa, Guru, atau Admin.", ["login-role"]);
+        showLoginError("Pilih jenis pengguna: Siswa, Guru, Kepala Sekolah, atau Admin.", ["login-role"]);
         roleEl?.focus();
         return;
     }
@@ -476,7 +476,7 @@ async function continueSessionSetup() {
         const sbRole = document.getElementById("sidebar-role-badge");
         if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
         if (sbNama) sbNama.innerText = appState.user.nama;
-        if (sbRole) sbRole.innerText = appState.user.role.toUpperCase() + (isGuruUser() && getGuruPeranText() ? " • " + getGuruPeranText().toUpperCase() : "");
+        if (sbRole) sbRole.innerText = (appState.user.role === "kepsek" ? "KEPALA SEKOLAH" : appState.user.role.toUpperCase()) + (isGuruUser() && getGuruPeranText() ? " • " + getGuruPeranText().toUpperCase() : "");
         renderSidebarMenu(appState.user.role);
         renderPeranSwitcher();
 
@@ -762,7 +762,7 @@ function openUserSettingsModal() {
                          class="w-11 h-11 rounded-full object-cover border border-slate-200 shrink-0">
                     <div class="min-w-0">
                         <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(user.nama)}</h4>
-                        <span class="inline-block text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase mt-0.5">${escapeHtml(user.role)}</span>
+                        <span class="inline-block text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase mt-0.5">${escapeHtml(getRoleLabel(user.role))}</span>
                     </div>
                 </div>
                 <button onclick="openEditProfilModal()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5 shrink-0">
@@ -859,7 +859,7 @@ function openEditProfilModal() {
     const user = appState.user || {};
     const role = (user.role || "").toLowerCase();
 
-    const isEditingLocked = role === "siswa" || role === "guru";
+    const isEditingLocked = role === "siswa" || role === "guru" || role === "kepsek";
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
@@ -906,7 +906,7 @@ function openEditProfilModal() {
                 </div>
 
                 <div>
-                    <label for="self-nip-nisn" class="block text-xs font-bold text-slate-500 uppercase mb-1">${role === 'guru' ? 'NIP' : (role === 'siswa' ? 'NISN' : 'ID Identifier')}</label>
+                    <label for="self-nip-nisn" class="block text-xs font-bold text-slate-500 uppercase mb-1">${role === 'guru' || role === 'kepsek' ? 'NIP' : (role === 'siswa' ? 'NISN' : 'ID Identifier')}</label>
                     <input type="text" id="self-nip-nisn" value="${escapeHtml(user.nip || user.nisn || '')}"
                            class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}"
                            ${isEditingLocked ? 'readonly' : ''}>

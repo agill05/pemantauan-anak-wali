@@ -10,7 +10,7 @@ const ABSENSI_LABEL = { H: 'Hadir', I: 'Izin', S: 'Sakit', A: 'Alpa', T: 'Terlam
 function absensiTabTersedia() {
     const u = appState.user;
     if (!u) return { kelas: false, binaan: false };
-    if (u.role === 'admin') return { kelas: true, binaan: true };
+    if (u.role === 'admin' || u.role === 'kepsek') return { kelas: true, binaan: true };
     if (u.role !== 'guru') return { kelas: false, binaan: false };
     return { kelas: isWaliUser(), binaan: isMentorUser() };
 }
@@ -39,7 +39,7 @@ function absensiSiswaTab(tab) {
     const u = appState.user;
     if (!u) return [];
     const punyaMentor = s => String(s.mentor_id || '').trim() !== '';
-    if (u.role === 'admin') return tab === 'binaan' ? all.filter(punyaMentor) : all;
+    if (u.role === 'admin' || u.role === 'kepsek') return tab === 'binaan' ? all.filter(punyaMentor) : all;
     if (tab === 'binaan') return all.filter(s => String(s.mentor_id || '').trim() === String(u.id));
     const kw = getKelasWaliId();
     return kw === null ? [] : all.filter(s => String(s.kelas_id) === String(kw));
@@ -73,7 +73,7 @@ function getAbsensiListAktif() {
     const tab = absensiTab;
     let list = absensiSiswaTab(tab);
     let filter = '';
-    if (isAdminUser()) {
+    if (isBacaSemuaUser()) {
         if (tab === 'kelas') {
             filter = document.getElementById('absensi-kelas-filter')?.value || '';
             if (filter) list = list.filter(s => String(s.kelas_id) === String(filter));
@@ -182,7 +182,7 @@ function renderAbsensiView() {
     const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
 
     let filterHtml = '';
-    if (isAdminUser()) {
+    if (isBacaSemuaUser()) {
         if (!isBinaan) {
             filterHtml = `
                 <div class="flex-1">
@@ -257,7 +257,7 @@ function renderAbsensiView() {
         const chip = isBinaan
             ? `<span class="ml-1.5 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded border bg-slate-50 text-slate-600 border-slate-200">${escapeHtml(absensiNamaKelas(s.kelas_id))}</span>`
             : `<span class="ml-1.5">${renderPeranChip(s)}</span>`;
-        const mentorLine = (isBinaan && isAdminUser()) ? `<span class="text-xs text-slate-400 block"><i class="fas fa-user-tie mr-1"></i>${escapeHtml(absensiNamaMentor(s.mentor_id))}</span>` : '';
+        const mentorLine = (isBinaan && isBacaSemuaUser()) ? `<span class="text-xs text-slate-400 block"><i class="fas fa-user-tie mr-1"></i>${escapeHtml(absensiNamaMentor(s.mentor_id))}</span>` : '';
         const opt = (v, label) => `<option value="${v}" ${rec.status === v ? 'selected' : ''}>${label} (${v})</option>`;
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
@@ -528,7 +528,7 @@ function cetakPDFAbsensi() {
 
     const inputDate = document.getElementById("absensi-date");
     const tanggal = inputDate ? (inputDate.value || getDateWITA()) : getDateWITA();
-    const admin = isAdminUser();
+    const admin = isBacaSemuaUser();
     const showKelas = isBinaan ? true : (admin && !filter);
     const showMentor = isBinaan && admin;
 

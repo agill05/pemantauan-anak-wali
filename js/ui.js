@@ -265,7 +265,7 @@ function sendWebPushNotification(title, body) {
 }
 
 function getRoleLabel(role) {
-    const map = { admin: "Admin", guru: "Guru", siswa: "Siswa", ortu: "Orang Tua" };
+    const map = { admin: "Admin", guru: "Guru", kepsek: "Kepala Sekolah", siswa: "Siswa", ortu: "Orang Tua" };
     return map[role] || (role ? role.charAt(0).toUpperCase() + role.slice(1) : "");
 }
 
@@ -452,6 +452,7 @@ function renderBacaSajaBanner(teks) {
 }
 
 function renderReadOnlyBanner(kategori, modul) {
+    if (isKepsekUser()) return renderBacaSajaBanner("Mode baca saja. Kepala Sekolah hanya dapat melihat data.");
     if (!isGuruUser()) return "";
     const list = getSiswaPeran();
     if (list.length === 0) return "";

@@ -88,7 +88,7 @@ async function loadKeagamaanData(forceRefresh = false) {
     }
 
     const rawSelectedSiswaId = filterSelect ? filterSelect.value : "";
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuru = isStafLihat();
 
     if (isAdminOrGuru && rawSelectedSiswaId === "") {
         renderKeagamaanView();
@@ -169,7 +169,7 @@ function renderKeagamaanView() {
 
     const selectEl = document.getElementById("karakter-siswa-filter");
     const filterSiswaId = selectEl ? selectEl.value : "";
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuru = isStafLihat();
 
     if (isAdminOrGuru && filterSiswaId === "") {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;

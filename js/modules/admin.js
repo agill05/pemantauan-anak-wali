@@ -32,6 +32,23 @@ function renderAdminSekolah() {
     if (nip) nip.value = appState.pengaturan?.nip_kepsek || "";
 }
 
+async function resetPasswordKepsek() {
+    const ok = await Swal.fire({
+        icon: "warning", title: "Reset Password Kepala Sekolah?",
+        text: "Password kembali ke kepsek123 dan wajib diganti saat login berikutnya.",
+        showCancelButton: true, confirmButtonText: "Ya, Reset", cancelButtonText: "Batal", confirmButtonColor: "#e11d48"
+    });
+    if (!ok.isConfirmed) return;
+    showLoading("Mereset password...");
+    const res = await apiCall("resetPasswordKepsek", {}, true);
+    hideLoading();
+    if (res && res.status === "success") {
+        Swal.fire({ icon: "success", title: "Berhasil", text: res.message, confirmButtonColor: "#2563eb" });
+    } else {
+        Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat mereset password.", confirmButtonColor: "#2563eb" });
+    }
+}
+
 async function saveSekolahForm(e) {
     e.preventDefault();
     const btn = document.getElementById("btn-save-sekolah");

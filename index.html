@@ -129,6 +129,7 @@
                                 <option value="" disabled selected>Pilih jenis pengguna</option>
                                 <option value="admin">Admin</option>
                                 <option value="guru">Guru</option>
+                                <option value="kepsek">Kepala Sekolah</option>
                                 <option value="siswa">Siswa</option>
                             </select>
                         </div>
@@ -217,14 +218,14 @@
                     aria-label="Segarkan data">
                     <i class="fas fa-rotate text-base"></i>
                 </button>
-                <button id="btn-notif-header" data-role-visible="admin,guru,siswa"
+                <button id="btn-notif-header" data-role-visible="admin,guru,siswa,kepsek"
                     class="p-2 relative hover:bg-white/10 rounded-xl transition hidden"
                     onclick="openNotificationModal()" aria-label="Buka notifikasi">
                     <i class="fas fa-bell text-lg"></i>
                     <span id="notif-badge"
                         class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
                 </button>
-                <button id="btn-settings-header" data-role-visible="admin,guru,siswa"
+                <button id="btn-settings-header" data-role-visible="admin,guru,siswa,kepsek"
                     class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()"
                     aria-label="Buka pengaturan akun">
                     <i class="fas fa-cog text-lg"></i>
@@ -297,7 +298,16 @@
 
             <div id="dash-stats-container" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
 
-            <div class="flex flex-col lg:flex-row gap-4" data-role-visible="admin,guru">
+            <div id="dash-kelas-wrap" data-role-visible="kepsek"
+                class="bg-surface p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fas fa-school text-primary"></i>
+                    <h3 class="text-sm font-bold text-slate-800">Ringkasan Per Kelas Hari Ini</h3>
+                </div>
+                <div id="dash-kelas-list" class="space-y-2"></div>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-4" data-role-visible="admin,guru,kepsek">
                 <div class="w-full lg:basis-2/3 bg-surface p-4 rounded-2xl shadow-sm border border-slate-100">
                     <div class="flex items-start gap-2 mb-3">
                         <i class="fas fa-bolt text-primary mt-0.5"></i>
@@ -761,6 +771,10 @@
                         <input type="text" id="m-skl-nip-kepsek" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="19xxxxxxxxxxxxxxxx">
                     </div>
                     <button type="submit" id="btn-save-sekolah" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Data Kepala Sekolah</button>
+                    <div class="pt-3 mt-1 border-t border-slate-100 space-y-2">
+                        <p class="text-[11px] text-slate-500 leading-relaxed">Akun login Kepala Sekolah dibuat otomatis saat data disimpan. Username: <b>kepsek</b>. Password awal: <b>kepsek123</b> (wajib diganti saat login pertama).</p>
+                        <button type="button" onclick="resetPasswordKepsek()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs">Reset Password Kepala Sekolah</button>
+                    </div>
                 </form>
             </div>
 

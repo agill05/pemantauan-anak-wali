@@ -62,7 +62,7 @@ async function openProfilSiswa(siswaTarget) {
     if (typeof refreshMagicLinkButton === "function") refreshMagicLinkButton();
 
     const mentor = siswa.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(siswa.mentor_id)) : null;
-    const staf = isAdminUser() || isGuruUser();
+    const staf = isStafLihat();
     const infoMentor = staf ? `<p class="text-xs text-slate-400">Mentor: ${mentor ? escapeHtml(mentor.nama) : (siswa.mentor_id ? '-' : 'Belum ada')} <span class="ml-1">${renderPeranChip(siswa)}</span></p>` : '';
 
     const totalHadir = absensi.filter(a => a.status === 'H').length;

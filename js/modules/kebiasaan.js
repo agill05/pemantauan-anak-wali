@@ -141,7 +141,7 @@ function renderKebiasaanView() {
     const tanggal = getTanggalKebiasaan();
     const lockState = getDateLockState(tanggal);
     const roleAllowed = bisaIsiKebiasaan(selectedSiswaId);
-    const bacaSaja = isGuruUser();
+    const bacaSaja = isGuruUser() || isKepsekUser();
     const isEditable = !!(roleAllowed && lockState.editable);
 
     const total = MASTER_KEBIASAAN.length;

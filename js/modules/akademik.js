@@ -25,7 +25,7 @@ async function loadAkademikData(forceRefresh = false) {
     }
 
     const rawSelectedSiswaId = filterSelect ? filterSelect.value : "";
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuru = isStafLihat();
     const isPrestasiActive = !document.getElementById("akd-tab-prestasi")?.classList.contains("hidden");
     const currentTab = isPrestasiActive ? 'prestasi' : 'nilai';
 
@@ -65,7 +65,7 @@ function renderAkademikNilai() {
 
     const selectEl = document.getElementById("akademik-siswa-filter");
     const filterSiswaId = selectEl ? selectEl.value : "";
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuru = isStafLihat();
 
     if (isAdminOrGuru && filterSiswaId === "") {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-indigo-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
@@ -116,7 +116,7 @@ function renderAkademikPrestasi() {
 
     const selectEl = document.getElementById("akademik-siswa-filter");
     const filterSiswaId = selectEl ? selectEl.value : "";
-    const isAdminOrGuru = appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru');
+    const isAdminOrGuru = isStafLihat();
 
     if (isAdminOrGuru && filterSiswaId === "") {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-amber-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;

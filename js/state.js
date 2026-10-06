@@ -189,6 +189,18 @@ function isAdminUser() {
     return !!(appState.user && appState.user.role === 'admin');
 }
 
+function isKepsekUser() {
+    return !!(appState.user && appState.user.role === 'kepsek');
+}
+
+function isBacaSemuaUser() {
+    return isAdminUser() || isKepsekUser();
+}
+
+function isStafLihat() {
+    return isAdminUser() || isGuruUser() || isKepsekUser();
+}
+
 function getKelasWaliId() {
     if (!isGuruUser()) return null;
     const flag = appState.user.kelas_wali_id;
@@ -288,6 +300,7 @@ function getAccessTypeSiswa(siswa) {
     if (!siswa || !appState.user) return null;
     const role = appState.user.role;
     if (role === "admin") return "admin";
+    if (role === "kepsek") return "readonly";
     if (role === "siswa") return String(siswa.id) === String(appState.user.id) ? "self" : null;
     if (role !== "guru") return null;
     const kw = getKelasWaliId();
