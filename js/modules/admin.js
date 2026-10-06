@@ -21,6 +21,7 @@ function switchAdminTab(tab) {
     if (tab === "kelas") renderAdminKelas();
     if (tab === "mentor") renderAdminMentor();
     if (tab === "sekolah") renderAdminSekolah();
+    if (tab === "kebiasaan") renderAdminKebiasaan();
 }
 
 function renderAdminSekolah() {
@@ -620,4 +621,232 @@ function _downloadCSVString(csvContent, filename) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+
+// =====================================================================
+// PENGATURAN KEBIASAAN (Tahap 4, admin)
+// Sumber data: sheet KonfigKebiasaan lewat getKonfigKebiasaan / saveKonfigKebiasaan.
+// Kebiasaan tidak dihapus, hanya dinonaktifkan, supaya riwayat siswa tetap utuh.
+// =====================================================================
+let adminKonfigKebiasaan = [];
+let adminKonfigMemuat = false;
+let adminKonfigMenyimpan = false;
+
+// Literal penuh supaya Tailwind menyertakan kelasnya saat build.
+const PALET_KEBIASAAN = [
+    { label: "Kuning", kelas: "text-amber-500 bg-amber-50" },
+    { label: "Hijau", kelas: "text-emerald-500 bg-emerald-50" },
+    { label: "Biru", kelas: "text-blue-500 bg-blue-50" },
+    { label: "Merah Muda", kelas: "text-rose-500 bg-rose-50" },
+    { label: "Indigo", kelas: "text-indigo-500 bg-indigo-50" },
+    { label: "Ungu", kelas: "text-purple-500 bg-purple-50" },
+    { label: "Abu-abu", kelas: "text-slate-600 bg-slate-100" },
+    { label: "Toska", kelas: "text-teal-500 bg-teal-50" },
+    { label: "Oranye", kelas: "text-orange-500 bg-orange-50" },
+    { label: "Biru Langit", kelas: "text-sky-500 bg-sky-50" },
+    { label: "Pink", kelas: "text-pink-500 bg-pink-50" },
+    { label: "Hijau Muda", kelas: "text-lime-600 bg-lime-50" }
+];
+
+function terapkanKonfigAdmin(list) {
+    adminKonfigKebiasaan = (list || []).slice().sort((a, b) => (a.urutan || 0) - (b.urutan || 0));
+    // Sinkronkan daftar yang dipakai layar kebiasaan di perangkat ini.
+    if (typeof applyKonfigKebiasaan === "function") applyKonfigKebiasaan(adminKonfigKebiasaan);
+    try { localStorage.setItem("cache_konfig_kebiasaan", JSON.stringify(adminKonfigKebiasaan.filter(k => k.aktif !== false))); } catch (e) { }
+    if (typeof kebiasaanKonfigLoaded !== "undefined") kebiasaanKonfigLoaded = true;
+}
+
+async function renderAdminKebiasaan(force = false) {
+    const list = document.getElementById("admin-kebiasaan-list");
+    if (!list) return;
+    if (adminKonfigKebiasaan.length > 0) gambarAdminKebiasaan();
+    else renderSkeleton("admin-kebiasaan-list", 3);
+    if (adminKonfigMemuat || (!force && adminKonfigKebiasaan.length > 0)) return;
+
+    adminKonfigMemuat = true;
+    const res = await apiCall("getKonfigKebiasaan", { semua: true }, false);
+    adminKonfigMemuat = false;
+    if (res && res.status === "success" && Array.isArray(res.data)) {
+        terapkanKonfigAdmin(res.data);
+        gambarAdminKebiasaan();
+    } else if (adminKonfigKebiasaan.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-wifi text-2xl mb-2"></i><p class="text-xs text-slate-500">Pengaturan gagal dimuat. Periksa koneksi lalu buka tab ini lagi.</p></div>`;
+    }
+}
+
+function gambarAdminKebiasaan() {
+    const list = document.getElementById("admin-kebiasaan-list");
+    if (!list) return;
+    const data = adminKonfigKebiasaan;
+    const aktif = data.filter(k => k.aktif !== false).length;
+    const ringkas = document.getElementById("admin-kebiasaan-ringkas");
+    if (ringkas) ringkas.textContent = `${aktif} aktif dari ${data.length} kebiasaan`;
+
+    list.innerHTML = data.map((k, i) => {
+        const on = k.aktif !== false;
+        return `
+            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3 ${on ? "" : "opacity-60"}">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${escapeHtml(k.warna || "text-slate-600 bg-slate-100")}">
+                    <i class="fas ${escapeHtml(k.ikon || "fa-check")}"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(k.id)} \u2022 ${escapeHtml(k.nama)}</p>
+                    <p class="text-[11px] text-slate-400 truncate">Jam default ${escapeHtml(k.jam_default || "-")} \u2022 ${on ? "Aktif" : "Nonaktif"}</p>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" onclick="geserKebiasaan(${i}, -1)" ${i === 0 ? "disabled" : ""} class="w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 disabled:opacity-30" aria-label="Naikkan urutan"><i class="fas fa-arrow-up text-xs"></i></button>
+                    <button type="button" onclick="geserKebiasaan(${i}, 1)" ${i === data.length - 1 ? "disabled" : ""} class="w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 disabled:opacity-30" aria-label="Turunkan urutan"><i class="fas fa-arrow-down text-xs"></i></button>
+                    <button type="button" onclick="openModalKebiasaan('${escapeHtml(k.id)}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100" aria-label="Ubah kebiasaan"><i class="fas fa-pen text-xs"></i></button>
+                </div>
+            </div>`;
+    }).join("") || `<div class="empty-state"><p class="text-xs text-slate-500">Belum ada kebiasaan.</p></div>`;
+}
+
+// Kirim ke server. Berhasil: ganti daftar lokal dengan hasil server.
+async function kirimKonfigKebiasaan(items) {
+    if (adminKonfigMenyimpan) return null;
+    adminKonfigMenyimpan = true;
+    const res = await apiCall("saveKonfigKebiasaan", { items }, true);
+    adminKonfigMenyimpan = false;
+    if (res && res.status === "success") {
+        if (Array.isArray(res.data)) terapkanKonfigAdmin(res.data);
+        gambarAdminKebiasaan();
+        return res;
+    }
+    if (res && res.status === "error") {
+        Swal.fire({ icon: "warning", title: "Tidak Tersimpan", text: res.message || "Ditolak server.", confirmButtonColor: "#2563eb" });
+    } else {
+        showToast("Koneksi bermasalah. Perubahan belum tersimpan.", "warning");
+    }
+    return null;
+}
+
+// Tukar urutan dua kebiasaan yang bersebelahan. Hanya dua baris yang dikirim.
+async function geserKebiasaan(idx, arah) {
+    const a = adminKonfigKebiasaan[idx];
+    const b = adminKonfigKebiasaan[idx + arah];
+    if (!a || !b) return;
+    const urutA = Number(a.urutan) || (idx + 1);
+    let urutB = Number(b.urutan) || (idx + arah + 1);
+    if (urutA === urutB) urutB = urutA + arah; // urutan kembar: pisahkan dulu
+    const res = await kirimKonfigKebiasaan([
+        Object.assign({}, a, { urutan: urutB }),
+        Object.assign({}, b, { urutan: urutA })
+    ]);
+    if (res) showToast("Urutan diperbarui.");
+}
+
+function openModalKebiasaan(id = null) {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+    const k = id ? adminKonfigKebiasaan.find(x => String(x.id) === String(id)) : null;
+    const warnaAda = k ? PALET_KEBIASAAN.some(p => p.kelas === k.warna) : true;
+    const warnaOpts = PALET_KEBIASAAN.map(p => `<option value="${p.kelas}" ${k && k.warna === p.kelas ? "selected" : ""}>${p.label}</option>`).join("") +
+        (!warnaAda ? `<option value="${escapeHtml(k.warna)}" selected>Kustom (tetap dipakai)</option>` : "");
+    const inp = "w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none";
+    const lbl = "block text-xs font-bold text-slate-500 mb-1";
+    const urutanBaru = adminKonfigKebiasaan.reduce((m, x) => Math.max(m, Number(x.urutan) || 0), 0) + 1;
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-slate-800">${k ? "Ubah Kebiasaan " + escapeHtml(k.id) : "Tambah Kebiasaan"}</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="simpanFormKebiasaan(event, '${k ? escapeHtml(k.id) : ""}')" class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+            <div><label for="m-kb-nama" class="${lbl}">NAMA KEBIASAAN</label>
+                <input type="text" id="m-kb-nama" maxlength="60" value="${escapeHtml(k ? k.nama : "")}" class="${inp}" required></div>
+            <div class="grid grid-cols-2 gap-2">
+                <div><label for="m-kb-singkat" class="${lbl}">NAMA SINGKAT</label>
+                    <input type="text" id="m-kb-singkat" maxlength="30" value="${escapeHtml(k ? k.nama_singkat : "")}" class="${inp}" placeholder="Sama dengan nama"></div>
+                <div><label for="m-kb-jam" class="${lbl}">JAM DEFAULT (WITA)</label>
+                    <input type="time" id="m-kb-jam" value="${escapeHtml(k ? k.jam_default : "")}" class="${inp}"></div>
+            </div>
+            <div><label for="m-kb-detail" class="${lbl}">KETERANGAN DEFAULT</label>
+                <input type="text" id="m-kb-detail" maxlength="200" value="${escapeHtml(k ? k.detail_default : "")}" class="${inp}"></div>
+            <div class="grid grid-cols-2 gap-2">
+                <div><label for="m-kb-ikon" class="${lbl}">IKON (Font Awesome)</label>
+                    <input type="text" id="m-kb-ikon" maxlength="40" value="${escapeHtml(k ? k.ikon : "fa-check")}" oninput="pratinjauKebiasaan()" class="${inp}" placeholder="fa-sun"></div>
+                <div><label for="m-kb-warna" class="${lbl}">WARNA</label>
+                    <select id="m-kb-warna" onchange="pratinjauKebiasaan()" class="${inp}">${warnaOpts}</select></div>
+            </div>
+            <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                <span id="m-kb-pratinjau" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 bg-slate-100"><i class="fas fa-check"></i></span>
+                Pratinjau ikon. Cari nama ikon gratis di fontawesome.com/icons, tulis seperti fa-sun.
+            </div>
+            <div><label for="m-kb-label-jam" class="${lbl}">LABEL ISIAN JAM</label>
+                <input type="text" id="m-kb-label-jam" maxlength="60" value="${escapeHtml(k ? k.label_jam : "Jam (WITA)")}" class="${inp}"></div>
+            <div><label for="m-kb-label-detail" class="${lbl}">LABEL ISIAN KETERANGAN</label>
+                <input type="text" id="m-kb-label-detail" maxlength="60" value="${escapeHtml(k ? k.label_detail : "Keterangan")}" class="${inp}"></div>
+            <div><label for="m-kb-placeholder" class="${lbl}">CONTOH ISIAN (placeholder)</label>
+                <input type="text" id="m-kb-placeholder" maxlength="200" value="${escapeHtml(k ? k.placeholder_detail : "")}" class="${inp}"></div>
+            <div class="grid grid-cols-2 gap-2">
+                <div><label for="m-kb-urutan" class="${lbl}">URUTAN</label>
+                    <input type="number" id="m-kb-urutan" min="1" max="99" value="${k ? (Number(k.urutan) || 1) : urutanBaru}" class="${inp}"></div>
+                <div><label for="m-kb-aktif" class="${lbl}">STATUS</label>
+                    <select id="m-kb-aktif" class="${inp}">
+                        <option value="Aktif" ${!k || k.aktif !== false ? "selected" : ""}>Aktif</option>
+                        <option value="Nonaktif" ${k && k.aktif === false ? "selected" : ""}>Nonaktif</option>
+                    </select></div>
+            </div>
+            <button type="submit" id="btn-save-kebiasaan" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Kebiasaan</button>
+        </form>`;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+    pratinjauKebiasaan();
+}
+
+function pratinjauKebiasaan() {
+    const wadah = document.getElementById("m-kb-pratinjau");
+    if (!wadah) return;
+    const ikon = ((document.getElementById("m-kb-ikon") || {}).value || "").trim();
+    const warna = (document.getElementById("m-kb-warna") || {}).value || "text-slate-600 bg-slate-100";
+    const aman = /^fa-[a-z0-9-]+$/.test(ikon) ? ikon : "fa-circle-question";
+    wadah.className = "w-9 h-9 rounded-xl flex items-center justify-center " + warna;
+    wadah.innerHTML = `<i class="fas ${aman}"></i>`;
+}
+
+async function simpanFormKebiasaan(e, id) {
+    e.preventDefault();
+    const v = (el) => String((document.getElementById(el) || {}).value || "").trim();
+    const nama = v("m-kb-nama");
+    const ikon = v("m-kb-ikon") || "fa-check";
+    if (!nama) return;
+    if (!/^fa-[a-z0-9-]+$/.test(ikon)) {
+        Swal.fire({ icon: "warning", title: "Ikon Tidak Valid", text: "Tulis nama ikon Font Awesome, contoh: fa-sun atau fa-book-open.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const item = {
+        nama,
+        nama_singkat: v("m-kb-singkat") || nama,
+        jam_default: v("m-kb-jam"),
+        detail_default: v("m-kb-detail"),
+        ikon,
+        warna: v("m-kb-warna"),
+        label_jam: v("m-kb-label-jam") || "Jam (WITA)",
+        label_detail: v("m-kb-label-detail") || "Keterangan",
+        placeholder_detail: v("m-kb-placeholder"),
+        urutan: Number(v("m-kb-urutan")) || 1,
+        aktif: v("m-kb-aktif") === "Nonaktif" ? "Nonaktif" : "Aktif"
+    };
+    if (id) item.id = id;
+
+    if (id && item.aktif === "Nonaktif") {
+        const ok = await Swal.fire({
+            icon: "question", title: "Nonaktifkan kebiasaan?",
+            text: "Kebiasaan ini tidak muncul lagi di isian siswa. Riwayat yang sudah ada tetap tersimpan dan bisa diaktifkan kembali.",
+            showCancelButton: true, confirmButtonText: "Ya, nonaktifkan", cancelButtonText: "Batal", confirmButtonColor: "#2563eb"
+        });
+        if (!ok.isConfirmed) return;
+    }
+
+    const btn = document.getElementById("btn-save-kebiasaan");
+    if (btn) { btn.disabled = true; btn.classList.add("opacity-60"); }
+    const res = await kirimKonfigKebiasaan([item]);
+    if (res) {
+        closeModal();
+        showToast(res.message || "Pengaturan kebiasaan disimpan.");
+    } else if (btn) {
+        btn.disabled = false;
+        btn.classList.remove("opacity-60");
+    }
 }

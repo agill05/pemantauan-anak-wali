@@ -1,7 +1,7 @@
 // =====================================================================
 // MODUL JURNAL SISWA (Tahap 3)
 // Siswa menulis satu refleksi per hari (hanya hari ini) dan membaca catatan wali/mentor.
-// Sisi guru (memberi catatan) dibuat di Tahap 4 dan memakai appState.jurnal serta renderJurnalCatatan.
+// Tahap 4: sisi guru (wali/mentor/admin) membaca jurnal siswa dan memberi catatan. Lihat bagian "SISI GURU" di bawah.
 // Memakai: apiCall, getDateWITA, formatTanggalLabel, escapeHtml, showToast (global).
 // =====================================================================
 
@@ -22,7 +22,7 @@ async function loadJurnalData(forceRefresh = false) {
     if (!container) return;
 
     if (appState.user.role !== "siswa") {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-book-open text-2xl mb-2"></i><p class="text-xs text-slate-500">Halaman jurnal untuk guru akan tersedia pada pembaruan berikutnya.</p></div>`;
+        loadJurnalGuru(forceRefresh);
         return;
     }
 
@@ -202,6 +202,248 @@ async function simpanJurnal() {
             Swal.fire({ icon: "warning", title: "Jurnal Tidak Tersimpan", text: res.message || "Ditolak server.", confirmButtonColor: "#2563eb" });
         } else {
             showToast("Koneksi bermasalah. Jurnal belum terkirim. Draf tetap aman di perangkat ini.", "warning");
+        }
+    }
+}
+
+
+// =====================================================================
+// SISI GURU (Tahap 4)
+// Wali/mentor/admin membaca jurnal siswa dalam cakupan dan menulis catatan.
+// Server menolak penulisan di luar peran (assertSiswaWrite "jurnal_catatan").
+// Tombol di sini hanya penyesuaian tampilan.
+// =====================================================================
+const JURNAL_CATATAN_MAX = 1000;
+const JURNAL_SLOT_LABEL = { wali: "Wali", mentor: "Mentor" };
+
+let jurnalGuruData = [];
+let jurnalGuruMemuat = false;
+let jurnalGuruTanda = "";      // sidik jari data terakhir, supaya polling tidak menggambar ulang tanpa perubahan
+let jurnalGuruPeran = null;
+let jurnalGuruMenyimpan = false;
+
+// Slot catatan yang boleh ditulis pengguna untuk siswa tertentu.
+function slotCatatanSiswa(siswa) {
+    if (!siswa || !appState.user) return [];
+    if (appState.user.role === "admin") return ["wali", "mentor"];
+    if (!canWrite("jurnal_catatan", siswa)) return [];
+    const tipe = getEffectiveAccessType(siswa);
+    if (tipe === "wali") return ["wali"];
+    if (tipe === "mentor") return ["mentor"];
+    if (tipe === "both") return ["wali", "mentor"];
+    return [];
+}
+
+function cariSiswaJurnal(id) {
+    return (appState.siswa || []).find(s => String(s.id) === String(id)) || null;
+}
+
+function pastikanKerangkaJurnalGuru(container) {
+    const peranSekarang = String(appState.peranAktif || "");
+    if (document.getElementById("jurnal-guru-list") && jurnalGuruPeran === peranSekarang) return;
+    jurnalGuruPeran = peranSekarang;
+    jurnalGuruTanda = "";
+    jurnalGuruData = [];
+
+    const today = getDateWITA();
+    const kls = "w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-accent";
+    const lbl = "block text-xs font-bold text-slate-500 mb-1 uppercase";
+    container.innerHTML = `
+        <div class="space-y-3">
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
+                <div>
+                    <label for="jg-siswa" class="${lbl}">Siswa</label>
+                    <select id="jg-siswa" onchange="loadJurnalGuru(true)" class="${kls}"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label for="jg-dari" class="${lbl}">Dari</label>
+                        <input type="date" id="jg-dari" value="${geserTanggalJurnal(today, -6)}" max="${today}" onchange="loadJurnalGuru(true)" class="${kls}">
+                    </div>
+                    <div>
+                        <label for="jg-sampai" class="${lbl}">Sampai</label>
+                        <input type="date" id="jg-sampai" value="${today}" max="${today}" onchange="loadJurnalGuru(true)" class="${kls}">
+                    </div>
+                </div>
+                <div>
+                    <label for="jg-filter" class="${lbl}">Tampilkan</label>
+                    <select id="jg-filter" onchange="renderJurnalGuru()" class="${kls}">
+                        <option value="">Semua jurnal</option>
+                        <option value="belum">Belum saya beri catatan</option>
+                    </select>
+                </div>
+            </div>
+            <div id="jurnal-guru-ringkas" class="text-[11px] font-semibold text-slate-500 px-1"></div>
+            <div id="jurnal-guru-list" class="space-y-2.5"></div>
+        </div>`;
+    const sel = document.getElementById("jg-siswa");
+    populateSiswaSelectForRole(sel, { includeAllOption: true });
+    sel.value = "ALL";
+}
+
+async function loadJurnalGuru(forceRefresh = false) {
+    const container = document.getElementById("jurnal-container");
+    if (!container || !appState.user || appState.user.role === "siswa") return;
+    pastikanKerangkaJurnalGuru(container);
+
+    const sid = document.getElementById("jg-siswa").value || "ALL";
+    const dari = document.getElementById("jg-dari").value;
+    const sampai = document.getElementById("jg-sampai").value;
+    if (!dari || !sampai || dari > sampai) {
+        renderJurnalGuruPesan("Rentang tanggal tidak valid. Tanggal awal harus sebelum tanggal akhir.");
+        return;
+    }
+    if (jurnalGuruMemuat) return;
+    if (!forceRefresh && jurnalGuruData.length > 0) { renderJurnalGuru(); return; }
+
+    jurnalGuruMemuat = true;
+    if (jurnalGuruData.length === 0) renderSkeleton("jurnal-guru-list", 3);
+    try {
+        const res = await apiCall("getJurnal", { siswa_id: sid, dari, sampai }, false);
+        if (res && res.status === "success" && Array.isArray(res.data)) {
+            const tanda = JSON.stringify(res.data);
+            const berubah = tanda !== jurnalGuruTanda;
+            jurnalGuruTanda = tanda;
+            jurnalGuruData = res.data;
+            lastFetchTimes.jurnal = Date.now();
+            if (berubah || !document.querySelector("#jurnal-guru-list > *")) renderJurnalGuru();
+        } else if (res && res.status === "error") {
+            renderJurnalGuruPesan(res.message || "Jurnal tidak dapat dimuat.");
+        } else if (jurnalGuruData.length === 0) {
+            renderJurnalGuruPesan("Jurnal gagal dimuat. Periksa koneksi lalu coba lagi.");
+        }
+    } finally {
+        jurnalGuruMemuat = false;
+    }
+}
+
+function renderJurnalGuruPesan(teks) {
+    const list = document.getElementById("jurnal-guru-list");
+    const ringkas = document.getElementById("jurnal-guru-ringkas");
+    if (ringkas) ringkas.textContent = "";
+    if (list) list.innerHTML = `<div class="empty-state"><i class="fas fa-book-open text-2xl mb-2"></i><p class="text-xs text-slate-500">${escapeHtml(teks)}</p></div>`;
+}
+
+function jurnalSudahDicatat(j, slots) {
+    // Dianggap sudah dicatat jika semua slot milik pengguna sudah terisi.
+    return slots.length > 0 && slots.every(sl => String((sl === "wali" ? j.catatan_wali : j.catatan_mentor) || "").trim() !== "");
+}
+
+function renderJurnalGuru() {
+    const list = document.getElementById("jurnal-guru-list");
+    if (!list) return;
+    const filter = document.getElementById("jg-filter") ? document.getElementById("jg-filter").value : "";
+
+    // Batasi ke siswa dalam peran aktif, simpan indeks asli untuk tombol.
+    const items = [];
+    jurnalGuruData.forEach((j, idx) => {
+        const siswa = cariSiswaJurnal(j.siswa_id);
+        if (isGuruUser() && (!siswa || !isSiswaInPeran(siswa))) return;
+        const slots = slotCatatanSiswa(siswa);
+        if (filter === "belum" && (slots.length === 0 || jurnalSudahDicatat(j, slots))) return;
+        items.push({ j, idx, siswa, slots });
+    });
+
+    const total = jurnalGuruData.length;
+    const belum = jurnalGuruData.filter(j => {
+        const siswa = cariSiswaJurnal(j.siswa_id);
+        if (isGuruUser() && (!siswa || !isSiswaInPeran(siswa))) return false;
+        const slots = slotCatatanSiswa(siswa);
+        return slots.length > 0 && !jurnalSudahDicatat(j, slots);
+    }).length;
+    const ringkas = document.getElementById("jurnal-guru-ringkas");
+    if (ringkas) ringkas.textContent = `${total} jurnal dalam periode. ${belum} belum diberi catatan oleh Anda.`;
+
+    if (items.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-book text-2xl mb-2"></i><p class="text-xs text-slate-500">${filter === "belum" ? "Semua jurnal sudah Anda beri catatan." : "Tidak ada jurnal pada periode ini."}</p></div>`;
+        return;
+    }
+
+    list.innerHTML = items.map(({ j, idx, siswa, slots }) => {
+        const kls = siswa ? (appState.kelas || []).find(k => String(k.id) === String(siswa.kelas_id)) : null;
+        const tombol = slots.map(sl => {
+            const ada = String((sl === "wali" ? j.catatan_wali : j.catatan_mentor) || "").trim() !== "";
+            return `<button type="button" onclick="bukaCatatanJurnal(${idx}, '${sl}')"
+                class="px-3 py-1.5 rounded-lg text-[11px] font-extrabold border transition ${ada ? "bg-white text-slate-600 border-slate-300 hover:bg-slate-50" : "bg-primary text-white border-primary hover:opacity-90"}">
+                <i class="fas ${ada ? "fa-pen" : "fa-comment-medical"} mr-1"></i>${ada ? "Ubah" : "Tulis"} Catatan ${JURNAL_SLOT_LABEL[sl]}
+            </button>`;
+        }).join("");
+        return `
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 text-xs">
+                <div class="flex justify-between items-start gap-2">
+                    <div class="min-w-0">
+                        <p class="font-extrabold text-slate-800 truncate">${escapeHtml(siswa ? siswa.nama : "Siswa")}</p>
+                        <p class="text-[10px] text-slate-400">Kelas ${escapeHtml(kls ? kls.nama_kelas : "-")} \u2022 ${escapeHtml(formatTanggalLabel(j.tanggal))}</p>
+                    </div>
+                    <span class="font-bold text-slate-600 shrink-0">${escapeHtml(j.mood || "")}</span>
+                </div>
+                <p class="text-slate-700 leading-relaxed whitespace-pre-line">${escapeHtml(j.isi || "")}</p>
+                ${renderJurnalCatatan(j)}
+                ${tombol ? `<div class="flex flex-wrap gap-2 pt-1">${tombol}</div>` : ""}
+            </div>`;
+    }).join("");
+}
+
+function bukaCatatanJurnal(idx, slot) {
+    const j = jurnalGuruData[idx];
+    if (!j) return;
+    const siswa = cariSiswaJurnal(j.siswa_id);
+    if (slotCatatanSiswa(siswa).indexOf(slot) === -1) return;
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+
+    const lama = String((slot === "wali" ? j.catatan_wali : j.catatan_mentor) || "");
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-slate-800"><i class="fas fa-comment-medical text-primary mr-1.5"></i>Catatan ${JURNAL_SLOT_LABEL[slot]}</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        </div>
+        <p class="text-xs text-slate-500 mb-2"><b>${escapeHtml(siswa ? siswa.nama : "Siswa")}</b> \u2022 ${escapeHtml(formatTanggalLabel(j.tanggal))}</p>
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 whitespace-pre-line max-h-32 overflow-y-auto mb-3">${escapeHtml(j.isi || "")}</div>
+        <label for="cj-catatan" class="block text-xs font-bold text-slate-500 mb-1">CATATAN UNTUK SISWA</label>
+        <textarea id="cj-catatan" rows="4" maxlength="${JURNAL_CATATAN_MAX}" oninput="document.getElementById('cj-hitung').textContent = this.value.length + '/${JURNAL_CATATAN_MAX}'"
+            placeholder="Tulis apresiasi atau arahan singkat..."
+            class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-accent">${escapeHtml(lama)}</textarea>
+        <div class="text-right text-[10px] text-slate-400 mt-1 mb-3"><span id="cj-hitung">${lama.length}/${JURNAL_CATATAN_MAX}</span></div>
+        <div class="flex gap-2">
+            ${lama ? `<button type="button" onclick="simpanCatatanJurnal(${idx}, '${slot}', true)" class="px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100">Hapus</button>` : ""}
+            <button type="button" id="cj-simpan" onclick="simpanCatatanJurnal(${idx}, '${slot}', false)" class="flex-1 bg-primary text-white font-bold py-2.5 rounded-xl text-xs">Simpan Catatan</button>
+        </div>`;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+    setTimeout(() => { const t = document.getElementById("cj-catatan"); if (t) t.focus(); }, 50);
+}
+
+async function simpanCatatanJurnal(idx, slot, hapus) {
+    if (jurnalGuruMenyimpan) return;
+    const j = jurnalGuruData[idx];
+    if (!j) return;
+    const catatan = hapus ? "" : String((document.getElementById("cj-catatan") || {}).value || "").trim();
+    if (!hapus && !catatan) {
+        Swal.fire({ icon: "warning", title: "Catatan Kosong", text: "Tulis catatan, atau pakai tombol Hapus untuk menghapus catatan lama.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const btn = document.getElementById("cj-simpan");
+    jurnalGuruMenyimpan = true;
+    if (btn) { btn.disabled = true; btn.classList.add("opacity-60"); btn.textContent = "Menyimpan..."; }
+
+    const res = await apiCall("saveCatatanJurnal", { siswa_id: String(j.siswa_id), tanggal: j.tanggal, catatan, sebagai: slot }, false);
+    jurnalGuruMenyimpan = false;
+
+    if (res && res.status === "success") {
+        const sebagai = res.sebagai || slot;
+        const nama = catatan ? String(appState.user.nama || "") : "";
+        if (sebagai === "wali") { j.catatan_wali = catatan; j.wali_nama = nama; }
+        else { j.catatan_mentor = catatan; j.mentor_nama = nama; }
+        jurnalGuruTanda = JSON.stringify(jurnalGuruData);
+        closeModal();
+        showToast(res.message || "Catatan tersimpan.");
+        renderJurnalGuru();
+    } else {
+        if (btn) { btn.disabled = false; btn.classList.remove("opacity-60"); btn.textContent = "Simpan Catatan"; }
+        if (res && res.status === "error") {
+            Swal.fire({ icon: "warning", title: "Catatan Tidak Tersimpan", text: res.message || "Ditolak server.", confirmButtonColor: "#2563eb" });
+        } else {
+            showToast("Koneksi bermasalah. Catatan belum terkirim.", "warning");
         }
     }
 }

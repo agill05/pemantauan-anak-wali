@@ -708,6 +708,7 @@ function renderSidebarMenu(role) {
         html += section("Pemantauan");
         html += item("absensi", "fa-calendar-check", "Presensi Kehadiran");
         html += item("kebiasaan", "fa-star", "7 Kebiasaan Hebat");
+        html += item("jurnal", "fa-book-open", "Jurnal Siswa");
         html += item("karakter", "fa-quran", "Keagamaan");
         html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
 

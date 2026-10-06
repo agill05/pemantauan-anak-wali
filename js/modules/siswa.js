@@ -269,9 +269,19 @@ function renderRadarChartSiswa(detailData) {
     });
 }
 
-function printProfilSiswa() {
+async function printProfilSiswa() {
     if (!appState.activeSiswaDetail) return;
     const { siswa, absensi, akademik, hafalan, prestasi = [], pembinaan = [] } = appState.activeSiswaDetail;
+
+    // Tahap 4: rekap kebiasaan dan jurnal 30 hari terakhir. Jika gagal dimuat, bagian 6 dan 7 dilewati.
+    let kj = null;
+    const sampaiKj = getDateWITA();
+    showLoading("Menyiapkan rapor...");
+    const resKj = await apiCall("getLaporanKebiasaan",
+        { siswa_id: String(siswa.id), dari: geserTanggalJurnal(sampaiKj, -29), sampai: sampaiKj, sertakan_jurnal: true }, false, 2, true);
+    hideLoading();
+    if (resKj && resKj.status === "success" && resKj.data && resKj.data.siswa && resKj.data.siswa[0]) kj = resKj.data;
+
     const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
     const e = escapeHtml;
     const hitung = st => absensi.filter(a => a.status === st).length;
@@ -293,6 +303,31 @@ function printProfilSiswa() {
         ["Nama Orang Tua / Wali", siswa.nama_ortu || "-"],
         ["No. WA Orang Tua / Wali", normalizePhone(siswa.no_hp_ortu) || "-"]
     ].map(([k, v]) => `<tr><td style="width: 170px; font-weight: bold;">${e(k)}</td><td>: ${e(v)}</td></tr>`).join("");
+
+    const b = v => e(bersihkanTeksPdf(v));
+    const cb = v => `<td style="text-align: center;">${b(v)}</td>`;
+    const lb = v => `<td style="text-align: left;">${b(v)}</td>`;
+    let bagianKebiasaan = "";
+    if (kj) {
+        const rk = kj.siswa[0];
+        const pct = n => Math.round((n / Math.max(kj.periode.hari, 1)) * 100);
+        const gabungCatatan = j => [
+            j.catatan_wali ? `Wali: ${j.catatan_wali}` : "",
+            j.catatan_mentor ? `Mentor: ${j.catatan_mentor}` : ""
+        ].filter(Boolean).join("; ") || "-";
+        const jurnal10 = (kj.jurnal || []).slice(0, 10);
+        bagianKebiasaan = `
+        <h4>6. Rekap 7 Kebiasaan Hebat (${kj.periode.hari} Hari Terakhir)</h4>
+        ${tabel([{ t: "Kebiasaan" }, { t: "Hari Sudah", w: 90 }, { t: "Persentase", w: 90 }],
+            kj.konfig.map(k => { const n = rk.per_kebiasaan[k.id] || 0; return `<tr>${lb(k.nama)}${c(n + " hari")}${c(pct(n) + "%")}</tr>`; }),
+            "Belum ada data kebiasaan")}
+        <p>Total poin: <b>${rk.poin}</b>. Hari dengan semua kebiasaan terpenuhi: <b>${rk.hari_penuh}</b> dari ${kj.periode.hari} hari. Capaian keseluruhan: <b>${rk.capaian}%</b>.</p>
+
+        <h4>7. Jurnal Harian dan Catatan Guru${(kj.jurnal || []).length > 10 ? " (10 Terbaru)" : ""}</h4>
+        ${tabel([{ t: "Tanggal", w: 70 }, { t: "Mood", w: 65 }, { t: "Isi Jurnal" }, { t: "Catatan Guru", w: 170 }],
+            jurnal10.map(j => `<tr>${cb(tanggalPendek(j.tanggal))}${cb(j.mood)}${lb(j.isi)}${lb(gabungCatatan(j))}</tr>`),
+            "Belum ada jurnal pada periode ini")}`;
+    }
 
     const html = `
         <table data-plain="1"><tbody>${biodata}</tbody></table>
@@ -321,6 +356,7 @@ function printProfilSiswa() {
         ${tabel([{ t: "Permasalahan" }, { t: "Status", w: 100 }, { t: "Tanggal", w: 100 }],
             pembinaan.map(p => `<tr>${l(p.permasalahan)}${c(p.status)}${c(p.tanggal)}</tr>`),
             "Tidak ada catatan pembinaan")}
+        ${bagianKebiasaan}
     `;
 
     const kepsek = (appState.pengaturan && appState.pengaturan.nama_kepsek) || "............................................";

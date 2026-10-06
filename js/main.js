@@ -1,7 +1,7 @@
 function canAccessView(role, viewId) {
     const staffOnly = ["siswa", "laporan"];
     if (viewId === "admin-manage") return role === "admin";
-    if (viewId === "jurnal") return role === "siswa"; // Tahap 4 membuka untuk guru
+    if (viewId === "jurnal") return true; // siswa menulis, guru/admin membaca dan memberi catatan
     if (staffOnly.includes(viewId)) return role === "admin" || role === "guru";
     return true;
 }
