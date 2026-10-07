@@ -91,7 +91,6 @@ function setupNetworkStatusListeners() {
                     }
                 } catch (e) { }
             }
-            triggerBackgroundSync();
         } else {
             banner?.classList.remove("hidden");
         }
@@ -99,18 +98,6 @@ function setupNetworkStatusListeners() {
 
     window.addEventListener("online", updateStatus);
     window.addEventListener("offline", updateStatus);
-}
-
-async function triggerBackgroundSync() {
-    if ('serviceWorker' in navigator && 'SyncManager' in window) {
-        try {
-            const registration = await navigator.serviceWorker.ready;
-            await registration.sync.register('sync-presensi-queue');
-            console.log('Background Sync berhasil didaftarkan');
-        } catch (err) {
-            console.error('Pendaftaran Background Sync gagal:', err);
-        }
-    }
 }
 
 async function fetchAllAppData(force = true) {

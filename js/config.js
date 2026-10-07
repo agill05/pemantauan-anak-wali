@@ -86,19 +86,3 @@ function applyKonfigKebiasaan(list) {
         placeholder_detail: k.placeholder_detail || ""
     })));
 }
-
-const STATUS_PEMBINAAN = {
-    PEMANTAUAN: "Pemantauan",
-    DALAM_PEMBINAAN: "Dalam Pembinaan",
-    PERLU_TINDAK_LANJUT: "Perlu Tindak Lanjut",
-    SELESAI: "Selesai"
-};
-
-function normalizeStatusPembinaan(status) {
-    const s = String(status || '').trim().toLowerCase();
-    if (s === 'pemantauan') return STATUS_PEMBINAAN.PEMANTAUAN;
-    if (s === 'dalam pembinaan') return STATUS_PEMBINAAN.DALAM_PEMBINAAN;
-    if (s === 'perlu tindak lanjut') return STATUS_PEMBINAAN.PERLU_TINDAK_LANJUT;
-    if (s === 'selesai') return STATUS_PEMBINAAN.SELESAI;
-    return status || STATUS_PEMBINAAN.PEMANTAUAN;
-}

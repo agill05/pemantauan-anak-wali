@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v64";
+const CACHE_NAME = "anak-wali-pwa-v65";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -103,16 +103,6 @@ self.addEventListener("fetch", (event) => {
             })
     );
 });
-
-self.addEventListener("sync", (event) => {
-    if (event.tag === "sync-presensi-queue") {
-        event.waitUntil(handleBackgroundSync());
-    }
-});
-
-async function handleBackgroundSync() {
-    console.log("[Service Worker] Pemicu sinkronisasi latar belakang aktif.");
-}
 
 self.addEventListener("notificationclick", (event) => {
     event.notification.close();
