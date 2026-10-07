@@ -5,7 +5,7 @@ let absensiMentorLoadedTanggal = null;
 let absensiMentorTried = null;
 let absensiMentorFetching = false;
 
-const ABSENSI_LABEL = { H: 'Hadir', I: 'Izin', S: 'Sakit', A: 'Alpa', T: 'Terlambat' };
+const ABSENSI_LABEL = { H: 'Hadir', I: 'Izin', S: 'Sakit', A: 'Alpa', T: 'Terlambat', '': 'Belum diisi' };
 
 function absensiTabTersedia() {
     const u = appState.user;
@@ -47,7 +47,7 @@ function absensiSiswaTab(tab) {
 function absensiRec(tab, siswaId) {
     const src = tab === 'binaan' ? appState.absensiMentor : appState.absensi;
     const r = (src || []).find(a => String(a.siswa_id) === String(siswaId));
-    return { status: (r && r.status) || 'H', waktu: r ? (r.waktu_masuk || r.waktu || '') : '' };
+    return { status: (r && r.status) || '', waktu: r ? (r.waktu_masuk || r.waktu || '') : '' };
 }
 
 function absensiBisaTulis(tab, siswa) {
@@ -167,7 +167,7 @@ function renderAbsensiView() {
     const rowEditable = s => dateEditable && absensiBisaTulis(tab, s);
     const editableCount = filteredSiswa.filter(rowEditable).length;
     const isEditable = editableCount > 0;
-    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0;
+    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0, countB = 0;
 
     filteredSiswa.forEach(s => {
         const st = absensiRec(tab, s.id).status;
@@ -175,7 +175,8 @@ function renderAbsensiView() {
         else if (st === 'S') countS++;
         else if (st === 'I') countI++;
         else if (st === 'T') countT++;
-        else countA++;
+        else if (st === 'A') countA++;
+        else countB++;
     });
 
     const persenHadir = totalSiswa > 0 ? Math.round((countH / totalSiswa) * 100) : 0;
@@ -240,12 +241,13 @@ function renderAbsensiView() {
             <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
                 <div id="absensi-progress-bar" class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: ${persenHadir}%"></div>
             </div>
-            <div class="grid grid-cols-5 gap-1.5 pt-1 border-t border-slate-700/60 text-center">
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 pt-1 border-t border-slate-700/60 text-center">
                 ${statCell('Hadir', 'stat-count-h', countH, 'text-emerald-400')}
                 ${statCell('Sakit', 'stat-count-s', countS, 'text-blue-400')}
                 ${statCell('Izin', 'stat-count-i', countI, 'text-amber-400')}
                 ${statCell('Telat', 'stat-count-t', countT, 'text-orange-400')}
                 ${statCell('Alpa', 'stat-count-a', countA, 'text-rose-400')}
+                ${statCell('Belum', 'stat-count-b', countB, 'text-slate-300')}
             </div>
         </div>` : '';
 
@@ -267,7 +269,7 @@ function renderAbsensiView() {
                 </div>
                 <div>
                     <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" ${editRow ? '' : 'disabled'} class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
-                        ${opt('H', 'Hadir')}${opt('I', 'Izin')}${opt('S', 'Sakit')}${opt('A', 'Alpa')}${opt('T', 'Terlambat')}
+                        <option value="" ${rec.status === '' ? 'selected' : ''}>Belum diisi</option>${opt('H', 'Hadir')}${opt('I', 'Izin')}${opt('S', 'Sakit')}${opt('A', 'Alpa')}${opt('T', 'Terlambat')}
                     </select>
                 </div>
             </div>`;
@@ -337,6 +339,21 @@ async function tampilRekapAbsensiMentor() {
     });
 }
 
+function absensiAdaKosong(selectElements) {
+    const kosong = Array.from(selectElements).filter(sel => sel.value === '');
+    selectElements.forEach(sel => { sel.style.outline = ''; });
+    if (kosong.length === 0) return false;
+    kosong.forEach(sel => { sel.style.outline = '2px solid #fb7185'; });
+    kosong[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    Swal.fire({
+        icon: 'warning',
+        title: 'Presensi Belum Lengkap',
+        text: `Masih ada ${kosong.length} siswa belum diisi. Lengkapi dulu, atau ketuk "Set Semua Hadir" lalu ubah yang tidak hadir.`,
+        confirmButtonColor: '#2563eb'
+    });
+    return true;
+}
+
 async function saveBatchAbsensiForm(event) {
     if (event) event.preventDefault();
 
@@ -355,6 +372,7 @@ async function saveBatchAbsensiForm(event) {
         showToast("Tidak ada presensi yang dapat disimpan.", "warning");
         return;
     }
+    if (absensiAdaKosong(selectElements)) return;
 
     showLoading("Menyimpan presensi...");
 
@@ -426,6 +444,7 @@ async function saveBatchAbsensiMentor() {
         showToast("Presensi binaan butuh koneksi internet.", "warning");
         return;
     }
+    if (absensiAdaKosong(selectElements)) return;
 
     showLoading("Menyimpan presensi binaan...");
     const waktu = getTimeWITA24();
@@ -486,15 +505,17 @@ function updateLiveAbsensiStats() {
     if (!selects || selects.length === 0) return;
 
     const total = selects.length;
-    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0;
+    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0, countB = 0;
 
     selects.forEach(sel => {
         const val = sel.value;
+        if (val !== '') sel.style.outline = '';
         if (val === 'H') countH++;
         else if (val === 'S') countS++;
         else if (val === 'I') countI++;
         else if (val === 'T') countT++;
-        else countA++;
+        else if (val === 'A') countA++;
+        else countB++;
     });
 
     const persen = total > 0 ? Math.round((countH / total) * 100) : 0;
@@ -507,6 +528,7 @@ function updateLiveAbsensiStats() {
     const statI = document.getElementById("stat-count-i");
     const statT = document.getElementById("stat-count-t");
     const statA = document.getElementById("stat-count-a");
+    const statB = document.getElementById("stat-count-b");
 
     if (persenEl) persenEl.innerHTML = `${persen}% <span class="text-xs font-normal text-slate-300">Hadir</span>`;
     if (ratioEl) ratioEl.innerText = `${countH}/${total}`;
@@ -516,6 +538,7 @@ function updateLiveAbsensiStats() {
     if (statI) statI.innerText = countI;
     if (statT) statT.innerText = countT;
     if (statA) statA.innerText = countA;
+    if (statB) statB.innerText = countB;
 }
 function cetakPDFAbsensi() {
     const { tab, filter, list } = getAbsensiListAktif();
@@ -538,13 +561,13 @@ function cetakPDFAbsensi() {
     if (isBinaan) namaGrup = admin ? (filter ? absensiNamaMentor(filter) : "Semua Mentor") : (appState.user.nama || "Mentor");
     else namaGrup = admin ? (filter ? absensiNamaKelas(filter) : "Semua Kelas") : absensiNamaKelas(getKelasWaliId());
 
-    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0;
+    let countH = 0, countS = 0, countI = 0, countA = 0, countT = 0, countB = 0;
     const td = (v, extra = '') => `<td style="padding: 6px 6px; text-align: center; ${extra}">${v}</td>`;
 
     const rowsHtml = urut.map((s, idx) => {
         const rec = absensiRec(tab, s.id);
         const st = rec.status;
-        if (st === 'H') countH++; else if (st === 'S') countS++; else if (st === 'I') countI++; else if (st === 'T') countT++; else countA++;
+        if (st === 'H') countH++; else if (st === 'S') countS++; else if (st === 'I') countI++; else if (st === 'T') countT++; else if (st === 'A') countA++; else countB++;
         return `<tr>
             ${td(idx + 1)}
             ${isBinaan ? '' : td(escapeHtml(s.no_absen || '-'))}
@@ -578,12 +601,12 @@ function cetakPDFAbsensi() {
         <table style="width: 100%; border-collapse: collapse; font-size: 11px;" border="1" borderColor="#94a3b8">
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
-                    <th style="padding: 6px;">Hadir</th><th style="padding: 6px;">Sakit</th><th style="padding: 6px;">Izin</th><th style="padding: 6px;">Terlambat</th><th style="padding: 6px;">Alpa</th>
+                    <th style="padding: 6px;">Hadir</th><th style="padding: 6px;">Sakit</th><th style="padding: 6px;">Izin</th><th style="padding: 6px;">Terlambat</th><th style="padding: 6px;">Alpa</th><th style="padding: 6px;">Belum diisi</th>
                 </tr>
             </thead>
             <tbody>
                 <tr style="text-align: center; font-weight: bold;">
-                    <td style="padding: 6px;">${countH}</td><td style="padding: 6px;">${countS}</td><td style="padding: 6px;">${countI}</td><td style="padding: 6px;">${countT}</td><td style="padding: 6px;">${countA}</td>
+                    <td style="padding: 6px;">${countH}</td><td style="padding: 6px;">${countS}</td><td style="padding: 6px;">${countI}</td><td style="padding: 6px;">${countT}</td><td style="padding: 6px;">${countA}</td><td style="padding: 6px;">${countB}</td>
                 </tr>
             </tbody>
         </table>
