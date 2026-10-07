@@ -851,8 +851,11 @@ async function changePasswordForm(e) {
     }
 }
 
+let fotoProfilTerkompres = null;
+
 function openEditProfilModal() {
     if (appState.user && appState.user.role === "ortu") return;
+    fotoProfilTerkompres = null;
     const box = document.getElementById("modal-content-box");
     if (!box) return;
 
@@ -882,7 +885,7 @@ function openEditProfilModal() {
                     </label>
                     <input type="file" id="input-foto-file" accept="image/*" onchange="previewSelectedPhoto(event)" class="hidden">
                 </div>
-                <span class="text-[11px] text-slate-400">Format: JPG/PNG (Maks. 2MB)</span>
+                <span class="text-[11px] text-slate-400">Format: JPG/PNG. Foto besar dikompres otomatis</span>
                 ${user.foto ? `
                 <button type="button" onclick="hapusFotoProfil()" class="text-[11px] text-rose-500 hover:text-rose-600 font-bold flex items-center gap-1">
                     <i class="fas fa-trash-alt"></i> Hapus Foto
@@ -930,22 +933,95 @@ function openEditProfilModal() {
     document.getElementById("modal-container")?.classList.remove("hidden");
 }
 
-function previewSelectedPhoto(event) {
-    const file = event.target.files[0];
+const FOTO_PROFIL_MAX_SISI = 800;
+const FOTO_PROFIL_MAX_BYTE = 2 * 1024 * 1024;
+
+function ukuranDataUrl(dataUrl) {
+    const b64 = dataUrl.substring(dataUrl.indexOf(",") + 1);
+    return Math.floor(b64.length * 3 / 4);
+}
+
+function muatGambar(file) {
+    if (window.createImageBitmap) {
+        return createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => muatGambarLama(file));
+    }
+    return muatGambarLama(file);
+}
+
+function muatGambarLama(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Gagal membaca gambar.")); };
+        img.src = url;
+    });
+}
+
+async function kompresFotoProfil(file) {
+    const img = await muatGambar(file);
+    const w0 = img.width, h0 = img.height;
+    if (!w0 || !h0) throw new Error("Gambar tidak valid.");
+
+    let hasil = null;
+    const skala = [1, 0.75, 0.5];
+    const kualitas = [0.85, 0.75, 0.65, 0.55, 0.45];
+
+    for (const s of skala) {
+        const sisi = FOTO_PROFIL_MAX_SISI * s;
+        const rasio = Math.min(1, sisi / Math.max(w0, h0));
+        const w = Math.max(1, Math.round(w0 * rasio));
+        const h = Math.max(1, Math.round(h0 * rasio));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        for (const q of kualitas) {
+            hasil = canvas.toDataURL("image/jpeg", q);
+            if (ukuranDataUrl(hasil) <= FOTO_PROFIL_MAX_BYTE) {
+                if (img.close) img.close();
+                return hasil;
+            }
+        }
+    }
+    if (img.close) img.close();
+    throw new Error("Foto terlalu besar untuk dikompres.");
+}
+
+async function previewSelectedPhoto(event) {
+    const input = event.target;
+    const file = input.files[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-        showToast("Ukuran foto maksimal 2MB!", "warning");
-        event.target.value = "";
+    if (!file.type || file.type.indexOf("image/") !== 0) {
+        showToast("File harus berupa gambar (JPG/PNG).", "warning");
+        input.value = "";
+        fotoProfilTerkompres = null;
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
+    try {
+        const hasil = await kompresFotoProfil(file);
+        fotoProfilTerkompres = hasil;
+
         const previewImg = document.getElementById("preview-foto-profil");
-        if (previewImg) previewImg.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+        if (previewImg) previewImg.src = hasil;
+
+        const asli = (file.size / 1024 / 1024).toFixed(1);
+        const baru = Math.max(1, Math.round(ukuranDataUrl(hasil) / 1024));
+        if (file.size > FOTO_PROFIL_MAX_BYTE) {
+            showToast("Foto dikompres otomatis (" + asli + "MB menjadi " + baru + "KB)");
+        }
+    } catch (err) {
+        input.value = "";
+        fotoProfilTerkompres = null;
+        showToast("Foto tidak dapat diproses. Coba foto lain.", "warning");
+    }
 }
 
 async function hapusFotoProfil() {
@@ -1033,11 +1109,20 @@ async function saveSelfProfileForm(e) {
     let base64Photo = null;
 
     if (file) {
-        base64Photo = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.readAsDataURL(file);
-        });
+        if (!fotoProfilTerkompres) {
+            try {
+                fotoProfilTerkompres = await kompresFotoProfil(file);
+            } catch (err) {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove("opacity-70", "cursor-not-allowed");
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+                showToast("Foto tidak dapat diproses. Coba foto lain.", "warning");
+                return;
+            }
+        }
+        base64Photo = fotoProfilTerkompres;
     }
 
     const payload = {
