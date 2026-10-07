@@ -15,7 +15,6 @@ function absensiTabTersedia() {
     return { kelas: isWaliUser(), binaan: isMentorUser() };
 }
 
-// Tab aktif mengikuti switcher peran: wali -> kelas, mentor -> binaan, semua -> pilihan sendiri.
 function syncAbsensiTab() {
     const info = absensiTabTersedia();
     const peran = isGuruUser() ? getPeranAktif() : null;

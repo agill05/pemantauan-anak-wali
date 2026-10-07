@@ -490,7 +490,6 @@ const LABEL_HAPUS_GURU = {
     hafalan: "Catatan hafalan (tetap ada)"
 };
 
-// Hitung dulu (dry run) lalu minta konfirmasi. Mengembalikan true kalau admin setuju hapus.
 async function konfirmasiHapusBersih(jenis, id) {
     const hitung = await apiCall("hitungHapus", { jenis: jenis, id: id }, true);
     if (!hitung || hitung.status !== "success") {
@@ -540,7 +539,6 @@ async function konfirmasiHapusBersih(jenis, id) {
     return !!konfirmasi.isConfirmed;
 }
 
-/* ===== Combobox cari siswa ===== */
 function _siswaComboMeta(id) {
     const s = (appState.siswa || []).find(x => String(x.id) === String(id));
     if (!s) return null;
@@ -656,7 +654,6 @@ function enhanceSiswaSelect(sel) {
     sel._comboSync();
 }
 
-/* modal tambah/ubah: otomatis aktif untuk m-akd-siswa, m-prs-siswa, m-kag-siswa, m-pbn-siswa */
 (function () {
     const box = document.getElementById("modal-content-box");
     if (!box) return;

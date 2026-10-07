@@ -1247,13 +1247,6 @@ body.dark .text-slate-400 {
     }
 }
 
-/* ==========================================================================
-   TEMA A (Bersih-Modern, Biru) - FASE 1
-   Hanya lapisan tampilan. Tidak ada perubahan fungsi.
-   Blok ini sengaja di paling bawah supaya menimpa aturan di atasnya.
-   Mode gelap tetap dikendalikan aturan body.dark di atas.
-   ========================================================================== */
-
 :root {
     --background: #f8fafc;
     --primary-light: #eff6ff;
@@ -1276,7 +1269,6 @@ body:not(.dark) .bg-background {
     background-color: var(--background);
 }
 
-/* Kartu: satu gaya, tanpa efek naik saat hover */
 .bg-surface,
 .bg-white {
     box-shadow: none;
@@ -1306,7 +1298,6 @@ body:not(.dark) .border-slate-100 {
     border-color: var(--line);
 }
 
-/* Tipografi: tidak ada teks di bawah 12px */
 .text-\[9px\],
 .text-\[10px\],
 .text-\[11px\] {
@@ -1336,7 +1327,6 @@ body:not(.dark) .border-slate-100 {
     letter-spacing: 0.02em;
 }
 
-/* Header putih bersih di semua ukuran layar */
 body:not(.dark) #main-header {
     background: #ffffff !important;
     color: var(--text);
@@ -1384,7 +1374,6 @@ body:not(.dark) #header-mobile-avatar {
     line-height: 1;
 }
 
-/* Sidebar terang (mode terang saja) */
 body:not(.dark) #app-sidebar {
     background: #ffffff;
     border-right: 1px solid var(--line);
@@ -1448,7 +1437,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     background: #fef2f2 !important;
 }
 
-/* Bottom nav: item aktif berbentuk pill */
 .nav-item {
     min-height: 3.5rem;
     justify-content: center;
@@ -1461,7 +1449,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     padding: 0.3rem 1rem;
 }
 
-/* Menu cepat dan banner */
 .quick-tile {
     border-radius: var(--radius-card);
 }
@@ -1485,14 +1472,12 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     box-shadow: none;
 }
 
-/* Empty state dan skeleton */
 .empty-state {
     border-radius: var(--radius-card);
     border: 1px dashed #cbd5e1;
     color: var(--text-soft);
 }
 
-/* Modal: bottom sheet di HP */
 #modal-content-box button:has(> .fa-times) {
     min-width: 44px;
     min-height: 44px;
@@ -1539,7 +1524,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     }
 }
 
-/* Input 16px di HP: iOS tidak zoom otomatis, target sentuh nyaman */
 @media (max-width: 767px) {
 
     #main-content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
@@ -1559,7 +1543,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     }
 }
 
-/* Tinggi layar iOS Safari */
 @supports (height: 100dvh) {
     body.h-screen {
         height: 100dvh;
@@ -1578,7 +1561,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     }
 }
 
-/* Gerak dikurangi */
 @media (prefers-reduced-motion: reduce) {
 
     .view-section.active,
@@ -1591,15 +1573,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     }
 }
 
-/* ==========================================================================
-   TEMA A - FASE 2: KERANGKA LAYOUT (HP / tablet / laptop / PC)
-   Hanya CSS. Tidak ada perubahan fungsi atau markup.
-   <768px   : header + bottom nav + sidebar drawer (seperti sebelumnya)
-   768-1023 : sidebar tetap 232px, tanpa bottom nav (BARU, tablet)
-   >=1024   : sidebar tetap 272px (tetap)
-   ========================================================================== */
-
-/* Tablet dan lebih besar: sidebar tetap, drawer dan bottom nav dimatikan */
 @media (min-width: 768px) {
     #app-sidebar {
         position: fixed;
@@ -1647,7 +1620,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     }
 }
 
-/* Khusus tablet: sidebar lebih ramping, header dan konten menyesuaikan */
 @media (min-width: 768px) and (max-width: 1023px) {
     :root {
         --sidebar-width: 232px;
@@ -1669,7 +1641,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     }
 }
 
-/* HP: bottom nav muat 5-6 item, safe-area layar miring (landscape iOS) */
 @media (max-width: 767px) {
     #bottom-nav-items .nav-item {
         min-width: 0;
@@ -1697,7 +1668,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     }
 }
 
-/* HP sangat sempit (<360px): label hanya tampil di item aktif, tetap terbaca pembaca layar */
 @media (max-width: 359px) {
     #bottom-nav-items .nav-item:not(.active) span {
         position: absolute;
@@ -1712,15 +1682,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     }
 }
 
-/* ==========================================================================
-   TEMA A - FASE 3: KOMPONEN (form, tombol, modal, popup)
-   Hanya CSS. Tidak ada perubahan fungsi atau markup.
-   Sasaran: pola class yang sudah seragam di template JS
-   (input/select/textarea ber-rounded-xl, tombol aksi ber-py-2.5 / py-3).
-   Mode gelap tetap dikendalikan aturan body.dark (memakai !important).
-   ========================================================================== */
-
-/* ---- Form: input, select, textarea ---- */
 :is(#main-content, #modal-content-box) :is(input, select, textarea).rounded-xl:not([class*="pr-9"]) {
     padding-left: 0.875rem;
     padding-right: 0.875rem;
@@ -1752,7 +1713,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     min-height: 5rem;
 }
 
-/* Panah select seragam */
 :is(#main-content, #modal-content-box) select.rounded-xl {
     -webkit-appearance: none;
     appearance: none;
@@ -1763,7 +1723,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     background-size: 1rem;
 }
 
-/* Checkbox dan radio */
 :is(#main-content, #modal-content-box) input:is([type="checkbox"], [type="radio"]) {
     width: 1.125rem;
     height: 1.125rem;
@@ -1771,7 +1730,6 @@ body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
     flex-shrink: 0;
 }
 
-/* ---- Tombol ---- */
 :is(#main-content, #modal-content-box) button:is([class*="py-2.5"], [class*="py-3"]) {
     min-height: 2.75rem;
     font-size: 0.875rem;
@@ -1788,7 +1746,6 @@ button:disabled:active {
     transform: none;
 }
 
-/* ---- Modal: judul dan jarak ---- */
 #modal-content-box h3.text-sm {
     font-size: 1rem;
     line-height: 1.5rem;
@@ -1798,19 +1755,16 @@ button:disabled:active {
     border-color: var(--line);
 }
 
-/* ---- Scroll horizontal (tab, chip) lebih halus di layar sentuh ---- */
 .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
 }
 
-/* ---- Tabel arsip ---- */
 #arsip-lihat-tabel tbody tr:hover {
     background: #f1f5f9;
 }
 
-/* ---- Popup SweetAlert2 (bukan toast) ---- */
 .swal2-popup:not(.swal2-toast) {
     font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     border-radius: 1.25rem;
@@ -1845,12 +1799,6 @@ button:disabled:active {
     }
 }
 
-/* ==========================================================================
-   TEMA A - FASE 4A: DASHBOARD + POLA KEPALA HALAMAN
-   Hanya CSS. Tidak ada perubahan fungsi atau markup.
-   ========================================================================== */
-
-/* ---- Kepala halaman (kartu judul + tanggal + tombol PDF) di semua halaman ---- */
 #main-content .view-section>.bg-surface:first-child h2.text-sm {
     font-size: 1rem;
     line-height: 1.5rem;
@@ -1866,7 +1814,6 @@ button:disabled:active {
     }
 }
 
-/* Tombol ikon kecil (lihat, WhatsApp, edit, hapus) wajib 44px agar mudah disentuh */
 #main-content button.p-2[aria-label],
 #main-content button.p-2[title] {
     min-width: 2.75rem;
@@ -1876,7 +1823,6 @@ button:disabled:active {
     justify-content: center;
 }
 
-/* ---- Dashboard: banner admin jadi lembut ---- */
 body:not(.dark) #dash-admin-banner {
     background: var(--primary-light);
     border-color: #bfdbfe;
@@ -1892,7 +1838,6 @@ body:not(.dark) #dash-admin-banner .text-slate-300 {
     color: var(--text-muted);
 }
 
-/* ---- Dashboard: kartu statistik ---- */
 #dash-stats-container>div {
     border-radius: var(--radius-card);
 }
@@ -1909,7 +1854,6 @@ body:not(.dark) #dash-admin-banner .text-slate-300 {
     }
 }
 
-/* ---- Dashboard: judul seksi lebih tegas ---- */
 body:not(.dark) #dash-section-bottom h2,
 body:not(.dark) #dash-section-agenda h2 {
     color: var(--text) !important;
@@ -1921,7 +1865,6 @@ body:not(.dark) #dash-section-agenda h2 {
     font-weight: 800;
 }
 
-/* ---- Dashboard: daftar prioritas dan agenda 2 kolom di tablet ke atas ---- */
 @media (min-width: 768px) {
 
     #dash-priority-container,
@@ -1944,7 +1887,6 @@ body:not(.dark) #dash-section-agenda h2 {
     }
 }
 
-/* ---- Dashboard: menu cepat, fokus keyboard dan sentuh ---- */
 .quick-tile {
     min-height: 5.5rem;
 }
@@ -1954,20 +1896,12 @@ body:not(.dark) #dash-section-agenda h2 {
     outline-offset: 2px;
 }
 
-/* ---- Dashboard: banner tablet berbaris, bukan menjulang ---- */
 @media (min-width: 768px) and (max-width: 1023px) {
     .dash-banner {
         min-height: 0;
     }
 }
 
-/* ==========================================================================
-   TEMA A - FASE 4B: PRESENSI + 7 KEBIASAAN HEBAT
-   Hanya CSS. Tidak ada perubahan fungsi atau markup.
-   ID elemen untuk update statistik langsung (stat-count-*, absensi-*) tidak diubah.
-   ========================================================================== */
-
-/* ---- Tab segmented (Presensi Kelas/Binaan, Hari Ini/Kalender, dst.) ---- */
 #main-content .bg-slate-100.p-1.rounded-xl>button,
 #kebiasaan-tabs button {
     min-height: 2.5rem;
@@ -1981,7 +1915,6 @@ body:not(.dark) #dash-section-agenda h2 {
     }
 }
 
-/* ---- Presensi: kartu statistik jadi terang (mode terang saja) ---- */
 body:not(.dark) #absensi-stats-card {
     background: #ffffff;
     color: var(--text);
@@ -2039,7 +1972,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     border-color: #a7f3d0;
 }
 
-/* ---- Presensi: status siswa, 2 kolom di tablet ke atas ---- */
 .absensi-select-item {
     min-width: 7.5rem;
 }
@@ -2061,7 +1993,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Presensi: tombol simpan menempel di atas bottom nav (HP) ---- */
 @media (max-width: 767px) {
     #absensi-list-container form>.pt-2 {
         position: sticky;
@@ -2075,7 +2006,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Kebiasaan: kartu ketercapaian biru solid, bukan gradasi ungu ---- */
 .bg-gradient-to-r.from-blue-600.via-indigo-600.to-purple-600 {
     background-image: none;
     background-color: var(--primary);
@@ -2083,7 +2013,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     border-radius: var(--radius-card);
 }
 
-/* ---- Kebiasaan: kartu kebiasaan 2 kolom di tablet ke atas ---- */
 @media (min-width: 768px) {
     #kebiasaan-list-container>.space-y-3 {
         display: grid;
@@ -2102,13 +2031,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ==========================================================================
-   TEMA A - FASE 4C: JURNAL + KEAGAMAAN + AKADEMIK
-   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4B).
-   Tidak ada perubahan id, onclick, data-*, atau fungsi.
-   ========================================================================== */
-
-/* ---- Tab segmented: Keagamaan (kategori) dan Akademik (Nilai/Prestasi) ---- */
 #keagamaan-kategori-tabs,
 #view-akademik>div:first-child.flex {
     background: #f1f5f9;
@@ -2128,7 +2050,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Tombol ikon kecil (edit/hapus nilai) wajib 44px ---- */
 :is(#view-jurnal, #view-karakter, #view-akademik) button.p-1\.5[aria-label] {
     min-width: 2.75rem;
     min-height: 2.75rem;
@@ -2137,7 +2058,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     justify-content: center;
 }
 
-/* ---- Tombol teks kecil: Edit/Hapus, Tambah, PDF ---- */
 :is(#keagamaan-container, #prestasi-list-container) button:is([onclick^="openModal"], [onclick^="delete"]) {
     min-height: 2.75rem;
     padding: 0 0.75rem;
@@ -2169,19 +2089,16 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     background-color: #047857;
 }
 
-/* Kepala halaman Keagamaan: boleh turun baris di HP sempit */
 #view-karakter>div:first-child {
     flex-wrap: wrap;
     gap: 0.75rem;
 }
 
-/* Baris judul seksi Akademik + tombol tambah */
 :is(#akd-tab-nilai, #akd-tab-prestasi)>.flex:first-child {
     flex-wrap: wrap;
     gap: 0.75rem;
 }
 
-/* ---- Filter siswa ---- */
 :is(#karakter-siswa-filter, #akademik-siswa-filter) {
     min-height: 2.75rem;
 }
@@ -2192,7 +2109,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Keagamaan: kartu progres hijau tegas, bukan gradasi ---- */
 .bg-gradient-to-r.from-emerald-600.to-teal-700 {
     background-image: none;
     background-color: #047857;
@@ -2204,7 +2120,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     color: #ecfdf5;
 }
 
-/* ---- Keagamaan, Akademik: daftar kartu 2 kolom di tablet ke atas ---- */
 @media (min-width: 768px) {
 
     #keagamaan-container,
@@ -2224,7 +2139,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
         min-width: 0;
     }
 
-    /* Kartu progres, banner baca saja, dan empty state selalu selebar baris */
     #keagamaan-container>.bg-gradient-to-r,
     #keagamaan-container>.empty-state,
     #akademik-list-container>.bg-violet-50,
@@ -2234,7 +2148,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* Kartu nilai: nama mapel boleh turun baris, badge dan tombol tidak menyusut */
 #akademik-list-container>.flex.items-center.justify-between {
     gap: 0.75rem;
 }
@@ -2248,7 +2161,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     flex-shrink: 0;
 }
 
-/* ---- Jurnal siswa: form dan riwayat berdampingan di laptop ---- */
 #jurnal-isi,
 #cj-catatan {
     line-height: 1.6;
@@ -2286,7 +2198,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
 
 @media (max-width: 767px) {
 
-    /* Tombol simpan menempel di atas bottom nav selagi mengetik */
     #jurnal-simpan {
         position: sticky;
         bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
@@ -2308,14 +2219,12 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
         min-width: 0;
     }
 
-    /* Form tetap terlihat selagi riwayat di-scroll */
     #jurnal-container>.space-y-4>:first-child {
         position: sticky;
         top: 1rem;
     }
 }
 
-/* ---- Jurnal guru: filter satu baris di tablet, daftar 2 kolom ---- */
 #jurnal-guru-ringkas {
     font-size: 0.875rem;
     color: var(--text-muted);
@@ -2358,7 +2267,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Modal catatan/nilai/keagamaan: tombol Simpan dan Hapus lega ---- */
 #modal-content-box form>button[type="submit"],
 #modal-content-box #cj-simpan {
     min-height: 2.75rem;
@@ -2366,25 +2274,16 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
 
 @media (max-width: 639px) {
 
-    /* Dua kolom di modal jadi satu kolom di HP sempit agar nilai terbaca */
     #modal-content-box .grid.grid-cols-2:has(#m-akd-nilai, #m-kag-tanggal, #m-prs-tanggal) {
         grid-template-columns: 1fr;
     }
 }
 
-/* ---- Fokus keyboard pada tombol di tiga halaman ---- */
 :is(#view-jurnal, #view-karakter, #view-akademik) button:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 
-/* ==========================================================================
-   TEMA A - FASE 4D: PEMBINAAN + SISWA + PROFIL SISWA
-   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4C).
-   Tidak ada perubahan id, onclick, data-*, atau fungsi.
-   ========================================================================== */
-
-/* ---- Pembinaan: kepala halaman dan filter ---- */
 #view-pembinaan>div:first-child {
     flex-wrap: wrap;
     gap: 0.75rem;
@@ -2394,7 +2293,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     min-height: 2.75rem;
 }
 
-/* ---- Tombol aksi: PDF, Tambah, Tambah Siswa ---- */
 #view-pembinaan button:is([onclick="cetakPDFPembinaan()"], [onclick="openModalPembinaan()"]),
 #view-siswa button[onclick="openModalSiswa()"] {
     min-height: 2.75rem;
@@ -2415,7 +2313,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     background-color: #e11d48;
 }
 
-/* ---- Pembinaan: Edit/Hapus di kartu ---- */
 #pembinaan-list-container button:is([onclick^="openModal"], [onclick^="delete"]) {
     min-height: 2.75rem;
     padding: 0 0.75rem;
@@ -2425,7 +2322,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     border-radius: var(--radius-control);
 }
 
-/* Judul masalah boleh turun baris, badge status tidak menyusut */
 #pembinaan-list-container>div>.flex.justify-between.items-start {
     gap: 0.75rem;
 }
@@ -2439,7 +2335,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     flex-shrink: 0;
 }
 
-/* ---- Pembinaan: daftar 2 kolom di tablet ke atas ---- */
 @media (min-width: 768px) {
 
     #pembinaan-list-container,
@@ -2463,7 +2358,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Siswa: pencarian dan tombol Tambah ---- */
 #view-siswa>.flex.gap-2 {
     align-items: stretch;
 }
@@ -2478,7 +2372,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     min-height: 2.75rem;
 }
 
-/* ---- Siswa: kartu boleh turun baris di HP agar nama terbaca ---- */
 #siswa-card-container>.flex.items-center.justify-between {
     flex-wrap: wrap;
     gap: 0.5rem 0.75rem;
@@ -2497,7 +2390,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     flex-shrink: 0;
 }
 
-/* Kartu siswa: ikon aksi jelas bedanya lewat latar, fokus terlihat */
 #siswa-card-container .touch-btn:focus-visible,
 #profil-siswa-details button:focus-visible,
 #view-profil-siswa button:focus-visible,
@@ -2507,7 +2399,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     outline-offset: 2px;
 }
 
-/* ---- Profil siswa: bilah atas ---- */
 #view-profil-siswa>div:first-child {
     gap: 0.75rem;
 }
@@ -2525,7 +2416,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     flex-wrap: wrap;
 }
 
-/* ---- Profil siswa: kartu identitas ---- */
 #profil-siswa-details>.rounded-3xl {
     border-radius: var(--radius-card);
 }
@@ -2539,7 +2429,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     line-height: 1.5rem;
 }
 
-/* ---- Profil siswa: tab ---- */
 #profil-siswa-details .prof-tab-btn {
     min-height: 2.75rem;
     font-size: 0.875rem;
@@ -2554,7 +2443,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     outline-offset: -2px;
 }
 
-/* ---- Profil siswa: angka rekap kehadiran lebih besar, 12px untuk label ---- */
 #tab-siswa-ringkasan .grid-cols-4 .font-black {
     font-size: 1.5rem;
     line-height: 2rem;
@@ -2564,7 +2452,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     padding: 0.75rem 0.25rem;
 }
 
-/* ---- Profil siswa: baris daftar tidak bertabrakan di 360px ---- */
 #profil-siswa-details .divide-y>.flex,
 #profil-siswa-details .p-3>.flex.justify-between {
     gap: 0.75rem;
@@ -2574,12 +2461,10 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     flex-shrink: 0;
 }
 
-/* Judul permasalahan pada tab Catatan boleh turun baris */
 #tab-siswa-catatan .flex.justify-between>span:first-child {
     min-width: 0;
 }
 
-/* ---- Profil siswa: tablet ke atas, isi tab 2 kolom ---- */
 @media (min-width: 768px) {
 
     #tab-siswa-keagamaan>.bg-white>.space-y-2,
@@ -2596,7 +2481,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Profil siswa: laptop, ringkasan 2 kolom (radar kiri, rekap kanan) ---- */
 @media (min-width: 1024px) {
     #tab-siswa-ringkasan:not(.hidden) {
         display: grid;
@@ -2615,14 +2499,12 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Modal siswa/pembinaan: dua kolom jadi satu di HP sempit ---- */
 @media (max-width: 639px) {
     #modal-content-box .grid.grid-cols-2:has(#m-ssw-absen, #m-ssw-nisn, #m-pbn-tanggal, #m-pbn-status) {
         grid-template-columns: 1fr;
     }
 }
 
-/* ---- Modal Ambil Siswa: daftar hasil punya batas tinggi dan scroll aman ---- */
 #ambil-siswa-hasil {
     overscroll-behavior: contain;
 }
@@ -2631,13 +2513,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     min-height: 2.75rem;
 }
 
-/* ==========================================================================
-   TEMA A - FASE 4E: LAPORAN (Presensi & Akademik, Kebiasaan & Jurnal)
-   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4D).
-   Tidak ada perubahan id, onclick, data-*, atau fungsi.
-   ========================================================================== */
-
-/* ---- Tab jenis laporan ---- */
 #view-laporan>div:first-child[role="group"] {
     background: #f1f5f9;
     border: 1px solid var(--line);
@@ -2654,7 +2529,6 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
     }
 }
 
-/* ---- Kartu filter: judul, isian, tombol ---- */
 #view-laporan h2.text-sm {
     font-size: 1rem;
     line-height: 1.5rem;
@@ -2675,7 +2549,6 @@ label:has(#lk-sertakan-jurnal) {
     font-size: 0.875rem;
 }
 
-/* Deretan tombol ekspor: otomatis 2-3 kolom sesuai lebar, tombol ganjil terakhir selebar baris */
 #view-laporan .grid:has(> button) {
     grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
 }
@@ -2693,7 +2566,6 @@ label:has(#lk-sertakan-jurnal) {
     box-shadow: none;
 }
 
-/* Warna tombol: aksi utama biru, Excel hijau, PDF gelap. Ungu dan teal dibuang. */
 #view-laporan button.bg-purple-600 {
     background-color: var(--primary);
 }
@@ -2710,7 +2582,6 @@ label:has(#lk-sertakan-jurnal) {
     background-color: #047857;
 }
 
-/* ---- Ungu jadi biru primer (mode terang) ---- */
 body:not(.dark) #view-laporan .bg-purple-50 {
     background-color: var(--primary-light);
 }
@@ -2723,7 +2594,6 @@ body:not(.dark) #view-laporan .text-purple-400 {
     color: #60a5fa;
 }
 
-/* Kontras AA untuk teks status di atas putih (mode terang) */
 body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container) .text-amber-600 {
     color: #b45309;
 }
@@ -2732,13 +2602,11 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     color: #047857;
 }
 
-/* ---- Teks bantu minimum 12px ---- */
 #view-laporan :is(.text-\[10px\], .text-\[11px\]) {
     font-size: 0.75rem;
     line-height: 1rem;
 }
 
-/* ---- Hasil: tombol lihat profil 44px, kartu tidak menjepit isi ---- */
 :is(#laporan-rekap-container, #laporan-k-container) button[title] {
     min-width: 2.75rem;
     min-height: 2.75rem;
@@ -2752,7 +2620,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     min-width: 0;
 }
 
-/* ---- Hasil: 2 kolom di tablet ke atas ---- */
 @media (min-width: 768px) {
 
     #laporan-rekap-container,
@@ -2769,7 +2636,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
         min-width: 0;
     }
 
-    /* Ringkasan periode dan empty state selalu selebar baris */
     #laporan-rekap-container>.empty-state,
     #laporan-k-container>.empty-state,
     #laporan-k-container>.flex-wrap {
@@ -2777,7 +2643,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     }
 }
 
-/* ---- Laptop: filter di samping (menempel), hasil di sebelahnya ---- */
 @media (min-width: 1024px) {
 
     #laporan-panel-umum:not(.hidden),
@@ -2803,27 +2668,17 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
         overflow-y: auto;
     }
 
-    /* Di panel samping, isian bertumpuk satu kolom */
     #laporan-panel-umum>.bg-surface .grid:not(:has(> button)),
     #laporan-panel-kebiasaan>.bg-surface .grid:not(:has(> button)) {
         grid-template-columns: 1fr;
     }
 }
 
-/* ---- Fokus keyboard ---- */
 #view-laporan :is(button, select, input):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 
-/* ==========================================================================
-   TEMA A - FASE 4F: ADMIN MASTER
-   (tab Guru, Siswa, Kelas, Mentor, Sekolah, Kebiasaan, Arsip)
-   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4E).
-   Tidak ada perubahan id, onclick, data-*, atau fungsi.
-   ========================================================================== */
-
-/* ---- Tab utama: 7 tab, scroll samping di HP, rata penuh di tablet ke atas ---- */
 #view-admin-manage>div:first-child.flex {
     background: #f1f5f9;
     border: 1px solid var(--line);
@@ -2859,7 +2714,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     outline-offset: -2px;
 }
 
-/* ---- Baris cari + tombol tambah ---- */
 #view-admin-manage .admin-tab-content>.flex>button.bg-primary,
 #view-admin-manage #btn-tambah-kebiasaan {
     min-height: 2.75rem;
@@ -2889,7 +2743,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     padding-right: 0.875rem;
 }
 
-/* ---- Baris alat CSV: tombol 44px, boleh turun baris di tablet ke atas ---- */
 #view-admin-manage .admin-tab-content>.overflow-x-auto button {
     min-height: 2.75rem;
     padding-left: 1rem;
@@ -2905,7 +2758,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     }
 }
 
-/* ---- Daftar baris: teks tidak menjepit tombol, tombol tidak menyusut ---- */
 #view-admin-manage :is(#admin-guru-list, #admin-siswa-list, #admin-kelas-list, #admin-mentor-list)>div {
     gap: 0.75rem;
 }
@@ -2924,7 +2776,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     gap: 0.375rem;
 }
 
-/* Tombol teks pada baris: Atur (mentor), Lihat (arsip) */
 #admin-mentor-list button,
 #admin-arsip-list button {
     min-height: 2.75rem;
@@ -2934,7 +2785,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     border-radius: var(--radius-control);
 }
 
-/* ---- Kebiasaan: baris boleh turun baris, tombol urut/ubah 44px ---- */
 #admin-kebiasaan-list>div {
     flex-wrap: wrap;
 }
@@ -2954,7 +2804,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     border-radius: var(--radius-control);
 }
 
-/* ---- Daftar 2 kolom di tablet ke atas ---- */
 @media (min-width: 768px) {
 
     #admin-guru-list,
@@ -2989,7 +2838,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     }
 }
 
-/* ---- Form (Sekolah, Arsip): lebar nyaman, tidak melar di laptop ---- */
 @media (min-width: 1024px) {
 
     #admin-tab-sekolah>form,
@@ -3009,7 +2857,6 @@ body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container
     line-height: 1.6;
 }
 
-/* ---- Ungu/violet jadi biru primer (mode terang) ---- */
 body:not(.dark) #view-admin-manage .bg-violet-50 {
     background-color: var(--primary-light);
 }
@@ -3018,13 +2865,11 @@ body:not(.dark) #view-admin-manage .text-violet-700 {
     color: var(--primary-hover);
 }
 
-/* ---- Teks bantu minimum 12px (halaman dan modal admin) ---- */
 :is(#view-admin-manage, #modal-content-box) :is(.text-\[10px\], .text-\[11px\]) {
     font-size: 0.75rem;
     line-height: 1rem;
 }
 
-/* ---- Arsip: panel lihat ---- */
 #arsip-panel-lihat button {
     min-height: 2.75rem;
     border-radius: var(--radius-control);
@@ -3057,7 +2902,6 @@ body:not(.dark) #view-admin-manage .text-violet-700 {
     border-radius: var(--radius-control);
 }
 
-/* HP sempit: kolom pencarian arsip bertumpuk */
 @media (max-width: 479px) {
     #arsip-panel-lihat form.grid-cols-2 {
         grid-template-columns: 1fr;
@@ -3068,7 +2912,6 @@ body:not(.dark) #view-admin-manage .text-violet-700 {
     }
 }
 
-/* ---- Tabel arsip: header menempel, scroll dalam kotak sendiri ---- */
 #arsip-lihat-tabel {
     max-height: 70vh;
     max-height: 70dvh;
@@ -3102,7 +2945,6 @@ body.dark #arsip-lihat-tabel thead th {
     border-radius: var(--radius-control);
 }
 
-/* ---- Modal Atur Anak Binaan ---- */
 #m-mentor-search,
 #m-mentor-kelas {
     min-height: 2.75rem;
@@ -3127,24 +2969,16 @@ body.dark #arsip-lihat-tabel thead th {
     overscroll-behavior: contain;
 }
 
-/* ---- Modal Kebiasaan, Guru, Kelas: dua kolom jadi satu di HP sempit ---- */
 @media (max-width: 479px) {
     #modal-content-box .grid.grid-cols-2:has(#m-kb-jam, #m-kb-ikon, #m-kb-urutan) {
         grid-template-columns: 1fr;
     }
 }
 
-/* ---- Fokus keyboard ---- */
 #view-admin-manage :is(button, input, select):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
-
-/* ==========================================================================
-   TEMA A - FASE 4G: DASHBOARD KEPSEK - RINGKASAN PER KELAS
-   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4F).
-   Tidak ada perubahan id, onclick, data-*, atau fungsi.
-   ========================================================================== */
 
 #dash-kelas-wrap h3.text-sm {
     font-size: 1rem;
@@ -3152,7 +2986,6 @@ body.dark #arsip-lihat-tabel thead th {
     font-weight: 800;
 }
 
-/* Kartu kelas: border dan radius seragam dengan komponen lain */
 #dash-kelas-list>div {
     border-color: var(--line);
     border-radius: var(--radius-control);
@@ -3167,12 +3000,10 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     color: var(--text-muted);
 }
 
-/* Persen kehadiran dan batang mudah dibaca */
 #dash-kelas-list .shrink-0.font-black {
     font-variant-numeric: tabular-nums;
 }
 
-/* Daftar kelas: 2 kolom di tablet, 3 kolom di layar lebar */
 @media (min-width: 768px) {
     #dash-kelas-list {
         display: grid;
@@ -3186,7 +3017,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         min-width: 0;
     }
 
-    /* Pesan "Belum ada data kelas" selebar baris */
     #dash-kelas-list>p {
         grid-column: 1 / -1;
     }
@@ -3198,12 +3028,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* ==========================================================================
-   TEMA A - PERBAIKAN SETELAH FASE 4G
-   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4G).
-   ========================================================================== */
-
-/* ---- 1. Admin > Mentor: semua kartu sama tinggi, ada badge wali atau tidak ---- */
 #view-admin-manage #admin-mentor-list {
     align-items: stretch;
 }
@@ -3212,15 +3036,11 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     min-height: 6.75rem;
 }
 
-/* ---- 2. Kolom pencarian dengan ikon di kiri: teks tidak tertutup ikon ----
-   Aturan Fase 3 menyeragamkan padding input sehingga pl-10 (ruang ikon) tertimpa.
-   Selektor ini memulihkan ruang ikon untuk semua input ber-pl-10. */
 #main-content input.rounded-xl[class*="pl-10"]:not([class*="pr-9"]),
 #modal-content-box input.rounded-xl[class*="pl-10"]:not([class*="pr-9"]) {
     padding-left: 2.75rem;
 }
 
-/* Ikon cari: di tengah tinggi kolom, tidak menangkap klik */
 #view-siswa .relative>i.fa-search {
     left: 1rem;
     top: 50%;
