@@ -85,29 +85,185 @@ function applyDashboardRoleTexts() {
 
 function renderSiswaDashboardParts() {
     renderSiswaStatusCard();
+    renderSiswaHome();
     renderPrioritySectionSiswa();
 }
 
+/* Kartu status lama diganti kartu-kartu baru di #dash-siswa-home */
 function renderSiswaStatusCard() {
     const statsContainer = document.getElementById("dash-stats-container");
     if (!statsContainer || !appState.user || appState.user.role !== "siswa") return;
+    statsContainer.innerHTML = "";
+}
 
-    let label;
-    if (!appState.notificationsReady) {
-        label = '<span class="text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Memeriksa status...</span>';
-    } else {
-        const n = (appState.currentNotifications || []).length;
-        label = n > 0
-            ? `⚠️ Memerlukan Tindak Lanjut <span class="text-xs font-semibold text-slate-400">(${n} indikator)</span>`
-            : '✅ Perkembangan Baik';
-    }
+/* ---------- Helper dashboard siswa ---------- */
+function sdMine(list) {
+    const uid = String(appState.user.id);
+    return (list || []).filter(x => String(x.siswa_id) === uid);
+}
+function sdTgl(x) { return String((x && x.tanggal) || "").slice(0, 10); }
+function sdAddDays(ymd, n) {
+    const d = new Date(ymd + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+}
+function sdSapaan() {
+    const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Makassar", hour: "2-digit", hour12: false }).format(new Date())) % 24;
+    if (h < 11) return "Selamat pagi";
+    if (h < 15) return "Selamat siang";
+    if (h < 18) return "Selamat sore";
+    return "Selamat malam";
+}
+function sdCard(title, body, link) {
+    const l = link ? `<button type="button" class="sd-link" onclick="switchView('${link[0]}')">${link[1]} <i class="fas fa-chevron-right text-[9px]"></i></button>` : "";
+    return `<div class="sd-card"><div class="sd-title"><span>${title}</span>${l}</div>${body}</div>`;
+}
+/* Set tanggal (YYYY-MM-DD) yang punya minimal 1 kebiasaan berstatus Sudah */
+function sdTanggalKebiasaan() {
+    const set = {};
+    sdMine(appState.kebiasaan).forEach(k => {
+        if (k.status === "Sudah") { const t = sdTgl(k); set[t] = (set[t] || 0) + 1; }
+    });
+    return set;
+}
 
-    statsContainer.innerHTML = `
-        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between col-span-3">
-            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Status Pemantauan Saya</span>
-            <p class="text-sm font-bold text-slate-700 mt-1">${label}</p>
-        </div>
-    `;
+/* ---------- A. Sapaan personal ---------- */
+function sdSapaanCard(u) {
+    const kls = (appState.kelas || []).find(k => String(k.id) === String(u.kelas_id));
+    const wali = kls ? (appState.guru || []).find(g => String(g.id) === String(kls.guru_id)) : null;
+    const mentor = u.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(u.mentor_id)) : null;
+    const foto = escapeHtml(u.foto || getInitialsAvatar(u.nama));
+    return `<div class="sd-greet">
+        <img src="${foto}" alt="">
+        <div class="min-w-0">
+            <h3>${sdSapaan()}, ${escapeHtml(getFirstName(u.nama) || "Kamu")}!</h3>
+            <p>Kelas ${kls ? escapeHtml(kls.nama_kelas) : "-"}</p>
+            <p>Wali: ${wali ? escapeHtml(wali.nama) : "-"} • Mentor: ${mentor ? escapeHtml(mentor.nama) : "-"}</p>
+        </div></div>`;
+}
+
+/* ---------- B. Misi hari ini ---------- */
+function sdMisiCard(today) {
+    const total = (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
+    const sudah = sdMine(appState.kebiasaan).filter(k => sdTgl(k) === today && k.status === "Sudah").length;
+    const jurnal = sdMine(appState.jurnal).some(j => sdTgl(j) === today);
+    const ibadah = sdMine(appState.keagamaan).some(j => sdTgl(j) === today);
+    const tugas = [
+        { ok: sudah >= total, label: "Isi kebiasaan harian", info: `${Math.min(sudah, total)}/${total}`, view: "kebiasaan" },
+        { ok: jurnal, label: "Tulis jurnal hari ini", info: jurnal ? "Selesai" : "Belum", view: "jurnal" },
+        { ok: ibadah, label: "Catat ibadah hari ini", info: ibadah ? "Selesai" : "Belum", view: "karakter" }
+    ];
+    const poin = Math.min(sudah / total, 1) + (jurnal ? 1 : 0) + (ibadah ? 1 : 0);
+    const pct = Math.round(poin / 3 * 100);
+    const rows = tugas.map(t => `<button type="button" class="sd-task ${t.ok ? "done" : ""}" onclick="switchView('${t.view}')">
+        <span><i class="fas ${t.ok ? "fa-circle-check" : "fa-circle"} mr-1.5"></i>${t.label}</span><small>${t.info}</small></button>`).join("");
+    return sdCard("Misi Hari Ini", `<div class="sd-mission"><div class="sd-ring" style="--p:${pct}"><span>${pct}%</span></div>
+        <p class="sd-note" style="margin:0">${pct >= 100 ? "Hebat! Semua misi hari ini selesai." : "Yuk selesaikan misimu hari ini!"}</p></div>${rows}`);
+}
+
+/* ---------- C. Streak dan badge ---------- */
+function sdHitungStreak(today) {
+    const set = sdTanggalKebiasaan();
+    let t = set[today] ? today : sdAddDays(today, -1);
+    let n = 0;
+    while (set[t]) { n++; t = sdAddDays(t, -1); }
+    return n;
+}
+function sdBadgeCard(today, absBulan, hafalan) {
+    const streak = sdHitungStreak(today);
+    const hadirPenuh = absBulan.length > 0 && absBulan.every(a => a.status === "H" || a.status === "T");
+    const lancar = hafalan.filter(h => h.status === "Lancar").length;
+    const badges = [
+        { ok: streak >= 7, icon: "fa-fire", text: "7 Hari Konsisten" },
+        { ok: hadirPenuh, icon: "fa-calendar-check", text: "Hadir Penuh Bulan Ini" },
+        { ok: lancar >= 3, icon: "fa-book-quran", text: "Hafalan Lancar" }
+    ].map(b => `<span class="sd-badge ${b.ok ? "" : "off"}"><i class="fas ${b.icon}"></i>${b.text}</span>`).join("");
+    const body = `<p class="text-sm font-black text-slate-800"><i class="fas fa-fire text-orange-500 mr-1"></i>${streak} hari berturut-turut</p>
+        <p class="sd-note" style="margin:0.125rem 0 0.5rem">${streak > 0 ? "Pertahankan semangatmu!" : "Isi kebiasaan hari ini untuk mulai streak."}</p>
+        <div class="sd-badges">${badges}</div>`;
+    return sdCard("Streak & Badge", body);
+}
+
+/* ---------- D. Tren kebiasaan (7 hari, minggu ini vs lalu) ---------- */
+function sdTrenCard(today) {
+    const total = (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
+    const set = sdTanggalKebiasaan();
+    const hari = [];
+    for (let i = 13; i >= 0; i--) hari.push(sdAddDays(today, -i));
+    const nilai = hari.map(t => Math.min((set[t] || 0) / total, 1));
+    const jum = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+    const lalu = jum(nilai.slice(0, 7)), kini = jum(nilai.slice(7));
+    const selisih = Math.round((kini - lalu) * 100);
+    const pesan = selisih > 0 ? `Naik ${selisih}% dibanding minggu lalu. Keren!` : selisih < 0 ? "Minggu ini sedikit turun. Ayo semangat lagi!" : "Stabil seperti minggu lalu.";
+    const bars = nilai.slice(7).map((v, i) => `<div class="${i === 6 ? "now" : ""}" style="height:${Math.max(v * 100, 3)}%"></div>`).join("");
+    const lbl = hari.slice(7).map(t => `<span>${t.slice(8)}</span>`).join("");
+    return sdCard("Tren Kebiasaan 7 Hari", `<p class="text-sm font-black text-slate-800">${Math.round(kini * 100)}% <span class="text-xs font-semibold text-slate-400">minggu ini</span></p>
+        <div class="sd-trend">${bars}</div><div class="sd-trend-lbl">${lbl}</div><p class="sd-note">${pesan}</p>`, ["kebiasaan", "Detail"]);
+}
+
+/* ---------- E. Kehadiran bulan ini ---------- */
+function sdHadirCard(absBulan) {
+    const c = { H: 0, S: 0, I: 0, A: 0, T: 0 };
+    absBulan.forEach(a => { if (c[a.status] !== undefined) c[a.status]++; });
+    const hadir = c.H + c.T;
+    const pct = absBulan.length ? Math.round(hadir / absBulan.length * 100) : 0;
+    const sisa = Math.max(3 - c.A, 0);
+    const body = absBulan.length
+        ? `<p class="text-sm font-black text-slate-800">${pct}% <span class="text-xs font-semibold text-slate-400">hadir bulan ini</span></p>
+           <div class="sd-bar"><i style="width:${pct}%"></i></div>
+           <div class="sd-stat"><div><b>${c.S}</b>Sakit</div><div><b>${c.I}</b>Izin</div><div><b>${c.A}</b>Alpa</div></div>
+           <p class="sd-note">Sisa kuota Alpa: <b>${sisa}</b> dari 3.</p>`
+        : `<p class="sd-note">Belum ada data kehadiran bulan ini.</p>`;
+    return sdCard("Kehadiran Bulan Ini", body, ["absensi", "Detail"]);
+}
+
+/* ---------- F. Ringkasan nilai ---------- */
+function sdNilaiCard(nilai) {
+    if (!nilai.length) return sdCard("Ringkasan Nilai", `<p class="sd-note">Belum ada data nilai.</p>`, ["karakter", "Detail"]);
+    const tertinggi = nilai.reduce((a, b) => Number(b.nilai_akhir) > Number(a.nilai_akhir) ? b : a);
+    const bawah = nilai.filter(n => Number(n.nilai_akhir) < Number(n.kktp)).length;
+    const tuntas = nilai.length - bawah;
+    const pct = Math.round(tuntas / nilai.length * 100);
+    const info = bawah > 0 ? `${bawah} mapel perlu ditingkatkan` : "Semua mapel sudah tuntas. Mantap!";
+    return sdCard("Ringkasan Nilai", `<p class="text-xs text-slate-500">Tertinggi: <b class="text-slate-800">${escapeHtml(tertinggi.mapel)}</b> (${escapeHtml(String(tertinggi.nilai_akhir))})</p>
+        <div class="sd-bar"><i style="width:${pct}%"></i></div><p class="sd-note">${info}</p>`, ["karakter", "Detail"]);
+}
+
+/* ---------- G. Progres hafalan ---------- */
+function sdHafalanCard(hafalan) {
+    if (!hafalan.length) return sdCard("Progres Hafalan", `<p class="sd-note">Belum ada catatan hafalan.</p>`, ["karakter", "Detail"]);
+    const terakhir = hafalan.slice().sort((a, b) => sdTgl(b).localeCompare(sdTgl(a)))[0];
+    const lancar = hafalan.filter(h => h.status === "Lancar").length;
+    return sdCard("Progres Hafalan", `<p class="text-sm font-black text-slate-800">${escapeHtml(terakhir.nama_surat || "-")}</p>
+        <p class="sd-note" style="margin-top:0.125rem">Status terakhir: <b>${escapeHtml(terakhir.status || "-")}</b> • ${lancar} capaian lancar</p>`, ["karakter", "Detail"]);
+}
+
+/* ---------- H. Prestasi terbaru ---------- */
+function sdPrestasiCard(prestasi) {
+    if (!prestasi.length) return sdCard("Prestasi Terbaru", `<p class="sd-note">Belum ada prestasi tercatat. Terus berusaha!</p>`, ["karakter", "Detail"]);
+    const list = prestasi.slice().sort((a, b) => sdTgl(b).localeCompare(sdTgl(a))).slice(0, 3);
+    const tl = list.map(p => `<div>${escapeHtml(p.nama_prestasi || "-")}<small>${escapeHtml(p.tingkat || "")} ${escapeHtml(sdTgl(p))}</small></div>`).join("");
+    return sdCard("Prestasi Terbaru", `<div class="sd-tl">${tl}</div>`, ["karakter", "Detail"]);
+}
+
+function renderSiswaHome() {
+    const el = document.getElementById("dash-siswa-home");
+    if (!el || !appState.user || appState.user.role !== "siswa") return;
+    const u = appState.user;
+    const today = getDateWITA();
+    const bulan = today.slice(0, 7);
+    const absBulan = sdMine(appState.absensi).filter(a => sdTgl(a).startsWith(bulan));
+    const hafalan = sdMine(appState.keagamaan).filter(h => h.nama_surat);
+    const nilai = sdMine(appState.akademik).filter(n => n.mapel);
+    const prestasi = sdMine(appState.prestasi);
+    el.innerHTML = [
+        sdSapaanCard(u),
+        sdMisiCard(today),
+        sdBadgeCard(today, absBulan, hafalan),
+        `<div class="sd-grid2">${sdHadirCard(absBulan)}${sdNilaiCard(nilai)}</div>`,
+        sdTrenCard(today),
+        `<div class="sd-grid2">${sdHafalanCard(hafalan)}${sdPrestasiCard(prestasi)}</div>`
+    ].join("");
 }
 
 function renderPrioritySectionSiswa() {

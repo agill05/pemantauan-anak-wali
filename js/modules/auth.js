@@ -619,6 +619,7 @@ function updateRoleVisibility(role) {
 
 function applyRoleUI(role) {
     document.body.setAttribute("data-role", role);
+    document.body.classList.toggle("role-siswa", String(role).toLowerCase() === "siswa");
     updateRoleVisibility(role);
 
     const navContainer = document.getElementById("bottom-nav-items");
@@ -1174,3 +1175,22 @@ async function saveSelfProfileForm(e) {
         });
     }
 }
+
+/* Blokir Ctrl+P dan cetak browser khusus siswa (pengamanan sisi klien) */
+function isSiswaAktif() {
+    return document.body && document.body.classList.contains("role-siswa");
+}
+document.addEventListener("keydown", function (e) {
+    if (!isSiswaAktif()) return;
+    if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === "p") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof showToast === "function") showToast("Fitur cetak tidak tersedia untuk siswa.", "info");
+    }
+}, true);
+window.addEventListener("beforeprint", function () {
+    if (isSiswaAktif()) document.body.classList.add("print-blocked");
+});
+window.addEventListener("afterprint", function () {
+    document.body.classList.remove("print-blocked");
+});

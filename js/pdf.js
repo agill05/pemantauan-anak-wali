@@ -338,6 +338,7 @@ function pdfDrawSignature(doc, pageW, pageH, y, dateStr, labelKanan, custom) {
 }
 
 async function buildOfficialPdf(title, contentHtml, options = {}) {
+    if (blokirSiswaPdf()) throw new Error("PDF diblokir untuk siswa");
     const { jsPDF } = window.jspdf;
     const orientation = options.orientation || "portrait";
     const labelKanan = options.labelKanan || ("Guru Pemantau / " + getPeranTtdText(options.siswa));
@@ -399,7 +400,16 @@ function pdfLibReady() {
     return false;
 }
 
+function blokirSiswaPdf() {
+    if (appState.user && String(appState.user.role).toLowerCase() === "siswa") {
+        Swal.fire({ icon: "info", title: "Tidak Tersedia", text: "Fitur ini tidak tersedia untuk siswa.", confirmButtonColor: "#2563eb" });
+        return true;
+    }
+    return false;
+}
+
 async function exportFeaturePDF(title, contentHtml, filename, options = {}) {
+    if (blokirSiswaPdf()) return;
     if (!pdfLibReady()) return;
     showLoading("Membuat file PDF...");
     try {
@@ -415,6 +425,7 @@ async function exportFeaturePDF(title, contentHtml, filename, options = {}) {
 }
 
 async function printFeaturePDF(title, contentHtml, options = {}) {
+    if (blokirSiswaPdf()) return;
     if (!pdfLibReady()) return;
     showLoading("Menyiapkan cetak...");
     try {

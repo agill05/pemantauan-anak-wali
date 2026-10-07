@@ -350,6 +350,8 @@
                 </div>
             </div>
 
+            <div id="dash-siswa-home" data-role-visible="siswa" class="hidden space-y-4"></div>
+
             <div id="dash-section-bottom">
                 <div class="flex justify-between items-center mb-2 px-1">
                     <div>
@@ -383,7 +385,7 @@
                     <div class="flex items-center gap-1.5">
                         <input type="date" id="absensi-date" onchange="loadAbsensiData(true)"
                             class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary">
-                        <button onclick="cetakPDFAbsensi()" title="Cetak PDF Rekapitulasi Presensi"
+                        <button data-role-visible="admin,guru,kepsek" onclick="cetakPDFAbsensi()" title="Cetak PDF Rekapitulasi Presensi"
                             class="bg-slate-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
                                 class="fas fa-file-pdf"></i></button>
                     </div>
@@ -399,7 +401,7 @@
                     <div class="flex items-center gap-2">
                         <span id="kebiasaan-save-status"
                             class="hidden text-xs font-bold px-2.5 py-1 rounded-lg transition-all duration-200"></span>
-                        <button onclick="cetakPDFKebiasaan()" title="Cetak PDF Ringkasan Kebiasaan"
+                        <button data-role-visible="admin,guru,kepsek" onclick="cetakPDFKebiasaan()" title="Cetak PDF Ringkasan Kebiasaan"
                             class="bg-slate-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
                                 class="fas fa-file-pdf"></i></button>
                     </div>
@@ -437,7 +439,7 @@
                     <p class="text-xs text-slate-400">Al-Qur'an, Iqro &amp; Doa Harian</p>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button onclick="cetakPDFKeagamaan()" title="Cetak PDF Jurnal Keagamaan"
+                    <button data-role-visible="admin,guru,kepsek" onclick="cetakPDFKeagamaan()" title="Cetak PDF Jurnal Keagamaan"
                         class="bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs font-bold"><i
                             class="fas fa-file-pdf"></i></button>
                     <button data-role-visible="admin,guru" data-write="keagamaan" onclick="openModalKeagamaan()"
@@ -480,7 +482,7 @@
                     class="flex-1 bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs outline-none font-semibold text-slate-700">
                     <option value="">Semua Siswa</option>
                 </select>
-                <button onclick="cetakPDFAkademik()" title="Cetak PDF Transkrip Nilai & Prestasi"
+                <button data-role-visible="admin,guru,kepsek" onclick="cetakPDFAkademik()" title="Cetak PDF Transkrip Nilai & Prestasi"
                     class="bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs font-bold shrink-0"><i
                         class="fas fa-file-pdf"></i></button>
             </div>
@@ -514,7 +516,7 @@
                     <p class="text-xs text-slate-400">Monitoring Masalah & Tindak Lanjut</p>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button onclick="cetakPDFPembinaan()" title="Cetak PDF Lembar Rekam Pembinaan"
+                    <button data-role-visible="admin,guru,kepsek" onclick="cetakPDFPembinaan()" title="Cetak PDF Lembar Rekam Pembinaan"
                         class="bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs font-bold"><i
                             class="fas fa-file-pdf"></i></button>
                     <button data-role-visible="admin,guru" data-write="pembinaan" onclick="openModalPembinaan()"
@@ -544,7 +546,7 @@
                         class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5 transition">
                         <i class="fas fa-magic"></i> Bagikan Magic Link (15 Menit)
                     </button>
-                    <button onclick="printProfilSiswa()"
+                    <button data-role-visible="admin,guru,kepsek" onclick="printProfilSiswa()"
                         class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-sm flex items-center gap-1.5">
                         <i class="fas fa-print"></i> Cetak Rapor
                     </button>
