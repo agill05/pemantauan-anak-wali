@@ -106,13 +106,13 @@ async function openProfilSiswa(siswaTarget) {
                             <span class="text-xs font-bold text-emerald-600 block">HADIR</span>
                             <span class="text-base font-black text-emerald-700">${totalHadir}</span>
                         </div>
-                        <div class="bg-blue-50 p-2.5 rounded-2xl border border-blue-100">
-                            <span class="text-xs font-bold text-blue-600 block">SAKIT</span>
-                            <span class="text-base font-black text-blue-700">${totalSakit}</span>
-                        </div>
                         <div class="bg-amber-50 p-2.5 rounded-2xl border border-amber-100">
-                            <span class="text-xs font-bold text-amber-600 block">IZIN</span>
-                            <span class="text-base font-black text-amber-700">${totalIzin}</span>
+                            <span class="text-xs font-bold text-amber-600 block">SAKIT</span>
+                            <span class="text-base font-black text-amber-700">${totalSakit}</span>
+                        </div>
+                        <div class="bg-blue-50 p-2.5 rounded-2xl border border-blue-100">
+                            <span class="text-xs font-bold text-blue-600 block">IZIN</span>
+                            <span class="text-base font-black text-blue-700">${totalIzin}</span>
                         </div>
                         <div class="bg-rose-50 p-2.5 rounded-2xl border border-rose-100">
                             <span class="text-xs font-bold text-rose-600 block">ALPA</span>
@@ -559,24 +559,24 @@ function renderSiswaView() {
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
-                    <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                    <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" alt="" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                     <div>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)} <span class="ml-1">${renderPeranChip(s)}</span></h4>
                         <p class="text-xs text-slate-400">${noAbsenLabel}NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button onclick="openProfilSiswa('${escapeHtml(s.id)}')" class="touch-btn bg-blue-50 text-blue-600 rounded-lg text-xs">
+                    <button onclick="openProfilSiswa('${escapeHtml(s.id)}')" aria-label="Lihat profil siswa" class="touch-btn bg-blue-50 text-blue-600 rounded-lg text-xs">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" class="touch-btn bg-emerald-50 text-emerald-600 rounded-lg text-xs">
+                    <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" aria-label="Hubungi orang tua lewat WhatsApp" class="touch-btn bg-emerald-50 text-emerald-600 rounded-lg text-xs">
                         <i class="fab fa-whatsapp"></i>
                     </button>
                     ${bisaUbahSiswa ? `
-                    <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="touch-btn bg-slate-100 text-slate-600 rounded-lg text-xs">
+                    <button onclick="openModalSiswa('${escapeHtml(s.id)}')" aria-label="Edit data siswa" class="touch-btn bg-slate-100 text-slate-600 rounded-lg text-xs">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button onclick="deleteSiswa('${escapeHtml(s.id)}')" class="touch-btn bg-rose-50 text-rose-600 rounded-lg text-xs">
+                    <button onclick="deleteSiswa('${escapeHtml(s.id)}')" aria-label="Hapus siswa" class="touch-btn bg-rose-50 text-rose-600 rounded-lg text-xs">
                         <i class="fas fa-trash"></i>
                     </button>` : ''}
                 </div>
