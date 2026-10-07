@@ -716,6 +716,9 @@ function renderRingkasanKelas(list) {
     }
     box.innerHTML = list.map(k => {
         const pct = k.total > 0 ? Math.round((k.hadir / k.total) * 100) : 0;
+        const warna = (k.belum_diisi >= k.total) ? ["text-slate-500", "bg-slate-200"]
+            : (pct >= 75 ? ["text-emerald-700", "bg-emerald-500"]
+                : (pct >= 40 ? ["text-amber-700", "bg-amber-500"] : ["text-rose-600", "bg-rose-500"]));
         return `
         <div class="p-3 rounded-xl border border-slate-100 bg-white">
             <div class="flex items-center justify-between gap-2">
@@ -723,10 +726,10 @@ function renderRingkasanKelas(list) {
                     <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(k.nama_kelas)}</p>
                     <p class="text-[11px] text-slate-400 truncate">Wali: ${escapeHtml(k.wali || "-")} • ${k.total} siswa</p>
                 </div>
-                <span class="text-sm font-black text-emerald-600 shrink-0">${pct}%</span>
+                <span class="text-base font-black ${warna[0]} shrink-0">${pct}%</span>
             </div>
-            <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2">
-                <div class="h-full bg-emerald-500" style="width:${pct}%"></div>
+            <div class="h-2 bg-slate-100 rounded-full overflow-hidden mt-2">
+                <div class="h-full ${warna[1]}" style="width:${pct}%"></div>
             </div>
             <p class="text-[11px] text-slate-500 mt-2">Hadir ${k.hadir} • Sakit ${k.sakit} • Izin ${k.izin} • Alpa ${k.alpa} • Belum diisi ${k.belum_diisi}${k.perlu_perhatian ? ` • <b class="text-rose-500">${k.perlu_perhatian} perlu perhatian</b>` : ""}</p>
         </div>`;

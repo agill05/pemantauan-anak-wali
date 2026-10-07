@@ -3139,3 +3139,61 @@ body.dark #arsip-lihat-tabel thead th {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
+
+/* ==========================================================================
+   TEMA A - FASE 4G: DASHBOARD KEPSEK - RINGKASAN PER KELAS
+   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4F).
+   Tidak ada perubahan id, onclick, data-*, atau fungsi.
+   ========================================================================== */
+
+#dash-kelas-wrap h3.text-sm {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 800;
+}
+
+/* Kartu kelas: border dan radius seragam dengan komponen lain */
+#dash-kelas-list>div {
+    border-color: var(--line);
+    border-radius: var(--radius-control);
+}
+
+#dash-kelas-list :is(.text-\[10px\], .text-\[11px\]) {
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+}
+
+body:not(.dark) #dash-kelas-list p.text-slate-500 {
+    color: var(--text-muted);
+}
+
+/* Persen kehadiran dan batang mudah dibaca */
+#dash-kelas-list .shrink-0.font-black {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Daftar kelas: 2 kolom di tablet, 3 kolom di layar lebar */
+@media (min-width: 768px) {
+    #dash-kelas-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        align-items: start;
+    }
+
+    #dash-kelas-list>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    /* Pesan "Belum ada data kelas" selebar baris */
+    #dash-kelas-list>p {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 1280px) {
+    #dash-kelas-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
