@@ -3197,3 +3197,33 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+
+/* ==========================================================================
+   TEMA A - PERBAIKAN SETELAH FASE 4G
+   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4G).
+   ========================================================================== */
+
+/* ---- 1. Admin > Mentor: semua kartu sama tinggi, ada badge wali atau tidak ---- */
+#view-admin-manage #admin-mentor-list {
+    align-items: stretch;
+}
+
+#view-admin-manage #admin-mentor-list>div {
+    min-height: 6.75rem;
+}
+
+/* ---- 2. Kolom pencarian dengan ikon di kiri: teks tidak tertutup ikon ----
+   Aturan Fase 3 menyeragamkan padding input sehingga pl-10 (ruang ikon) tertimpa.
+   Selektor ini memulihkan ruang ikon untuk semua input ber-pl-10. */
+#main-content input.rounded-xl[class*="pl-10"]:not([class*="pr-9"]),
+#modal-content-box input.rounded-xl[class*="pl-10"]:not([class*="pr-9"]) {
+    padding-left: 2.75rem;
+}
+
+/* Ikon cari: di tengah tinggi kolom, tidak menangkap klik */
+#view-siswa .relative>i.fa-search {
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
