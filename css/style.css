@@ -2630,3 +2630,188 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
 #ambil-siswa-q {
     min-height: 2.75rem;
 }
+
+/* ==========================================================================
+   TEMA A - FASE 4E: LAPORAN (Presensi & Akademik, Kebiasaan & Jurnal)
+   Hanya CSS. Tempel di AKHIR css/style.css (setelah blok FASE 4D).
+   Tidak ada perubahan id, onclick, data-*, atau fungsi.
+   ========================================================================== */
+
+/* ---- Tab jenis laporan ---- */
+#view-laporan>div:first-child[role="group"] {
+    background: #f1f5f9;
+    border: 1px solid var(--line);
+}
+
+#view-laporan>div:first-child[role="group"]>button {
+    min-height: 2.5rem;
+    line-height: 1.25;
+}
+
+@media (pointer: coarse) {
+    #view-laporan>div:first-child[role="group"]>button {
+        min-height: 2.75rem;
+    }
+}
+
+/* ---- Kartu filter: judul, isian, tombol ---- */
+#view-laporan h2.text-sm {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+
+#laporan-kelas-filter,
+#laporan-status-filter,
+#lk-kelas-filter,
+#lk-dari,
+#lk-sampai {
+    min-height: 2.75rem;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+}
+
+label:has(#lk-sertakan-jurnal) {
+    min-height: 2.75rem;
+    font-size: 0.875rem;
+}
+
+/* Deretan tombol ekspor: otomatis 2-3 kolom sesuai lebar, tombol ganjil terakhir selebar baris */
+#view-laporan .grid:has(> button) {
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+}
+
+#view-laporan .grid:has(> button)>button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+#view-laporan .grid:has(> button)>button {
+    min-height: 2.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    line-height: 1.25;
+    text-align: center;
+    box-shadow: none;
+}
+
+/* Warna tombol: aksi utama biru, Excel hijau, PDF gelap. Ungu dan teal dibuang. */
+#view-laporan button.bg-purple-600 {
+    background-color: var(--primary);
+}
+
+#view-laporan button.bg-purple-600:hover {
+    background-color: var(--primary-hover);
+}
+
+#view-laporan button.bg-teal-600 {
+    background-color: #059669;
+}
+
+#view-laporan button.bg-teal-600:hover {
+    background-color: #047857;
+}
+
+/* ---- Ungu jadi biru primer (mode terang) ---- */
+body:not(.dark) #view-laporan .bg-purple-50 {
+    background-color: var(--primary-light);
+}
+
+body:not(.dark) #view-laporan :is(.text-purple-600, .text-purple-700) {
+    color: var(--primary);
+}
+
+body:not(.dark) #view-laporan .text-purple-400 {
+    color: #60a5fa;
+}
+
+/* Kontras AA untuk teks status di atas putih (mode terang) */
+body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container) .text-amber-600 {
+    color: #b45309;
+}
+
+body:not(.dark) #view-laporan :is(#laporan-rekap-container, #laporan-k-container) .text-emerald-600 {
+    color: #047857;
+}
+
+/* ---- Teks bantu minimum 12px ---- */
+#view-laporan :is(.text-\[10px\], .text-\[11px\]) {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+/* ---- Hasil: tombol lihat profil 44px, kartu tidak menjepit isi ---- */
+:is(#laporan-rekap-container, #laporan-k-container) button[title] {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-control);
+}
+
+:is(#laporan-rekap-container, #laporan-k-container)>div>.min-w-0 {
+    min-width: 0;
+}
+
+/* ---- Hasil: 2 kolom di tablet ke atas ---- */
+@media (min-width: 768px) {
+
+    #laporan-rekap-container,
+    #laporan-k-container {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        align-items: start;
+    }
+
+    #laporan-rekap-container>*,
+    #laporan-k-container>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    /* Ringkasan periode dan empty state selalu selebar baris */
+    #laporan-rekap-container>.empty-state,
+    #laporan-k-container>.empty-state,
+    #laporan-k-container>.flex-wrap {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---- Laptop: filter di samping (menempel), hasil di sebelahnya ---- */
+@media (min-width: 1024px) {
+
+    #laporan-panel-umum:not(.hidden),
+    #laporan-panel-kebiasaan:not(.hidden) {
+        display: grid;
+        grid-template-columns: 22rem minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    #laporan-panel-umum>*,
+    #laporan-panel-kebiasaan>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    #laporan-panel-umum>.bg-surface,
+    #laporan-panel-kebiasaan>.bg-surface {
+        position: sticky;
+        top: 1rem;
+        max-height: calc(100vh - 2rem);
+        max-height: calc(100dvh - 2rem);
+        overflow-y: auto;
+    }
+
+    /* Di panel samping, isian bertumpuk satu kolom */
+    #laporan-panel-umum>.bg-surface .grid:not(:has(> button)),
+    #laporan-panel-kebiasaan>.bg-surface .grid:not(:has(> button)) {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---- Fokus keyboard ---- */
+#view-laporan :is(button, select, input):focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}

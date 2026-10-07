@@ -81,19 +81,19 @@ function renderLaporanRekapView() {
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama)}</h4>
                         ${renderPeranChip((appState.siswa || []).find(x => String(x.id) === String(item.id)))}
                         <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${isPerhatian ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
-                            ${isPerhatian ? '⚠️ Perhatian' : '✅ Tuntas'}
+                            ${isPerhatian ? '<i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i>Perhatian' : '<i class="fas fa-circle-check mr-1" aria-hidden="true"></i>Tuntas'}
                         </span>
                     </div>
                     <p class="text-xs text-slate-400 mt-0.5">NISN: ${escapeHtml(item.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
                     <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600 mt-1.5 pt-1.5 border-t border-slate-50">
                         <span class="text-emerald-600 font-semibold"><i class="fas fa-check-circle text-[10px] mr-1"></i>H: ${item.presensi.hadir}</span>
-                        <span class="text-blue-600"><i class="fas fa-notes-medical text-[10px] mr-1"></i>S: ${item.presensi.sakit}</span>
-                        <span class="text-amber-600"><i class="fas fa-envelope-open text-[10px] mr-1"></i>I: ${item.presensi.izin}</span>
+                        <span class="text-amber-600"><i class="fas fa-notes-medical text-[10px] mr-1"></i>S: ${item.presensi.sakit}</span>
+                        <span class="text-blue-600"><i class="fas fa-envelope-open text-[10px] mr-1"></i>I: ${item.presensi.izin}</span>
                         <span class="text-rose-600 font-bold"><i class="fas fa-exclamation-triangle text-[10px] mr-1"></i>A: ${item.presensi.alpa}</span>
                         <span class="text-purple-700 font-semibold"><i class="fas fa-book text-[10px] mr-1"></i>< KKTP: ${item.dibawah_kktp}</span>
                     </div>
                 </div>
-                <button onclick="openProfilSiswa('${escapeHtml(item.id)}')" class="p-2.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl text-xs font-bold shrink-0 transition" title="Lihat Profil Lengkap">
+                <button onclick="openProfilSiswa('${escapeHtml(item.id)}')" class="p-2.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl text-xs font-bold shrink-0 transition" title="Lihat Profil Lengkap" aria-label="Lihat profil lengkap">
                     <i class="fas fa-eye"></i>
                 </button>
             </div>
@@ -364,7 +364,7 @@ function renderLaporanKebiasaan() {
                         <span><i class="fas fa-comment text-purple-500 mr-1"></i>dicatat wali ${x.jurnal_catatan_wali}, mentor ${x.jurnal_catatan_mentor}</span>
                     </div>
                 </div>
-                <button onclick="openProfilSiswa('${escapeHtml(x.id)}')" class="p-2.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl text-xs font-bold shrink-0 transition" title="Lihat Profil Lengkap">
+                <button onclick="openProfilSiswa('${escapeHtml(x.id)}')" class="p-2.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl text-xs font-bold shrink-0 transition" title="Lihat Profil Lengkap" aria-label="Lihat profil lengkap">
                     <i class="fas fa-eye"></i>
                 </button>
             </div>`;
