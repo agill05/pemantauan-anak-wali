@@ -55,7 +55,7 @@ const MASTER_SURAHS = [
     { no: 100, nama: "Al-'Adiyat", juz: 30 }, { no: 101, nama: "Al-Qari'ah", juz: 30 }, { no: 102, nama: "At-Takasur", juz: 30 },
     { no: 103, nama: "Al-'Asr", juz: 30 }, { no: 104, nama: "Al-Humazah", juz: 30 }, { no: 105, nama: "Al-Fil", juz: 30 },
     { no: 106, nama: "Quraisy", juz: 30 }, { no: 107, nama: "Al-Ma'un", juz: 30 }, { no: 108, nama: "Al-Kautsar", juz: 30 },
-    { no: 109, nama: "Al-Kafirun", juz: 30 }, { no: 110, nama: "An-Nasr", juz: 30 }, { no: 111, nama: "Al-Masad", juz: 30 },
+    { no: 109, nama: "Al-Kafirun", juz: 30 }, { no: 110, nama: "An-Nasr", juz: 30 }, { no: 111, nama: "Al-Lahab", juz: 30 },
     { no: 112, nama: "Al-Ikhlas", juz: 30 }, { no: 113, nama: "Al-Falaq", juz: 30 }, { no: 114, nama: "An-Nas", juz: 30 }
 ];
 
