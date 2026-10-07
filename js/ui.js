@@ -581,6 +581,19 @@ function enhanceSiswaSelect(sel) {
     sel.style.cssText = "position:absolute;left:0;bottom:0;width:100%;height:1px;opacity:0;pointer-events:none;";
     wrap.append(inp, list, sel);
 
+    // Tahan blur saat pointer ada di daftar, agar klik/tap tidak kalah balapan dengan close()
+    let picking = false;
+    let pickTimer = null;
+    const holdOpen = () => {
+        picking = true;
+        clearTimeout(pickTimer);
+        pickTimer = setTimeout(() => {
+            picking = false;
+            if (document.activeElement !== inp && !list.classList.contains("hidden")) close();
+        }, 700);
+    };
+    const releaseHold = () => { picking = false; clearTimeout(pickTimer); };
+
     const label = () => {
         const o = sel.options[sel.selectedIndex];
         if (!o || (o.value === "" && o.disabled)) return "";
@@ -615,6 +628,7 @@ function enhanceSiswaSelect(sel) {
         inp.setAttribute("aria-expanded", "true");
     };
     const pick = (v) => {
+        releaseHold();
         sel.value = v;
         inp.value = label();
         list.classList.add("hidden");
@@ -630,7 +644,7 @@ function enhanceSiswaSelect(sel) {
     render("");
     });
     inp.addEventListener("input", () => render(inp.value));
-    inp.addEventListener("blur", () => setTimeout(close, 150));
+    inp.addEventListener("blur", () => setTimeout(() => { if (!picking) close(); }, 150));
     inp.addEventListener("keydown", (e) => {
         if (e.key === "Escape") { inp.blur(); }
         else if (e.key === "Enter") {
@@ -639,6 +653,8 @@ function enhanceSiswaSelect(sel) {
             if (b) pick(b.dataset.v);
         }
     });
+    list.addEventListener("mousedown", (e) => e.preventDefault());
+    list.addEventListener("pointerdown", holdOpen);
     list.addEventListener("click", (e) => {
         const b = e.target.closest("button[data-v]");
         if (b) pick(b.dataset.v);
