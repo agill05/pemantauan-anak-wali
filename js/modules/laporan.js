@@ -84,7 +84,7 @@ function renderLaporanRekapView() {
                             ${isPerhatian ? '<i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i>Perhatian' : '<i class="fas fa-circle-check mr-1" aria-hidden="true"></i>Tuntas'}
                         </span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-0.5">NISN: ${escapeHtml(item.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
+                    ${renderInfoRows([{label:"NISN",value:item.nisn || "-"},{label:"Kelas",value:kls ? kls.nama_kelas : "-"}])}
                     <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600 mt-1.5 pt-1.5 border-t border-slate-50">
                         <span class="text-emerald-600 font-semibold"><i class="fas fa-check-circle text-[10px] mr-1"></i>H: ${item.presensi.hadir}</span>
                         <span class="text-amber-600"><i class="fas fa-notes-medical text-[10px] mr-1"></i>S: ${item.presensi.sakit}</span>

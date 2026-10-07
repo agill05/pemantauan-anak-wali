@@ -145,7 +145,7 @@ function renderAkademikPrestasi() {
                         <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-award"></i></div>
                         <div>
                             <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama_prestasi)}</h4>
-                            <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • ${escapeHtml(item.tanggal)}</p>
+                            ${renderInfoRows([{label:"Siswa",value:s ? s.nama : "Siswa"},{label:"Tanggal",value:item.tanggal}])}
                         </div>
                     </div>
                     <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">${escapeHtml(item.tingkat)}</span>

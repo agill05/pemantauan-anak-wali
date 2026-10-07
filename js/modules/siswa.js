@@ -75,7 +75,7 @@ async function openProfilSiswa(siswaTarget) {
             <img src="${escapeHtml(siswa.foto || getInitialsAvatar(siswa.nama))}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200">
             <div>
                 <h3 class="font-bold text-base text-slate-800">${escapeHtml(siswa.nama)}</h3>
-                <p class="text-xs text-slate-400">NISN: ${escapeHtml(siswa.nisn || '-')} • Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
+                ${renderInfoRows([{label:"NISN",value:siswa.nisn || "-"},{label:"Kelas",value:kls ? kls.nama_kelas : "-"}])}
                 <p class="text-xs text-slate-400">Ortu/Wali: ${escapeHtml(siswa.nama_ortu || normalizePhone(siswa.no_hp_ortu) || '-')}</p>
                 ${infoMentor}
             </div>
@@ -187,7 +187,7 @@ async function openProfilSiswa(siswaTarget) {
                                 <div class="p-2.5 bg-slate-50 rounded-xl text-xs flex justify-between items-center">
                                     <div>
                                         <h5 class="font-bold text-slate-800">${escapeHtml(p.nama_prestasi)}</h5>
-                                        <p class="text-xs text-slate-400">${escapeHtml(p.tingkat)} • ${escapeHtml(p.tanggal)}</p>
+                                        ${renderInfoRows([{label:"Tingkat",value:p.tingkat},{label:"Tanggal",value:p.tanggal}])}
                                         ${renderPenulisBadge(p)}
                                     </div>
                                 </div>

@@ -74,7 +74,7 @@ function refreshMagicLinkButton() {
             return;
         }
         const teks = formatSisaMagic(sisa);
-        btn.innerHTML = `<i class="fas fa-hourglass-half"></i> Link aktif • <span class="font-mono">${teks}</span>`;
+        btn.innerHTML = `<i class="fas fa-hourglass-half"></i> Link aktif: <span class="font-mono">${teks}</span>`;
         if (live) live.textContent = teks;
     };
     tick();
@@ -174,7 +174,8 @@ function tampilkanModalMagicLink(siswa, magicUrl, expiry) {
                     <span class="flex items-center gap-1.5"><i class="fas fa-clock text-amber-600"></i> Sisa waktu aktif</span>
                     <span id="magic-link-countdown" class="font-mono text-sm">${formatSisaMagic(expiry - Date.now())}</span>
                 </div>
-                <p class="text-[11px] text-amber-700">Dibuat ${formatJamWita(dibuat)} • Berakhir ${formatJamWita(expiry)}</p>
+                <p class="text-[11px] text-amber-700">Dibuat: ${formatJamWita(dibuat)}</p>
+                <p class="text-[11px] text-amber-700">Berakhir: ${formatJamWita(expiry)}</p>
                 <p class="text-[11px] text-amber-700">Link baru bisa dibuat setelah ${formatJamWita(expiry)}.</p>
                 <p class="text-amber-700 leading-relaxed text-[11px]">
                     Orang tua dapat langsung memantau capaian kehadiran, karakter 7 kebiasaan, keagamaan, dan nilai anak tanpa perlu login akun.
@@ -267,7 +268,7 @@ function showExpiredMagicLinkScreen(message = "Tautan Magic Link telah kedaluwar
                     <i class="fas fa-hourglass-end"></i>
                 </div>
                 <h1 class="text-xl font-black text-slate-800 mb-1">Akses Kedaluwarsa</h1>
-                <p class="text-xs text-slate-500">Pemantauan Anak Wali • SMPN 1 Talaga Jaya</p>
+                <p class="text-xs text-slate-500">Pemantauan Anak Wali – SMPN 1 Talaga Jaya</p>
             </div>
 
             <div class="bg-surface p-6 rounded-3xl border border-slate-100 shadow-sm text-center space-y-4">

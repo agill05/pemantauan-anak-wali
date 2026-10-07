@@ -476,7 +476,7 @@ async function continueSessionSetup() {
         const sbRole = document.getElementById("sidebar-role-badge");
         if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
         if (sbNama) sbNama.innerText = appState.user.nama;
-        if (sbRole) sbRole.innerText = (appState.user.role === "kepsek" ? "KEPALA SEKOLAH" : appState.user.role.toUpperCase()) + (isGuruUser() && getGuruPeranText() ? " • " + getGuruPeranText().toUpperCase() : "");
+        if (sbRole) sbRole.innerText = (appState.user.role === "kepsek" ? "KEPALA SEKOLAH" : appState.user.role.toUpperCase()) + (isGuruUser() && getGuruPeranText() ? " – " + getGuruPeranText().toUpperCase() : "");
         renderSidebarMenu(appState.user.role);
         renderPeranSwitcher();
 

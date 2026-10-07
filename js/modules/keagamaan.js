@@ -9,7 +9,7 @@ function formatCapaianKeagamaan(h) {
     const kat = getKategoriHafalan(h);
     const nama = h.nama_surat || "";
     if (kat === "surah") return `Surah ${nama}`;
-    if (kat === "iqro") return h.halaman ? `${nama} • hal. ${h.halaman}` : nama;
+    if (kat === "iqro") return h.halaman ? `${nama}, hal. ${h.halaman}` : nama;
     return nama;
 }
 
@@ -210,7 +210,7 @@ function renderKeagamaanView() {
                         <div class="w-9 h-9 shrink-0 rounded-xl ${warnaBox[meta.warna]} flex items-center justify-center font-bold text-xs"><i class="fas ${meta.icon}"></i></div>
                         <div class="min-w-0">
                             <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(formatCapaianKeagamaan(item))}</h4>
-                            <p class="text-xs text-slate-400 truncate">${meta.label} • ${escapeHtml(s ? s.nama : 'Siswa')} • ${escapeHtml(item.tanggal)}</p>
+                            ${renderInfoRows([{label:"Jenis",value:meta.label},{label:"Siswa",value:s ? s.nama : "Siswa"},{label:"Tanggal",value:item.tanggal}])}
                         </div>
                     </div>
                     <span class="text-xs font-bold px-2 py-0.5 rounded-md border shrink-0 ${statusBadge}">${escapeHtml(item.status)}</span>

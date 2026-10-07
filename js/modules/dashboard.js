@@ -137,8 +137,7 @@ function sdSapaanCard(u) {
         <img src="${foto}" alt="">
         <div class="min-w-0">
             <h3>${sdSapaan()}, ${escapeHtml(getFirstName(u.nama) || "Kamu")}!</h3>
-            <p>Kelas ${kls ? escapeHtml(kls.nama_kelas) : "-"}</p>
-            <p>Wali: ${wali ? escapeHtml(wali.nama) : "-"} • Mentor: ${mentor ? escapeHtml(mentor.nama) : "-"}</p>
+            ${renderInfoRows([{ label: "Kelas", value: kls ? kls.nama_kelas : "-" }, { label: "Wali", value: wali ? wali.nama : "-" }, { label: "Mentor", value: mentor ? mentor.nama : "-" }])}
         </div></div>`;
 }
 
@@ -235,7 +234,7 @@ function sdHafalanCard(hafalan) {
     const terakhir = hafalan.slice().sort((a, b) => sdTgl(b).localeCompare(sdTgl(a)))[0];
     const lancar = hafalan.filter(h => h.status === "Lancar").length;
     return sdCard("Progres Hafalan", `<p class="text-sm font-black text-slate-800">${escapeHtml(terakhir.nama_surat || "-")}</p>
-        <p class="sd-note" style="margin-top:0.125rem">Status terakhir: <b>${escapeHtml(terakhir.status || "-")}</b> • ${lancar} capaian lancar</p>`, ["karakter", "Detail"]);
+        ${renderInfoRows([{ label: "Status", value: terakhir.status || "-" }, { label: "Lancar", value: lancar + " capaian" }])}`, ["karakter", "Detail"]);
 }
 
 /* ---------- H. Prestasi terbaru ---------- */
@@ -395,7 +394,7 @@ function renderAgendaSection(agendaList) {
             </div>
             <div>
               <h4 class="font-bold text-xs text-slate-800">${escapeHtml(ag.nama_siswa)}</h4>
-              <p class="text-xs text-slate-500">${escapeHtml(ag.jenis)} • ${escapeHtml(ag.permasalahan || '-')}</p>
+              ${renderInfoRows([{label:"Jenis",value:ag.jenis},{label:"Masalah",value:ag.permasalahan || "-"}])}
             </div>
           </div>
           <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-1 rounded-lg border border-amber-100">
@@ -880,14 +879,14 @@ function renderRingkasanKelas(list) {
             <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                     <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(k.nama_kelas)}</p>
-                    <p class="text-[11px] text-slate-400 truncate">Wali: ${escapeHtml(k.wali || "-")} • ${k.total} siswa</p>
+                    ${renderInfoRows([{label:"Wali",value:k.wali || "-"},{label:"Siswa",value:k.total + " siswa"}])}
                 </div>
                 <span class="text-base font-black ${warna[0]} shrink-0">${pct}%</span>
             </div>
             <div class="h-2 bg-slate-100 rounded-full overflow-hidden mt-2">
                 <div class="h-full ${warna[1]}" style="width:${pct}%"></div>
             </div>
-            <p class="text-[11px] text-slate-500 mt-2">Hadir ${k.hadir} • Sakit ${k.sakit} • Izin ${k.izin} • Alpa ${k.alpa} • Belum diisi ${k.belum_diisi}${k.perlu_perhatian ? ` • <b class="text-rose-500">${k.perlu_perhatian} perlu perhatian</b>` : ""}</p>
+            <div class="sd-stat" style="flex-wrap:wrap"><div><b>${k.hadir}</b>Hadir</div><div><b>${k.sakit}</b>Sakit</div><div><b>${k.izin}</b>Izin</div><div><b>${k.alpa}</b>Alpa</div><div><b>${k.belum_diisi}</b>Belum diisi</div>${k.perlu_perhatian ? `<div style="background:#fff1f2;color:#e11d48"><b style="color:#e11d48">${k.perlu_perhatian}</b>Perlu perhatian</div>` : ""}</div>
         </div>`;
     }).join("");
 }

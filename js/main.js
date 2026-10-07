@@ -168,7 +168,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("btn-back-profil")?.classList.add("hidden");
             
             initTheme();
-            setHeaderText("Pemantauan Anak Wali", "Akses Orang Tua • Berlaku 15 Menit");
+            setHeaderText("Pemantauan Anak Wali", "Akses Orang Tua – Berlaku 15 Menit");
 
             appState.user = { role: 'ortu', nama: 'Orang Tua / Wali' };
             applyRoleUI('ortu');

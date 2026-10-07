@@ -67,7 +67,7 @@ function renderPembinaanView() {
                     <div>
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${escapeHtml(item.jenis || 'Pembinaan')}</span>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.permasalahan)}</h4>
-                        <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} • Tanggal: ${escapeHtml(item.tanggal)}</p>
+                        ${renderInfoRows([{label:"Siswa",value:s ? s.nama : "Siswa"},{label:"Tanggal",value:item.tanggal}])}
                     </div>
                     <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(item.status)}</span>
                 </div>
