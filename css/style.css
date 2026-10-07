@@ -1990,7 +1990,7 @@ body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
 @media (max-width: 767px) {
     #absensi-list-container form>.pt-2 {
         position: sticky;
-        bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+        bottom: calc(env(safe-area-inset-bottom, 0px) - 2.5rem);
         z-index: 5;
         padding-top: 0.75rem;
     }
