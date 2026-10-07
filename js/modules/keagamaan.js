@@ -98,19 +98,22 @@ async function loadKeagamaanData(forceRefresh = false) {
     const selectedSiswaId = rawSelectedSiswaId === "ALL" ? null : rawSelectedSiswaId;
     const isStale = (Date.now() - (lastFetchTimes.keagamaan || 0)) > CACHE_TTL;
 
-    if (appState.keagamaan && appState.keagamaan.length > 0) {
+    const sudahTampil = !!(appState.keagamaan && appState.keagamaan.length > 0);
+    if (sudahTampil) {
         renderKeagamaanView();
     } else {
         renderSkeleton("keagamaan-container", 3);
     }
 
-    if (forceRefresh || isStale || !appState.keagamaan || appState.keagamaan.length === 0) {
+    if (forceRefresh || isStale || !sudahTampil) {
         const res = await apiCall("getKeagamaan", { siswa_id: selectedSiswaId }, false);
         if (res && res.data) {
+            const berubah = !sudahTampil
+                || JSON.stringify(res.data) !== JSON.stringify(appState.keagamaan);
             appState.keagamaan = res.data;
             lastFetchTimes.keagamaan = Date.now();
             saveAppStateToLocal();
-            renderKeagamaanView();
+            if (berubah) renderKeagamaanView();
         }
     }
 }

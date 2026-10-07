@@ -3,19 +3,22 @@ async function loadLaporanRekap(forceRefresh = false) {
 
     populateLaporanKelasFilter();
 
-    if (appState.laporanRekap && appState.laporanRekap.length > 0) {
+    const sudahTampil = !!(appState.laporanRekap && appState.laporanRekap.length > 0);
+    if (sudahTampil) {
         renderLaporanRekapView();
     } else {
         renderSkeleton("laporan-rekap-container", 4);
     }
 
-    if (forceRefresh || isStale || !appState.laporanRekap || appState.laporanRekap.length === 0) {
+    if (forceRefresh || isStale || !sudahTampil) {
         const res = await apiCall("getLaporanRekap", {}, false);
         if (res && res.data) {
+            const berubah = !sudahTampil
+                || JSON.stringify(res.data) !== JSON.stringify(appState.laporanRekap);
             appState.laporanRekap = res.data;
             lastFetchTimes.laporan = Date.now();
             saveAppStateToLocal();
-            renderLaporanRekapView();
+            if (berubah) renderLaporanRekapView();
         }
     }
 }

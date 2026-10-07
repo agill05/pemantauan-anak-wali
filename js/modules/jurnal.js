@@ -20,7 +20,8 @@ async function loadJurnalData(forceRefresh = false) {
     }
 
     if (!appState.jurnal) appState.jurnal = [];
-    if (appState.jurnal.length > 0) renderJurnalView();
+    const sudahTampil = appState.jurnal.length > 0;
+    if (sudahTampil) renderJurnalView();
     else renderSkeleton("jurnal-container", 3);
 
     const isStale = (Date.now() - (lastFetchTimes.jurnal || 0)) > CACHE_TTL;
@@ -32,9 +33,11 @@ async function loadJurnalData(forceRefresh = false) {
         const dari = geserTanggalJurnal(sampai, -60);
         const res = await apiCall("getJurnal", { siswa_id: String(appState.user.id), dari, sampai }, false);
         if (res && res.status === "success" && Array.isArray(res.data)) {
+            const berubah = !sudahTampil
+                || JSON.stringify(res.data) !== JSON.stringify(appState.jurnal);
             appState.jurnal = res.data;
             lastFetchTimes.jurnal = Date.now();
-            renderJurnalView();
+            if (berubah) renderJurnalView();
         } else if (appState.jurnal.length === 0) {
             container.innerHTML = `<div class="empty-state"><i class="fas fa-wifi text-2xl mb-2"></i><p class="text-xs text-slate-500">Jurnal gagal dimuat. Periksa koneksi lalu coba lagi.</p></div>`;
         }

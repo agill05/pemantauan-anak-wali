@@ -54,9 +54,15 @@ async function renderDashboard() {
 
     apiCall("getDashboardData", {}, false).then(res => {
         if (res && res.status === "success") {
-            if (role !== "siswa") renderPrioritySection(res.data.priority_list);
-            renderAgendaSection(res.data.agenda_list);
-            if (roleAsli === "kepsek") renderRingkasanKelas(res.data.per_kelas);
+            const tanda = JSON.stringify([res.data.priority_list, res.data.agenda_list, res.data.per_kelas]);
+            const adaIsi = !!document.querySelector("#dash-agenda-list > *");
+            const berubah = tanda !== dashboardTanda || !adaIsi;
+            dashboardTanda = tanda;
+            if (berubah) {
+                if (role !== "siswa") renderPrioritySection(res.data.priority_list);
+                renderAgendaSection(res.data.agenda_list);
+                if (roleAsli === "kepsek") renderRingkasanKelas(res.data.per_kelas);
+            }
             checkStudentNotifications();
         }
     });
@@ -406,6 +412,7 @@ function renderAgendaSection(agendaList) {
 
 const NOTIF_CACHE_KEY = "notif_ditangani_cache";
 let pendingPembinaanNotif = null;
+let dashboardTanda = "";
 
 async function fetchNotifDitangani() {
     const res = await apiCall("getNotifDitangani", {}, false);
