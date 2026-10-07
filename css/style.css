@@ -1238,6 +1238,37 @@ body.dark .text-slate-400 {
     color: #059669;
 }
 
+#post-login-splash {
+    overflow: hidden;
+}
+
+#post-login-splash .splash-bg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 130%;
+    background: url("../assets/img/background-sekolah.jpg") center / cover no-repeat;
+    animation: splash-pan 18s ease-in-out infinite alternate;
+    will-change: transform;
+}
+
+#post-login-splash .splash-wash {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.82) 45%, rgba(255, 255, 255, 0.94) 100%);
+}
+
+#post-login-splash .splash-core {
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes splash-pan {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-23.08%, 0, 0); }
+}
+
 #post-login-splash.is-done .splash-core {
     animation: splash-pop 0.28s ease-out;
 }
@@ -1256,6 +1287,11 @@ body.dark .text-slate-400 {
 
     #post-login-splash.is-done .splash-core {
         animation: none;
+    }
+
+    #post-login-splash .splash-bg {
+        animation: none;
+        transform: translate3d(-11.54%, 0, 0);
     }
 }
 

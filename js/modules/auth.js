@@ -1,7 +1,95 @@
 const LOGIN_ROLE_KEY = "login_last_role";
 const LOGIN_ROLE_LABEL = { siswa: "Siswa", guru: "Guru", kepsek: "Kepala Sekolah", admin: "Admin" };
 const LOGIN_FIELD_IDS = ["login-role", "login-username", "login-password"];
+const LOGIN_LOCK_KEY = "login_lock_until";
 let loginInFlight = false;
+let loginLockTimer = null;
+let loginLockActiveKey = "";
+let loginLockUntil = 0;
+
+function loginLockId(role, username) {
+    return role + "|" + String(username || "").trim().toLowerCase();
+}
+
+function readLoginLocks() {
+    try { return JSON.parse(localStorage.getItem(LOGIN_LOCK_KEY)) || {}; } catch (_) { return {}; }
+}
+
+function getStoredLock(id) {
+    const locks = readLoginLocks();
+    const until = Number(locks[id] || 0);
+    if (until > Date.now()) return until;
+    if (id in locks) storeLoginLock(id, 0);
+    return 0;
+}
+
+function storeLoginLock(id, until) {
+    const locks = readLoginLocks();
+    const now = Date.now();
+    Object.keys(locks).forEach(k => { if (Number(locks[k]) <= now) delete locks[k]; });
+    if (until > now) locks[id] = until; else delete locks[id];
+    try { localStorage.setItem(LOGIN_LOCK_KEY, JSON.stringify(locks)); } catch (_) { }
+}
+
+function formatLoginCountdown(sec) {
+    const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+    const ss = String(sec % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+}
+
+function stopLoginCountdown() {
+    clearInterval(loginLockTimer);
+    loginLockTimer = null;
+    loginLockActiveKey = "";
+    loginLockUntil = 0;
+    document.getElementById("login-error")?.removeAttribute("aria-live");
+    const btn = document.getElementById("btn-submit-login");
+    if (btn && !loginInFlight) btn.disabled = false;
+}
+
+function startLoginCountdown(until, id) {
+    clearInterval(loginLockTimer);
+    loginLockActiveKey = id;
+    loginLockUntil = until;
+    const btn = document.getElementById("btn-submit-login");
+    if (btn) btn.disabled = true;
+
+    let first = true;
+    const tick = () => {
+        const sisa = Math.ceil((loginLockUntil - Date.now()) / 1000);
+        if (sisa <= 0) {
+            storeLoginLock(id, 0);
+            stopLoginCountdown();
+            clearLoginError();
+            return;
+        }
+        showLoginError(`Coba lagi dalam ${formatLoginCountdown(sisa)}`, ["login-username"]);
+        if (first) {
+            first = false;
+            document.getElementById("login-error")?.setAttribute("aria-live", "off");
+        }
+    };
+    tick();
+    if (loginLockUntil > Date.now()) loginLockTimer = setInterval(tick, 1000);
+}
+
+function syncLoginLock() {
+    const role = document.getElementById("login-role")?.value || "";
+    const username = document.getElementById("login-username")?.value || "";
+    const id = loginLockId(role, username);
+    const until = role && username.trim() ? getStoredLock(id) : 0;
+    if (until) {
+        if (loginLockActiveKey !== id) startLoginCountdown(until, id);
+    } else if (loginLockTimer) {
+        stopLoginCountdown();
+        clearLoginError();
+    }
+}
+
+function onLoginFieldInput() {
+    syncLoginLock();
+    if (!loginLockTimer) clearLoginError();
+}
 
 function showLoginError(message, invalidIds = []) {
     const box = document.getElementById("login-error");
@@ -25,7 +113,7 @@ function setLoginBusy(busy) {
     const btn = document.getElementById("btn-submit-login");
     const label = document.getElementById("btn-login-label");
     if (btn) {
-        btn.disabled = busy;
+        btn.disabled = busy || (loginLockTimer !== null && loginLockUntil > Date.now());
         btn.setAttribute("aria-busy", busy ? "true" : "false");
     }
     if (label) label.textContent = busy ? "Memeriksa…" : "Masuk";
@@ -252,6 +340,11 @@ async function handleAppLogin(e) {
     const username = usernameEl.value.trim();
     const password = passwordEl.value;
 
+    if (role && username && getStoredLock(loginLockId(role, username))) {
+        syncLoginLock();
+        return;
+    }
+
     clearLoginError();
 
     if (!role) {
@@ -306,7 +399,14 @@ async function handleAppLogin(e) {
     loginInFlight = false;
     setLoginBusy(false);
 
-    if (res) {
+    if (res && res.code === "LOGIN_LOCKED" && Number(res.sisa_detik) > 0) {
+        const id = loginLockId(role, username);
+        const until = Date.now() + Number(res.sisa_detik) * 1000;
+        storeLoginLock(id, until);
+        startLoginCountdown(until, id);
+        passwordEl.value = "";
+        shakeLoginForm();
+    } else if (res) {
         showLoginError(
             res.message || `Username atau kata sandi salah. Cek juga jenis pengguna yang dipilih (${LOGIN_ROLE_LABEL[role]}).`,
             ["login-username", "login-password"]
@@ -340,9 +440,10 @@ function initLoginForm() {
 
     LOGIN_FIELD_IDS.forEach(id => {
         const el = document.getElementById(id);
-        el?.addEventListener("input", clearLoginError);
-        el?.addEventListener("change", clearLoginError);
+        el?.addEventListener("input", onLoginFieldInput);
+        el?.addEventListener("change", onLoginFieldInput);
     });
+    syncLoginLock();
 
     const notice = document.getElementById("login-offline");
     const syncOnline = () => { if (notice) notice.hidden = navigator.onLine; };
