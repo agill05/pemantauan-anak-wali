@@ -40,28 +40,10 @@ function renderAdminSekolah() {
     }
 }
 
-async function saveAkunKepsek() {
-    const username = document.getElementById("m-ks-username").value.trim();
-    const password = document.getElementById("m-ks-password").value;
-    if (!username) {
-        Swal.fire({ icon: "warning", title: "Username kosong", text: "Isi username Kepala Sekolah.", confirmButtonColor: "#2563eb" });
-        return;
-    }
-    showLoading("Menyimpan akun...");
-    const res = await apiCall("saveAkunKepsek", { username, password }, true);
-    hideLoading();
-    if (res && res.status === "success") {
-        document.getElementById("m-ks-password").value = "";
-        Swal.fire({ icon: "success", title: "Berhasil", text: res.message, confirmButtonColor: "#2563eb" });
-    } else {
-        Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat menyimpan akun.", confirmButtonColor: "#2563eb" });
-    }
-}
-
 async function resetPasswordKepsek() {
     const ok = await Swal.fire({
         icon: "warning", title: "Reset Password Kepala Sekolah?",
-        text: "Password kembali ke kepsek123 dan wajib diganti saat login berikutnya.",
+        text: "Password kembali ke kepsek123 dan Kepala Sekolah wajib menggantinya saat login berikutnya.",
         showCancelButton: true, confirmButtonText: "Ya, Reset", cancelButtonText: "Batal", confirmButtonColor: "#e11d48"
     });
     if (!ok.isConfirmed) return;
@@ -79,6 +61,14 @@ async function saveSekolahForm(e) {
     e.preventDefault();
     const btn = document.getElementById("btn-save-sekolah");
     const originalHtml = btn ? btn.innerHTML : "";
+    const username = document.getElementById("m-ks-username").value.trim();
+    const password = document.getElementById("m-ks-password").value;
+
+    if (!username) {
+        Swal.fire({ icon: "warning", title: "Username kosong", text: "Isi username Kepala Sekolah.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
@@ -87,6 +77,8 @@ async function saveSekolahForm(e) {
     const payload = {
         nama_kepsek: document.getElementById("m-skl-kepsek").value,
         nip_kepsek: document.getElementById("m-skl-nip-kepsek").value,
+        username: username,
+        password: password,
     };
 
     const res = await apiCall("savePengaturan", payload, true);
@@ -97,9 +89,10 @@ async function saveSekolahForm(e) {
     }
 
     if (res && res.status === "success") {
-        appState.pengaturan = { ...appState.pengaturan, ...payload };
+        appState.pengaturan = { ...appState.pengaturan, nama_kepsek: payload.nama_kepsek, nip_kepsek: payload.nip_kepsek };
         saveAppStateToLocal();
-        showToast("Data Kepala Sekolah tersimpan!");
+        document.getElementById("m-ks-password").value = "";
+        showToast(res.message || "Data Kepala Sekolah tersimpan!");
     } else {
         Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: res?.message || 'Terjadi kesalahan.', confirmButtonColor: '#2563eb' });
     }

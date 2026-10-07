@@ -760,7 +760,7 @@
             </div>
 
             <div id="admin-tab-sekolah" class="admin-tab-content space-y-3 hidden">
-                <p class="text-xs text-slate-500">Data Kepala Sekolah berlaku untuk seluruh sekolah (1 data, dipakai di semua laporan/rapor) — bukan diisi per-siswa.</p>
+                <p class="text-xs text-slate-500">Data dan akun Kepala Sekolah berlaku untuk seluruh sekolah (1 data, dipakai di semua laporan/rapor) — bukan diisi per-siswa.</p>
                 <form onsubmit="saveSekolahForm(event)" class="space-y-3 bg-white p-3.5 rounded-2xl border border-slate-100">
                     <div>
                         <label for="m-skl-kepsek" class="block text-xs font-bold text-slate-500 mb-1">NAMA KEPALA SEKOLAH</label>
@@ -770,21 +770,20 @@
                         <label for="m-skl-nip-kepsek" class="block text-xs font-bold text-slate-500 mb-1">NIP KEPALA SEKOLAH</label>
                         <input type="text" id="m-skl-nip-kepsek" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="19xxxxxxxxxxxxxxxx">
                     </div>
-                    <button type="submit" id="btn-save-sekolah" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Data Kepala Sekolah</button>
                     <div class="pt-3 mt-1 border-t border-slate-100 space-y-2">
                         <p class="text-[11px] font-bold text-slate-600 uppercase">Akun Login Kepala Sekolah</p>
-                        <p class="text-[11px] text-slate-500 leading-relaxed">Akun dibuat otomatis saat data disimpan. Password awal: <b>kepsek123</b>. Password yang Anda isi di sini bersifat sementara, Kepala Sekolah wajib menggantinya saat login.</p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">Password awal: <b>kepsek123</b> (wajib diganti saat login pertama). Password yang Anda isi di sini langsung dipakai tanpa diminta ganti lagi.</p>
                         <div>
                             <label for="m-ks-username" class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
                             <input type="text" id="m-ks-username" autocomplete="off" autocapitalize="none" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="kepsek">
                         </div>
                         <div>
-                            <label for="m-ks-password" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD SEMENTARA (OPSIONAL)</label>
+                            <label for="m-ks-password" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD BARU (OPSIONAL)</label>
                             <input type="text" id="m-ks-password" autocomplete="off" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="Kosongkan jika tidak diubah (min. 6 karakter)">
                         </div>
-                        <button type="button" onclick="saveAkunKepsek()" class="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Akun Kepala Sekolah</button>
-                        <button type="button" onclick="resetPasswordKepsek()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs">Reset Password Kepala Sekolah</button>
                     </div>
+                    <button type="submit" id="btn-save-sekolah" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Data &amp; Akun Kepala Sekolah</button>
+                    <button type="button" onclick="resetPasswordKepsek()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs">Reset Password Kepala Sekolah</button>
                 </form>
             </div>
 
