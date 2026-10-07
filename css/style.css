@@ -1246,3 +1246,858 @@ body.dark .text-slate-400 {
         animation: none;
     }
 }
+
+/* ==========================================================================
+   TEMA A (Bersih-Modern, Biru) - FASE 1
+   Hanya lapisan tampilan. Tidak ada perubahan fungsi.
+   Blok ini sengaja di paling bawah supaya menimpa aturan di atasnya.
+   Mode gelap tetap dikendalikan aturan body.dark di atas.
+   ========================================================================== */
+
+:root {
+    --background: #f8fafc;
+    --primary-light: #eff6ff;
+    --line: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --text-soft: #64748b;
+    --radius-card: 1rem;
+    --radius-control: 0.75rem;
+    --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-hover: var(--shadow-card);
+    --st-hadir: #059669;
+    --st-sakit: #d97706;
+    --st-izin: #2563eb;
+    --st-alpa: #dc2626;
+}
+
+body:not(.dark) .bg-background {
+    background-color: var(--background);
+}
+
+/* Kartu: satu gaya, tanpa efek naik saat hover */
+.bg-surface,
+.bg-white {
+    box-shadow: none;
+}
+
+.rounded-2xl.bg-white,
+.rounded-2xl.bg-surface,
+.rounded-3xl.bg-white,
+.rounded-3xl.bg-surface {
+    box-shadow: var(--shadow-card);
+}
+
+#main-content .bg-surface:hover,
+#main-content .bg-white:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+#main-content .rounded-2xl.bg-white:hover,
+#main-content .rounded-2xl.bg-surface:hover,
+#main-content .rounded-3xl.bg-white:hover,
+#main-content .rounded-3xl.bg-surface:hover {
+    box-shadow: var(--shadow-card);
+}
+
+body:not(.dark) .border-slate-100 {
+    border-color: var(--line);
+}
+
+/* Tipografi: tidak ada teks di bawah 12px */
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+    font-size: 0.75rem;
+}
+
+.sidebar-section-label,
+.sidebar-school {
+    font-size: 0.75rem;
+}
+
+#main-content h2.uppercase,
+#main-content h3.uppercase,
+#main-content label.uppercase,
+#modal-content-box label.uppercase {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+#main-content h2.uppercase,
+#main-content h3.uppercase {
+    font-size: 0.875rem;
+}
+
+.sidebar-section-label {
+    text-transform: none;
+    letter-spacing: 0.02em;
+}
+
+/* Header putih bersih di semua ukuran layar */
+body:not(.dark) #main-header {
+    background: #ffffff !important;
+    color: var(--text);
+    border-bottom: 1px solid var(--line);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body:not(.dark) #main-header .text-blue-100 {
+    color: var(--text-soft) !important;
+}
+
+body:not(.dark) #header-title {
+    color: var(--text) !important;
+}
+
+body:not(.dark) #main-header button {
+    color: #334155;
+}
+
+body:not(.dark) #main-header button:hover {
+    background: #f1f5f9 !important;
+}
+
+body:not(.dark) #header-mobile-avatar {
+    background: #f1f5f9;
+    border-color: var(--line);
+}
+
+#btn-notif-header {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#notif-badge {
+    width: auto;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+/* Sidebar terang (mode terang saja) */
+body:not(.dark) #app-sidebar {
+    background: #ffffff;
+    border-right: 1px solid var(--line);
+}
+
+body:not(.dark) #app-sidebar .border-b,
+body:not(.dark) #app-sidebar .border-t {
+    border-color: var(--line) !important;
+}
+
+body:not(.dark) #app-sidebar #sidebar-nama,
+body:not(.dark) #app-sidebar span.font-black {
+    color: var(--text) !important;
+}
+
+body:not(.dark) #app-sidebar #sidebar-role-badge {
+    background: var(--primary-light) !important;
+    color: var(--primary) !important;
+}
+
+body:not(.dark) #app-sidebar .fa-times {
+    color: var(--text-soft);
+}
+
+body:not(.dark) .sidebar-section-label,
+body:not(.dark) .sidebar-school {
+    color: var(--text-soft);
+}
+
+body:not(.dark) .sidebar-nav-item {
+    color: #334155 !important;
+}
+
+body:not(.dark) .sidebar-nav-item i {
+    color: var(--text-soft) !important;
+}
+
+body:not(.dark) .sidebar-nav-item:hover {
+    background: #f1f5f9 !important;
+    color: var(--text) !important;
+}
+
+body:not(.dark) #app-sidebar .sidebar-nav-item.active {
+    background: var(--primary-light) !important;
+    color: var(--primary) !important;
+}
+
+body:not(.dark) #app-sidebar .sidebar-nav-item.active i {
+    color: var(--primary) !important;
+}
+
+body:not(.dark) #app-sidebar .sidebar-nav-item.active::before {
+    background: var(--primary);
+}
+
+body:not(.dark) #app-sidebar button[onclick="handleLogout()"] {
+    color: var(--st-alpa) !important;
+}
+
+body:not(.dark) #app-sidebar button[onclick="handleLogout()"]:hover {
+    background: #fef2f2 !important;
+}
+
+/* Bottom nav: item aktif berbentuk pill */
+.nav-item {
+    min-height: 3.5rem;
+    justify-content: center;
+}
+
+.nav-item.active i {
+    transform: none;
+    box-shadow: none;
+    border-radius: 999px;
+    padding: 0.3rem 1rem;
+}
+
+/* Menu cepat dan banner */
+.quick-tile {
+    border-radius: var(--radius-card);
+}
+
+.quick-tile:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.quick-tile-label {
+    font-size: 0.875rem;
+}
+
+.quick-tile-icon {
+    box-shadow: none;
+}
+
+.dash-banner {
+    background: var(--primary);
+    border-radius: var(--radius-card);
+    box-shadow: none;
+}
+
+/* Empty state dan skeleton */
+.empty-state {
+    border-radius: var(--radius-card);
+    border: 1px dashed #cbd5e1;
+    color: var(--text-soft);
+}
+
+/* Modal: bottom sheet di HP */
+#modal-content-box button:has(> .fa-times) {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes sheetUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 639px) {
+    #modal-container {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+
+    #modal-content-box {
+        max-width: none !important;
+        max-height: 92vh !important;
+        border-radius: 1.25rem 1.25rem 0 0 !important;
+        padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    #modal-content-box::before {
+        content: "";
+        display: block;
+        width: 2.5rem;
+        height: 4px;
+        margin: -0.5rem auto 1rem;
+        border-radius: 999px;
+        background: #cbd5e1;
+    }
+
+    #modal-container:not(.hidden) #modal-content-box {
+        animation: sheetUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+}
+
+/* Input 16px di HP: iOS tidak zoom otomatis, target sentuh nyaman */
+@media (max-width: 767px) {
+
+    #main-content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    #main-content select,
+    #main-content textarea,
+    #modal-content-box input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    #modal-content-box select,
+    #modal-content-box textarea {
+        font-size: 16px;
+    }
+
+    #main-content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    #main-content select,
+    #modal-content-box input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    #modal-content-box select {
+        min-height: 44px;
+    }
+}
+
+/* Tinggi layar iOS Safari */
+@supports (height: 100dvh) {
+    body.h-screen {
+        height: 100dvh;
+    }
+
+    #view-login.min-h-screen {
+        min-height: 100dvh;
+    }
+
+    #app-sidebar {
+        height: 100dvh;
+    }
+
+    #modal-content-box {
+        max-height: 90dvh;
+    }
+}
+
+/* Gerak dikurangi */
+@media (prefers-reduced-motion: reduce) {
+
+    .view-section.active,
+    #modal-container:not(.hidden) #modal-content-box {
+        animation: none !important;
+    }
+
+    .skeleton {
+        animation: none;
+    }
+}
+
+/* ==========================================================================
+   TEMA A - FASE 2: KERANGKA LAYOUT (HP / tablet / laptop / PC)
+   Hanya CSS. Tidak ada perubahan fungsi atau markup.
+   <768px   : header + bottom nav + sidebar drawer (seperti sebelumnya)
+   768-1023 : sidebar tetap 232px, tanpa bottom nav (BARU, tablet)
+   >=1024   : sidebar tetap 272px (tetap)
+   ========================================================================== */
+
+/* Tablet dan lebih besar: sidebar tetap, drawer dan bottom nav dimatikan */
+@media (min-width: 768px) {
+    #app-sidebar {
+        position: fixed;
+        transform: none !important;
+        top: 0;
+        left: 0;
+        width: var(--sidebar-width);
+        max-width: var(--sidebar-width);
+        box-shadow: none;
+        z-index: 30;
+        padding-left: env(safe-area-inset-left, 0px);
+    }
+
+    #sidebar-backdrop {
+        display: none !important;
+    }
+
+    #app-sidebar button[onclick="toggleSidebar(false)"],
+    #app-sidebar .fa-times,
+    #btn-toggle-sidebar,
+    #header-mobile-avatar {
+        display: none !important;
+    }
+
+    #main-header {
+        left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+    }
+
+    #main-content {
+        margin-left: var(--sidebar-width);
+    }
+
+    #bottom-nav {
+        display: none !important;
+    }
+
+    #main-content>.view-section {
+        max-width: 1180px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+        padding-bottom: 2rem !important;
+    }
+}
+
+/* Khusus tablet: sidebar lebih ramping, header dan konten menyesuaikan */
+@media (min-width: 768px) and (max-width: 1023px) {
+    :root {
+        --sidebar-width: 232px;
+    }
+
+    #header-default {
+        min-height: 5rem;
+        padding: 1rem 1.5rem;
+    }
+
+    #header-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+    }
+
+    #main-content {
+        padding-top: 6.5rem;
+        padding-bottom: 2rem;
+    }
+}
+
+/* HP: bottom nav muat 5-6 item, safe-area layar miring (landscape iOS) */
+@media (max-width: 767px) {
+    #bottom-nav-items .nav-item {
+        min-width: 0;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+
+    #bottom-nav-items .nav-item span {
+        max-width: 100%;
+        white-space: nowrap;
+        letter-spacing: -0.01em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #main-header,
+    #bottom-nav {
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+    }
+
+    #main-content {
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+    }
+}
+
+/* HP sangat sempit (<360px): label hanya tampil di item aktif, tetap terbaca pembaca layar */
+@media (max-width: 359px) {
+    #bottom-nav-items .nav-item:not(.active) span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+}
+
+/* ==========================================================================
+   TEMA A - FASE 3: KOMPONEN (form, tombol, modal, popup)
+   Hanya CSS. Tidak ada perubahan fungsi atau markup.
+   Sasaran: pola class yang sudah seragam di template JS
+   (input/select/textarea ber-rounded-xl, tombol aksi ber-py-2.5 / py-3).
+   Mode gelap tetap dikendalikan aturan body.dark (memakai !important).
+   ========================================================================== */
+
+/* ---- Form: input, select, textarea ---- */
+:is(#main-content, #modal-content-box) :is(input, select, textarea).rounded-xl:not([class*="pr-9"]) {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+}
+
+:is(#main-content, #modal-content-box) :is(input, select, textarea).rounded-xl {
+    font-size: 0.875rem;
+    border-color: #cbd5e1;
+    border-radius: var(--radius-control);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+:is(#main-content, #modal-content-box) :is(input, select, textarea).rounded-xl:hover {
+    border-color: #94a3b8;
+}
+
+:is(#main-content, #modal-content-box) :is(input, select, textarea).rounded-xl:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+:is(#main-content, #modal-content-box) :is(input, select, textarea).rounded-xl:is(:disabled, [readonly]) {
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+}
+
+:is(#main-content, #modal-content-box) textarea.rounded-xl {
+    line-height: 1.5;
+    min-height: 5rem;
+}
+
+/* Panah select seragam */
+:is(#main-content, #modal-content-box) select.rounded-xl {
+    -webkit-appearance: none;
+    appearance: none;
+    padding-right: 2.25rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+}
+
+/* Checkbox dan radio */
+:is(#main-content, #modal-content-box) input:is([type="checkbox"], [type="radio"]) {
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+}
+
+/* ---- Tombol ---- */
+:is(#main-content, #modal-content-box) button:is([class*="py-2.5"], [class*="py-3"]) {
+    min-height: 2.75rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+button:disabled:active {
+    transform: none;
+}
+
+/* ---- Modal: judul dan jarak ---- */
+#modal-content-box h3.text-sm {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+
+#modal-content-box>div:first-child.border-b {
+    border-color: var(--line);
+}
+
+/* ---- Scroll horizontal (tab, chip) lebih halus di layar sentuh ---- */
+.overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+/* ---- Tabel arsip ---- */
+#arsip-lihat-tabel tbody tr:hover {
+    background: #f1f5f9;
+}
+
+/* ---- Popup SweetAlert2 (bukan toast) ---- */
+.swal2-popup:not(.swal2-toast) {
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-title {
+    font-size: 1.125rem;
+    font-weight: 800;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-html-container {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-actions .swal2-styled {
+    min-height: 2.75rem;
+    border-radius: var(--radius-control);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+@media (max-width: 639px) {
+    .swal2-container {
+        padding: 1rem;
+    }
+
+    .swal2-popup:not(.swal2-toast) {
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   TEMA A - FASE 4A: DASHBOARD + POLA KEPALA HALAMAN
+   Hanya CSS. Tidak ada perubahan fungsi atau markup.
+   ========================================================================== */
+
+/* ---- Kepala halaman (kartu judul + tanggal + tombol PDF) di semua halaman ---- */
+#main-content .view-section>.bg-surface:first-child h2.text-sm {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+
+#main-content .view-section>div:first-child :is(input[type="date"], input[type="month"], select, button) {
+    min-height: 2.5rem;
+}
+
+@media (pointer: coarse) {
+    #main-content .view-section>div:first-child :is(input[type="date"], input[type="month"], select, button) {
+        min-height: 2.75rem;
+    }
+}
+
+/* Tombol ikon kecil (lihat, WhatsApp, edit, hapus) wajib 44px agar mudah disentuh */
+#main-content button.p-2[aria-label],
+#main-content button.p-2[title] {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---- Dashboard: banner admin jadi lembut ---- */
+body:not(.dark) #dash-admin-banner {
+    background: var(--primary-light);
+    border-color: #bfdbfe;
+    color: var(--text);
+    box-shadow: none;
+}
+
+body:not(.dark) #dash-admin-banner .text-accent {
+    color: var(--primary);
+}
+
+body:not(.dark) #dash-admin-banner .text-slate-300 {
+    color: var(--text-muted);
+}
+
+/* ---- Dashboard: kartu statistik ---- */
+#dash-stats-container>div {
+    border-radius: var(--radius-card);
+}
+
+@media (max-width: 639px) {
+    #dash-stats-container>.col-span-3 {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 768px) {
+    #dash-stats-container .text-2xl {
+        font-size: 1.75rem;
+    }
+}
+
+/* ---- Dashboard: judul seksi lebih tegas ---- */
+body:not(.dark) #dash-section-bottom h2,
+body:not(.dark) #dash-section-agenda h2 {
+    color: var(--text) !important;
+}
+
+#dash-section-bottom h2,
+#dash-section-agenda h2 {
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+/* ---- Dashboard: daftar prioritas dan agenda 2 kolom di tablet ke atas ---- */
+@media (min-width: 768px) {
+
+    #dash-priority-container,
+    #dash-agenda-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    #dash-priority-container>*,
+    #dash-agenda-list>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    #dash-priority-container>.empty-state,
+    #dash-priority-container>p,
+    #dash-agenda-list>.empty-state {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---- Dashboard: menu cepat, fokus keyboard dan sentuh ---- */
+.quick-tile {
+    min-height: 5.5rem;
+}
+
+.quick-tile:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ---- Dashboard: banner tablet berbaris, bukan menjulang ---- */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .dash-banner {
+        min-height: 0;
+    }
+}
+
+/* ==========================================================================
+   TEMA A - FASE 4B: PRESENSI + 7 KEBIASAAN HEBAT
+   Hanya CSS. Tidak ada perubahan fungsi atau markup.
+   ID elemen untuk update statistik langsung (stat-count-*, absensi-*) tidak diubah.
+   ========================================================================== */
+
+/* ---- Tab segmented (Presensi Kelas/Binaan, Hari Ini/Kalender, dst.) ---- */
+#main-content .bg-slate-100.p-1.rounded-xl>button,
+#kebiasaan-tabs button {
+    min-height: 2.5rem;
+}
+
+@media (pointer: coarse) {
+
+    #main-content .bg-slate-100.p-1.rounded-xl>button,
+    #kebiasaan-tabs button {
+        min-height: 2.75rem;
+    }
+}
+
+/* ---- Presensi: kartu statistik jadi terang (mode terang saja) ---- */
+body:not(.dark) #absensi-stats-card {
+    background: #ffffff;
+    color: var(--text);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-card);
+}
+
+body:not(.dark) #absensi-stats-card .text-slate-400,
+body:not(.dark) #absensi-stats-card .text-slate-300 {
+    color: var(--text-muted) !important;
+}
+
+body:not(.dark) #absensi-stats-card .text-emerald-400 {
+    color: #059669;
+}
+
+body:not(.dark) #absensi-stats-card .text-blue-400 {
+    color: #2563eb;
+}
+
+body:not(.dark) #absensi-stats-card .text-amber-400 {
+    color: #b45309;
+}
+
+body:not(.dark) #absensi-stats-card .text-orange-400 {
+    color: #c2410c;
+}
+
+body:not(.dark) #absensi-stats-card .text-rose-400 {
+    color: #dc2626;
+}
+
+body:not(.dark) #absensi-stats-card .bg-slate-800\/80 {
+    background: #f8fafc;
+    border-color: var(--line);
+}
+
+body:not(.dark) #absensi-stats-card .bg-slate-700 {
+    background: #e2e8f0;
+}
+
+body:not(.dark) #absensi-stats-card .bg-emerald-400 {
+    background: #10b981;
+}
+
+body:not(.dark) #absensi-stats-card .border-slate-700\/60 {
+    border-color: var(--line);
+}
+
+body:not(.dark) #absensi-stats-card .bg-emerald-500\/20 {
+    background: #ecfdf5;
+}
+
+body:not(.dark) #absensi-stats-card .border-emerald-500\/30 {
+    border-color: #a7f3d0;
+}
+
+/* ---- Presensi: status siswa, 2 kolom di tablet ke atas ---- */
+.absensi-select-item {
+    min-width: 7.5rem;
+}
+
+@media (min-width: 768px) {
+    #absensi-list-container form.space-y-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    #absensi-list-container form.space-y-2>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    #absensi-list-container form.space-y-2>.pt-2 {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---- Presensi: tombol simpan menempel di atas bottom nav (HP) ---- */
+@media (max-width: 767px) {
+    #absensi-list-container form>.pt-2 {
+        position: sticky;
+        bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+        z-index: 5;
+        padding-top: 0.75rem;
+    }
+
+    body:not(.dark) #absensi-list-container form>.pt-2 {
+        background: linear-gradient(to top, var(--background) 65%, rgba(248, 250, 252, 0));
+    }
+}
+
+/* ---- Kebiasaan: kartu ketercapaian biru solid, bukan gradasi ungu ---- */
+.bg-gradient-to-r.from-blue-600.via-indigo-600.to-purple-600 {
+    background-image: none;
+    background-color: var(--primary);
+    box-shadow: none;
+    border-radius: var(--radius-card);
+}
+
+/* ---- Kebiasaan: kartu kebiasaan 2 kolom di tablet ke atas ---- */
+@media (min-width: 768px) {
+    #kebiasaan-list-container>.space-y-3 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    #kebiasaan-list-container>.space-y-3>* {
+        grid-column: 1 / -1;
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    #kebiasaan-list-container>.space-y-3>[class*="border-2"][class*="p-3.5"] {
+        grid-column: auto;
+    }
+}
