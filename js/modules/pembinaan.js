@@ -25,8 +25,7 @@ async function loadPembinaanData(forceRefresh = false) {
 
     const selectedSiswaId = isSiswa ? appState.user.id : (filterSelect ? filterSelect.value : null);
 
-    const sudahTampil = !!(appState.pembinaan && appState.pembinaan.length > 0);
-    if (sudahTampil) {
+    if (appState.pembinaan && appState.pembinaan.length > 0) {
         renderPembinaanView();
     } else {
         renderSkeleton("pembinaan-list-container", 3);
@@ -34,12 +33,10 @@ async function loadPembinaanData(forceRefresh = false) {
 
     const res = await apiCall("getPembinaan", { siswa_id: selectedSiswaId }, false);
     if (res && res.data) {
-        const berubah = !sudahTampil
-            || JSON.stringify(res.data) !== JSON.stringify(appState.pembinaan);
         appState.pembinaan = res.data;
         lastFetchTimes.pembinaan = Date.now();
         saveAppStateToLocal();
-        if (berubah) renderPembinaanView();
+        renderPembinaanView();
     }
 }
 

@@ -59,8 +59,7 @@ async function loadKebiasaanData(forceRefresh = false) {
     const isStale = (Date.now() - (lastFetchTimes.kebiasaan || 0)) > CACHE_TTL;
     const sameDate = kebiasaanLoadedTanggal === tanggal;
 
-    const sudahTampil = !!(sameDate && appState.kebiasaan && appState.kebiasaan.length > 0);
-    if (sudahTampil) {
+    if (sameDate && appState.kebiasaan && appState.kebiasaan.length > 0) {
         renderKebiasaanView();
     } else {
         renderSkeleton("kebiasaan-list-container", 4);
@@ -71,13 +70,11 @@ async function loadKebiasaanData(forceRefresh = false) {
     if (forceRefresh || isStale || !sameDate || !appState.kebiasaan || appState.kebiasaan.length === 0) {
         const res = await apiCall("getKebiasaan", { tanggal }, false);
         if (res && res.status === "success" && res.data) {
-            const berubah = !sudahTampil
-                || JSON.stringify(res.data) !== JSON.stringify(appState.kebiasaan);
             appState.kebiasaan = res.data;
             kebiasaanLoadedTanggal = tanggal;
             lastFetchTimes.kebiasaan = Date.now();
             saveAppStateToLocal();
-            if (berubah) renderKebiasaanView();
+            renderKebiasaanView();
         }
     }
     muatRingkasanKebiasaan(false);
@@ -90,9 +87,8 @@ async function muatRingkasanKebiasaan(force = false) {
     if (!force && cache && (Date.now() - cache.waktu) < RINGKASAN_TTL) return;
     const res = await apiCall("getRingkasanKebiasaan", { siswa_id: sid }, false, 2, true);
     if (res && res.status === "success" && res.data) {
-        const berubah = !cache || JSON.stringify(cache.data) !== JSON.stringify(res.data);
         kebiasaanRingkasan[sid] = { data: res.data, waktu: Date.now() };
-        if (berubah && kebiasaanTab === "hari-ini" && getSiswaKebiasaanTerpilih() === sid) renderKebiasaanView();
+        if (kebiasaanTab === "hari-ini" && getSiswaKebiasaanTerpilih() === sid) renderKebiasaanView();
     }
 }
 

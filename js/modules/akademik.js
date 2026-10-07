@@ -37,29 +37,25 @@ async function loadAkademikData(forceRefresh = false) {
     const selectedSiswaId = rawSelectedSiswaId === "ALL" ? null : rawSelectedSiswaId;
     const isStale = (Date.now() - (lastFetchTimes.akademik || 0)) > CACHE_TTL;
 
-    const sudahTampil = !!(appState.akademik && appState.akademik.length > 0);
-    if (sudahTampil) {
+    if (appState.akademik && appState.akademik.length > 0) {
         switchAkademikTab(currentTab);
     } else {
         renderSkeleton("akademik-list-container", 3);
         renderSkeleton("prestasi-list-container", 3);
     }
 
-    if (forceRefresh || isStale || !sudahTampil) {
+    if (forceRefresh || isStale || !appState.akademik || appState.akademik.length === 0) {
         const [resAkd, resPrs] = await Promise.all([
             apiCall("getAkademik", { siswa_id: selectedSiswaId }, false),
             apiCall("getPrestasi", { siswa_id: selectedSiswaId }, false)
         ]);
 
-        const tandaLama = JSON.stringify([appState.akademik, appState.prestasi]);
         if (resAkd && resAkd.data) appState.akademik = resAkd.data;
         if (resPrs && resPrs.data) appState.prestasi = resPrs.data;
-        const berubah = !sudahTampil
-            || JSON.stringify([appState.akademik, appState.prestasi]) !== tandaLama;
 
         lastFetchTimes.akademik = Date.now();
         saveAppStateToLocal();
-        if (berubah) switchAkademikTab(currentTab);
+        switchAkademikTab(currentTab);
     }
 }
 

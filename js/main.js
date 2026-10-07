@@ -89,18 +89,15 @@ function onPeranChanged() {
     renderPeranSwitcher();
     updateHeaderUser();
     applyWriteVisibility();
+    if (typeof _refreshAllSiswaDropdowns === "function") _refreshAllSiswaDropdowns();
     if (typeof checkStudentNotifications === "function") checkStudentNotifications();
-
-    // switchView sudah memuat + merender ulang view aktif; dropdown cukup diisi ulang
-    // tanpa render view (hindari render ganda saat ganti peran).
-    if (typeof _refreshAllSiswaDropdowns === "function") _refreshAllSiswaDropdowns(true);
 
     const activeView = document.querySelector(".view-section.active");
     const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
     if (viewId !== "login") switchView(viewId);
 }
 
-function _refreshAllSiswaDropdowns(tanpaRender = false) {
+function _refreshAllSiswaDropdowns() {
     const siswaList = getSiswaPeran();
 
     const selKebiasaan = document.getElementById("kebiasaan-siswa-select");
@@ -121,7 +118,7 @@ function _refreshAllSiswaDropdowns(tanpaRender = false) {
                 enhanceSiswaSelect(selPembinaan);
     }
 
-    const activeView = tanpaRender ? null : document.querySelector(".view-section.active");
+    const activeView = document.querySelector(".view-section.active");
     if (activeView) {
         const viewId = activeView.id.replace("view-", "");
         if (viewId === "absensi") renderAbsensiView();

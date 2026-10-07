@@ -93,12 +93,10 @@ async function loadAbsensiMentor(tanggal, force) {
     let res = null;
     try { res = await apiCall("getAbsensiMentor", { tanggal }, false); } finally { absensiMentorFetching = false; }
     if (res && res.data) {
-        const berubah = absensiMentorLoadedTanggal !== tanggal
-            || JSON.stringify(res.data) !== JSON.stringify(appState.absensiMentor);
         appState.absensiMentor = res.data;
         absensiMentorLoadedTanggal = tanggal;
         lastFetchTimes.absensiMentor = Date.now();
-        if (berubah) renderAbsensiView();
+        renderAbsensiView();
     }
 }
 
@@ -111,9 +109,7 @@ async function loadAbsensiData(forceRefresh = false) {
     const isStale = (Date.now() - (lastFetchTimes.absensi || 0)) > CACHE_TTL;
     const sameDate = absensiLoadedTanggal === tanggal;
 
-    const sudahTampil = !!(sameDate && appState.absensi && appState.absensi.length > 0);
-
-    if (sudahTampil) {
+    if (sameDate && appState.absensi && appState.absensi.length > 0) {
         renderAbsensiView();
     } else {
         renderSkeleton("absensi-list-container", 4);
@@ -122,13 +118,11 @@ async function loadAbsensiData(forceRefresh = false) {
     if (forceRefresh || isStale || !sameDate || !appState.absensi || appState.absensi.length === 0) {
         const res = await apiCall("getAbsensi", { tanggal }, false);
         if (res && res.data) {
-            const berubah = !sudahTampil
-                || JSON.stringify(res.data) !== JSON.stringify(appState.absensi);
             appState.absensi = res.data;
             absensiLoadedTanggal = tanggal;
             lastFetchTimes.absensi = Date.now();
             saveAppStateToLocal();
-            if (berubah) renderAbsensiView();
+            renderAbsensiView();
         }
     }
 
