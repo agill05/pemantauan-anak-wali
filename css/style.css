@@ -5,13 +5,33 @@
     --secondary: #059669;
     --accent: #d97706;
     --danger: #dc2626;
-    --background: #eef2f9;
+    --background: #f8fafc;
     --surface: #ffffff;
     --border-subtle: #e2e8f0;
+    --line: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --text-soft: #64748b;
+
     --radius-lg: 1rem;
     --radius-xl: 1.25rem;
-    --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
-    --shadow-hover: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+    --radius-card: 1rem;
+    --radius-control: 0.75rem;
+
+    --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-hover: var(--shadow-card);
+
+    --sidebar-width: 272px;
+    --navy-900: #101c3f;
+    --navy-800: #16244d;
+    --navy-700: #1b2c5c;
+    --navy-line: rgba(255, 255, 255, 0.09);
+
+    --st-hadir: #059669;
+    --st-sakit: #d97706;
+    --st-izin: #2563eb;
+    --st-alpa: #dc2626;
 }
 
 * {
@@ -252,14 +272,6 @@ a:focus-visible {
 
 #bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-:root {
-    --sidebar-width: 272px;
-    --navy-900: #101c3f;
-    --navy-800: #16244d;
-    --navy-700: #1b2c5c;
-    --navy-line: rgba(255, 255, 255, 0.09);
 }
 
 #app-sidebar {
@@ -1245,24 +1257,6 @@ body.dark .text-slate-400 {
     #post-login-splash.is-done .splash-core {
         animation: none;
     }
-}
-
-:root {
-    --background: #f8fafc;
-    --primary-light: #eff6ff;
-    --line: #e2e8f0;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --text-soft: #64748b;
-    --radius-card: 1rem;
-    --radius-control: 0.75rem;
-    --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow-hover: var(--shadow-card);
-    --st-hadir: #059669;
-    --st-sakit: #d97706;
-    --st-izin: #2563eb;
-    --st-alpa: #dc2626;
 }
 
 body:not(.dark) .bg-background {
