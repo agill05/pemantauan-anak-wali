@@ -485,6 +485,7 @@ async function continueSessionSetup() {
         const hasCachedData = loadAppStateFromLocal();
 
         const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
+        switchView(targetView);
 
         setSplashStage("session");
         setSplashStage("data");
@@ -516,8 +517,9 @@ async function continueSessionSetup() {
             _refreshAllSiswaDropdowns();
         }
 
-        // Render view SEKALI, setelah bootstrap selesai (hindari render ganda).
-        switchView(targetView);
+        if (targetView === "dashboard") {
+            renderDashboard();
+        }
 
         startRealtimeNotificationPolling();
         startDataPolling();
