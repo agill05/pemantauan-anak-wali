@@ -60,7 +60,9 @@ function gsRenderKontributor(records) {
 
 function gsFormatTanggal(rec) {
     if (!rec) return "";
-    const jam = rec.dibuat_pada ? String(rec.dibuat_pada).trim() : "";
+    const mentah = rec.dibuat_pada ? String(rec.dibuat_pada).trim() : "";
+    const m = mentah.match(/(\d{1,2}:\d{2})(?::\d{2})?$/);
+    const jam = m ? m[1] : "";
     return jam ? `${rec.tanggal || ""} · ${jam}` : String(rec.tanggal || "");
 }
 
