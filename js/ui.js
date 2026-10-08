@@ -442,12 +442,12 @@ function renderPeranChip(siswa) {
 
 function renderPenulisBadge(rec) {
     const u = appState.user;
-    if (!rec || !u || (u.role !== "admin" && u.role !== "guru")) return "";
+    if (!rec || !u || !["admin", "guru", "kepsek", "siswa"].includes(u.role)) return "";
     const sebagai = String(rec.dibuat_sebagai || "").toLowerCase().trim();
     const peran = PENULIS_LABEL[sebagai] ? sebagai : "wali";
     const ownerId = String(rec.dibuat_oleh_id || "").trim();
     let nama = "";
-    if (ownerId) {
+    if (ownerId && u.role !== "siswa") {
         if (ownerId === String(u.id)) nama = "Anda";
         else if (ownerId === "guru-dihapus") nama = "Guru dihapus";
         else {
