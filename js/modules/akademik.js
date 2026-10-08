@@ -126,139 +126,92 @@ function renderAkademikPrestasi() {
         return;
     }
 
+    if (isKepsekUser() && !document.getElementById("prestasi-gs-filter")) {
+        container.insertAdjacentHTML('beforebegin', `<div id="prestasi-gs-filter">${gsRenderFilterKepsek('prs-f', 'renderAkademikPrestasi')}</div>`);
+    }
+
     const basePrestasi = scopeBySiswaId(appState.prestasi, item => item.siswa_id);
     const filteredPrestasi = (filterSiswaId && filterSiswaId !== "ALL")
         ? basePrestasi.filter(item => String(item.siswa_id) === String(filterSiswaId))
         : basePrestasi;
 
-    if (filteredPrestasi.length === 0) {
+    const fk = isKepsekUser() ? gsBacaFilterKepsek('prs-f') : null;
+    let groups = gsTerapkanFilter(gsGroupBySiswa(filteredPrestasi, r => r.siswa_id), fk);
+    groups = gsUrutkan(groups, fk ? fk.urut : 'terbaru', g => prsSkorTertinggi(g.records));
+
+    if (groups.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-trophy text-2xl mb-2 text-amber-500"></i><p class="text-xs text-slate-500">Belum ada data catatan prestasi untuk siswa ini.</p></div>`;
+        prsRefreshDetail();
         return;
     }
 
-    container.innerHTML = filteredPrestasi.map(item => {
-        const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
-        const bisaUbah = canEditRecord(item, 'prestasi');
-        const penanda = renderPenulisBadge(item) + renderPeranChip(s);
-
-        return `
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                <div class="flex justify-between items-start">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold"><i class="fas fa-award"></i></div>
-                        <div>
-                            <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama_prestasi)}</h4>
-                            ${renderInfoRows([{label:"Siswa",value:s ? s.nama : "Siswa"},{label:"Tanggal",value:item.tanggal}])}
-                        </div>
-                    </div>
-                    <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">${escapeHtml(item.tingkat)}</span>
+    container.innerHTML = groups.map(g => {
+        const terbaru = g.records[0];
+        const ringkasan = `
+            <div class="space-y-1.5">
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fas fa-award"></i></span>
+                    <span class="font-bold text-slate-700">${g.records.length} prestasi</span>
                 </div>
-                ${penanda ? `<div class="flex flex-wrap items-center gap-1.5">${penanda}</div>` : ''}
-                ${bisaUbah ? `
-                <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
-                    <button onclick="openModalPrestasi('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
-                    <button onclick="deletePrestasi('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
-                </div>` : ''}
-            </div>
-        `;
+                ${prsRenderRincianTingkat(g.records)}
+                <p class="text-xs text-slate-500">Terbaru: <span class="font-bold text-slate-700">${escapeHtml(terbaru.nama_prestasi)}</span></p>
+            </div>`;
+        return gsRenderCard(g, ringkasan, 'openDetailPrestasi');
     }).join("");
+
+    prsRefreshDetail();
 }
 
-function openModalAkademik(id = null) {
+const PRS_TINGKAT = ['Sekolah', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Nasional'];
+
+function prsSkorTertinggi(records) {
+    return records.reduce((m, r) => Math.max(m, PRS_TINGKAT.indexOf(r.tingkat)), -1);
+}
+
+function prsRenderRincianTingkat(records) {
+    const hitung = {};
+    records.forEach(r => { const t = r.tingkat || 'Lainnya'; hitung[t] = (hitung[t] || 0) + 1; });
+    const urut = Object.keys(hitung).sort((a, b) => PRS_TINGKAT.indexOf(b) - PRS_TINGKAT.indexOf(a));
+    return `<div class="flex flex-wrap gap-1">${urut.map(t =>
+        `<span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">${escapeHtml(t)} ${hitung[t]}</span>`).join('')}</div>`;
+}
+
+function openDetailPrestasi(siswaId) {
+    const base = scopeBySiswaId(appState.prestasi, item => item.siswa_id)
+        .filter(r => String(r.siswa_id) === String(siswaId));
+    const g = gsGroupBySiswa(base, r => r.siswa_id)[0];
+    if (!g) { closeModal(); return; }
+    const body = g.records.map(item => {
+        const isi = `
+            <div class="flex justify-between items-start gap-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm"><i class="fas fa-award"></i></div>
+                    <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.nama_prestasi)}</h4>
+                </div>
+                <span class="text-xs font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 whitespace-nowrap">${escapeHtml(item.tingkat)}</span>
+            </div>`;
+        return gsRenderBarisCatatan(item, 'prestasi', isi, 'openModalPrestasi', 'deletePrestasi');
+    }).join('');
+    gsOpenSheet(g, { judul: 'Prestasi', kategori: 'prestasi', ringkasanHtml: prsRenderRincianTingkat(g.records), bodyHtml: body, tambahFn: 'tambahPrestasiSiswa' });
+    const box = document.getElementById("modal-content-box");
+    if (box) { box.dataset.gs = 'prestasi'; box.dataset.gsSiswa = String(siswaId); }
+}
+
+function prsRefreshDetail() {
+    const box = document.getElementById("modal-content-box");
+    const modal = document.getElementById("modal-container");
+    if (!box || !modal || modal.classList.contains("hidden") || box.dataset.gs !== 'prestasi') return;
+    openDetailPrestasi(box.dataset.gsSiswa);
+}
+
+function tambahPrestasiSiswa(siswaId) {
+    openModalPrestasi(null, siswaId);
+}
+
+function openModalPrestasi(id = null, preSiswaId = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
-
-    const writable = getSiswaWritable('akademik');
-    if (!id && writable.length === 0) {
-        Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Nilai mapel hanya dapat diisi untuk anak wali.', confirmButtonColor: '#2563eb' });
-        return;
-    }
-
-    const rec = id ? appState.akademik.find(x => String(x.id) === String(id)) : null;
-    const siswaOpts = sortSiswa(writable).map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
-
-    box.innerHTML = `
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-sm font-bold text-slate-800">${rec ? 'Edit Nilai Akademik' : 'Input Nilai Mata Pelajaran'}</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
-        </div>
-        <form onsubmit="saveAkademikForm(event, '${id || ''}')" class="space-y-3">
-            <div>
-                <label for="m-akd-siswa" class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
-                <select id="m-akd-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>
-            </div>
-            <div>
-                <label for="m-akd-mapel" class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
-                <input type="text" id="m-akd-mapel" value="${escapeHtml(rec?.mapel || '')}" placeholder="Contoh: Matematika" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label for="m-akd-nilai" class="block text-xs font-bold text-slate-500 mb-1">NILAI AKHIR</label>
-                    <input type="number" id="m-akd-nilai" value="${rec?.nilai_akhir || ''}" placeholder="0 - 100" min="0" max="100" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
-                </div>
-                <div>
-                    <label for="m-akd-kktp" class="block text-xs font-bold text-slate-500 mb-1">KKTP (STANDAR)</label>
-                    <input type="number" id="m-akd-kktp" value="${rec?.kktp || '75'}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
-                </div>
-            </div>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Nilai</button>
-        </form>
-    `;
-    document.getElementById("modal-container")?.classList.remove("hidden");
-}
-
-async function saveAkademikForm(e, id) {
-    e.preventDefault();
-    const payload = {
-        id: id || null,
-        siswa_id: document.getElementById("m-akd-siswa").value,
-        mapel: document.getElementById("m-akd-mapel").value,
-        nilai_akhir: document.getElementById("m-akd-nilai").value,
-        kktp: document.getElementById("m-akd-kktp").value
-    };
-
-    showLoading("Menyimpan nilai akademik...");
-    const res = await apiCall("saveAkademik", payload, false);
-    hideLoading();
-
-    if (res && res.status === "success") {
-        const savedRecord = { ...payload, id: res.id || id || ("AKD-" + Date.now()) };
-        const idx = appState.akademik.findIndex(x => String(x.id) === String(savedRecord.id));
-        if (idx !== -1) appState.akademik[idx] = savedRecord;
-        else appState.akademik.push(savedRecord);
-
-        saveAppStateToLocal();
-        renderAkademikNilai();
-        closeModal();
-        showToast("Nilai tersimpan!");
-    } else {
-        Swal.fire({
-            icon: 'error',
-            title: 'Gagal Menyimpan',
-            text: res?.message || 'Terjadi kesalahan saat menyimpan nilai akademik ke database spreadsheet.',
-            confirmButtonColor: '#2563eb'
-        });
-    }
-}
-
-async function deleteAkademik(id) {
-    const confirm = await Swal.fire({ title: 'Hapus Nilai Mapel?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
-    if (confirm.isConfirmed) {
-        appState.akademik = appState.akademik.filter(x => String(x.id) !== String(id));
-        saveAppStateToLocal();
-        renderAkademikNilai();
-        showToast("Nilai dihapus");
-        const res = await apiCall("deleteAkademik", { id }, false);
-        if (res && res.status === "error") {
-            showToast(res.message || "Gagal menghapus nilai.", "warning");
-            loadAkademikData(true);
-        }
-    }
-}
-
-function openModalPrestasi(id = null) {
-    const box = document.getElementById("modal-content-box");
-    if (!box) return;
+    box.dataset.gs = "";
 
     const writable = getSiswaWritable('prestasi');
     if (!id && writable.length === 0) {
@@ -267,7 +220,7 @@ function openModalPrestasi(id = null) {
     }
 
     const rec = id ? appState.prestasi.find(x => String(x.id) === String(id)) : null;
-    const siswaOpts = sortSiswa(writable).map(s => `<option value="${s.id}" ${rec && String(rec.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const siswaOpts = sortSiswa(writable).map(s => `<option value="${s.id}" ${String(rec ? rec.siswa_id : (preSiswaId || '')) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
@@ -287,7 +240,7 @@ function openModalPrestasi(id = null) {
                 <div>
                     <label for="m-prs-tingkat" class="block text-xs font-bold text-slate-500 mb-1">TINGKAT</label>
                     <select id="m-prs-tingkat" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                        ${['Sekolah', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Nasional'].map(t => `<option value="${t}" ${rec && rec.tingkat === t ? 'selected' : ''}>${t}</option>`).join('')}
+                        ${PRS_TINGKAT.map(t => `<option value="${t}" ${rec && rec.tingkat === t ? 'selected' : ''}>${t}</option>`).join('')}
                     </select>
                 </div>
                 <div>
