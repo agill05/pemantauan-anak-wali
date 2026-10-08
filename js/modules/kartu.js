@@ -4,7 +4,7 @@ const KARTU_GAP = 4;
 const KARTU_COLS = 2;
 const KARTU_ROWS = 4;
 const KARTU_PER_HALAMAN = KARTU_COLS * KARTU_ROWS;
-const KARTU_MAX_PILIH = 400;
+const KARTU_MAX_PILIH = 500;
 
 const _kartuState = { kelasId: "", sel: new Set() };
 
@@ -27,7 +27,11 @@ function _kartuDaftarSiswa() {
         const kw = String(getKelasWaliId());
         list = list.filter(s => String(s.kelas_id) === kw);
     }
-    return sortSiswa(list);
+    const urut = sortSiswa(list);
+    if (isGuruUser()) return urut;
+    const rank = new Map((appState.kelas || []).map((kl, i) => [String(kl.id), i]));
+    const r = s => (rank.has(String(s.kelas_id)) ? rank.get(String(s.kelas_id)) : 9999);
+    return urut.sort((a, b) => r(a) - r(b));
 }
 
 function _kartuDaftarTampil() {
@@ -60,8 +64,7 @@ function openModalKartu(preId = null) {
     } else if (pre) {
         _kartuState.kelasId = String(pre.kelas_id || "");
     } else {
-        const kelasPertama = (getVisibleKelas() || [])[0];
-        _kartuState.kelasId = kelasPertama ? String(kelasPertama.id) : "";
+        _kartuState.kelasId = "";
     }
 
     _kartuState.sel = new Set();
@@ -74,6 +77,7 @@ function openModalKartu(preId = null) {
         <div>
             <label for="kartu-kelas" class="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
             <select id="kartu-kelas" onchange="kartuPilihKelas(this.value)" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                <option value="" ${_kartuState.kelasId === "" ? "selected" : ""}>Semua Kelas</option>
                 ${(getVisibleKelas() || []).map(k => `<option value="${escapeHtml(k.id)}" ${String(k.id) === _kartuState.kelasId ? "selected" : ""}>${escapeHtml(k.nama_kelas)}</option>`).join("")}
             </select>
         </div>
@@ -101,6 +105,9 @@ function openModalKartu(preId = null) {
                 <button type="button" onclick="kartuProses('download')" class="bg-primary text-white font-bold py-2.5 rounded-xl text-xs"><i class="fas fa-file-pdf mr-1"></i> Unduh PDF</button>
                 <button type="button" onclick="kartuProses('print')" class="bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs"><i class="fas fa-print mr-1"></i> Cetak</button>
             </div>
+            ${isAdminUser() ? `
+            <button type="button" onclick="kartuResetPassword()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs"><i class="fas fa-key mr-1"></i> Reset Password Siswa ke siswa123</button>
+            ` : ""}
         </div>
     `;
     _kartuRenderDaftar();
@@ -193,9 +200,12 @@ async function kartuProses(mode) {
         hideLoading();
         closeModal();
 
-        const label = isGuruUser() || _kartuState.kelasId
-            ? _kartuNamaKelas(_kartuState.kelasId).replace(/[^A-Za-z0-9]+/g, "_")
-            : "Terpilih";
+        let label = "Terpilih";
+        if (isGuruUser() || _kartuState.kelasId) {
+            label = _kartuNamaKelas(_kartuState.kelasId).replace(/[^A-Za-z0-9]+/g, "_");
+        } else if (terpilih.length === _kartuDaftarTampil().length) {
+            label = "Semua_Kelas";
+        }
         if (mode === "print") _kartuCetak(doc);
         else {
             doc.save(`Kartu_Akun_Siswa_${label || "Terpilih"}_${getDateWITA()}.pdf`);
@@ -205,6 +215,34 @@ async function kartuProses(mode) {
         console.error("Gagal membuat kartu:", err);
         hideLoading();
         Swal.fire({ icon: "error", title: "Gagal", text: "Gagal membuat kartu akun.", confirmButtonColor: "#2563eb" });
+    }
+}
+
+async function kartuResetPassword() {
+    if (!isAdminUser()) return;
+    const kelasId = _kartuState.kelasId;
+    const label = kelasId ? `kelas ${_kartuNamaKelas(kelasId)}` : "SEMUA kelas";
+    const ok = await Swal.fire({
+        icon: "warning",
+        title: "Reset Password Siswa?",
+        html: `Password siswa <b>${escapeHtml(label)}</b> kembali ke <b>siswa123</b>.<br>Password lama tidak bisa dipulihkan dan siswa wajib menggantinya saat login berikutnya.`,
+        input: "text",
+        inputPlaceholder: "Ketik RESET untuk lanjut",
+        showCancelButton: true,
+        confirmButtonText: "Ya, Reset",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#e11d48",
+        preConfirm: v => (String(v || "").trim() === "RESET" ? true : Swal.showValidationMessage("Ketik RESET persis."))
+    });
+    if (!ok.isConfirmed) return;
+
+    showLoading("Mereset password...");
+    const res = await apiCall("resetPasswordSiswa", { kelas_id: kelasId }, true);
+    hideLoading();
+    if (res && res.status === "success") {
+        Swal.fire({ icon: "success", title: "Berhasil", text: res.message, confirmButtonColor: "#2563eb" });
+    } else {
+        Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat mereset password.", confirmButtonColor: "#2563eb" });
     }
 }
 
