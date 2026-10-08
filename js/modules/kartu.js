@@ -227,12 +227,12 @@ async function kartuResetPassword() {
         title: "Reset Password Siswa?",
         html: `Password siswa <b>${escapeHtml(label)}</b> kembali ke <b>siswa123</b>.<br>Password lama tidak bisa dipulihkan dan siswa wajib menggantinya saat login berikutnya.`,
         input: "text",
-        inputPlaceholder: "Ketik RESET untuk lanjut",
+        inputPlaceholder: "Ketik \"RESET\" untuk lanjut",
         showCancelButton: true,
         confirmButtonText: "Ya, Reset",
         cancelButtonText: "Batal",
         confirmButtonColor: "#e11d48",
-        preConfirm: v => (String(v || "").trim() === "RESET" ? true : Swal.showValidationMessage("Ketik RESET persis."))
+        preConfirm: v => (String(v || "").trim() === "RESET" ? true : Swal.showValidationMessage("Ketik \"RESET\" persis."))
     });
     if (!ok.isConfirmed) return;
 
