@@ -63,7 +63,11 @@ async function openProfilSiswa(siswaTarget) {
 
     const mentor = siswa.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(siswa.mentor_id)) : null;
     const staf = isStafLihat();
-    const infoMentor = staf ? `<p class="text-xs text-slate-400">Mentor: ${mentor ? escapeHtml(mentor.nama) : (siswa.mentor_id ? '-' : 'Belum ada')} <span class="ml-1">${renderPeranChip(siswa)}</span></p>` : '';
+    const infoMentor = staf ? {
+        label: "Mentor",
+        value: `${mentor ? escapeHtml(mentor.nama) : (siswa.mentor_id ? '-' : 'Belum ada')} <span class="ml-1">${renderPeranChip(siswa)}</span>`,
+        html: true
+    } : null;
 
     const totalHadir = absensi.filter(a => a.status === 'H').length;
     const totalSakit = absensi.filter(a => a.status === 'S').length;
@@ -75,9 +79,12 @@ async function openProfilSiswa(siswaTarget) {
             <img src="${escapeHtml(siswa.foto || getInitialsAvatar(siswa.nama))}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200">
             <div>
                 <h3 class="font-bold text-base text-slate-800">${escapeHtml(siswa.nama)}</h3>
-                ${renderInfoRows([{label:"NISN",value:siswa.nisn || "-"},{label:"Kelas",value:kls ? kls.nama_kelas : "-"}])}
-                <p class="text-xs text-slate-400">Ortu/Wali: ${escapeHtml(siswa.nama_ortu || normalizePhone(siswa.no_hp_ortu) || '-')}</p>
-                ${infoMentor}
+                ${renderInfoRows([
+                    {label:"NISN",value:siswa.nisn || "-"},
+                    {label:"Kelas",value:kls ? kls.nama_kelas : "-"},
+                    {label:"Ortu/Wali",value:siswa.nama_ortu || normalizePhone(siswa.no_hp_ortu) || "-"},
+                    infoMentor
+                ])}
             </div>
         </div>
 

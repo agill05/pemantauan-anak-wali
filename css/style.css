@@ -3096,7 +3096,7 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 /* ===== Baris label : nilai ===== */
 .info-rows { margin-top: 0.25rem; }
 .info-row { display: flex; gap: 0; font-size: 0.75rem; line-height: 1.5; }
-.info-label { flex: 0 0 3.75rem; color: #94a3b8; font-weight: 600; }
+.info-label { flex: 0 0 4.5rem; color: #94a3b8; font-weight: 600; }
 .info-sep { flex: 0 0 0.75rem; color: #94a3b8; font-weight: 600; }
 .info-value { min-width: 0; color: #334155; font-weight: 700; overflow-wrap: anywhere; }
 .sd-greet .info-label,
