@@ -198,8 +198,7 @@ function pdfDrawKop(doc, pageW, y0, logoL, logoR) {
     return ly + 8;
 }
 
-function pdfDrawTitle(doc, pageW, y, title, dateStr) {
-    const pageH = doc.internal.pageSize.getHeight();
+function pdfDrawTitle(doc, pageW, y, title) {
     const cx = pageW / 2;
     doc.setFont(PDF_FONT, "bold");
     doc.setFontSize(13);
@@ -211,15 +210,7 @@ function pdfDrawTitle(doc, pageW, y, title, dateStr) {
         doc.line(cx - w / 2, y + 1.2, cx + w / 2, y + 1.2);
         y += 6;
     });
-    const nama = appState.user ? appState.user.nama : "User";
-    const role = appState.user && appState.user.role ? appState.user.role.toUpperCase() : "";
-    doc.setTextColor(71, 85, 105);
-    y = pdfDrawInfo(doc, [
-        { l: "Tanggal Cetak", v: dateStr },
-        { l: "Dicetak Oleh", v: nama + (role ? ` (${role})` : "") }
-    ], PDF_MARGIN, y + 1, pageW - 2 * PDF_MARGIN, 10, 5, pageH - 20);
-    doc.setTextColor(15, 23, 42);
-    return y + 3;
+    return y + 4;
 }
 
 function pdfCellObj(cell, isHead) {
@@ -388,7 +379,7 @@ async function buildOfficialPdf(title, contentHtml, options = {}) {
     ]);
 
     let y = pdfDrawKop(doc, pageW, 12, logoL, logoR);
-    y = pdfDrawTitle(doc, pageW, y, title, dateStr);
+    y = pdfDrawTitle(doc, pageW, y, title);
 
     const holder = document.createElement("div");
     holder.innerHTML = contentHtml;
