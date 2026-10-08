@@ -42,8 +42,29 @@ function isDoaStandar(nama) {
     return MASTER_DOA.some(d => d.nama === nama);
 }
 
+function kagKunciItem(h) {
+    return getKategoriHafalan(h) + "|" + String(h.nama_surat || "");
+}
+
+function kagLebihBaru(a, b) {
+    const d = gsTanggalNum(a) - gsTanggalNum(b);
+    if (d !== 0) return d > 0;
+    return String(a.dibuat_pada || "") >= String(b.dibuat_pada || "");
+}
+
+// Status resmi: per siswa + item, ambil catatan terbaru.
+function kagResmi(list = []) {
+    const map = new Map();
+    list.forEach(h => {
+        const k = String(h.siswa_id) + "|" + kagKunciItem(h);
+        const cur = map.get(k);
+        if (!cur || kagLebihBaru(h, cur)) map.set(k, h);
+    });
+    return Array.from(map.values());
+}
+
 function getHafalanProgressStats(hafalanList = []) {
-    const lancar = hafalanList.filter(h => h.status === "Lancar");
+    const lancar = kagResmi(hafalanList).filter(h => h.status === "Lancar");
     const lancarSet = (kat) => new Set(lancar.filter(h => getKategoriHafalan(h) === kat).map(h => h.nama_surat));
     const surahLancar = lancarSet("surah");
     const iqroLancar = lancarSet("iqro");
@@ -163,9 +184,62 @@ function _kagProgressHeader(stats, kat) {
     </div>`;
 }
 
+function kagSkorMendesak(g) {
+    return kagResmi(g.records).reduce((n, h) => n + (h.status === "Mengulang" ? 2 : (h.status === "Belum Mulai" ? 1 : 0)), 0);
+}
+
+function kagGabungItem(records) {
+    const map = new Map();
+    records.forEach(h => {
+        const k = kagKunciItem(h);
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(h);
+    });
+    const out = [];
+    map.forEach(list => {
+        list.sort((x, y) => (kagLebihBaru(x, y) ? -1 : 1));
+        const terbaruPerPembuat = new Map();
+        list.forEach(h => { const pk = gsKunciPembuat(h); if (!terbaruPerPembuat.has(pk)) terbaruPerPembuat.set(pk, h.status); });
+        const beda = new Set(terbaruPerPembuat.values()).size > 1;
+        out.push({ records: list, resmi: list[0], beda });
+    });
+    out.sort((x, y) => (kagLebihBaru(x.resmi, y.resmi) ? -1 : 1));
+    return out;
+}
+
+function kagStatusBadgeCls(status) {
+    return status === 'Lancar' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (status === 'Mengulang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200');
+}
+
+function kagBedaChip() {
+    return `<span class="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded border bg-rose-50 text-rose-700 border-rose-200"><i class="fas fa-triangle-exclamation text-[9px]"></i> Beda status</span>`;
+}
+
+function kagRingkasanTeks(records, kat) {
+    const st = getHafalanProgressStats(records);
+    const doaEx = st.doa.tambahan > 0 ? ` +${st.doa.tambahan}` : "";
+    const surah = `Juz 30: ${st.juz30.count}/${st.juz30.total}`;
+    const iqro = `Iqro: ${st.iqro.count}/${st.iqro.total}`;
+    const doa = `Doa: ${st.doa.count}/${st.doa.total}${doaEx}`;
+    if (kat === "surah") return [surah, `Total: ${st.total.count}/114`];
+    if (kat === "iqro") return [iqro];
+    if (kat === "doa") return [doa];
+    return [surah, iqro, doa];
+}
+
+function kagRingkasanHtml(records, kat) {
+    const chips = kagRingkasanTeks(records, kat).map(t => `<span class="font-bold text-slate-600">${escapeHtml(t)}</span>`).join('<span class="text-slate-300">·</span>');
+    const nBeda = kagGabungItem(records).filter(x => x.beda).length;
+    return `<div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">${chips}${nBeda ? kagBedaChip() + `<span class="font-bold text-rose-600">${nBeda}</span>` : ''}</div>`;
+}
+
 function renderKeagamaanView() {
     const container = document.getElementById("keagamaan-container");
     if (!container) return;
+
+    if (isKepsekUser() && !document.getElementById("keagamaan-gs-filter")) {
+        container.insertAdjacentHTML('beforebegin', `<div id="keagamaan-gs-filter">${gsRenderFilterKepsek('kag-f', 'renderKeagamaanView')}</div>`);
+    }
 
     const selectEl = document.getElementById("karakter-siswa-filter");
     const filterSiswaId = selectEl ? selectEl.value : "";
@@ -182,51 +256,116 @@ function renderKeagamaanView() {
         : baseKeagamaan;
 
     const kat = keagamaanKategoriFilter;
-    const filteredHafalan = kat === "semua" ? perSiswa : perSiswa.filter(h => getKategoriHafalan(h) === kat);
+    const satuSiswa = !isAdminOrGuru || (filterSiswaId && filterSiswaId !== "ALL");
+    const progressHeaderHtml = satuSiswa ? _kagProgressHeader(getHafalanProgressStats(perSiswa), kat) : "";
 
-    const progressHeaderHtml = _kagProgressHeader(getHafalanProgressStats(perSiswa), kat);
+    const fk = isKepsekUser() ? gsBacaFilterKepsek('kag-f') : null;
+    let groups = gsTerapkanFilter(gsGroupBySiswa(perSiswa, h => h.siswa_id), fk);
+    groups = groups.map(g => ({ g, tampil: kat === "semua" ? g.records : g.records.filter(h => getKategoriHafalan(h) === kat) }))
+        .filter(x => x.tampil.length > 0);
+    const urut = gsUrutkan(groups.map(x => x.g), fk ? fk.urut : 'terbaru', kagSkorMendesak);
+    const tampilMap = new Map(groups.map(x => [x.g.siswaId, x.tampil]));
 
-    if (!filteredHafalan || filteredHafalan.length === 0) {
+    if (urut.length === 0) {
         const emptyLabel = kat === "iqro" ? "bacaan Iqro" : (kat === "doa" ? "hafalan doa" : (kat === "surah" ? "hafalan Al-Qur'an" : "capaian keagamaan"));
         const emptyIcon = KEAGAMAAN_KATEGORI[kat] ? KEAGAMAAN_KATEGORI[kat].icon : "fa-quran";
         container.innerHTML = progressHeaderHtml + `<div class="empty-state"><i class="fas ${emptyIcon} text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan ${emptyLabel}.</p></div>`;
+        kagRefreshDetail();
         return;
     }
 
-    const warnaBox = { emerald: "bg-emerald-50 text-emerald-600", amber: "bg-amber-50 text-amber-600", sky: "bg-sky-50 text-sky-600" };
-
-    const cardsHtml = filteredHafalan.map(item => {
-        const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
-        const itemKat = getKategoriHafalan(item);
-        const meta = KEAGAMAAN_KATEGORI[itemKat];
-        const statusBadge = item.status === 'Lancar' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (item.status === 'Mengulang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200');
-        const bisaUbah = canEditRecord(item, 'keagamaan');
-        const penanda = renderPenulisBadge(item) + renderPeranChip(s);
-
-        return `
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                <div class="flex justify-between items-start gap-2">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <div class="w-9 h-9 shrink-0 rounded-xl ${warnaBox[meta.warna]} flex items-center justify-center font-bold text-xs"><i class="fas ${meta.icon}"></i></div>
-                        <div class="min-w-0">
-                            <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(formatCapaianKeagamaan(item))}</h4>
-                            ${renderInfoRows([{label:"Jenis",value:meta.label},{label:"Siswa",value:s ? s.nama : "Siswa"},{label:"Tanggal",value:item.tanggal}])}
-                        </div>
-                    </div>
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-md border shrink-0 ${statusBadge}">${escapeHtml(item.status)}</span>
-                </div>
-                ${item.catatan ? `<p class="text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-slate-600 italic">"${escapeHtml(item.catatan)}"</p>` : ''}
-                ${penanda ? `<div class="flex flex-wrap items-center gap-1.5">${penanda}</div>` : ''}
-                ${bisaUbah ? `
-                <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
-                    <button onclick="openModalKeagamaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
-                    <button onclick="deleteKeagamaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
-                </div>` : ''}
-            </div>
-        `;
+    const cardsHtml = urut.map(g => {
+        const gTampil = Object.assign({}, g, { records: tampilMap.get(g.siswaId) });
+        return gsRenderCard(gTampil, kagRingkasanHtml(g.records, kat), 'openDetailKeagamaan');
     }).join("");
 
     container.innerHTML = progressHeaderHtml + cardsHtml;
+    kagRefreshDetail();
+}
+
+function kagDataGrup(siswaId) {
+    const base = scopeBySiswaId(appState.keagamaan, h => h.siswa_id)
+        .filter(h => String(h.siswa_id) === String(siswaId));
+    return gsGroupBySiswa(base, h => h.siswa_id)[0] || null;
+}
+
+function kagBarisItem(item) {
+    const r = item.resmi;
+    const meta = KEAGAMAAN_KATEGORI[getKategoriHafalan(r)];
+    const subs = item.records.map(h => {
+        const bisaUbah = !isKepsekUser() && canEditRecord(h, 'keagamaan');
+        return `
+            <div class="bg-white p-2 rounded-lg border border-slate-100 space-y-1">
+                <div class="flex flex-wrap items-center gap-1.5">
+                    ${renderPenulisBadge(h)}
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${kagStatusBadgeCls(h.status)}">${escapeHtml(h.status)}</span>
+                    <span class="text-[10px] text-slate-400">${escapeHtml(gsFormatTanggal(h))}</span>
+                </div>
+                ${h.catatan ? `<p class="text-xs text-slate-600 italic">"${escapeHtml(h.catatan)}"</p>` : ''}
+                ${bisaUbah ? `
+                <div class="flex justify-end gap-2">
+                    <button onclick="openModalKeagamaan('${escapeHtml(h.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
+                    <button onclick="deleteKeagamaan('${escapeHtml(h.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
+                </div>` : ''}
+            </div>`;
+    }).join("");
+    return `
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2">
+            <div class="flex justify-between items-start gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <i class="fas ${meta.icon} text-emerald-600"></i>
+                    <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(formatCapaianKeagamaan(r))}</h4>
+                </div>
+                <div class="flex flex-wrap justify-end items-center gap-1">
+                    ${item.beda ? kagBedaChip() : ''}
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md border shrink-0 ${kagStatusBadgeCls(r.status)}">${escapeHtml(r.status)}</span>
+                </div>
+            </div>
+            ${subs}
+        </div>`;
+}
+
+function openDetailKeagamaan(siswaId, tab) {
+    const g = kagDataGrup(siswaId);
+    if (!g) { closeModal(); return; }
+    const box = document.getElementById("modal-content-box");
+    const aktif = KEAGAMAAN_KATEGORI[tab] ? tab
+        : (box && box.dataset.gs === 'keagamaan' && String(box.dataset.gsSiswa) === String(siswaId) && KEAGAMAAN_KATEGORI[box.dataset.gsTab] ? box.dataset.gsTab
+            : (KEAGAMAAN_KATEGORI[keagamaanKategoriFilter] ? keagamaanKategoriFilter : "surah"));
+
+    const tabs = Object.keys(KEAGAMAAN_KATEGORI).map(k => {
+        const n = new Set(g.records.filter(h => getKategoriHafalan(h) === k).map(kagKunciItem)).size;
+        const on = k === aktif;
+        return `<button type="button" onclick="openDetailKeagamaan('${escapeHtml(g.siswaId)}','${k}')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-center ${on ? 'bg-surface text-primary shadow-sm' : 'text-slate-600'}">${KEAGAMAAN_KATEGORI[k].label} (${n})</button>`;
+    }).join("");
+
+    const ringkasan = `
+        <div class="space-y-2">
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">${kagRingkasanHtml(g.records, "semua")}</div>
+            <div class="flex bg-slate-200/70 p-1 rounded-xl gap-1">${tabs}</div>
+        </div>`;
+
+    const items = kagGabungItem(g.records.filter(h => getKategoriHafalan(h) === aktif));
+    const body = items.length
+        ? items.map(kagBarisItem).join("")
+        : `<div class="empty-state"><p class="text-xs text-slate-500">Belum ada catatan ${escapeHtml(KEAGAMAAN_KATEGORI[aktif].label.toLowerCase())}.</p></div>`;
+
+    gsOpenSheet(g, { judul: 'Keagamaan', kategori: 'keagamaan', ringkasanHtml: ringkasan, bodyHtml: body, tambahFn: 'tambahKeagamaanSiswa' });
+    const box2 = document.getElementById("modal-content-box");
+    if (box2) { box2.dataset.gs = 'keagamaan'; box2.dataset.gsSiswa = String(siswaId); box2.dataset.gsTab = aktif; }
+}
+
+function kagRefreshDetail() {
+    const box = document.getElementById("modal-content-box");
+    const modal = document.getElementById("modal-container");
+    if (!box || !modal || modal.classList.contains("hidden") || box.dataset.gs !== 'keagamaan') return;
+    openDetailKeagamaan(box.dataset.gsSiswa, box.dataset.gsTab);
+}
+
+function tambahKeagamaanSiswa(siswaId) {
+    const box = document.getElementById("modal-content-box");
+    const tab = box ? box.dataset.gsTab : "";
+    openModalKeagamaan(null, siswaId, tab);
 }
 
 function _kagItemOptions(kat, selected) {
@@ -272,9 +411,10 @@ function onKeagamaanItemChange() {
     input.required = show;
 }
 
-function openModalKeagamaan(id = null) {
+function openModalKeagamaan(id = null, preSiswaId = null, preKat = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
+    box.dataset.gs = "";
 
     const writable = getSiswaWritable('keagamaan');
     if (!id && writable.length === 0) {
@@ -283,8 +423,8 @@ function openModalKeagamaan(id = null) {
     }
 
     const record = id ? appState.keagamaan.find(x => String(x.id) === String(id)) : null;
-    const siswaOptions = sortSiswa(writable).map(s => `<option value="${s.id}" ${record && String(record.siswa_id) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
-    const kat = record ? getKategoriHafalan(record) : (KEAGAMAAN_KATEGORI[keagamaanKategoriFilter] ? keagamaanKategoriFilter : "surah");
+    const siswaOptions = sortSiswa(writable).map(s => `<option value="${s.id}" ${(record ? String(record.siswa_id) === String(s.id) : (preSiswaId !== null && String(preSiswaId) === String(s.id))) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const kat = record ? getKategoriHafalan(record) : (KEAGAMAAN_KATEGORI[preKat] ? preKat : KEAGAMAAN_KATEGORI[keagamaanKategoriFilter] ? keagamaanKategoriFilter : "surah");
     const kategoriOptions = Object.keys(KEAGAMAAN_KATEGORI).map(k => `<option value="${k}" ${k === kat ? 'selected' : ''}>${KEAGAMAAN_KATEGORI[k].label}</option>`).join("");
 
     box.innerHTML = `
