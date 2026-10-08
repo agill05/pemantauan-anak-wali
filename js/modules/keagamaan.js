@@ -430,7 +430,10 @@ function cetakPDFKeagamaan() {
     `).join('');
 
     const contentHtml = `
-        ${pdfInfoBlock([{label: "Nama Siswa", value: siswa ? siswa.nama : "-"}, {label: "Kelas", value: kls ? kls.nama_kelas : "-"}])}
+        <p style="margin: 0 0 8px 0; font-size: 12px;">
+            Nama Siswa: <b>${escapeHtml(siswa ? siswa.nama : '-')}</b> &nbsp;|&nbsp;
+            Kelas: <b>${kls ? escapeHtml(kls.nama_kelas) : '-'}</b>
+        </p>
         <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;" border="1" borderColor="#94a3b8">
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">

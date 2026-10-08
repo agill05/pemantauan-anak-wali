@@ -583,7 +583,7 @@ function cetakPDFAbsensi() {
     const labelGrup = isBinaan ? 'Mentor' : 'Kelas';
 
     const contentHtml = `
-        ${pdfInfoBlock([{label: labelGrup, value: namaGrup}, {label: "Tanggal Presensi", value: tanggal}])}
+        <p style="margin: 0 0 8px 0; font-size: 12px;">${labelGrup}: <b>${escapeHtml(namaGrup)}</b> &nbsp;|&nbsp; Tanggal Presensi: <b>${escapeHtml(tanggal)}</b></p>
         <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px;" border="1" borderColor="#94a3b8">
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">

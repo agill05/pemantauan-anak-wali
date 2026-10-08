@@ -132,38 +132,6 @@ function pdfDrawRich(doc, segs, x, y, maxW, fontSize, lineH, align) {
     return y;
 }
 
-function pdfInfoBlock(rows) {
-    const isi = rows.map(r =>
-        `<div data-l="${escapeHtml(r.label)}" data-v="${escapeHtml(r.value === null || r.value === undefined || r.value === "" ? "-" : r.value)}"></div>`
-    ).join("");
-    return `<div data-pdf-info="1">${isi}</div>`;
-}
-
-function pdfDrawInfo(doc, rows, x, y, maxW, fontSize, lineH, bottomLimit) {
-    doc.setFontSize(fontSize);
-    doc.setFont(PDF_FONT, "normal");
-    const labelW = Math.max(...rows.map(r => doc.getTextWidth(r.l)));
-    const sepX = x + labelW + 1.5;
-    const valX = sepX + 4;
-    const valW = Math.max(20, maxW - (valX - x));
-    rows.forEach(r => {
-        doc.setFont(PDF_FONT, "bold");
-        const lines = doc.splitTextToSize(String(r.v), valW);
-        if (y + lines.length * lineH > bottomLimit) { doc.addPage(); y = PDF_MARGIN + 5; }
-        doc.setFont(PDF_FONT, "normal");
-        doc.text(r.l, x, y);
-        doc.text(":", sepX, y);
-        doc.setFont(PDF_FONT, "bold");
-        lines.forEach((ln, i) => doc.text(ln, valX, y + i * lineH));
-        y += lines.length * lineH;
-    });
-    return y;
-}
-
-function pdfReadInfo(el) {
-    return [...el.children].map(c => ({ l: c.getAttribute("data-l") || "", v: c.getAttribute("data-v") || "-" }));
-}
-
 function pdfDrawLogo(doc, img, boxX, boxY, box) {
     if (!img) return;
     const scale = Math.min(box / img.w, box / img.h);
@@ -199,7 +167,6 @@ function pdfDrawKop(doc, pageW, y0, logoL, logoR) {
 }
 
 function pdfDrawTitle(doc, pageW, y, title, dateStr) {
-    const pageH = doc.internal.pageSize.getHeight();
     const cx = pageW / 2;
     doc.setFont(PDF_FONT, "bold");
     doc.setFontSize(13);
@@ -214,12 +181,13 @@ function pdfDrawTitle(doc, pageW, y, title, dateStr) {
     const nama = appState.user ? appState.user.nama : "User";
     const role = appState.user && appState.user.role ? appState.user.role.toUpperCase() : "";
     doc.setTextColor(71, 85, 105);
-    y = pdfDrawInfo(doc, [
-        { l: "Tanggal Cetak", v: dateStr },
-        { l: "Dicetak Oleh", v: nama + (role ? ` (${role})` : "") }
-    ], PDF_MARGIN, y + 1, pageW - 2 * PDF_MARGIN, 10, 5, pageH - 20);
+    y = pdfDrawRich(doc, [
+        { text: `Tanggal Cetak: ${dateStr} | Dicetak Oleh: `, bold: false },
+        { text: nama, bold: true },
+        { text: role ? ` (${role})` : "", bold: false }
+    ], cx, y + 0.5, pageW - 2 * PDF_MARGIN, 10, 5, "center");
     doc.setTextColor(15, 23, 42);
-    return y + 3;
+    return y + 4;
 }
 
 function pdfCellObj(cell, isHead) {
@@ -396,8 +364,6 @@ async function buildOfficialPdf(title, contentHtml, options = {}) {
         const tag = el.tagName;
         if (tag === "TABLE") {
             y = pdfDrawTable(doc, el, y, usableW);
-        } else if (el.hasAttribute && el.hasAttribute("data-pdf-info")) {
-            y = pdfDrawInfo(doc, pdfReadInfo(el), PDF_MARGIN, y, usableW, 11, 5, bottomLimit) + 2;
         } else if (/^H[1-6]$/.test(tag)) {
             if (y + 12 > bottomLimit) { doc.addPage(); y = PDF_MARGIN + 5; }
             doc.setFont(PDF_FONT, "bold");

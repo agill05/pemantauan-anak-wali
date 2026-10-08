@@ -93,10 +93,7 @@ function renderAkademikNilai() {
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
                 <div>
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.mapel)}</h4>
-                    ${renderInfoRows([
-                        {label:"Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + ' <span class="ml-1">' + renderPeranChip(s) + '</span>',html:true},
-                        {label:"KKTP",value:item.kktp}
-                    ])}
+                    <p class="text-xs text-slate-400">Siswa: ${escapeHtml(s ? s.nama : 'Siswa')} <span class="ml-1">${renderPeranChip(s)}</span> | KKTP: ${item.kktp}</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="text-xs font-black px-2.5 py-1 rounded-xl border ${badgeColor}">
@@ -393,7 +390,10 @@ function cetakPDFAkademik() {
     `).join('') : `<tr><td colspan="4" style="padding: 10px; text-align: center; color: #64748b;">Belum ada catatan prestasi.</td></tr>`;
 
     const contentHtml = `
-        ${pdfInfoBlock([{label: "Nama Siswa", value: siswa ? siswa.nama : "-"}, {label: "Kelas", value: kls ? kls.nama_kelas : "-"}])}
+        <p style="margin: 0 0 8px 0; font-size: 12px;">
+            Nama Siswa: <b>${escapeHtml(siswa ? siswa.nama : '-')}</b> &nbsp;|&nbsp;
+            Kelas: <b>${kls ? escapeHtml(kls.nama_kelas) : '-'}</b>
+        </p>
 
         <h4 style="font-size: 12px; margin: 0 0 6px 0; text-decoration: underline;">A. Transkrip Nilai Mapel (Evaluasi KKTP)</h4>
         <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px;" border="1" borderColor="#94a3b8">
