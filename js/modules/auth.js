@@ -372,7 +372,7 @@ async function handleAppLogin(e) {
 
     let res = null;
     try {
-        res = await apiCall("login", { role, username, password }, false, 1, true);
+        res = await apiCall("login", { role, username, password }, false, 2, true, 45000);
     } catch (err) {
         console.error("Login gagal:", err);
     }
