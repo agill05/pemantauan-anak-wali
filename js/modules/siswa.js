@@ -561,7 +561,6 @@ function renderSiswaView() {
     container.innerHTML = renderReadOnlyBanner('siswa', 'data siswa') + filtered.map(s => {
         const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
         const bisaUbahSiswa = canWrite('siswa', s);
-        const noAbsenLabel = s.no_absen ? `No. Absen: ${s.no_absen} | ` : '';
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
@@ -569,7 +568,7 @@ function renderSiswaView() {
                     <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" alt="" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                     <div>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)} <span class="ml-1">${renderPeranChip(s)}</span></h4>
-                        <p class="text-xs text-slate-400">${noAbsenLabel}NISN: ${escapeHtml(s.nisn || '-')} | Kelas: ${kls ? escapeHtml(kls.nama_kelas) : '-'}</p>
+                        ${renderInfoRows([{label:"NISN",value:s.nisn || "-"},{label:"Kelas",value:kls ? kls.nama_kelas : "-"}])}
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5">
@@ -944,7 +943,11 @@ function _renderHasilAmbilSiswa() {
             <div class="bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between gap-2 ${aktif ? '' : 'opacity-60'}">
                 <div class="min-w-0">
                     <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(s.nama)}</p>
-                    <p class="text-[11px] text-slate-400">NISN: <b class="text-slate-600">${escapeHtml(s.nisn || '-')}</b> | Kelas: <b class="text-slate-600">${escapeHtml(s.kelas_nama || '-')}</b>${s.wali_nama ? ` (wali: <b class="text-slate-600">${escapeHtml(s.wali_nama)}</b>)` : ''} | Mentor: <b class="text-slate-600">${s.punya_mentor ? escapeHtml(s.mentor_nama || 'ada') : 'belum ada mentor'}</b></p>
+                    ${renderInfoRows([
+                        {label:"NISN",value:s.nisn || "-"},
+                        {label:"Kelas",value:(s.kelas_nama || "-") + (s.wali_nama ? " (wali: " + s.wali_nama + ")" : "")},
+                        {label:"Mentor",value:s.punya_mentor ? (s.mentor_nama || "ada") : "belum ada mentor"}
+                    ])}
                     ${aktif ? '' : `<p class="text-[11px] text-amber-700 mt-0.5">${alasan}</p>`}
                 </div>
                 <button ${aktif ? '' : 'disabled'} onclick="ambilSiswaSekolah('${escapeHtml(s.id)}')" class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold ${aktif ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">Ambil</button>
