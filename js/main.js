@@ -258,6 +258,9 @@ function startDataPolling() {
         const modal = document.getElementById("modal-container");
         if (modal && !modal.classList.contains("hidden")) return;
 
+        const sigVersi = await cekVersiData();
+        if (sigVersi === null) return;
+
         const activeView = document.querySelector(".view-section.active");
         const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
 
@@ -275,6 +278,7 @@ function startDataPolling() {
                 case "pembinaan": await loadPembinaanData(true); break;
                 case "laporan": await loadLaporanRekap(true); break;
             }
+            _lastVersiSheet = sigVersi;
         } catch (e) {
             console.error("Polling error:", e);
         }

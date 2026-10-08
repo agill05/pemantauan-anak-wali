@@ -1,6 +1,11 @@
 async function apiCall(action, payload = {}, showFullLoader = false, retries = 3, silent = false, timeoutMs = 25000) {
     if (showFullLoader) showLoading();
 
+    // satu request_id untuk semua retry: backend menolak duplikat tulis (idempotent)
+    const requestId = (typeof crypto !== "undefined" && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+
     for (let attempt = 1; attempt <= retries; attempt++) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -9,7 +14,7 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
             const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ action: action, token: appState.token, payload: payload }),
+                body: JSON.stringify({ action: action, token: appState.token, payload: payload, request_id: requestId }),
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
@@ -31,6 +36,15 @@ async function apiCall(action, payload = {}, showFullLoader = false, retries = 3
             await new Promise(res => setTimeout(res, 1200));
         }
     }
+}
+
+let _lastVersiSheet = null;
+// Return signature versi sheet kalau ada perubahan, null kalau tidak ada. Fail-open saat error.
+async function cekVersiData() {
+    const res = await apiCall("getVersi", {}, false, 1, true, 8000);
+    if (!res || res.status !== "success" || !res.data) return "gagal-" + Date.now();
+    const sig = JSON.stringify(res.data);
+    return sig === _lastVersiSheet ? null : sig;
 }
 
 function startSilentTokenRefresh() {

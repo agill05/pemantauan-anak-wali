@@ -660,6 +660,7 @@ function startRealtimeNotificationPolling() {
 
     notificationPollingInterval = setInterval(async () => {
         if (!appState.token || !appState.user) return;
+        if (document.hidden) return;
 
         const prevCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
         await checkStudentNotifications();
@@ -668,7 +669,7 @@ function startRealtimeNotificationPolling() {
         if (currentCount > prevCount) {
             showToast(`${currentCount - prevCount} catatan siswa baru ditemukan!`, "warning");
         }
-    }, 30000);
+    }, 60000);
 }
 
 function handleLogout(force = false) {

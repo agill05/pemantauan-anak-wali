@@ -75,7 +75,7 @@ function populateSiswaSelectForRole(selectEl, options = {}) {
 }
 
 let dataPollingInterval = null;
-const DATA_POLL_INTERVAL_MS = 18000;
+const DATA_POLL_INTERVAL_MS = 45000;
 
 function saveAppStateToLocal() {
     try {
