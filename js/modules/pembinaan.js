@@ -40,9 +40,32 @@ async function loadPembinaanData(forceRefresh = false) {
     }
 }
 
+const PBN_SKOR_STATUS = { 'perlu tindak lanjut': 3, 'dalam pembinaan': 2, 'pemantauan': 1, 'selesai': 0 };
+const PBN_WARNA_PENULIS = { wali: 'border-l-blue-400', mentor: 'border-l-violet-400', admin: 'border-l-slate-400' };
+
+function pbnSkor(rec) {
+    return PBN_SKOR_STATUS[String(rec.status || '').trim().toLowerCase()] ?? 0;
+}
+
+function pbnStatusTeratas(records) {
+    return records.reduce((best, r) => (!best || pbnSkor(r) > pbnSkor(best)) ? r : best, null);
+}
+
+function pbnJadwalTerdekat(records) {
+    const today = getDateWITA();
+    const list = records
+        .filter(r => pbnSkor(r) > 0 && r.jadwal_pantau && String(r.jadwal_pantau) >= today)
+        .map(r => String(r.jadwal_pantau)).sort();
+    return list[0] || '';
+}
+
 function renderPembinaanView() {
     const container = document.getElementById("pembinaan-list-container");
     if (!container) return;
+
+    if (isKepsekUser() && !document.getElementById("pembinaan-gs-filter")) {
+        container.insertAdjacentHTML('beforebegin', `<div id="pembinaan-gs-filter">${gsRenderFilterKepsek('pbn-f', 'renderPembinaanView')}</div>`);
+    }
 
     const filterSiswaId = document.getElementById("pembinaan-siswa-filter")?.value || "";
     const basePembinaan = scopeBySiswaId(appState.pembinaan, item => item.siswa_id);
@@ -50,45 +73,85 @@ function renderPembinaanView() {
         ? basePembinaan.filter(item => String(item.siswa_id) === String(filterSiswaId))
         : basePembinaan;
 
-    if (filteredPembinaan.length === 0) {
+    const fk = isKepsekUser() ? gsBacaFilterKepsek('pbn-f') : null;
+    let groups = gsTerapkanFilter(gsGroupBySiswa(filteredPembinaan, r => r.siswa_id), fk);
+    groups = gsUrutkan(groups, fk ? fk.urut : 'terbaru', g => pbnSkor(pbnStatusTeratas(g.records)));
+
+    if (groups.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-user-check text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Tidak ada catatan pembinaan aktif untuk siswa ini.</p></div>`;
+        pbnRefreshDetail();
         return;
     }
 
-    container.innerHTML = filteredPembinaan.map(item => {
-        const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
-        const statusBadge = getPembinaanStatusBadge(item.status);
-        const bisaUbah = canEditRecord(item, 'pembinaan');
-        const penanda = renderPenulisBadge(item) + renderPeranChip(s);
-
-        return `
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${escapeHtml(item.jenis || 'Pembinaan')}</span>
-                        <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.permasalahan)}</h4>
-                        ${renderInfoRows([{label:"Siswa",value:s ? s.nama : "Siswa"},{label:"Tanggal",value:item.tanggal}])}
-                    </div>
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${statusBadge}">${escapeHtml(item.status)}</span>
-                </div>
-                ${item.jadwal_pantau ? `
-                <div class="text-xs bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center gap-1.5 text-slate-600 font-medium">
-                    <i class="fas fa-clock text-amber-500"></i> Jadwal Pantau: <span class="font-bold text-amber-700">${escapeHtml(item.jadwal_pantau)}</span>
-                </div>` : ''}
-                ${penanda ? `<div class="flex flex-wrap items-center gap-1.5">${penanda}</div>` : ''}
-                ${bisaUbah ? `
-                <div class="flex justify-end gap-2 pt-1 border-t border-slate-50">
-                    <button onclick="openModalPembinaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
-                    <button onclick="deletePembinaan('${escapeHtml(item.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
-                </div>` : ''}
-            </div>
-        `;
+    container.innerHTML = groups.map(g => {
+        const aktif = g.records.filter(r => pbnSkor(r) > 0).length;
+        const top = pbnStatusTeratas(g.records);
+        const pantau = pbnJadwalTerdekat(g.records);
+        const ringkasan = `
+            <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                <span class="font-bold text-slate-600">${aktif} aktif</span>
+                <span class="font-bold px-2 py-0.5 rounded-md border ${getPembinaanStatusBadge(top.status)}">${escapeHtml(top.status)}</span>
+                ${pantau ? `<span class="text-amber-700 font-bold"><i class="fas fa-clock text-amber-500"></i> Pantau ${escapeHtml(pantau)}</span>` : ''}
+            </div>`;
+        return gsRenderCard(g, ringkasan, 'openDetailPembinaan');
     }).join("");
+
+    pbnRefreshDetail();
 }
 
-function openModalPembinaan(id = null) {
+function pbnDataGrup(siswaId) {
+    const base = scopeBySiswaId(appState.pembinaan, item => item.siswa_id)
+        .filter(r => String(r.siswa_id) === String(siswaId));
+    const g = gsGroupBySiswa(base, r => r.siswa_id)[0];
+    return g || null;
+}
+
+function openDetailPembinaan(siswaId) {
+    const g = pbnDataGrup(siswaId);
+    if (!g) { closeModal(); return; }
+    const top = pbnStatusTeratas(g.records);
+    const pantau = pbnJadwalTerdekat(g.records);
+    const ringkasan = `
+        <div class="flex flex-wrap items-center gap-1.5 text-xs bg-slate-50 p-2 rounded-xl border border-slate-100">
+            <span class="font-bold text-slate-600">${g.records.filter(r => pbnSkor(r) > 0).length} aktif dari ${g.records.length}</span>
+            <span class="font-bold px-2 py-0.5 rounded-md border ${getPembinaanStatusBadge(top.status)}">${escapeHtml(top.status)}</span>
+            ${pantau ? `<span class="text-amber-700 font-bold"><i class="fas fa-clock text-amber-500"></i> Pantau ${escapeHtml(pantau)}</span>` : ''}
+        </div>`;
+    const body = g.records.map(item => {
+        const sebagai = String(item.dibuat_sebagai || '').toLowerCase().trim();
+        const warna = PBN_WARNA_PENULIS[sebagai] || PBN_WARNA_PENULIS.wali;
+        const isi = `
+            <div class="flex justify-between items-start gap-2">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${escapeHtml(item.jenis || 'Pembinaan')}</span>
+                    <p class="font-bold text-xs text-slate-800">${escapeHtml(item.permasalahan)}</p>
+                </div>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-md border whitespace-nowrap ${getPembinaanStatusBadge(item.status)}">${escapeHtml(item.status)}</span>
+            </div>
+            ${item.jadwal_pantau ? `<div class="text-xs text-slate-600"><i class="fas fa-clock text-amber-500"></i> Jadwal Pantau: <span class="font-bold text-amber-700">${escapeHtml(item.jadwal_pantau)}</span></div>` : ''}`;
+        return gsRenderBarisCatatan(item, 'pembinaan', isi, 'openModalPembinaan', 'deletePembinaan')
+            .replace('class="bg-slate-50 p-3', `class="border-l-4 ${warna} bg-slate-50 p-3`);
+    }).join('');
+    gsOpenSheet(g, { judul: 'Pembinaan', kategori: 'pembinaan', ringkasanHtml: ringkasan, bodyHtml: body, tambahFn: 'tambahPembinaanSiswa' });
+    const box = document.getElementById("modal-content-box");
+    if (box) { box.dataset.gs = 'pembinaan'; box.dataset.gsSiswa = String(siswaId); }
+}
+
+function pbnRefreshDetail() {
+    const box = document.getElementById("modal-content-box");
+    const modal = document.getElementById("modal-container");
+    if (!box || !modal || modal.classList.contains("hidden") || box.dataset.gs !== 'pembinaan') return;
+    openDetailPembinaan(box.dataset.gsSiswa);
+}
+
+function tambahPembinaanSiswa(siswaId) {
+    openModalPembinaan(null, siswaId);
+}
+
+function openModalPembinaan(id = null, preSiswaId = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
+    box.dataset.gs = "";
 
     const writable = getSiswaWritable('pembinaan');
     if (!id && writable.length === 0) {
@@ -100,7 +163,7 @@ function openModalPembinaan(id = null) {
     const draft = !id ? getFormDraft("pembinaan") : null;
 
     const siswaOpts = sortSiswa(writable).map(s =>
-        `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
+        `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id || preSiswaId) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
     ).join("");
 
     const tanggalPengisian = rec ? rec.tanggal : getDateWITA();
