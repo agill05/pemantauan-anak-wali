@@ -766,7 +766,7 @@
                 <form onsubmit="saveSekolahForm(event)" class="space-y-3 bg-white p-3.5 rounded-2xl border border-slate-100">
                     <div>
                         <label for="m-skl-kepsek" class="block text-xs font-bold text-slate-500 mb-1">NAMA KEPALA SEKOLAH</label>
-                        <input type="text" id="m-skl-kepsek" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="Contoh: Drs. Ahmad, M.Pd.">
+                        <input type="text" id="m-skl-kepsek" onblur="rapikanInputNama(this)" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="Contoh: Drs. Ahmad, M.Pd.">
                     </div>
                     <div>
                         <label for="m-skl-nip-kepsek" class="block text-xs font-bold text-slate-500 mb-1">NIP KEPALA SEKOLAH</label>

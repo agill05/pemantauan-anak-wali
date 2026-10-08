@@ -613,7 +613,7 @@ function openModalSiswa(id = null) {
         <form onsubmit="saveSiswaForm(event, '${id || ''}')" class="space-y-3">
             <div>
                 <label for="m-ssw-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
-                <input type="text" id="m-ssw-nama" value="${escapeHtml(s?.nama || '')}" placeholder="Masukkan nama lengkap siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                <input type="text" id="m-ssw-nama" onblur="rapikanInputNama(this)" value="${escapeHtml(s?.nama || '')}" placeholder="Masukkan nama lengkap siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -661,7 +661,7 @@ function openModalSiswa(id = null) {
             </div>
             <div>
                 <label for="m-ssw-nama-ortu" class="block text-xs font-bold text-slate-500 mb-1">NAMA ORANG TUA / WALI</label>
-                <input type="text" id="m-ssw-nama-ortu" value="${escapeHtml(s?.nama_ortu || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="Nama lengkap orang tua/wali">
+                <input type="text" id="m-ssw-nama-ortu" onblur="rapikanInputNama(this)" value="${escapeHtml(s?.nama_ortu || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" placeholder="Nama lengkap orang tua/wali">
             </div>
             <div>
                 <label for="m-ssw-ortu" class="block text-xs font-bold text-slate-500 mb-1">NO. WA ORANG TUA / WALI</label>
@@ -693,14 +693,14 @@ async function saveSiswaForm(e, id) {
 
     const payload = {
         id: id || null,
-        nama: document.getElementById("m-ssw-nama").value,
+        nama: titleCaseNama(document.getElementById("m-ssw-nama").value),
         no_absen: document.getElementById("m-ssw-absen").value,
         username: document.getElementById("m-ssw-user").value,
         password: document.getElementById("m-ssw-pwd").value,
         nisn: document.getElementById("m-ssw-nisn").value,
         kelas_id: isGuruUser() ? (getKelasWaliId() || "") : document.getElementById("m-ssw-kelas").value,
         no_hp_ortu: normalizePhone(document.getElementById("m-ssw-ortu").value),
-        nama_ortu: document.getElementById("m-ssw-nama-ortu").value,
+        nama_ortu: titleCaseNama(document.getElementById("m-ssw-nama-ortu").value),
     };
 
     const mentorSel = document.getElementById("m-ssw-mentor");

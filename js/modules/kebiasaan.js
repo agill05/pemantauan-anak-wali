@@ -50,7 +50,7 @@ async function loadKebiasaanData(forceRefresh = false) {
 
     const selectSiswa = document.getElementById("kebiasaan-siswa-select");
     if (selectSiswa && selectSiswa.options.length === 0) {
-        populateSiswaSelectForRole(selectSiswa);
+        populateSiswaSelectForRole(selectSiswa, { includeAllOption: true });
     }
 
     renderKebiasaanTabs();
@@ -137,6 +137,8 @@ function renderKebiasaanView() {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
         return;
     }
+
+    if (selectedSiswaId === "ALL") { renderKebiasaanSemua(container); return; }
 
     const tanggal = getTanggalKebiasaan();
     const lockState = getDateLockState(tanggal);
@@ -246,6 +248,85 @@ function renderKebiasaanView() {
             ${badgeHtml}
             ${tombolPagi}
             ${itemsHtml}
+        </div>`;
+}
+
+function pilihSiswaKebiasaan(siswaId) {
+    const sel = document.getElementById("kebiasaan-siswa-select");
+    if (!sel) return;
+    sel.value = siswaId;
+    if (typeof sel._comboSync === "function") sel._comboSync();
+    onKebiasaanSiswaChange();
+}
+
+function renderKebiasaanSemua(container) {
+    const tanggal = getTanggalKebiasaan();
+    const total = MASTER_KEBIASAAN.length;
+    const aktifIds = new Set(MASTER_KEBIASAAN.map(k => String(k.id)));
+
+    const sudahPerSiswa = {};
+    (appState.kebiasaan || []).forEach(r => {
+        if (String(r.tanggal) !== String(tanggal) || r.status !== "Sudah") return;
+        if (!aktifIds.has(String(r.kebiasaan_id))) return;
+        const sid = String(r.siswa_id);
+        if (!sudahPerSiswa[sid]) sudahPerSiswa[sid] = new Set();
+        sudahPerSiswa[sid].add(String(r.kebiasaan_id));
+    });
+
+    const kelasMap = {};
+    (appState.kelas || []).forEach(k => { kelasMap[String(k.id)] = k.nama_kelas || ""; });
+
+    const daftar = getSiswaPeran().map(s => ({
+        id: String(s.id),
+        nama: s.nama || "",
+        kelas: kelasMap[String(s.kelas_id)] || "",
+        n: sudahPerSiswa[String(s.id)] ? sudahPerSiswa[String(s.id)].size : 0
+    })).sort((a, b) => (a.n - b.n) || a.nama.localeCompare(b.nama, "id"));
+
+    const tuntas = daftar.filter(d => total > 0 && d.n >= total).length;
+    const belum = daftar.filter(d => d.n === 0).length;
+    const sebagian = daftar.length - tuntas - belum;
+    const labelTanggal = tanggal === getDateWITA() ? "Hari Ini" : escapeHtml(formatTanggalLabel(tanggal));
+
+    const ringkasan = `
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-4 text-white shadow-md space-y-3">
+            <div>
+                <span class="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">Semua Siswa - ${labelTanggal}</span>
+                <h3 class="text-2xl font-black leading-tight">${tuntas}<span class="text-sm text-blue-200">/${daftar.length} tuntas</span></h3>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                <div class="bg-white/10 rounded-xl p-1.5"><span class="text-[10px] text-blue-200 block">Tuntas</span><span class="font-black text-emerald-300">${tuntas}</span></div>
+                <div class="bg-white/10 rounded-xl p-1.5"><span class="text-[10px] text-blue-200 block">Sebagian</span><span class="font-black text-amber-300">${sebagian}</span></div>
+                <div class="bg-white/10 rounded-xl p-1.5"><span class="text-[10px] text-blue-200 block">Belum Isi</span><span class="font-black text-rose-300">${belum}</span></div>
+            </div>
+        </div>`;
+
+    const baris = daftar.map(d => {
+        const persen = total > 0 ? Math.round((d.n / total) * 100) : 0;
+        const penuh = total > 0 && d.n >= total;
+        const gayaBadge = penuh ? "bg-emerald-100 text-emerald-700" : (d.n > 0 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-600");
+        const gayaBar = penuh ? "bg-emerald-500" : (d.n > 0 ? "bg-amber-400" : "bg-slate-200");
+        return `
+            <button type="button" onclick="pilihSiswaKebiasaan('${escapeHtml(d.id)}')"
+                class="w-full text-left bg-white p-3 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.99] transition">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(d.nama)}</h4>
+                        <p class="text-[10px] text-slate-400">${d.kelas ? escapeHtml(d.kelas) : "Tanpa kelas"}</p>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-extrabold shrink-0 ${gayaBadge}">${d.n}/${total}</span>
+                </div>
+                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2">
+                    <div class="${gayaBar} h-full rounded-full" style="width:${persen}%"></div>
+                </div>
+            </button>`;
+    }).join("");
+
+    container.innerHTML = `
+        <div class="space-y-3">
+            ${renderBacaSajaBanner("Ringkasan semua siswa. Pilih siswa untuk melihat detail.")}
+            ${ringkasan}
+            ${baris || `<div class="empty-state"><p class="text-xs text-slate-500">Belum ada data siswa.</p></div>`}
         </div>`;
 }
 

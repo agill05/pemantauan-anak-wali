@@ -75,7 +75,7 @@ async function saveSekolahForm(e) {
     }
 
     const payload = {
-        nama_kepsek: document.getElementById("m-skl-kepsek").value,
+        nama_kepsek: titleCaseNama(document.getElementById("m-skl-kepsek").value),
         nip_kepsek: document.getElementById("m-skl-nip-kepsek").value,
         username: username,
         password: password,
@@ -400,7 +400,7 @@ function openModalGuru(id = null) {
         <form onsubmit="saveGuruForm(event, '${id || ''}')" class="space-y-3">
             <div>
                 <label for="m-guru-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
-                <input type="text" id="m-guru-nama" value="${escapeHtml(g?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                <input type="text" id="m-guru-nama" onblur="rapikanInputNama(this)" value="${escapeHtml(g?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -455,7 +455,7 @@ async function saveGuruForm(e, id) {
 
     const payload = {
         id: id || null,
-        nama: document.getElementById("m-guru-nama").value,
+        nama: titleCaseNama(document.getElementById("m-guru-nama").value),
         username: document.getElementById("m-guru-user").value,
         password: document.getElementById("m-guru-pwd").value,
         nip: document.getElementById("m-guru-nip").value,

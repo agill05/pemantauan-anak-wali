@@ -101,7 +101,7 @@ function _refreshAllSiswaDropdowns() {
     const siswaList = getSiswaPeran();
 
     const selKebiasaan = document.getElementById("kebiasaan-siswa-select");
-    if (selKebiasaan && siswaList.length > 0) populateSiswaSelectForRole(selKebiasaan);
+    if (selKebiasaan && siswaList.length > 0) populateSiswaSelectForRole(selKebiasaan, { includeAllOption: true });
 
     const selKarakter = document.getElementById("karakter-siswa-filter");
     if (selKarakter && siswaList.length > 0) populateSiswaSelectForRole(selKarakter, { includeAllOption: true });

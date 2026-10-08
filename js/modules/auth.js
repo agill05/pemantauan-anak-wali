@@ -996,7 +996,7 @@ function openEditProfilModal() {
 
             <div>
                 <label for="self-nama" class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
-                <input type="text" id="self-nama" value="${escapeHtml(user.nama || '')}"
+                <input type="text" id="self-nama" onblur="rapikanInputNama(this)" value="${escapeHtml(user.nama || '')}"
                        class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}"
                        ${isEditingLocked ? 'readonly' : 'required'}>
                 ${isEditingLocked ? '<p class="text-[10px] text-slate-400 mt-0.5">*Nama hanya dapat diubah oleh Admin sekolah.</p>' : ''}
@@ -1006,8 +1006,9 @@ function openEditProfilModal() {
                 <div>
                     <label for="self-username" class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
                     <input type="text" id="self-username" value="${escapeHtml(user.username || '')}"
-                           class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}"
-                           ${isEditingLocked ? 'readonly' : 'required'}>
+                           autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="30"
+                           class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none focus:border-blue-500" required>
+                    <p class="text-[10px] text-slate-400 mt-0.5">4-30 karakter: huruf kecil, angka, titik, garis bawah, strip.</p>
                 </div>
 
                 <div>
@@ -1227,12 +1228,24 @@ async function saveSelfProfileForm(e) {
         base64Photo = fotoProfilTerkompres;
     }
 
+    const roleSaya = (appState.user && appState.user.role) || "";
+    const usernameBaru = document.getElementById("self-username").value.trim().toLowerCase();
+    if (!/^[a-z0-9._-]{4,30}$/.test(usernameBaru) && usernameBaru !== String(appState.user.username || "").toLowerCase()) {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove("opacity-70", "cursor-not-allowed");
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+        showToast("Username 4-30 karakter: huruf kecil, angka, titik, garis bawah, atau strip.", "warning");
+        return;
+    }
+
     const payload = {
-        nama: document.getElementById("self-nama").value,
-        username: document.getElementById("self-username").value,
+        username: usernameBaru,
         no_hp: normalizePhone(document.getElementById("self-hp").value),
         fileData: base64Photo
     };
+    if (roleSaya === "admin") payload.nama = titleCaseNama(document.getElementById("self-nama").value);
 
     showLoading("Memperbarui profil...");
 
@@ -1248,8 +1261,8 @@ async function saveSelfProfileForm(e) {
     if (res && res.status === "success") {
         closeModal();
 
-        appState.user.nama = payload.nama;
-        appState.user.username = payload.username;
+        if (roleSaya === "admin") appState.user.nama = res.nama || payload.nama;
+        appState.user.username = res.username || payload.username;
         appState.user.no_hp = payload.no_hp;
         if (res.photoUrl) appState.user.foto = res.photoUrl;
 

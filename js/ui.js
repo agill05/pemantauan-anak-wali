@@ -685,3 +685,14 @@ function renderInfoRows(rows) {
     ).join("");
     return `<div class="info-rows">${isi}</div>`;
 }
+
+function titleCaseNama(nama) {
+    const s = String(nama === null || nama === undefined ? "" : nama).replace(/\s+/g, " ").trim();
+    if (!s) return "";
+    if (s !== s.toUpperCase() && s !== s.toLowerCase()) return s;
+    return s.toLowerCase().replace(/(^|[\s.\-'\u2019])(\p{L})/gu, (m, pemisah, huruf) => pemisah + huruf.toUpperCase());
+}
+
+function rapikanInputNama(el) {
+    if (el && !el.readOnly) el.value = titleCaseNama(el.value);
+}
