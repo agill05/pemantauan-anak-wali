@@ -187,7 +187,7 @@
     <header id="main-header"
         class="bg-primary text-white shadow-md fixed top-0 w-full z-20 transition-all duration-300 hidden no-print">
         <div id="header-default" class="flex justify-between items-center gap-2 px-4 py-1.5 min-h-16">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
                 <button id="btn-toggle-sidebar" onclick="toggleSidebar(true)"
                     class="touch-btn shrink-0 -ml-1 hover:bg-white/10 rounded-xl transition" aria-label="Buka menu navigasi">
                     <i class="fas fa-bars text-lg"></i>
@@ -274,6 +274,11 @@
         <nav id="sidebar-menu-items" class="flex-1 overflow-y-auto py-2 px-2 space-y-1"></nav>
 
         <div class="p-3 border-t border-slate-100">
+            <button type="button" id="btn-refresh-sidebar"
+                onclick="manualRefreshAll(); toggleSidebar(false);"
+                class="sidebar-refresh w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition mb-1">
+                <i class="fas fa-rotate w-5 text-center"></i> Segarkan Data
+            </button>
             <button id="btn-install-sidebar" onclick="installApp()"
                 class="hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary hover:bg-blue-50 transition mb-1">
                 <i class="fas fa-download w-5 text-center"></i> Install Aplikasi

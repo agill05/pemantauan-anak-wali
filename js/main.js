@@ -131,8 +131,8 @@ function _refreshAllSiswaDropdowns() {
 }
 
 async function manualRefreshAll() {
-    const icon = document.querySelector("#btn-refresh-header i");
-    if (icon) icon.classList.add("fa-spin");
+    const icons = document.querySelectorAll("#btn-refresh-header i, #btn-refresh-sidebar i");
+    icons.forEach(i => i.classList.add("fa-spin"));
 
     await fetchAllAppData(true);
     _refreshAllSiswaDropdowns();
@@ -143,7 +143,7 @@ async function manualRefreshAll() {
     const viewId = activeView ? activeView.id.replace("view-", "") : "dashboard";
     switchView(viewId);
 
-    if (icon) icon.classList.remove("fa-spin");
+    icons.forEach(i => i.classList.remove("fa-spin"));
     showToast("Data terbaru disinkronkan.");
 }
 

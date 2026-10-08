@@ -311,8 +311,13 @@ function updateHeaderUser() {
     if (title) title.title = nama;
     if (sub) {
         const peranTeks = isGuruUser() && getPeranTersedia().length > 1 ? ` (${PERAN_LABEL[getPeranAktif()]})` : "";
-        sub.textContent = `${getRoleLabel(appState.user.role)}${peranTeks} – SMPN 1 Talaga Jaya`;
-        sub.title = sub.textContent;
+        const roleText = `${getRoleLabel(appState.user.role)}${peranTeks}`;
+        sub.textContent = roleText;
+        const school = document.createElement("span");
+        school.className = "hidden lg:inline";
+        school.textContent = " – SMPN 1 Talaga Jaya";
+        sub.appendChild(school);
+        sub.title = `${roleText} – SMPN 1 Talaga Jaya`;
     }
 }
 
@@ -327,6 +332,22 @@ function setHeaderText(titleText, subtitleText) {
     if (namaEl) namaEl.textContent = titleText;
     if (title) title.title = titleText;
     if (sub) { sub.textContent = subtitleText; sub.title = subtitleText; }
+}
+
+function syncHeaderHeight() {
+    const header = document.getElementById("main-header");
+    if (!header) return;
+    const apply = () => {
+        document.documentElement.style.setProperty("--header-h", header.offsetHeight + "px");
+    };
+    apply();
+    if (window.ResizeObserver) new ResizeObserver(apply).observe(header);
+    window.addEventListener("resize", apply);
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", syncHeaderHeight);
+} else {
+    syncHeaderHeight();
 }
 
 function formatTanggalLabel(tanggal) {

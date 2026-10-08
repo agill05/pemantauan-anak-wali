@@ -3102,3 +3102,35 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 .sd-greet .info-label,
 .sd-greet .info-sep { color: rgba(255, 255, 255, 0.7); }
 .sd-greet .info-value { color: #fff; }
+
+/* ===== Header mobile: teks tidak terpotong ===== */
+@media (max-width: 1023px) {
+    #header-greeting,
+    #header-title,
+    #header-subtitle {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+    }
+
+    #header-title { line-height: 1.25; }
+
+    #header-default > div:first-child { gap: 0.5rem; }
+
+    #peran-switcher-header { max-width: 6rem; }
+}
+
+@media (max-width: 767px) {
+    /* Tinggi header dinamis, diisi oleh syncHeaderHeight() di ui.js */
+    #main-content { padding-top: var(--header-h, 4rem); }
+}
+
+/* Refresh pindah ke sidebar di layar < 640px */
+@media (max-width: 639px) {
+    #btn-refresh-header { display: none !important; }
+}
+@media (min-width: 640px) {
+    .sidebar-refresh { display: none !important; }
+}
