@@ -624,11 +624,7 @@ function openModalSiswa(id = null) {
                 <label for="m-ssw-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
                 <input type="text" id="m-ssw-nama" onblur="rapikanInputNama(this)" value="${escapeHtml(s?.nama || '')}" placeholder="Masukkan nama lengkap siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label for="m-ssw-absen" class="block text-xs font-bold text-slate-500 mb-1">NOMOR ABSEN (OPSIONAL)</label>
-                    <input type="number" id="m-ssw-absen" value="${s?.no_absen !== undefined && s?.no_absen !== null ? s.no_absen : ''}" placeholder="Contoh: 1" min="1" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                </div>
+            <div class="grid grid-cols-1 gap-2">
                 <div>
                     <label for="m-ssw-nisn" class="block text-xs font-bold text-slate-500 mb-1">NISN</label>
                     <input type="text" id="m-ssw-nisn" value="${escapeHtml(s?.nisn || '')}" placeholder="Masukkan NISN" inputmode="numeric" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
@@ -703,7 +699,6 @@ async function saveSiswaForm(e, id) {
     const payload = {
         id: id || null,
         nama: titleCaseNama(document.getElementById("m-ssw-nama").value),
-        no_absen: document.getElementById("m-ssw-absen").value,
         username: document.getElementById("m-ssw-user").value,
         password: document.getElementById("m-ssw-pwd").value,
         nisn: document.getElementById("m-ssw-nisn").value,
@@ -743,8 +738,8 @@ async function saveSiswaForm(e, id) {
 }
 
 function downloadTemplateSiswaCSV() {
-    const csvContent = "\uFEFF" + "username,nama,no_absen,nisn,nama_kelas,no_hp_ortu,nama_ortu,password,mentor_id\n" +
-        "siswa01,Contoh Nama Siswa,1,0012345678,VII A,081234567890,Contoh Nama Orang Tua,,guru01\n";
+    const csvContent = "\uFEFF" + "username,nama,nisn,nama_kelas,no_hp_ortu,nama_ortu,password,mentor_id\n" +
+        "siswa01,Contoh Nama Siswa,0012345678,VII A,081234567890,Contoh Nama Orang Tua,,guru01\n";
     _downloadCSVString(csvContent, "Template_Import_Siswa.csv");
     showToast("Template CSV Siswa berhasil diunduh!");
 }
@@ -760,7 +755,6 @@ function exportSiswaCSV() {
         return {
             username: s.username || "",
             nama: s.nama || "",
-            no_absen: s.no_absen || "",
             nisn: s.nisn || "",
             nama_kelas: kls ? kls.nama_kelas : "",
             no_hp_ortu: normalizePhone(s.no_hp_ortu),
@@ -769,7 +763,7 @@ function exportSiswaCSV() {
             mentor_id: mg ? mg.username : (s.mentor_id || "")
         };
     });
-    const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "no_absen", "nisn", "nama_kelas", "no_hp_ortu", "nama_ortu", "password", "mentor_id"] });
+    const csvContent = "\uFEFF" + Papa.unparse(rows, { columns: ["username", "nama", "nisn", "nama_kelas", "no_hp_ortu", "nama_ortu", "password", "mentor_id"] });
     _downloadCSVString(csvContent, `Data_Siswa_SMPN1TalagaJaya_${getDateWITA()}.csv`);
     showToast("Data Siswa berhasil diekspor ke CSV!");
 }

@@ -134,11 +134,10 @@ function _kartuRenderDaftar() {
     } else {
         wadah.innerHTML = tampil.map(s => {
             const id = String(s.id);
-            const noAbsen = s.no_absen ? `${escapeHtml(String(s.no_absen))}. ` : "";
             return `
                 <label class="flex items-center gap-2.5 px-3 py-2 text-xs cursor-pointer hover:bg-slate-50">
                     <input type="checkbox" ${_kartuState.sel.has(id) ? "checked" : ""} onchange="kartuToggle('${escapeHtml(id)}', this.checked)">
-                    <span class="text-slate-700">${noAbsen}${escapeHtml(s.nama || "")}</span>
+                    <span class="text-slate-700">${escapeHtml(s.nama || "")}</span>
                 </label>`;
         }).join("");
     }

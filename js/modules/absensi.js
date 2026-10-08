@@ -254,7 +254,6 @@ function renderAbsensiView() {
     const rowsHtml = filteredSiswa.map(s => {
         const rec = absensiRec(tab, s.id);
         const editRow = rowEditable(s);
-        const noAbsenBadge = (!isBinaan && s.no_absen) ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-black mr-1">${escapeHtml(String(s.no_absen))}</span>` : '';
         const chip = isBinaan
             ? `<span class="ml-1.5 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded border bg-slate-50 text-slate-600 border-slate-200">${escapeHtml(absensiNamaKelas(s.kelas_id))}</span>`
             : `<span class="ml-1.5">${renderPeranChip(s)}</span>`;
@@ -263,7 +262,7 @@ function renderAbsensiView() {
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                 <div>
-                    <h4 class="font-bold text-xs text-slate-800 flex items-center flex-wrap">${noAbsenBadge}${escapeHtml(s.nama)}${chip}</h4>
+                    <h4 class="font-bold text-xs text-slate-800 flex items-center flex-wrap">${escapeHtml(s.nama)}${chip}</h4>
                     ${mentorLine}
                     <span class="text-xs text-slate-400"><i class="far fa-clock mr-1"></i>${rec.waktu ? formatDisplayTime(rec.waktu) : 'Belum Absen'}</span>
                 </div>
@@ -570,7 +569,6 @@ function cetakPDFAbsensi() {
         if (st === 'H') countH++; else if (st === 'S') countS++; else if (st === 'I') countI++; else if (st === 'T') countT++; else if (st === 'A') countA++; else countB++;
         return `<tr>
             ${td(idx + 1)}
-            ${isBinaan ? '' : td(escapeHtml(s.no_absen || '-'))}
             <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(s.nama)}</td>
             ${showKelas ? td(escapeHtml(absensiNamaKelas(s.kelas_id))) : ''}
             ${showMentor ? td(escapeHtml(absensiNamaMentor(s.mentor_id))) : ''}
@@ -588,7 +586,6 @@ function cetakPDFAbsensi() {
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
                     ${th('No', '30px')}
-                    ${isBinaan ? '' : th('No. Absen', '60px')}
                     <th style="padding: 8px 6px; text-align: left;">Nama Siswa</th>
                     ${showKelas ? th('Kelas', '60px') : ''}
                     ${showMentor ? th('Mentor', '110px') : ''}

@@ -13,16 +13,9 @@ function safeStr(v) {
 }
 
 function sortSiswa(listSiswa) {
-    return [...listSiswa].sort((a, b) => {
-        const noA = (a.no_absen !== undefined && a.no_absen !== null && String(a.no_absen).trim() !== "") ? Number(a.no_absen) : null;
-        const noB = (b.no_absen !== undefined && b.no_absen !== null && String(b.no_absen).trim() !== "") ? Number(b.no_absen) : null;
-
-        if (noA !== null && noB !== null) return noA - noB;
-        if (noA !== null) return -1;
-        if (noB !== null) return 1;
-
-        return String(a.nama || "").localeCompare(String(b.nama || ""), "id");
-    });
+    return [...listSiswa].sort((a, b) =>
+        String(a.nama || "").localeCompare(String(b.nama || ""), "id", { sensitivity: "base", numeric: true })
+    );
 }
 
 function renderSkeleton(containerId, count = 3) {

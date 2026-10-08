@@ -165,7 +165,7 @@ function renderAdminSiswa() {
     list.innerHTML = filtered.map(s => `
         <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
             <div>
-                <h4 class="font-bold text-xs text-slate-800">${s.no_absen ? `[${s.no_absen}] ` : ''}${escapeHtml(s.nama)}</h4>
+                <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
                 <p class="text-xs text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
                 <p class="text-xs text-slate-400">Mentor: ${escapeHtml(getNamaMentorSiswa(s))}</p>
             </div>
@@ -281,7 +281,7 @@ function renderMentorSiswaList() {
             <label class="flex items-center gap-2 bg-white border border-slate-100 rounded-xl px-2.5 py-2 cursor-pointer">
                 <input type="checkbox" ${_mentorModal.sel.has(sid) ? "checked" : ""} onchange="toggleMentorSiswa('${escapeHtml(sid)}', this.checked)">
                 <span class="flex-1 min-w-0">
-                    <span class="block text-xs font-bold text-slate-800 truncate">${s.no_absen ? `[${escapeHtml(s.no_absen)}] ` : ""}${escapeHtml(s.nama)}</span>
+                    <span class="block text-xs font-bold text-slate-800 truncate">${escapeHtml(s.nama)}</span>
                     <span class="block text-[11px] text-slate-400">${kls ? "Kelas " + escapeHtml(kls.nama_kelas) : "Tanpa kelas"}</span>
                 </span>
                 ${info}
