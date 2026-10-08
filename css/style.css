@@ -3093,11 +3093,12 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 .sd-tl > div::before { content: ""; position: absolute; left: -1.0625rem; top: 0.3rem; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #f59e0b; }
 .sd-tl small { display: block; color: #94a3b8; font-size: 0.625rem; }
 
-/* ===== Baris label-nilai (pengganti pemisah "•") ===== */
+/* ===== Baris label : nilai ===== */
 .info-rows { margin-top: 0.25rem; }
-.info-row { display: flex; gap: 0.5rem; font-size: 0.75rem; line-height: 1.5; }
+.info-row { display: flex; gap: 0; font-size: 0.75rem; line-height: 1.5; }
 .info-label { flex: 0 0 3.75rem; color: #94a3b8; font-weight: 600; }
+.info-sep { flex: 0 0 0.75rem; color: #94a3b8; font-weight: 600; }
 .info-value { min-width: 0; color: #334155; font-weight: 700; overflow-wrap: anywhere; }
-.sd-greet .info-label { color: rgba(255, 255, 255, 0.7); }
+.sd-greet .info-label,
+.sd-greet .info-sep { color: rgba(255, 255, 255, 0.7); }
 .sd-greet .info-value { color: #fff; }
-.sd-stat > div { min-width: 4rem; }

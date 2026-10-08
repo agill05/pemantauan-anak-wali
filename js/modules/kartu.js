@@ -367,9 +367,10 @@ function _kartuGambar(doc, x, y, s, ctx) {
         doc.setFont(PDF_FONT, "normal");
         doc.setTextColor(100, 116, 139);
         doc.text(lbl, tx, ty);
+        doc.text(":", tx + 11, ty);
         doc.setFont(PDF_FONT, "bold");
         doc.setTextColor(15, 23, 42);
-        doc.text(": " + String(val), tx + 11, ty);
+        doc.text(String(val), tx + 13, ty);
         ty += 4;
     });
 
@@ -377,24 +378,25 @@ function _kartuGambar(doc, x, y, s, ctx) {
     doc.setFillColor(241, 245, 249);
     doc.roundedRect(bx, by, bw, bh, 1, 1, "F");
 
-    const nilaiMaks = bw - 17;
+    const nilaiMaks = bw - 18;
     const tulisKredensial = (lbl, val, baseY, miring) => {
         doc.setFont(PDF_FONT, "normal");
         doc.setFontSize(6);
         doc.setTextColor(100, 116, 139);
         doc.text(lbl, bx + 1.5, baseY);
+        doc.text(":", bx + 13, baseY);
         doc.setTextColor(15, 23, 42);
         if (miring) {
             doc.setFont(PDF_FONT, "italic");
             doc.setFontSize(7);
-            doc.text(val, bx + 16, baseY);
+            doc.text(val, bx + 15, baseY);
             return;
         }
         let uk = 8.5;
         doc.setFont("courier", "bold");
         doc.setFontSize(uk);
         while (doc.getTextWidth(val) > nilaiMaks && uk > 5) { uk -= 0.25; doc.setFontSize(uk); }
-        doc.text(val, bx + 16, baseY);
+        doc.text(val, bx + 15, baseY);
     };
     tulisKredensial("Username", String(s.username || "-"), by + 4.8, false);
     if (ctx.pakaiDefault && ctx.passwordDefault) tulisKredensial("Password", ctx.passwordDefault, by + 10.2, false);

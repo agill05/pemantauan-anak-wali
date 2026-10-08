@@ -678,10 +678,10 @@ function enhanceSiswaSelect(sel) {
     }).observe(box, { childList: true });
 })();
 
-/* Baris label-nilai (pengganti pemisah "•"). rows: [{label, value, html?}] */
+/* Baris label : nilai. rows: [{label, value, html?}] */
 function renderInfoRows(rows) {
     const isi = (rows || []).filter(r => r && r.value !== undefined && r.value !== null && r.value !== "").map(r =>
-        `<div class="info-row"><span class="info-label">${escapeHtml(r.label)}</span><span class="info-value">${r.html ? r.value : escapeHtml(String(r.value))}</span></div>`
+        `<div class="info-row"><span class="info-label">${escapeHtml(r.label)}</span><span class="info-sep" aria-hidden="true">:</span><span class="info-value">${r.html ? r.value : escapeHtml(String(r.value))}</span></div>`
     ).join("");
     return `<div class="info-rows">${isi}</div>`;
 }
