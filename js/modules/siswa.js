@@ -573,6 +573,9 @@ function renderSiswaView() {
                         <i class="fab fa-whatsapp"></i>
                     </button>
                     ${bisaUbahSiswa ? `
+                    <button onclick="openModalKartu('${escapeHtml(s.id)}')" aria-label="Cetak kartu akun siswa" class="touch-btn bg-indigo-50 text-indigo-600 rounded-lg text-xs">
+                        <i class="fas fa-id-card"></i>
+                    </button>
                     <button onclick="openModalSiswa('${escapeHtml(s.id)}')" aria-label="Edit data siswa" class="touch-btn bg-slate-100 text-slate-600 rounded-lg text-xs">
                         <i class="fas fa-edit"></i>
                     </button>

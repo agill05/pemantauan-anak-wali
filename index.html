@@ -17,6 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -670,6 +671,10 @@
                         placeholder="Cari nama / NISN siswa..."
                         class="w-full bg-surface border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs outline-none focus:border-primary">
                 </div>
+                <button data-role-visible="admin,guru" onclick="openModalKartu()" aria-label="Cetak kartu akun siswa"
+                    class="bg-emerald-600 text-white px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
+                    <i class="fas fa-id-card"></i>
+                </button>
                 <button data-role-visible="admin,guru" data-write="ambil_siswa" onclick="openModalSiswa()"
                     class="bg-primary text-white px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
                     <i class="fas fa-plus"></i> Tambah
@@ -738,6 +743,9 @@
                     <button onclick="exportSiswaCSV()"
                         class="whitespace-nowrap bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
                             class="fas fa-file-export"></i> Ekspor CSV/Excel</button>
+                    <button onclick="openModalKartu()"
+                        class="whitespace-nowrap bg-indigo-50 text-indigo-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-id-card"></i> Cetak Kartu Akun</button>
                     <input type="file" id="import-siswa-file" accept=".csv" class="hidden" onchange="handleImportSiswaFile(event)">
                 </div>
                 <div id="admin-siswa-list" class="space-y-2"></div>
@@ -919,6 +927,7 @@
     <script src="js/modules/pembinaan.js"></script>
     <script src="js/modules/dashboard.js"></script>
     <script src="js/modules/siswa.js"></script>
+    <script src="js/modules/kartu.js"></script>
     <script src="js/modules/laporan.js"></script>
     <script src="js/modules/admin.js"></script>
     <script src="js/modules/magiclink.js"></script>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v69";
+const CACHE_NAME = "anak-wali-pwa-v70";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -21,6 +21,7 @@ const ASSETS_TO_CACHE = [
     "./js/modules/pembinaan.js",
     "./js/modules/dashboard.js",
     "./js/modules/siswa.js",
+    "./js/modules/kartu.js",
     "./js/modules/laporan.js",
     "./js/modules/admin.js",
     "./js/modules/magiclink.js",
@@ -33,6 +34,7 @@ const ASSETS_TO_CACHE = [
     "https://cdn.jsdelivr.net/npm/chart.js",
     "https://cdn.jsdelivr.net/npm/sweetalert2@11",
     "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js",
+    "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js",
     "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",
     "https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"
 ];
