@@ -45,6 +45,17 @@ function _kartuNamaKelas(kelasId) {
     return k ? k.nama_kelas : "";
 }
 
+function _kartuNamaWali(s) {
+    const kl = (appState.kelas || []).find(x => String(x.id) === String(s.kelas_id));
+    const g = kl && kl.guru_id ? (appState.guru || []).find(x => String(x.id) === String(kl.guru_id)) : null;
+    return (g && g.nama) || s.wali_nama || "-";
+}
+
+function _kartuNamaMentor(s) {
+    const g = s.mentor_id ? (appState.guru || []).find(x => String(x.id) === String(s.mentor_id)) : null;
+    return (g && g.nama) || s.mentor_nama || "-";
+}
+
 function openModalKartu(preId = null) {
     if (blokirSiswaPdf()) return;
     if (!_kartuBolehAkses()) return;
@@ -334,6 +345,8 @@ async function buildKartuPdf(list, info) {
         _kartuGambar(doc, x0 + col * (KARTU_W + KARTU_GAP), y0 + row * (KARTU_H + KARTU_GAP), s, {
             logo,
             foto: fotos[String(s.id)] || null,
+            wali: _kartuNamaWali(s),
+            mentor: _kartuNamaMentor(s),
             qr,
             pakaiDefault: info.pakai_default[String(s.id)] === true,
             passwordDefault: info.password_default || ""
@@ -356,13 +369,21 @@ function _kartuGambar(doc, x, y, s, ctx) {
     doc.roundedRect(x + 1.6, y + 1.3, 8.4, 8.4, 1.2, 1.2, "F");
     pdfDrawLogo(doc, ctx.logo, x + 1.8, y + 1.5, 8);
 
+    // Judul + subjudul direntang rata kiri-kanan (x+12 s.d. x+W-3)
+    const hx1 = x + 12, hx2 = x + W - 3;
+    const rentang = (txt, baseY, style, size) => {
+        doc.setFont(PDF_FONT, style);
+        doc.setFontSize(size);
+        const gap = Math.max(0, (hx2 - hx1 - doc.getTextWidth(txt)) / (txt.length - 1));
+        doc.text(txt, hx1, baseY, { charSpace: gap });
+    };
     doc.setTextColor(255, 255, 255);
-    doc.setFont(PDF_FONT, "bold");
-    doc.setFontSize(8.5);
-    doc.text("KARTU AKUN SISWA", x + 12, y + 5.2);
-    doc.setFont(PDF_FONT, "normal");
-    doc.setFontSize(6);
-    doc.text("SMP NEGERI 1 TALAGA JAYA", x + 12, y + 8.6);
+    rentang("KARTU AKUN SISWA", y + 5.6, "bold", 13);
+    rentang("SMP NEGERI 1 TALAGA JAYA", y + 9, "normal", 7);
+
+    // Garis aksen di bawah header
+    doc.setFillColor(250, 204, 21);
+    doc.rect(x, y + 11, W, 0.7, "F");
 
     const px = x + 3, py = y + 14, pw = 17, ph = 22;
     doc.setFillColor(226, 232, 240);
@@ -389,27 +410,31 @@ function _kartuGambar(doc, x, y, s, ctx) {
     let ukuran = 10;
     doc.setFontSize(ukuran);
     let baris = doc.splitTextToSize(String(s.nama || "-"), tw);
-    if (baris.length > 2) {
-        ukuran = 8;
+    if (baris.length > 1) {
+        ukuran = 8.5;
         doc.setFontSize(ukuran);
         baris = doc.splitTextToSize(String(s.nama || "-"), tw);
     }
     if (baris.length > 2) baris = [baris[0], pdfFitOneLine(doc, baris.slice(1).join(" "), tw, "bold", ukuran, 6)];
+    const duaBaris = baris.length > 1;
     let ty = py + 3.8;
     baris.forEach(t => { doc.setFont(PDF_FONT, "bold"); doc.setFontSize(ukuran); doc.text(t, tx, ty); ty += ukuran * 0.45; });
 
     const kelas = _kartuNamaKelas(s.kelas_id) || "-";
-    ty += 1.5;
-    doc.setFontSize(7.5);
-    [["NISN", s.nisn || "-"], ["Kelas", kelas]].forEach(([lbl, val]) => {
+    const langkah = duaBaris ? 2.9 : 3.4;
+    ty += duaBaris ? 1 : 1.5;
+    const nilaiMaksInfo = W - 3 - 16 - 23;
+    [["NISN", s.nisn || "-"], ["Kelas", kelas], ["Wali Kelas", ctx.wali || "-"], ["Mentor", ctx.mentor || "-"]].forEach(([lbl, val]) => {
         doc.setFont(PDF_FONT, "normal");
+        doc.setFontSize(duaBaris ? 6.8 : 7);
         doc.setTextColor(100, 116, 139);
         doc.text(lbl, tx, ty);
-        doc.text(":", tx + 11, ty);
-        doc.setFont(PDF_FONT, "bold");
+        doc.text(":", tx + 14, ty);
         doc.setTextColor(15, 23, 42);
-        doc.text(String(val), tx + 13, ty);
-        ty += 4;
+        const teks = pdfFitOneLine(doc, String(val), nilaiMaksInfo, "bold", duaBaris ? 6.8 : 7, 5);
+        doc.setFont(PDF_FONT, "bold");
+        doc.text(teks, tx + 16, ty);
+        ty += langkah;
     });
 
     const bx = x + 3, by = y + 37, bw = W - 6 - 14 - 2, bh = 12.5;
