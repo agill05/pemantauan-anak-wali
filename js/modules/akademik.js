@@ -113,6 +113,118 @@ function renderAkademikNilai() {
     }).join("");
 }
 
+function openModalAkademik(id = null) {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+    box.dataset.gs = "";
+
+    const writable = getSiswaWritable('akademik');
+    if (!id && writable.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Tidak ada siswa yang dapat Anda isi nilainya.', confirmButtonColor: '#2563eb' });
+        return;
+    }
+
+    const rec = id ? (appState.akademik || []).find(x => String(x.id) === String(id)) : null;
+    if (id && !rec) {
+        showToast("Data nilai tidak ditemukan. Muat ulang halaman.", "warning");
+        return;
+    }
+
+    const filterEl = document.getElementById("akademik-siswa-filter");
+    const preSiswaId = rec ? rec.siswa_id : (filterEl && filterEl.value && filterEl.value !== "ALL" ? filterEl.value : "");
+    const daftar = rec
+        ? (appState.siswa || []).filter(s => String(s.id) === String(rec.siswa_id))
+        : writable;
+    const siswaOpts = sortSiswa(daftar).map(s => `<option value="${escapeHtml(s.id)}" ${String(preSiswaId) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-slate-800">${rec ? 'Edit Nilai Mapel' : 'Tambah Nilai Mapel'}</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="saveAkademikForm(event, '${id ? escapeHtml(id) : ''}')" class="space-y-3">
+            <div>
+                <label for="m-akd-siswa" class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
+                <select id="m-akd-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" ${rec ? 'disabled' : ''} required>${siswaOpts}</select>
+            </div>
+            <div>
+                <label for="m-akd-mapel" class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
+                <input type="text" id="m-akd-mapel" value="${escapeHtml(rec?.mapel || '')}" placeholder="Contoh: Matematika" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label for="m-akd-nilai" class="block text-xs font-bold text-slate-500 mb-1">NILAI AKHIR</label>
+                    <input type="number" id="m-akd-nilai" min="0" max="100" step="0.01" inputmode="decimal" value="${rec ? escapeHtml(rec.nilai_akhir) : ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                </div>
+                <div>
+                    <label for="m-akd-kktp" class="block text-xs font-bold text-slate-500 mb-1">KKTP</label>
+                    <input type="number" id="m-akd-kktp" min="0" max="100" step="0.01" inputmode="decimal" value="${rec ? escapeHtml(rec.kktp) : '75'}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                </div>
+            </div>
+            <button type="submit" class="w-full bg-primary text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Nilai</button>
+        </form>
+    `;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+async function saveAkademikForm(e, id) {
+    e.preventDefault();
+    const nilai = Number(document.getElementById("m-akd-nilai").value);
+    const kktp = Number(document.getElementById("m-akd-kktp").value);
+    if (!(nilai >= 0 && nilai <= 100) || !(kktp >= 0 && kktp <= 100)) {
+        showToast("Nilai dan KKTP harus 0 sampai 100.", "warning");
+        return;
+    }
+    const siswaEl = document.getElementById("m-akd-siswa");
+    const payload = {
+        id: id || null,
+        siswa_id: siswaEl.value,
+        mapel: document.getElementById("m-akd-mapel").value.trim(),
+        nilai_akhir: nilai,
+        kktp: kktp
+    };
+
+    showLoading("Menyimpan nilai mapel...");
+    const res = await apiCall("saveAkademik", payload, false);
+    hideLoading();
+
+    if (res && res.status === "success") {
+        const newId = res.id || id || ("AKD-" + Date.now());
+        if (!Array.isArray(appState.akademik)) appState.akademik = [];
+        const idx = appState.akademik.findIndex(x => String(x.id) === String(newId));
+        const base = idx !== -1 ? appState.akademik[idx] : buildAuditLocal(payload.siswa_id);
+        const saved = { ...base, ...payload, id: newId };
+        if (idx !== -1) appState.akademik[idx] = saved;
+        else appState.akademik.push(saved);
+
+        saveAppStateToLocal();
+        renderAkademikNilai();
+        closeModal();
+        showToast("Nilai mapel tersimpan!");
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menyimpan',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan nilai mapel.',
+            confirmButtonColor: '#2563eb'
+        });
+    }
+}
+
+async function deleteAkademik(id) {
+    const confirm = await Swal.fire({ title: 'Hapus Nilai Mapel?', text: 'Data tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+    if (!confirm.isConfirmed) return;
+    appState.akademik = (appState.akademik || []).filter(x => String(x.id) !== String(id));
+    saveAppStateToLocal();
+    renderAkademikNilai();
+    showToast("Nilai mapel dihapus");
+    const res = await apiCall("deleteAkademik", { id }, false);
+    if (res && res.status === "error") {
+        showToast(res.message || "Gagal menghapus nilai mapel.", "warning");
+        loadAkademikData(true);
+    }
+}
+
 function renderAkademikPrestasi() {
     const container = document.getElementById("prestasi-list-container");
     if (!container) return;
