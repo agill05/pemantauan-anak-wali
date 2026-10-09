@@ -159,6 +159,7 @@ function arsipSayaBuka(i) {
                 <p class="text-xs font-bold text-slate-800 truncate">${escapeHtml(arsipSayaLihat.judul)}</p>
                 <p id="arsip-saya-info" class="text-[11px] text-slate-400"></p>
             </div>
+            ${r.jenis === "Laporan" && role !== "siswa" ? `<button type="button" onclick="arsipSayaUnduhPdf()" class="px-3 py-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold" aria-label="Unduh laporan semester PDF"><i class="fas fa-file-pdf mr-1"></i> PDF</button>` : ""}
             <button type="button" onclick="arsipSayaUnduhCsv()" class="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold"><i class="fas fa-download mr-1"></i> CSV</button>
         </div>
         ${pakaiFilter ? `
@@ -236,6 +237,7 @@ function arsipSayaPayload(v, offset, limit) {
 async function arsipSayaMuatHalaman() {
     const v = arsipSayaLihat;
     if (!v) return;
+    if (v.jenis === "Laporan") { arsipSayaMuatLaporan(v); return; }
     const seq = ++v.seq;
     const tabel = document.getElementById("arsip-saya-tabel");
     if (tabel) tabel.innerHTML = `<div class="p-6 text-center text-xs text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i> Memuat...</div>`;
@@ -293,16 +295,7 @@ async function arsipSayaUnduhCsv() {
     arsipSayaUnduhSibuk = true;
     showLoading("Menyiapkan CSV...");
     try {
-        let offset = 0, total = Infinity, headers = [], rows = [];
-        while (offset < total) {
-            const res = await apiCall("getArsipData", arsipSayaPayload(v, offset, 2000), false, 2, true);
-            if (!res || res.status !== "success") throw new Error(res?.message || "Koneksi bermasalah.");
-            headers = res.headers || headers;
-            total = Number(res.total) || 0;
-            if (!res.data.length) break;
-            rows = rows.concat(res.data);
-            offset += res.data.length;
-        }
+        const { headers, rows } = await arsipSayaAmbilSemua(v);
         if (rows.length === 0) throw new Error("Tidak ada baris untuk diunduh.");
         const baris = [headers.map(arsipCsvSel).join(";")]
             .concat(rows.map(r => headers.map(h => arsipCsvSel(r[h])).join(";")));
@@ -321,5 +314,231 @@ async function arsipSayaUnduhCsv() {
     } finally {
         hideLoading();
         arsipSayaUnduhSibuk = false;
+    }
+}
+
+// ===== TAHAP 6: LAPORAN SEMESTER ARSIP =====
+// Laporan = snapshot statis per siswa (Arsip_Laporan_<periode>), dibangun admin dari data arsip.
+// Satu baris per siswa, jadi aman dimuat penuh lalu ditampilkan tanpa halaman.
+
+const ARSIP_LAPORAN_PDF_KOLOM = [
+    ["nama_siswa", "Siswa", null], ["kelas", "Kelas", 48],
+    ["hadir", "H", 26], ["sakit", "S", 26], ["izin", "I", 26], ["alpa", "A", 26],
+    ["total_mapel", "Mapel", 34], ["dibawah_kktp", "< KKTP", 34],
+    ["jumlah_prestasi", "Prestasi", 38], ["jumlah_hafalan", "Hafalan", 38],
+    ["jumlah_pembinaan", "Pembinaan", 44], ["skor_kebiasaan", "Skor Kebiasaan", 48],
+    ["jurnal_ditulis", "Jurnal", 32]
+];
+
+function arsipSayaAngka(x, kunci) {
+    const n = Number(x && x[kunci]);
+    return isNaN(n) ? 0 : n;
+}
+
+function arsipSayaPersenHadir(x) {
+    const h = arsipSayaAngka(x, "hadir");
+    const total = h + arsipSayaAngka(x, "sakit") + arsipSayaAngka(x, "izin") + arsipSayaAngka(x, "alpa");
+    return total === 0 ? null : Math.round(h / total * 100);
+}
+
+function arsipSayaTeksPersen(p) {
+    return p === null ? "-" : p + "%";
+}
+
+// Ambil semua baris sheet arsip sesuai filter aktif. Dipakai CSV, PDF, dan laporan.
+async function arsipSayaAmbilSemua(v) {
+    let offset = 0, total = Infinity, headers = [], rows = [];
+    while (offset < total) {
+        const res = await apiCall("getArsipData", arsipSayaPayload(v, offset, 2000), false, 2, true);
+        if (!res || res.status !== "success") throw new Error(res?.message || "Koneksi bermasalah.");
+        headers = res.headers || headers;
+        total = Number(res.total) || 0;
+        if (!res.data.length) break;
+        rows = rows.concat(res.data);
+        offset += res.data.length;
+    }
+    return { headers: headers, rows: rows };
+}
+
+function arsipSayaRingkasanLaporan(rows) {
+    const jumlah = (k) => rows.reduce((t, x) => t + arsipSayaAngka(x, k), 0);
+    const hadir = jumlah("hadir");
+    const catatan = hadir + jumlah("sakit") + jumlah("izin") + jumlah("alpa");
+    return {
+        siswa: rows.length,
+        persenHadir: catatan === 0 ? null : Math.round(hadir / catatan * 100),
+        alpa: jumlah("alpa"),
+        bawahKktp: rows.filter(x => arsipSayaAngka(x, "dibawah_kktp") > 0).length,
+        prestasi: jumlah("jumlah_prestasi")
+    };
+}
+
+function arsipSayaKartuAngka(label, nilai, warna) {
+    return `
+        <div class="bg-white p-2.5 rounded-xl border border-slate-100 text-center">
+            <p class="text-base font-bold ${warna}">${escapeHtml(String(nilai))}</p>
+            <p class="text-[10px] text-slate-400 font-bold uppercase">${escapeHtml(label)}</p>
+        </div>`;
+}
+
+function arsipSayaHtmlLaporanSiswa(x) {
+    const p = arsipSayaPersenHadir(x);
+    const baris = (label, nilai) => `
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+            <span class="text-slate-500">${escapeHtml(label)}</span>
+            <span class="font-bold text-slate-800">${escapeHtml(String(nilai))}</span>
+        </div>`;
+    const bagian = (judul, ikon, isi) => `
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-100">
+            <p class="text-[11px] font-bold text-slate-400 uppercase mb-1"><i class="fas ${ikon} mr-1" aria-hidden="true"></i>${escapeHtml(judul)}</p>
+            <div class="text-xs">${isi}</div>
+        </div>`;
+    const bawah = arsipSayaAngka(x, "dibawah_kktp");
+    return `
+        <div class="space-y-2">
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100">
+                <p class="text-sm font-bold text-slate-800">${escapeHtml(String(x.nama_siswa || "-"))}</p>
+                <p class="text-[11px] text-slate-400">${escapeHtml(String(x.kelas || "-"))}</p>
+            </div>
+            ${bagian("Kehadiran", "fa-calendar-check",
+                baris("Hadir", arsipSayaAngka(x, "hadir")) + baris("Sakit", arsipSayaAngka(x, "sakit")) +
+                baris("Izin", arsipSayaAngka(x, "izin")) + baris("Alpa", arsipSayaAngka(x, "alpa")) +
+                baris("Persentase hadir", arsipSayaTeksPersen(p)))}
+            ${bagian("Akademik", "fa-graduation-cap",
+                baris("Jumlah mapel", arsipSayaAngka(x, "total_mapel")) +
+                baris("Mapel di bawah KKTP", bawah === 0 ? "Tidak ada" : bawah))}
+            ${bagian("Capaian dan Pembinaan", "fa-trophy",
+                baris("Prestasi", arsipSayaAngka(x, "jumlah_prestasi")) +
+                baris("Hafalan", arsipSayaAngka(x, "jumlah_hafalan")) +
+                baris("Pembinaan", arsipSayaAngka(x, "jumlah_pembinaan")))}
+            ${bagian("7 Kebiasaan", "fa-star",
+                baris("Kebiasaan sudah", arsipSayaAngka(x, "kebiasaan_sudah")) +
+                baris("Hari tercatat", arsipSayaAngka(x, "kebiasaan_hari_tercatat")) +
+                baris("Skor kebiasaan", arsipSayaAngka(x, "skor_kebiasaan")) +
+                baris("Jurnal ditulis", arsipSayaAngka(x, "jurnal_ditulis")))}
+        </div>`;
+}
+
+function arsipSayaHtmlLaporanTabel(rows) {
+    const kolom = ["nama_siswa", "kelas", "hadir", "sakit", "izin", "alpa", "total_mapel", "dibawah_kktp",
+        "jumlah_prestasi", "jumlah_hafalan", "jumlah_pembinaan", "skor_kebiasaan", "jurnal_ditulis"];
+    const label = { nama_siswa: "Siswa", kelas: "Kelas", hadir: "H", sakit: "S", izin: "I", alpa: "A",
+        total_mapel: "Mapel", dibawah_kktp: "< KKTP", jumlah_prestasi: "Prestasi", jumlah_hafalan: "Hafalan",
+        jumlah_pembinaan: "Pembinaan", skor_kebiasaan: "Skor", jurnal_ditulis: "Jurnal" };
+    const sel = (x, c) => {
+        const teks = escapeHtml(String(x[c] === null || x[c] === undefined ? "" : x[c]));
+        const merah = (c === "alpa" || c === "dibawah_kktp") && arsipSayaAngka(x, c) > 0;
+        return `<td class="px-2 py-1.5 align-top whitespace-nowrap ${merah ? "text-rose-600 font-bold" : "text-slate-700"}">${teks}</td>`;
+    };
+    return `
+        <table class="w-full text-xs text-left">
+            <thead class="bg-slate-50 text-slate-500">
+                <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap">${escapeHtml(label[c])}</th>`).join("")}</tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                ${rows.map(x => `<tr>${kolom.map(c => sel(x, c)).join("")}</tr>`).join("")}
+            </tbody>
+        </table>`;
+}
+
+async function arsipSayaMuatLaporan(v) {
+    const seq = ++v.seq;
+    const tabel = document.getElementById("arsip-saya-tabel");
+    const pager = document.getElementById("arsip-saya-pager");
+    if (pager) pager.innerHTML = "";
+    if (tabel) tabel.innerHTML = `<div class="p-6 text-center text-xs text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i> Memuat...</div>`;
+
+    let hasil;
+    try {
+        hasil = await arsipSayaAmbilSemua(v);
+    } catch (err) {
+        if (arsipSayaLihat !== v || seq !== v.seq) return;
+        const el = document.getElementById("arsip-saya-tabel");
+        if (el) el.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">${escapeHtml(String(err.message || err))}</div>`;
+        return;
+    }
+    if (arsipSayaLihat !== v || seq !== v.seq) return;
+    const el = document.getElementById("arsip-saya-tabel");
+    if (!el) return;
+
+    v.laporan = hasil.rows;
+    v.total = hasil.rows.length;
+    const info = document.getElementById("arsip-saya-info");
+    if (info) info.textContent = `${v.total} siswa`;
+
+    if (hasil.rows.length === 0) {
+        el.className = "bg-white rounded-2xl border border-slate-100 overflow-x-auto";
+        el.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Tidak ada baris yang cocok.</div>`;
+        return;
+    }
+
+    if (arsipSayaRole() === "siswa") {
+        el.className = "";
+        el.innerHTML = arsipSayaHtmlLaporanSiswa(hasil.rows[0]);
+        return;
+    }
+
+    const r = arsipSayaRingkasanLaporan(hasil.rows);
+    el.className = "space-y-2";
+    el.innerHTML = `
+        <div class="grid grid-cols-5 gap-1.5">
+            ${arsipSayaKartuAngka("Siswa", r.siswa, "text-slate-800")}
+            ${arsipSayaKartuAngka("Hadir", arsipSayaTeksPersen(r.persenHadir), "text-emerald-600")}
+            ${arsipSayaKartuAngka("Alpa", r.alpa, r.alpa > 0 ? "text-rose-600" : "text-slate-800")}
+            ${arsipSayaKartuAngka("< KKTP", r.bawahKktp, r.bawahKktp > 0 ? "text-amber-600" : "text-slate-800")}
+            ${arsipSayaKartuAngka("Prestasi", r.prestasi, "text-blue-600")}
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-100 overflow-x-auto">${arsipSayaHtmlLaporanTabel(hasil.rows)}</div>`;
+}
+
+function arsipSayaHtmlLaporanPdf(rows) {
+    const kepala = `<th style="width: 24px;">No</th>` + ARSIP_LAPORAN_PDF_KOLOM.map(k =>
+        `<th${k[2] ? ` style="width: ${k[2]}px;"` : ""}>${escapeHtml(k[1])}</th>`).join("");
+    const isi = rows.map((x, i) => {
+        const sel = ARSIP_LAPORAN_PDF_KOLOM.map(k => {
+            const teks = escapeHtml(String(x[k[0]] === null || x[k[0]] === undefined ? "" : x[k[0]]));
+            return k[0] === "nama_siswa" || k[0] === "kelas"
+                ? `<td>${teks}</td>`
+                : `<td style="text-align:center;">${teks}</td>`;
+        }).join("");
+        return `<tr><td style="text-align:center;">${i + 1}</td>${sel}</tr>`;
+    }).join("");
+    return `<table><thead><tr>${kepala}</tr></thead><tbody>${isi}</tbody></table>`;
+}
+
+let arsipSayaPdfSibuk = false;
+
+async function arsipSayaUnduhPdf() {
+    const v = arsipSayaLihat;
+    if (!v || v.jenis !== "Laporan" || arsipSayaPdfSibuk) return;
+    if (arsipSayaRole() === "siswa") { blokirSiswaPdf(); return; }
+    if (!pdfLibReady()) return;
+    arsipSayaPdfSibuk = true;
+    showLoading("Menyiapkan laporan...");
+    try {
+        const hasil = (Array.isArray(v.laporan) && v.laporan.length > 0) ? { rows: v.laporan } : await arsipSayaAmbilSemua(v);
+        if (hasil.rows.length === 0) throw new Error("Tidak ada baris untuk dicetak.");
+        const r = arsipSayaRingkasanLaporan(hasil.rows);
+        const meta = arsipSayaDaftar.filter(x => String(x.periode_key) === v.periode && x.jenis === "Laporan")[0];
+        const info = pdfInfoBlock([
+            { label: "Periode", value: `${v.sem} ${v.ta}` },
+            { label: "Data sampai", value: (meta && meta.sampai_tanggal) || "-" },
+            { label: "Kelas", value: v.kelas || "Semua kelas" },
+            { label: "Jumlah siswa", value: String(r.siswa) },
+            { label: "Rata-rata hadir", value: arsipSayaTeksPersen(r.persenHadir) },
+            { label: "Siswa dengan mapel < KKTP", value: String(r.bawahKktp) }
+        ]);
+        const catatan = `<p>Keterangan: H = Hadir, S = Sakit, I = Izin, A = Alpa. Data dihitung dari arsip semester dan tidak berubah.</p>`;
+        const nama = `Laporan_Arsip_${v.periode}${v.kelas ? "_" + v.kelas.replace(/[^A-Za-z0-9]+/g, "") : ""}.pdf`;
+        const doc = await buildOfficialPdf(`Laporan Semester ${v.sem} ${v.ta}`, info + arsipSayaHtmlLaporanPdf(hasil.rows) + catatan,
+            { orientation: "landscape" });
+        doc.save(nama);
+        showToast("File PDF berhasil diunduh!");
+    } catch (err) {
+        console.error("Gagal membuat PDF arsip:", err);
+        Swal.fire({ icon: "error", title: "PDF Gagal", text: String(err.message || err), confirmButtonColor: "#2563eb" });
+    } finally {
+        hideLoading();
+        arsipSayaPdfSibuk = false;
     }
 }
