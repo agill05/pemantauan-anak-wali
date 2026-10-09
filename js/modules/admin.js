@@ -933,16 +933,62 @@ let arsipSibuk = false;
 let arsipLihat = null;
 const ARSIP_PER_HALAMAN = 100;
 
+const ARSIP_JENIS = [
+    { id: "Kebiasaan", label: "Kebiasaan", ket: "Catatan 7 kebiasaan harian", def: true },
+    { id: "Jurnal", label: "Jurnal", ket: "Jurnal harian siswa", def: true },
+    { id: "Presensi", label: "Presensi", ket: "Kehadiran siswa", def: true },
+    { id: "PresensiMentor", label: "Presensi Mentor", ket: "Kehadiran mentoring", def: true },
+    { id: "Keagamaan", label: "Keagamaan", ket: "Hafalan keagamaan", def: true },
+    { id: "Prestasi", label: "Prestasi", ket: "Catatan prestasi", def: true },
+    { id: "Pembinaan", label: "Pembinaan", ket: "Hanya kasus berstatus selesai. Sisanya tetap aktif.", def: true },
+    { id: "Akademik", label: "Akademik", ket: "Salin penuh tanpa batas tanggal. Nilai di sheet aktif dikosongkan.", def: true }
+];
+const ARSIP_WARNA = {
+    Kebiasaan: "bg-emerald-50 text-emerald-700", Jurnal: "bg-violet-50 text-violet-700",
+    Presensi: "bg-blue-50 text-blue-700", PresensiMentor: "bg-sky-50 text-sky-700",
+    Keagamaan: "bg-teal-50 text-teal-700", Prestasi: "bg-amber-50 text-amber-700",
+    Pembinaan: "bg-orange-50 text-orange-700", Akademik: "bg-indigo-50 text-indigo-700",
+    Laporan: "bg-slate-100 text-slate-700"
+};
 const ARSIP_KOLOM = {
     Kebiasaan: ["tanggal", "nama_siswa", "kelas", "kebiasaan_id", "status", "jam", "detail"],
-    Jurnal: ["tanggal", "nama_siswa", "kelas", "mood", "isi", "catatan_wali", "catatan_mentor"]
+    Jurnal: ["tanggal", "nama_siswa", "kelas", "mood", "isi", "catatan_wali", "catatan_mentor"],
+    Laporan: ["nama_siswa", "kelas", "hadir", "sakit", "izin", "alpa", "total_mapel", "dibawah_kktp",
+        "jumlah_prestasi", "jumlah_hafalan", "jumlah_pembinaan", "kebiasaan_sudah",
+        "kebiasaan_hari_tercatat", "skor_kebiasaan", "jurnal_ditulis"]
 };
 const ARSIP_LABEL = {
     tanggal: "Tanggal", nama_siswa: "Siswa", kelas: "Kelas", kebiasaan_id: "Kebiasaan", status: "Status",
     jam: "Jam", detail: "Detail", mood: "Mood", isi: "Isi Jurnal", catatan_wali: "Catatan Wali",
-    catatan_mentor: "Catatan Mentor"
+    catatan_mentor: "Catatan Mentor", hadir: "Hadir", sakit: "Sakit", izin: "Izin", alpa: "Alpa",
+    total_mapel: "Mapel", dibawah_kktp: "< KKTP", jumlah_prestasi: "Prestasi", jumlah_hafalan: "Hafalan",
+    jumlah_pembinaan: "Pembinaan", kebiasaan_sudah: "Kebiasaan Sudah",
+    kebiasaan_hari_tercatat: "Hari Tercatat", skor_kebiasaan: "Skor Kebiasaan", jurnal_ditulis: "Jurnal Ditulis"
 };
 const ARSIP_KOLOM_PANJANG = ["detail", "isi", "catatan_wali", "catatan_mentor"];
+const ARSIP_KOLOM_SEMBUNYI = ["id", "siswa_id", "kelas_id", "periode_key", "dibuat_oleh_id", "mentor_id", "guru_id"];
+
+function arsipLabelKolom(c) {
+    if (ARSIP_LABEL[c]) return ARSIP_LABEL[c];
+    const t = String(c).replace(/_/g, " ");
+    return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function arsipKolomPanjang(c) {
+    return ARSIP_KOLOM_PANJANG.indexOf(c) !== -1 || /(catatan|keterangan|deskripsi|kronologi|tindakan|materi|uraian)/i.test(c);
+}
+
+function arsipPilihKolom(jenis, headers) {
+    const tetap = ARSIP_KOLOM[jenis];
+    if (tetap) {
+        const k = tetap.filter(c => headers.indexOf(c) !== -1);
+        if (k.length > 0) return k;
+    }
+    const depan = ["tanggal", "nama_siswa", "kelas"].filter(c => headers.indexOf(c) !== -1);
+    const sisa = headers.filter(c => ARSIP_KOLOM_SEMBUNYI.indexOf(c) === -1 && depan.indexOf(c) === -1);
+    const hasil = depan.concat(sisa);
+    return hasil.length > 0 ? hasil : headers;
+}
 
 function arsipTampilPanel(nama) {
     const utama = document.getElementById("arsip-panel-utama");
@@ -959,7 +1005,26 @@ function arsipTahunAjaranDefault() {
     return { ta: awal + "/" + (awal + 1), semester: bln >= 7 ? "Ganjil" : "Genap" };
 }
 
+function arsipGambarJenis() {
+    const box = document.getElementById("arsip-jenis-list");
+    if (!box || box.dataset.siap === "1") return;
+    box.dataset.siap = "1";
+    box.innerHTML = ARSIP_JENIS.map(j => `
+        <label class="flex items-start gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer">
+            <input type="checkbox" class="arsip-jenis-cek mt-0.5" value="${escapeHtml(j.id)}" ${j.def ? "checked" : ""}>
+            <span class="min-w-0">
+                <span class="block text-xs font-bold text-slate-700">${escapeHtml(j.label)}</span>
+                <span class="block text-[11px] text-slate-400">${escapeHtml(j.ket)}</span>
+            </span>
+        </label>`).join("");
+}
+
+function arsipSemuaJenis(nyala) {
+    document.querySelectorAll(".arsip-jenis-cek").forEach(c => { c.checked = !!nyala; });
+}
+
 function arsipIsiDefault() {
+    arsipGambarJenis();
     const ta = document.getElementById("arsip-ta");
     const sem = document.getElementById("arsip-semester");
     if (!ta || !sem) return;
@@ -990,6 +1055,16 @@ async function renderAdminArsip() {
     }
 }
 
+function arsipKelompok() {
+    const peta = new Map();
+    arsipDaftar.forEach((r, i) => {
+        const key = String(r.tahun_ajaran) + "|" + String(r.semester);
+        if (!peta.has(key)) peta.set(key, { ta: String(r.tahun_ajaran), sem: String(r.semester), baris: [] });
+        peta.get(key).baris.push({ r: r, i: i });
+    });
+    return Array.from(peta.values());
+}
+
 function arsipGambarDaftar() {
     const list = document.getElementById("admin-arsip-list");
     if (!list) return;
@@ -997,23 +1072,35 @@ function arsipGambarDaftar() {
         list.innerHTML = `<div class="empty-state"><i class="fas fa-box-archive text-xl mb-1"></i><p class="text-xs">Belum ada arsip.</p></div>`;
         return;
     }
-    list.innerHTML = arsipDaftar.map((r, i) => {
-        const ada = r.ada !== false;
-        const warnaJenis = r.jenis === "Jurnal" ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700";
+    list.innerHTML = arsipKelompok().map(g => {
+        const total = g.baris.reduce((s, x) => s + (Number(x.r.jumlah_baris) || 0), 0);
+        const pertama = g.baris[0].r;
+        const adaLaporan = g.baris.some(x => x.r.jenis === "Laporan");
+        const chips = g.baris.map(x => {
+            const ada = x.r.ada !== false;
+            const warna = ARSIP_WARNA[x.r.jenis] || "bg-slate-100 text-slate-700";
+            return `
+            <button type="button" onclick="arsipBuka(${x.i})" ${ada ? "" : "disabled"} class="px-2 py-1.5 rounded-lg ${warna} text-[11px] font-bold disabled:opacity-40" aria-label="Lihat arsip ${escapeHtml(x.r.jenis)}">
+                ${escapeHtml(x.r.jenis)} <span class="font-semibold opacity-80">${Number(x.r.jumlah_baris) || 0}</span>${ada ? "" : " (hilang)"}
+            </button>`;
+        }).join("");
+        const ta = escapeHtml(g.ta), sem = escapeHtml(g.sem);
         return `
-        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3 ${ada ? "" : "opacity-60"}">
-            <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-1 mb-0.5">
-                    <p class="text-xs font-bold text-slate-800">${escapeHtml(r.semester)} ${escapeHtml(r.tahun_ajaran)}</p>
-                    <span class="px-1.5 py-0.5 rounded-md ${warnaJenis} text-[10px] font-bold">${escapeHtml(r.jenis)}</span>
-                    ${ada ? "" : '<span class="px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-bold">Sheet tidak ditemukan</span>'}
-                </div>
-                <p class="text-[11px] text-slate-400">${Number(r.jumlah_baris) || 0} baris, sampai ${escapeHtml(r.sampai_tanggal || "-")}</p>
-                <p class="text-[11px] text-slate-400 truncate">Oleh ${escapeHtml(r.dibuat_oleh_nama || "-")} \u2022 ${escapeHtml(r.dibuat_pada || "-")}</p>
+        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-slate-800">${sem} ${ta}</p>
+                <p class="text-[11px] text-slate-400">${g.baris.length} arsip \u2022 ${total} baris \u2022 sampai ${escapeHtml(pertama.sampai_tanggal || "-")}</p>
+                <p class="text-[11px] text-slate-400 truncate">Oleh ${escapeHtml(pertama.dibuat_oleh_nama || "-")} \u2022 ${escapeHtml(pertama.dibuat_pada || "-")}</p>
             </div>
-            <button type="button" onclick="arsipBuka(${i})" ${ada ? "" : "disabled"} class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold disabled:opacity-40" aria-label="Lihat isi arsip">
-                <i class="fas fa-eye mr-1"></i> Lihat
-            </button>
+            <div class="flex flex-wrap gap-1.5">${chips}</div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button type="button" onclick="arsipBangunLaporan('${ta}','${sem}')" class="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold">
+                    <i class="fas fa-chart-column mr-1"></i> ${adaLaporan ? "Bangun Ulang Laporan" : "Bangun Laporan"}
+                </button>
+                <button type="button" onclick="arsipHapus('${ta}','${sem}')" class="px-3 py-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold">
+                    <i class="fas fa-trash mr-1"></i> Hapus Arsip
+                </button>
+            </div>
         </div>`;
     }).join("");
 }
@@ -1022,9 +1109,14 @@ function arsipBacaForm() {
     const ta = (document.getElementById("arsip-ta")?.value || "").trim();
     const semester = document.getElementById("arsip-semester")?.value || "";
     const sampai = document.getElementById("arsip-sampai")?.value || "";
+    const jenis = Array.from(document.querySelectorAll(".arsip-jenis-cek:checked")).map(c => c.value);
     const m = ta.match(/^(\d{4})\/(\d{4})$/);
     if (!m || Number(m[2]) !== Number(m[1]) + 1) {
         showToast("Tahun ajaran harus berformat 2026/2027.", "warning");
+        return null;
+    }
+    if (jenis.length === 0) {
+        showToast("Pilih minimal satu jenis data.", "warning");
         return null;
     }
     if (!sampai) {
@@ -1035,25 +1127,108 @@ function arsipBacaForm() {
         showToast("Tanggal harus sebelum hari ini.", "warning");
         return null;
     }
-    return { tahun_ajaran: ta, semester: semester, sampai_tanggal: sampai };
+    return {
+        tahun_ajaran: ta, semester: semester, sampai_tanggal: sampai, jenis: jenis,
+        laporan: document.getElementById("arsip-laporan-cek")?.checked !== false
+    };
 }
 
-async function arsipPanggil(payload, teks) {
+async function arsipPanggil(action, payload, teks, timeout) {
     showLoading(teks);
-    const res = await apiCall("archiveSemester", payload, false, 1, true, 170000);
+    const res = await apiCall(action, payload, false, 1, true, timeout || 170000);
     hideLoading();
     return res;
 }
 
-function arsipHtmlRingkasan(data) {
-    return (data || []).map(r => `
+function arsipNamaJenis(id) {
+    const j = ARSIP_JENIS.filter(x => x.id === id)[0];
+    return j ? j.label : id;
+}
+
+function arsipKlasifikasi(res) {
+    if (res === null || res === undefined) return "putus";
+    if (res.status === "success") return "ok";
+    const m = String(res.message || "");
+    if (/sudah diarsipkan/i.test(m)) return "sudah";
+    if (/Tidak ada data untuk diarsipkan/i.test(m)) return "kosong";
+    return "gagal";
+}
+
+// Satu panggilan simulasi per jenis. Hasil: [{ jenis, tipe, data, pesan }]
+async function arsipSimulasiSemua(form, progres) {
+    const hasil = [];
+    for (let i = 0; i < form.jenis.length; i++) {
+        const jenis = form.jenis[i];
+        const res = await arsipPanggil("archiveSemester", {
+            tahun_ajaran: form.tahun_ajaran, semester: form.semester, sampai_tanggal: form.sampai_tanggal,
+            jenis: [jenis], dry_run: true
+        }, `Memeriksa ${arsipNamaJenis(jenis)} (${i + 1}/${form.jenis.length})...`);
+        const tipe = arsipKlasifikasi(res);
+        hasil.push({
+            jenis: jenis, tipe: tipe,
+            data: tipe === "ok" && Array.isArray(res.data) ? res.data[0] : null,
+            pesan: res ? String(res.message || "") : "Koneksi bermasalah."
+        });
+        if (tipe === "putus" || tipe === "gagal") break;
+        if (progres) progres(hasil);
+    }
+    return hasil;
+}
+
+const ARSIP_STATUS_TAMPIL = {
+    menunggu: { teks: "Menunggu", warna: "text-slate-400", ikon: "fa-clock" },
+    jalan: { teks: "Berjalan", warna: "text-blue-600", ikon: "fa-spinner fa-spin" },
+    ok: { teks: "Selesai", warna: "text-emerald-600", ikon: "fa-circle-check" },
+    sudah: { teks: "Sudah diarsipkan", warna: "text-slate-500", ikon: "fa-forward" },
+    kosong: { teks: "Tidak ada data", warna: "text-slate-500", ikon: "fa-minus" },
+    gagal: { teks: "Gagal", warna: "text-rose-600", ikon: "fa-circle-xmark" },
+    putus: { teks: "Respons tidak diterima", warna: "text-amber-600", ikon: "fa-triangle-exclamation" }
+};
+
+function arsipGambarProgres(baris) {
+    const box = document.getElementById("arsip-progres");
+    if (!box) return;
+    box.classList.remove("hidden");
+    box.className = "bg-white p-3.5 rounded-2xl border border-slate-100";
+    box.innerHTML = `
+        <p class="text-xs font-bold text-slate-700 mb-1"><i class="fas fa-list-check mr-1 text-blue-500"></i> Progres arsip</p>
+        ${baris.map(b => {
+            const st = ARSIP_STATUS_TAMPIL[b.status] || ARSIP_STATUS_TAMPIL.menunggu;
+            return `
+            <div class="py-1.5 border-b border-slate-100 last:border-0">
+                <div class="flex justify-between gap-2 text-xs">
+                    <span class="font-bold text-slate-700">${escapeHtml(b.label)}</span>
+                    <span class="${st.warna} font-semibold"><i class="fas ${st.ikon} mr-1"></i>${st.teks}</span>
+                </div>
+                ${b.info ? `<p class="text-[11px] text-slate-400">${escapeHtml(b.info)}</p>` : ""}
+            </div>`;
+        }).join("")}`;
+}
+
+function arsipHtmlRingkasan(hasil) {
+    return (hasil || []).map(h => {
+        const nama = escapeHtml(arsipNamaJenis(h.jenis));
+        if (h.tipe === "ok" && h.data) {
+            const d = h.data;
+            return `
+            <div class="py-1.5 border-b border-slate-100 last:border-0">
+                <div class="flex justify-between gap-2 text-xs">
+                    <span class="font-bold text-slate-700">${nama}</span>
+                    <span class="text-slate-600"><b>${Number(d.diarsipkan) || 0}</b> dipindah \u2022 ${Number(d.tersisa) || 0} tetap</span>
+                </div>
+                <p class="text-[11px] text-slate-400">${d.tanggal_terlama ? escapeHtml(d.tanggal_terlama) + " s.d. " + escapeHtml(d.tanggal_terbaru) : "Tanpa kolom tanggal (salin penuh)"} \u2022 ${escapeHtml(d.nama_sheet)}</p>
+            </div>`;
+        }
+        const st = ARSIP_STATUS_TAMPIL[h.tipe] || ARSIP_STATUS_TAMPIL.gagal;
+        return `
         <div class="py-1.5 border-b border-slate-100 last:border-0">
             <div class="flex justify-between gap-2 text-xs">
-                <span class="font-bold text-slate-700">${escapeHtml(r.jenis)}</span>
-                <span class="text-slate-600"><b>${Number(r.diarsipkan) || 0}</b> dipindah \u2022 ${Number(r.tersisa) || 0} tetap</span>
+                <span class="font-bold text-slate-700">${nama}</span>
+                <span class="${st.warna} font-semibold">${st.teks}</span>
             </div>
-            <p class="text-[11px] text-slate-400">${r.tanggal_terlama ? escapeHtml(r.tanggal_terlama) + " s.d. " + escapeHtml(r.tanggal_terbaru) : "Tidak ada data"} \u2022 ${escapeHtml(r.nama_sheet)}</p>
-        </div>`).join("");
+            ${h.tipe === "gagal" || h.tipe === "putus" ? `<p class="text-[11px] text-rose-600">${escapeHtml(h.pesan)}</p>` : ""}
+        </div>`;
+    }).join("");
 }
 
 async function arsipSimulasi(e) {
@@ -1063,19 +1238,15 @@ async function arsipSimulasi(e) {
     if (!form) return;
     const box = document.getElementById("arsip-hasil-simulasi");
     arsipSibuk = true;
-    const res = await arsipPanggil(Object.assign({ dry_run: true }, form), "Menghitung simulasi...");
+    const hasil = await arsipSimulasiSemua(form);
     arsipSibuk = false;
     if (!box) return;
     box.classList.remove("hidden");
-    if (res && res.status === "success") {
-        box.className = "bg-white p-3.5 rounded-2xl border border-slate-100";
-        box.innerHTML = `
-            <p class="text-xs font-bold text-slate-700 mb-1"><i class="fas fa-flask mr-1 text-blue-500"></i> Hasil simulasi (belum ada data berubah)</p>
-            ${arsipHtmlRingkasan(res.data)}`;
-    } else {
-        box.className = "bg-rose-50 p-3.5 rounded-2xl border border-rose-100";
-        box.innerHTML = `<p class="text-xs font-semibold text-rose-700">${escapeHtml(res?.message || "Koneksi bermasalah. Coba lagi.")}</p>`;
-    }
+    const bermasalah = hasil.some(h => h.tipe === "gagal" || h.tipe === "putus");
+    box.className = bermasalah ? "bg-rose-50 p-3.5 rounded-2xl border border-rose-100" : "bg-white p-3.5 rounded-2xl border border-slate-100";
+    box.innerHTML = `
+        <p class="text-xs font-bold text-slate-700 mb-1"><i class="fas fa-flask mr-1 text-blue-500"></i> Hasil simulasi (belum ada data berubah)</p>
+        ${arsipHtmlRingkasan(hasil)}`;
 }
 
 async function arsipJalankan() {
@@ -1084,12 +1255,21 @@ async function arsipJalankan() {
     if (!form) return;
 
     arsipSibuk = true;
-    const sim = await arsipPanggil(Object.assign({ dry_run: true }, form), "Memeriksa data...");
+    const sim = await arsipSimulasiSemua(form);
     arsipSibuk = false;
-    if (!sim || sim.status !== "success") {
-        Swal.fire({ icon: "warning", title: "Tidak Bisa Diarsipkan", text: sim?.message || "Koneksi bermasalah. Coba lagi.", confirmButtonColor: "#2563eb" });
+
+    const rusak = sim.filter(h => h.tipe === "gagal" || h.tipe === "putus")[0];
+    if (rusak) {
+        Swal.fire({ icon: "warning", title: "Tidak Bisa Diarsipkan", text: `${arsipNamaJenis(rusak.jenis)}: ${rusak.pesan}`, confirmButtonColor: "#2563eb" });
         return;
     }
+    const antrean = sim.filter(h => h.tipe === "ok" && h.data && Number(h.data.diarsipkan) > 0);
+    if (antrean.length === 0) {
+        Swal.fire({ icon: "info", title: "Tidak Ada yang Diarsipkan", html: `<div class="text-left text-xs">${arsipHtmlRingkasan(sim)}</div>`, confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const adaAkademik = antrean.some(h => h.jenis === "Akademik");
+    const adaPembinaan = antrean.some(h => h.jenis === "Pembinaan");
 
     const konfirm = await Swal.fire({
         icon: "warning",
@@ -1097,8 +1277,11 @@ async function arsipJalankan() {
         html: `
             <div class="text-left text-xs">
                 <p class="mb-2"><b>${escapeHtml(form.semester)} ${escapeHtml(form.tahun_ajaran)}</b>, data sampai <b>${escapeHtml(form.sampai_tanggal)}</b>.</p>
-                ${arsipHtmlRingkasan(sim.data)}
+                ${arsipHtmlRingkasan(sim)}
+                ${adaAkademik ? '<p class="mt-2 text-rose-600 font-semibold">Akademik disalin penuh. Semua nilai di sheet aktif dikosongkan.</p>' : ""}
+                ${adaPembinaan ? '<p class="mt-2 text-slate-500">Pembinaan: hanya kasus berstatus selesai yang dipindah.</p>' : ""}
                 <p class="mt-3 text-rose-600 font-semibold">Data dipindah dari sheet aktif. Poin, streak, badge, dan laporan periode ini akan kosong di aplikasi. Cetak laporan semester lebih dulu. Pastikan backup spreadsheet sudah ada.</p>
+                <p class="mt-2 text-slate-500">Proses berjalan satu jenis demi satu jenis. Jika terputus, jalankan ulang. Jenis yang sudah selesai dilewati.</p>
             </div>`,
         input: "text",
         inputPlaceholder: "Ketik ARSIPKAN",
@@ -1116,22 +1299,142 @@ async function arsipJalankan() {
     });
     if (!konfirm.isConfirmed) return;
 
+    document.getElementById("arsip-hasil-simulasi")?.classList.add("hidden");
+    const baris = antrean.map(h => ({ jenis: h.jenis, label: arsipNamaJenis(h.jenis), status: "menunggu", info: "" }));
+    if (form.laporan) baris.push({ jenis: "Laporan", label: "Laporan semester", status: "menunggu", info: "" });
+    arsipGambarProgres(baris);
+
     arsipSibuk = true;
-    const res = await arsipPanggil(form, "Mengarsipkan dan memverifikasi data. Jangan tutup halaman...");
+    let berhenti = "";
+    let selesai = 0;
+    let totalBaris = 0;
+
+    for (let i = 0; i < antrean.length; i++) {
+        const b = baris[i];
+        b.status = "jalan";
+        arsipGambarProgres(baris);
+        const res = await arsipPanggil("archiveSemester", {
+            tahun_ajaran: form.tahun_ajaran, semester: form.semester, sampai_tanggal: form.sampai_tanggal,
+            jenis: [b.jenis]
+        }, `Mengarsipkan ${b.label} (${i + 1}/${antrean.length}). Jangan tutup halaman...`);
+        const tipe = arsipKlasifikasi(res);
+        b.status = tipe;
+        if (tipe === "ok") {
+            const d = Array.isArray(res.data) ? res.data[0] : null;
+            const n = d ? Number(d.diarsipkan) || 0 : 0;
+            totalBaris += n;
+            selesai++;
+            b.info = n + " baris dipindah dan terverifikasi";
+        } else if (tipe === "sudah" || tipe === "kosong") {
+            b.info = String(res.message || "");
+        } else if (tipe === "putus") {
+            b.info = "Proses mungkin masih berjalan di server. Jangan ulangi dulu. Tunggu 1 menit, lalu muat ulang daftar arsip.";
+            berhenti = `Respons ${b.label} tidak diterima. Tunggu 1 menit, cek Daftar Arsip, lalu jalankan ulang. Jenis yang sudah selesai dilewati.`;
+        } else {
+            b.info = String(res.message || "Terjadi kesalahan.");
+            berhenti = `${b.label} gagal: ${b.info} Jenis setelahnya belum dijalankan. Aman diulang.`;
+        }
+        arsipGambarProgres(baris);
+        if (berhenti) break;
+    }
+
+    let laporanOk = null;
+    if (!berhenti && form.laporan) {
+        const b = baris[baris.length - 1];
+        b.status = "jalan";
+        arsipGambarProgres(baris);
+        const res = await arsipPanggil("buildArsipLaporan", {
+            tahun_ajaran: form.tahun_ajaran, semester: form.semester, ulang: true
+        }, "Membangun laporan semester...");
+        const tipe = arsipKlasifikasi(res);
+        b.status = tipe === "ok" ? "ok" : (tipe === "putus" ? "putus" : "gagal");
+        b.info = tipe === "ok" ? String(res.message || "") : String(res?.message || "Respons tidak diterima.");
+        laporanOk = tipe === "ok";
+        arsipGambarProgres(baris);
+    }
     arsipSibuk = false;
 
-    if (res === null) {
+    if (berhenti) {
+        await Swal.fire({ icon: "warning", title: "Arsip Berhenti", text: berhenti, confirmButtonColor: "#2563eb" });
+    } else if (laporanOk === false) {
         await Swal.fire({
-            icon: "info",
-            title: "Respons Tidak Diterima",
-            html: "<p class=\"text-xs\">Proses mungkin masih berjalan di server. <b>Jangan ulangi.</b> Tunggu 1 menit, lalu cek Daftar Arsip.</p>",
+            icon: "warning", title: "Arsip Selesai, Laporan Gagal",
+            text: `${totalBaris} baris dipindahkan. Laporan semester belum terbentuk. Gunakan tombol Bangun Laporan di daftar arsip.`,
             confirmButtonColor: "#2563eb"
         });
-    } else if (res.status === "success") {
-        document.getElementById("arsip-hasil-simulasi")?.classList.add("hidden");
-        await Swal.fire({ icon: "success", title: "Arsip Selesai", text: res.message, confirmButtonColor: "#2563eb" });
     } else {
-        await Swal.fire({ icon: "error", title: "Arsip Gagal", text: res.message || "Terjadi kesalahan.", confirmButtonColor: "#2563eb" });
+        await Swal.fire({
+            icon: "success", title: "Arsip Selesai",
+            text: `${selesai} jenis, ${totalBaris} baris dipindahkan dan terverifikasi.`,
+            confirmButtonColor: "#2563eb"
+        });
+    }
+    arsipDaftar = [];
+    renderAdminArsip();
+}
+
+async function arsipBangunLaporan(ta, sem) {
+    if (arsipSibuk) return;
+    const k = await Swal.fire({
+        icon: "question",
+        title: "Bangun laporan semester?",
+        html: `<p class="text-xs text-left">Laporan <b>${escapeHtml(sem)} ${escapeHtml(ta)}</b> dihitung ulang dari data arsip. Laporan lama diganti jika sudah ada.</p>`,
+        showCancelButton: true,
+        confirmButtonText: "Bangun",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#2563eb"
+    });
+    if (!k.isConfirmed) return;
+    arsipSibuk = true;
+    const res = await arsipPanggil("buildArsipLaporan", { tahun_ajaran: ta, semester: sem, ulang: true }, "Membangun laporan semester...");
+    arsipSibuk = false;
+    if (res === null) {
+        await Swal.fire({ icon: "info", title: "Respons Tidak Diterima", text: "Proses mungkin masih berjalan. Tunggu 1 menit, lalu muat ulang daftar arsip.", confirmButtonColor: "#2563eb" });
+    } else if (res.status === "success") {
+        await Swal.fire({ icon: "success", title: "Laporan Selesai", text: res.message, confirmButtonColor: "#2563eb" });
+    } else {
+        await Swal.fire({ icon: "error", title: "Laporan Gagal", text: res.message || "Terjadi kesalahan.", confirmButtonColor: "#2563eb" });
+    }
+    arsipDaftar = [];
+    renderAdminArsip();
+}
+
+async function arsipHapus(ta, sem) {
+    if (arsipSibuk) return;
+    const sheetTerkait = arsipDaftar.filter(r => String(r.tahun_ajaran) === ta && String(r.semester) === sem);
+    const konfirm = await Swal.fire({
+        icon: "warning",
+        title: "Hapus arsip periode ini?",
+        html: `
+            <div class="text-left text-xs">
+                <p class="mb-2"><b>${escapeHtml(sem)} ${escapeHtml(ta)}</b>: ${sheetTerkait.length} sheet arsip, catatan arsip, dan snapshot akses guru/siswa dihapus.</p>
+                <p class="text-rose-600 font-semibold">Penghapusan permanen. Data asli periode ini sudah dipangkas, jadi arsip adalah satu-satunya salinan. Unduh CSV dan buat backup spreadsheet lebih dulu.</p>
+            </div>`,
+        input: "text",
+        inputPlaceholder: "Ketik HAPUS",
+        showCancelButton: true,
+        confirmButtonText: "Hapus Arsip",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#dc2626",
+        preConfirm: (v) => {
+            if (String(v || "").trim() !== "HAPUS") {
+                Swal.showValidationMessage("Ketik HAPUS (huruf besar) untuk melanjutkan.");
+                return false;
+            }
+            return true;
+        }
+    });
+    if (!konfirm.isConfirmed) return;
+
+    arsipSibuk = true;
+    const res = await arsipPanggil("deleteArsip", { tahun_ajaran: ta, semester: sem, konfirmasi: "HAPUS" }, "Menghapus arsip...");
+    arsipSibuk = false;
+    if (res === null) {
+        await Swal.fire({ icon: "info", title: "Respons Tidak Diterima", text: "Proses mungkin masih berjalan. Tunggu 1 menit, muat ulang daftar arsip. Jika masih ada, ulangi hapus (aman diulang).", confirmButtonColor: "#2563eb" });
+    } else if (res.status === "success") {
+        await Swal.fire({ icon: "success", title: "Arsip Dihapus", text: res.message, confirmButtonColor: "#2563eb" });
+    } else {
+        await Swal.fire({ icon: "error", title: "Hapus Gagal", text: res.message || "Terjadi kesalahan.", confirmButtonColor: "#2563eb" });
     }
     arsipDaftar = [];
     renderAdminArsip();
@@ -1211,8 +1514,7 @@ async function arsipMuatHalaman() {
     v.total = Number(res.total) || 0;
     v.headers = Array.isArray(res.headers) ? res.headers : [];
 
-    const pilihan = (ARSIP_KOLOM[v.jenis] || []).filter(c => v.headers.indexOf(c) !== -1);
-    const kolom = pilihan.length > 0 ? pilihan : v.headers;
+    const kolom = arsipPilihKolom(v.jenis, v.headers);
 
     if (res.data.length === 0) {
         el.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Tidak ada baris yang cocok.</div>`;
@@ -1220,13 +1522,12 @@ async function arsipMuatHalaman() {
         el.innerHTML = `
             <table class="w-full text-xs text-left">
                 <thead class="bg-slate-50 text-slate-500">
-                    <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap">${escapeHtml(ARSIP_LABEL[c] || c)}</th>`).join("")}</tr>
+                    <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap">${escapeHtml(arsipLabelKolom(c))}</th>`).join("")}</tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     ${res.data.map(row => `<tr>${kolom.map(c => {
                         const teks = String(row[c] === null || row[c] === undefined ? "" : row[c]);
-                        const panjang = ARSIP_KOLOM_PANJANG.indexOf(c) !== -1;
-                        return `<td class="px-2 py-1.5 align-top text-slate-700 ${panjang ? "min-w-[14rem]" : "whitespace-nowrap"}">${escapeHtml(teks)}</td>`;
+                        return `<td class="px-2 py-1.5 align-top text-slate-700 ${arsipKolomPanjang(c) ? "min-w-[14rem]" : "whitespace-nowrap"}">${escapeHtml(teks)}</td>`;
                     }).join("")}</tr>`).join("")}
                 </tbody>
             </table>`;
