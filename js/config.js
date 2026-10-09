@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxEow_5oMstZhiPJYUKNtQNUSyZs95rvf-ax4Llna0D9KlIJxpH3fM9f7crkNkGOwab/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzpgPAQ6jgPwEHg_3aOCmHGvLJNeqPmkEaO2m5sVPj5AOLt9zgGWJfRuWOtLhPXupr0/exec";
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SNOOZE_24H_MS = 24 * 60 * 60 * 1000;
