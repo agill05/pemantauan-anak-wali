@@ -3159,3 +3159,80 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 @media (prefers-reduced-motion: reduce) {
     .swap-in-left, .swap-in-right, .swap-in-fade { animation: none; }
 }
+
+/* Arsip semester (siswa, guru, kepsek) */
+#view-arsip-saya :is(.text-\[10px\], .text-\[11px\]) {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+#view-arsip-saya p.text-xs {
+    line-height: 1.6;
+}
+
+#view-arsip-saya button {
+    min-height: 2.75rem;
+    border-radius: var(--radius-control);
+}
+
+#arsip-saya-list button {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.75rem;
+}
+
+#arsip-saya-panel-lihat button.w-8 {
+    width: 2.75rem;
+    height: 2.75rem;
+}
+
+#arsip-saya-panel-lihat button:not(.w-8) {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 0.875rem;
+}
+
+#arsip-saya-f-q,
+#arsip-saya-f-kelas,
+#arsip-saya-f-siswa {
+    min-height: 2.75rem;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+}
+
+#arsip-saya-tabel {
+    -webkit-overflow-scrolling: touch;
+}
+
+#view-arsip-saya :is(button, input, select):focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 479px) {
+    #arsip-saya-panel-lihat form.grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+
+    #arsip-saya-panel-lihat form.grid-cols-2>.col-span-2 {
+        grid-column: auto;
+    }
+}
+
+@media (min-width: 768px) {
+    #arsip-saya-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        align-items: start;
+    }
+
+    #arsip-saya-list>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    #arsip-saya-list>.empty-state {
+        grid-column: 1 / -1;
+    }
+}

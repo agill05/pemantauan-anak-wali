@@ -808,6 +808,7 @@ function renderSidebarMenu(role) {
         html += item("jurnal", "fa-book-open", "Jurnal Harian");
         html += item("karakter", "fa-quran", "Keagamaan");
         html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
+        html += item("arsip-saya", "fa-box-archive", "Arsip Semester");
     } else if (role !== "ortu") {
         html += section("Pemantauan");
         html += item("absensi", "fa-calendar-check", "Presensi Kehadiran");
@@ -825,6 +826,8 @@ function renderSidebarMenu(role) {
         if (role === "admin") {
             html += item("arsip", "fa-box-archive", "Arsip");
             html += item("admin-manage", "fa-user-cog", "Master Data");
+        } else {
+            html += item("arsip-saya", "fa-box-archive", "Arsip Semester");
         }
     }
 
