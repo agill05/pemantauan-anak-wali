@@ -201,6 +201,7 @@ function closeModal() {
     const modal = document.getElementById("modal-container");
     if (!modal) return;
     if (modal.dataset.forceLock === "true") return;
+    if (typeof bulkResetModal === "function") bulkResetModal();
     modal.classList.add("hidden");
 }
 

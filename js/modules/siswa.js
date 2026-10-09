@@ -562,13 +562,15 @@ function renderSiswaView() {
         return;
     }
 
-    container.innerHTML = renderReadOnlyBanner('siswa', 'data siswa') + filtered.map(s => {
+    const idsBisaHapus = isAdminUser() ? filtered.filter(s => canWrite('siswa', s)).map(s => String(s.id)) : [];
+    container.innerHTML = renderReadOnlyBanner('siswa', 'data siswa') + bulkToolbar("siswa", idsBisaHapus) + filtered.map(s => {
         const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
         const bisaUbahSiswa = canWrite('siswa', s);
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
+                    ${bisaUbahSiswa && isAdminUser() ? bulkCheckbox("siswa", s.id) : ""}
                     <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" alt="" class="w-10 h-10 rounded-full object-cover border border-slate-200">
                     <div>
                         <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)} <span class="ml-1">${renderPeranChip(s)}</span></h4>

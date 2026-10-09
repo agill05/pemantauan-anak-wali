@@ -113,9 +113,10 @@ function renderAdminGuru() {
         return;
     }
 
-    list.innerHTML = filtered.map(g => `
+    list.innerHTML = bulkToolbar("guru", filtered.map(g => String(g.id))) + filtered.map(g => `
         <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
-            <div>
+            ${bulkCheckbox("guru", g.id)}
+            <div class="flex-1 min-w-0">
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(g.nama)}</h4>
                 <p class="text-xs text-slate-400">Username: ${escapeHtml(g.username)} | NIP: ${escapeHtml(g.nip || '-')}</p>
                 ${renderPeranBadgesGuru(g)}
@@ -165,9 +166,10 @@ function renderAdminSiswa() {
         return;
     }
 
-    list.innerHTML = filtered.map(s => `
+    list.innerHTML = bulkToolbar("siswa", filtered.map(s => String(s.id))) + filtered.map(s => `
         <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
-            <div>
+            ${bulkCheckbox("siswa", s.id)}
+            <div class="flex-1 min-w-0">
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
                 <p class="text-xs text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
                 <p class="text-xs text-slate-400">Mentor: ${escapeHtml(getNamaMentorSiswa(s))}</p>
@@ -372,11 +374,13 @@ function renderAdminKelas() {
         return;
     }
 
-    list.innerHTML = appState.kelas.map(k => {
+    const bulkBarKelas = bulkToolbar("kelas", appState.kelas.map(k => String(k.id)));
+    list.innerHTML = bulkBarKelas + appState.kelas.map(k => {
         const wali = appState.guru.find(g => String(g.id) === String(k.guru_id));
         return `
             <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
-                <div>
+                ${bulkCheckbox("kelas", k.id)}
+                <div class="flex-1 min-w-0">
                     <h4 class="font-bold text-xs text-slate-800">Kelas ${escapeHtml(k.nama_kelas)}</h4>
                     <p class="text-xs text-slate-400">Wali Kelas: ${wali ? escapeHtml(wali.nama) : 'Belum ditentukan'}</p>
                 </div>

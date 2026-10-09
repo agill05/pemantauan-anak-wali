@@ -132,7 +132,7 @@ function openDetailPembinaan(siswaId) {
         return gsRenderBarisCatatan(item, 'pembinaan', isi, 'openModalPembinaan', 'deletePembinaan')
             .replace('class="bg-slate-50 p-3', `class="border-l-4 ${warna} bg-slate-50 p-3`);
     }).join('');
-    gsOpenSheet(g, { judul: 'Pembinaan', kategori: 'pembinaan', ringkasanHtml: ringkasan, bodyHtml: body, tambahFn: 'tambahPembinaanSiswa' });
+    gsOpenSheet(g, { judul: 'Pembinaan', kategori: 'pembinaan', ringkasanHtml: ringkasan, bodyHtml: body, tambahFn: 'tambahPembinaanSiswa', bulkIds: bulkIdsEditable('pembinaan', g.records) });
     const box = document.getElementById("modal-content-box");
     if (box) { box.dataset.gs = 'pembinaan'; box.dataset.gsSiswa = String(siswaId); }
 }

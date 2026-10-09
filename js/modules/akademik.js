@@ -86,7 +86,8 @@ function renderAkademikNilai() {
         return;
     }
 
-    container.innerHTML = bannerBaca + filteredAkademik.map(item => {
+    const idsBisaHapusAkd = filteredAkademik.filter(item => canEditRecord(item, 'akademik')).map(item => String(item.id));
+    container.innerHTML = bannerBaca + bulkToolbar("akademik", idsBisaHapusAkd) + filteredAkademik.map(item => {
         const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
         const isBelowKKTP = Number(item.nilai_akhir) < Number(item.kktp);
         const badgeColor = isBelowKKTP ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200';
@@ -94,7 +95,8 @@ function renderAkademikNilai() {
 
         return `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-                <div>
+                ${bisaUbah ? bulkCheckbox("akademik", item.id) : ""}
+                <div class="flex-1 min-w-0">
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.mapel)}</h4>
                     ${renderInfoRows([
                         {label:"Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + ' <span class="ml-1">' + renderPeranChip(s) + '</span>',html:true},
@@ -307,7 +309,7 @@ function openDetailPrestasi(siswaId) {
             </div>`;
         return gsRenderBarisCatatan(item, 'prestasi', isi, 'openModalPrestasi', 'deletePrestasi');
     }).join('');
-    gsOpenSheet(g, { judul: 'Prestasi', kategori: 'prestasi', ringkasanHtml: prsRenderRincianTingkat(g.records), bodyHtml: body, tambahFn: 'tambahPrestasiSiswa' });
+    gsOpenSheet(g, { judul: 'Prestasi', kategori: 'prestasi', ringkasanHtml: prsRenderRincianTingkat(g.records), bodyHtml: body, tambahFn: 'tambahPrestasiSiswa', bulkIds: bulkIdsEditable('prestasi', g.records) });
     const box = document.getElementById("modal-content-box");
     if (box) { box.dataset.gs = 'prestasi'; box.dataset.gsSiswa = String(siswaId); }
 }

@@ -302,6 +302,7 @@ function kagBarisItem(item) {
         return `
             <div class="bg-white p-2 rounded-lg border border-slate-100 space-y-1">
                 <div class="flex flex-wrap items-center gap-1.5">
+                    ${bisaUbah ? bulkCheckbox('keagamaan', h.id) : ''}
                     ${renderPenulisBadge(h)}
                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${kagStatusBadgeCls(h.status)}">${escapeHtml(h.status)}</span>
                     <span class="text-[10px] text-slate-400">${escapeHtml(gsFormatTanggal(h))}</span>
@@ -355,7 +356,7 @@ function openDetailKeagamaan(siswaId, tab) {
         ? items.map(kagBarisItem).join("")
         : `<div class="empty-state"><p class="text-xs text-slate-500">Belum ada catatan ${escapeHtml(KEAGAMAAN_KATEGORI[aktif].label.toLowerCase())}.</p></div>`;
 
-    gsOpenSheet(g, { judul: 'Keagamaan', kategori: 'keagamaan', ringkasanHtml: ringkasan, bodyHtml: body, tambahFn: 'tambahKeagamaanSiswa' });
+    gsOpenSheet(g, { judul: 'Keagamaan', kategori: 'keagamaan', ringkasanHtml: ringkasan, bodyHtml: body, tambahFn: 'tambahKeagamaanSiswa', bulkIds: bulkIdsEditable('keagamaan', g.records.filter(h => getKategoriHafalan(h) === aktif)) });
     const box2 = document.getElementById("modal-content-box");
     if (box2) { box2.dataset.gs = 'keagamaan'; box2.dataset.gsSiswa = String(siswaId); box2.dataset.gsTab = aktif; }
 }

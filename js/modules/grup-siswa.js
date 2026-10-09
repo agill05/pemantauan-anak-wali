@@ -113,6 +113,7 @@ function gsOpenSheet(g, opsi) {
             <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
         ${opsi.ringkasanHtml ? `<div class="mb-3">${opsi.ringkasanHtml}</div>` : ""}
+        ${opsi.bulkIds ? bulkToolbar(opsi.kategori, opsi.bulkIds) : ""}
         <div class="space-y-2 overflow-y-auto" style="max-height:58vh">${opsi.bodyHtml}</div>
         ${bisaTambah ? `<button onclick="${opsi.tambahFn}('${escapeHtml(g.siswaId)}')" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-3"><i class="fas fa-plus"></i> Tambah</button>` : ""}
     `;
@@ -122,9 +123,10 @@ function gsOpenSheet(g, opsi) {
 // Baris catatan di detail: pembuat, tanggal, aksi sesuai hak akses
 function gsRenderBarisCatatan(rec, kategori, isiHtml, editFn, hapusFn) {
     const bisaUbah = !isKepsekUser() && canEditRecord(rec, kategori);
+    const cb = bisaUbah ? bulkCheckbox(kategori, rec.id) : "";
     return `
         <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1.5">
-            ${isiHtml}
+            ${cb ? `<div class="flex items-start">${cb}<div class="flex-1 min-w-0 space-y-1.5">${isiHtml}</div></div>` : isiHtml}
             <div class="flex flex-wrap items-center gap-1.5">
                 ${renderPenulisBadge(rec)}
                 <span class="text-[10px] text-slate-400">${escapeHtml(gsFormatTanggal(rec))}</span>
