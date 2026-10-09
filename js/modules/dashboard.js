@@ -534,10 +534,11 @@ async function checkStudentNotifications() {
         if (resPbn && resPbn.data) appState.pembinaan = resPbn.data;
     }
 
-    const [resRekap] = await Promise.all([
+    const [resRekap, resTatib] = await Promise.all([
         apiCall("getLaporanRekap", {}, false),
-        fetchNotifDitangani()
-    ]);
+        fetchNotifDitangani(),
+        isSiswa ? null : apiCall("getRekapTatib", {}, false, 1, true)
+    ]).then(r => [r[0], r[2]]);
     const rekapData = resRekap?.data || [];
 
     let activeList = [];
@@ -681,6 +682,42 @@ async function checkStudentNotifications() {
                     defaultPembinaan: `Tindak lanjut pembinaan: ${p.permasalahan}`
                 });
             }
+        });
+    }
+
+    if (resTatib && resTatib.status === 'success' && Array.isArray(resTatib.data)) {
+        const ROMAWI = ['', 'I', 'II', 'III'];
+        const kf = resTatib.konfig || {};
+        resTatib.data.forEach(r => {
+            const tahap = Number(r.tahap) || 0;
+            if (tahap < 1 && !r.mencapai_batas) return;
+            const s = (appState.siswa || []).find(x => String(x.id) === String(r.siswa_id));
+            if (!s) return;
+            const sId = String(r.siswa_id);
+            const total = Number(r.total) || 0;
+            const tertunda = Array.isArray(r.panggilan_tertunda) ? r.panggilan_tertunda : [];
+            const dasar = { siswa: { id: s.id, nama: s.nama }, category: 'Tata Tertib' };
+
+            if (r.mencapai_batas) {
+                processNotifItem(Object.assign({}, dasar, {
+                    id: `${sId}_tatib_batas`,
+                    level: 'kritis',
+                    title: 'Poin Tata Tertib Mencapai Batas',
+                    desc: `${s.nama} mencapai ${total} poin pelanggaran (batas ${kf.batas_keluar || 50}). Perlu keputusan pimpinan sekolah.`,
+                    defaultPembinaan: `Pembinaan tata tertib: akumulasi ${total} poin pelanggaran (mencapai batas).`,
+                    tatibTahap: tertunda[0] || ''
+                }));
+                return;
+            }
+            if (!tertunda.includes(ROMAWI[tahap])) return;
+            processNotifItem(Object.assign({}, dasar, {
+                id: `${sId}_tatib_p${tahap}`,
+                level: tahap === 1 ? 'sedang' : 'kritis',
+                title: `Poin Tata Tertib: Panggilan Orang Tua ${ROMAWI[tahap]}`,
+                desc: `${s.nama} mencapai ${total} poin pelanggaran (ambang ${kf['panggilan_' + tahap] || '-'}). Panggilan orang tua ${ROMAWI[tahap]} belum dicatat.`,
+                defaultPembinaan: `Pembinaan tata tertib: akumulasi ${total} poin pelanggaran (Panggilan Orang Tua ${ROMAWI[tahap]}).`,
+                tatibTahap: ROMAWI[tahap]
+            }));
         });
     }
 
@@ -853,6 +890,10 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                         <button onclick="openQuickPembinaan('${n.siswa.id}', '${escapeHtml(n.defaultPembinaan)}', '${n.id}')" class="px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 flex items-center gap-1">
                             <i class="fas fa-edit"></i> Buat Catatan Pembinaan
                         </button>
+                        ${n.tatibTahap && typeof tatibBisaCatatPanggilan === 'function' && tatibBisaCatatPanggilan(n.siswa.id) ? `
+                        <button onclick="closeModal(); openModalTatibPanggilan('${n.siswa.id}', '${n.tatibTahap}')" class="px-2.5 py-1.5 bg-violet-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-violet-700 flex items-center gap-1">
+                            <i class="fas fa-phone"></i> Catat Panggilan Ortu
+                        </button>` : ''}
                         ` : ''}
                     </div>
                 </div>

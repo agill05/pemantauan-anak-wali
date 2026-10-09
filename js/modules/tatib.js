@@ -1,6 +1,5 @@
-/* Modul Tata Tertib (Tahap 5): daftar poin siswa, form input banyak siswa, detail dasar.
- * Memakai grup-siswa.js (gsRenderCard, gsOpenSheet). Detail lengkap, notifikasi,
- * pembinaan, dan panggilan orang tua dikerjakan di Tahap 6. */
+/* Modul Tata Tertib (Tahap 5-6): daftar poin siswa, form input banyak siswa, detail rinci, panggilan orang tua.
+ * Memakai grup-siswa.js (gsRenderCard, gsOpenSheet). Notifikasi ambang ada di dashboard.js. */
 
 const TT_KAT_LABEL_BAWAAN = { A: "Kelakuan", B: "Kerajinan", C: "Kerapian", D: "Penghargaan" };
 const TT_KAT_WARNA = {
@@ -76,10 +75,14 @@ async function loadTatibData(forceRefresh = false) {
     if (tatibMemuat) return;
     tatibMemuat = true;
     try {
-        const [resCatatan, resRekap] = await Promise.all([
+        const [resCatatan, resRekap, resPanggilan] = await Promise.all([
             apiCall("getTatib", {}, false),
-            apiCall("getRekapTatib", {}, false)
+            apiCall("getRekapTatib", {}, false),
+            apiCall("getTatibPanggilan", {}, false, 1, true)
         ]);
+        if (resPanggilan && resPanggilan.status === "success" && Array.isArray(resPanggilan.data)) {
+            tatibPanggilan = resPanggilan.data;
+        }
         if (resCatatan && resCatatan.status === "success" && Array.isArray(resCatatan.data)) {
             appState.tatib = resCatatan.data;
         }
@@ -175,7 +178,7 @@ function renderTatibView() {
     tatibRefreshDetail();
 }
 
-// ---------- detail dasar ----------
+// ---------- detail (Tahap 6) ----------
 
 function ttDataGrup(siswaId) {
     const base = scopeBySiswaId(appState.tatib, r => r.siswa_id).filter(r => String(r.siswa_id) === String(siswaId));
@@ -183,11 +186,122 @@ function ttDataGrup(siswaId) {
     return g || { siswaId: String(siswaId), siswa: ttCariSiswa(siswaId), records: [] };
 }
 
-function openDetailTatib(siswaId) {
+let ttDetailKat = "semua";
+let tatibPanggilan = [];
+const TT_TAHAP_ROMAWI = ["", "I", "II", "III"];
+
+function ttTertunda(siswaId) {
+    const t = ttRekapSiswa(siswaId).panggilan_tertunda;
+    return Array.isArray(t) ? t : [];
+}
+
+function ttPanggilanSiswa(siswaId) {
+    return (tatibPanggilan || [])
+        .filter(p => String(p.siswa_id) === String(siswaId))
+        .sort((a, b) => TT_TAHAP_ROMAWI.indexOf(String(a.tahap)) - TT_TAHAP_ROMAWI.indexOf(String(b.tahap)));
+}
+
+// Wali kelas siswa (atau admin) boleh mencatat panggilan orang tua. Kepsek hanya membaca.
+function tatibBisaCatatPanggilan(siswaId) {
+    const u = appState.user;
+    if (!u || isKepsekUser()) return false;
+    if (u.role === "admin") return true;
+    if (u.role !== "guru") return false;
+    const siswa = ttCariSiswa(siswaId);
+    if (!siswa) return false;
+    const tipe = getEffectiveAccessType(siswa);
+    return tipe === "wali" || tipe === "both";
+}
+
+function ttBisaUbahPanggilan(p) {
+    if (tatibBisaCatatPanggilan(p.siswa_id)) return true;
+    const u = appState.user;
+    return !!u && u.role === "guru" && String(p.dibuat_oleh_id || "").trim() === String(u.id).trim();
+}
+
+function ttTeksPembinaan(siswaId) {
+    const r = ttRekapSiswa(siswaId);
+    const tahap = r.mencapai_batas ? "mencapai batas" : (r.tahap >= 1 ? "Panggilan Orang Tua " + TT_TAHAP_ROMAWI[r.tahap] : "");
+    return "Pembinaan tata tertib: akumulasi " + (Number(r.total) || 0) + " poin pelanggaran" + (tahap ? " (" + tahap + ")" : "") + ".";
+}
+
+function ttBuatPembinaan(siswaId) {
+    openQuickPembinaan(siswaId, ttTeksPembinaan(siswaId), "");
+}
+
+function ttRincianKategori(records) {
+    const per = { A: { n: 0, poin: 0 }, B: { n: 0, poin: 0 }, C: { n: 0, poin: 0 }, D: { n: 0, poin: 0 } };
+    records.forEach(r => {
+        const p = per[r.kategori];
+        if (!p) return;
+        p.n++;
+        p.poin += Number(r.skor_akhir) || 0;
+    });
+    return `<div class="grid grid-cols-2 gap-2">` + Object.keys(per).map(k => `
+        <div class="rounded-xl border border-slate-100 p-2 ${TT_KAT_WARNA[k]}">
+            <p class="text-[11px] font-bold">${k} \u2022 ${escapeHtml(ttNamaKategori(k))}</p>
+            <p class="text-xs font-extrabold">${k === "D" ? "\u2212" : ""}${per[k].poin} poin</p>
+            <p class="text-[10px] opacity-80">${per[k].n} catatan</p>
+        </div>`).join("") + `</div>`;
+}
+
+function ttHtmlPanggilan(siswaId) {
+    const daftar = ttPanggilanSiswa(siswaId);
+    const tertunda = ttTertunda(siswaId);
+    const baris = daftar.map(p => {
+        const aksi = ttBisaUbahPanggilan(p) ? `
+            <div class="flex justify-end gap-3 pt-1 border-t border-slate-100">
+                <button onclick="openModalTatibPanggilan('${escapeHtml(siswaId)}', '${escapeHtml(p.tahap)}', '${escapeHtml(p.id)}')" class="text-xs font-bold text-blue-600"><i class="fas fa-edit"></i> Edit</button>
+                <button onclick="hapusTatibPanggilan('${escapeHtml(p.id)}')" class="text-xs font-bold text-rose-600"><i class="fas fa-trash"></i> Hapus</button>
+            </div>` : "";
+        return `
+            <div class="bg-violet-50/60 p-2.5 rounded-xl border border-violet-100 space-y-1">
+                <div class="flex justify-between items-center gap-2 text-xs">
+                    <span class="font-bold text-violet-700">Panggilan ${escapeHtml(p.tahap)}</span>
+                    <span class="text-slate-500">${escapeHtml(p.tanggal)} \u2022 ${Number(p.skor_saat) || 0} poin</span>
+                </div>
+                ${p.catatan ? `<p class="text-xs text-slate-600 break-words">${escapeHtml(p.catatan)}</p>` : ""}
+                <div class="flex flex-wrap items-center gap-1.5">${renderPenulisBadge(p)}</div>
+                ${aksi}
+            </div>`;
+    }).join("");
+    const petunjuk = tertunda.length ? `<p class="text-xs font-bold text-violet-700"><i class="fas fa-circle-exclamation"></i> Belum dicatat: Panggilan ${tertunda.join(", ")}</p>` : "";
+    return `
+        <div class="space-y-2">
+            <p class="text-xs font-bold text-slate-700">Panggilan Orang Tua</p>
+            ${baris || `<p class="text-xs text-slate-400">Belum ada panggilan dicatat.</p>`}
+            ${petunjuk}
+        </div>`;
+}
+
+function ttFilterRiwayat(k) {
+    ttDetailKat = k;
+    const box = document.getElementById("modal-content-box");
+    if (box && box.dataset.gs === "tatib") openDetailTatib(box.dataset.gsSiswa, true);
+}
+
+function openDetailTatib(siswaId, pertahankan = false) {
+    if (!pertahankan) ttDetailKat = "semua";
     const g = ttDataGrup(siswaId);
-    const body = g.records.length === 0
-        ? `<p class="text-xs text-slate-400 text-center py-4">Belum ada catatan.</p>`
-        : g.records.map(rec => {
+    const sid = escapeHtml(g.siswaId);
+    const tertunda = ttTertunda(g.siswaId);
+
+    const aksi = [];
+    if (!isKepsekUser() && canWrite("pembinaan", g.siswa || g.siswaId)) {
+        aksi.push(`<button onclick="ttBuatPembinaan('${sid}')" class="px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 flex items-center gap-1"><i class="fas fa-edit"></i> Buat Pembinaan</button>`);
+    }
+    if (tatibBisaCatatPanggilan(g.siswaId) && tertunda.length > 0) {
+        aksi.push(`<button onclick="openModalTatibPanggilan('${sid}', '${tertunda[0]}')" class="px-2.5 py-1.5 bg-violet-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-violet-700 flex items-center gap-1"><i class="fas fa-phone"></i> Catat Panggilan Ortu</button>`);
+    }
+
+    const chip = (k, label) => {
+        const on = ttDetailKat === k;
+        return `<button type="button" onclick="ttFilterRiwayat('${k}')" aria-pressed="${on}" class="shrink-0 whitespace-nowrap px-2.5 py-1 rounded-lg text-[11px] font-bold ${on ? "bg-blue-600 text-white" : "bg-white text-slate-600 border border-slate-200"}">${label}</button>`;
+    };
+    const tampil = ttDetailKat === "semua" ? g.records : g.records.filter(r => r.kategori === ttDetailKat);
+    const riwayat = tampil.length === 0
+        ? `<p class="text-xs text-slate-400 text-center py-3">Tidak ada catatan.</p>`
+        : tampil.map(rec => {
             const penghargaan = String(rec.jenis) === "penghargaan";
             const warna = TT_KAT_WARNA[rec.kategori] || "text-slate-600 bg-slate-100";
             const pengali = Number(rec.pengali) || 1;
@@ -204,20 +318,140 @@ function openDetailTatib(siswaId) {
             return gsRenderBarisCatatan(rec, "tatib", isi, "openModalTatibEdit", "hapusTatib");
         }).join("");
 
+    const body = `
+        <div class="space-y-3">
+            <div>
+                <p class="text-xs font-bold text-slate-700 mb-1.5">Rincian per Kategori</p>
+                ${ttRincianKategori(g.records)}
+            </div>
+            ${ttHtmlPanggilan(g.siswaId)}
+            <div class="space-y-2">
+                <p class="text-xs font-bold text-slate-700">Riwayat</p>
+                <div class="flex gap-1.5 overflow-x-auto pb-1">
+                    ${chip("semua", "Semua")}${Object.keys(TT_KAT_LABEL_BAWAAN).map(k => chip(k, k)).join("")}
+                </div>
+                ${riwayat}
+            </div>
+        </div>`;
+
     gsOpenSheet(g, {
         judul: "Tata Tertib", kategori: "tatib",
-        ringkasanHtml: `<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">${ttRingkasanHtml(g.siswaId)}</div>`,
+        ringkasanHtml: `<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-2">${ttRingkasanHtml(g.siswaId)}${aksi.length ? `<div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200/60">${aksi.join("")}</div>` : ""}</div>`,
         bodyHtml: body, tambahFn: "tambahTatibSiswa"
     });
     const box = document.getElementById("modal-content-box");
-    if (box) { box.dataset.gs = "tatib"; box.dataset.gsSiswa = String(siswaId); }
+    if (box) { box.dataset.gs = "tatib"; box.dataset.gsSiswa = String(g.siswaId); }
 }
 
 function tatibRefreshDetail() {
     const box = document.getElementById("modal-content-box");
     const modal = document.getElementById("modal-container");
     if (!box || !modal || modal.classList.contains("hidden") || box.dataset.gs !== "tatib") return;
-    openDetailTatib(box.dataset.gsSiswa);
+    openDetailTatib(box.dataset.gsSiswa, true);
+}
+
+// ---------- panggilan orang tua ----------
+
+async function segarkanSetelahPanggilan() {
+    await loadTatibData(true);
+    if (typeof checkStudentNotifications === "function") checkStudentNotifications();
+}
+
+async function openModalTatibPanggilan(siswaId, tahap = "", id = null) {
+    if (tatibRekap.size === 0 && !tatibMemuat) await loadTatibData();
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+    const siswa = ttCariSiswa(siswaId);
+    const p = id ? (tatibPanggilan || []).find(x => String(x.id) === String(id)) : null;
+    if (id && !p) return;
+    if (!id && !tatibBisaCatatPanggilan(siswaId)) {
+        Swal.fire({ icon: "info", title: "Akses Ditolak", text: "Hanya wali kelas siswa atau admin yang dapat mencatat panggilan orang tua.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const sudah = new Set(ttPanggilanSiswa(siswaId).map(x => String(x.tahap)));
+    const bolehTahap = id ? [String(p.tahap)] : ["I", "II", "III"].filter(t => !sudah.has(t));
+    if (!bolehTahap.length) {
+        Swal.fire({ icon: "info", title: "Sudah Lengkap", text: "Panggilan I, II, dan III sudah dicatat.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const pilih = bolehTahap.includes(String(tahap)) ? String(tahap) : (ttTertunda(siswaId).find(t => bolehTahap.includes(t)) || bolehTahap[0]);
+    const r = ttRekapSiswa(siswaId);
+    const inp = "w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none";
+    const lbl = "block text-xs font-bold text-slate-500 mb-1";
+
+    box.dataset.gs = "";
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-slate-800">${p ? "Ubah" : "Catat"} Panggilan Orang Tua</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="simpanTatibPanggilan(event, '${escapeHtml(siswaId)}', '${p ? escapeHtml(p.id) : ""}')" class="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
+            <div class="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs space-y-0.5">
+                <p class="font-bold text-slate-800">${escapeHtml(siswa ? siswa.nama : "Siswa")}</p>
+                <p class="text-slate-500">${p ? Number(p.skor_saat) || 0 : Number(r.total) || 0} poin pelanggaran${p ? " saat dicatat" : " saat ini (dicatat otomatis)"}</p>
+            </div>
+            <div>
+                <label for="tt-p-tahap" class="${lbl}">TAHAP PANGGILAN</label>
+                <select id="tt-p-tahap" class="${inp}" ${p ? "disabled" : ""}>
+                    ${bolehTahap.map(t => `<option value="${t}" ${t === pilih ? "selected" : ""}>Panggilan ${t}</option>`).join("")}
+                </select>
+            </div>
+            <div>
+                <label for="tt-p-tanggal" class="${lbl}">TANGGAL PANGGILAN</label>
+                <input type="date" id="tt-p-tanggal" value="${escapeHtml(p ? p.tanggal : getDateWITA())}" max="${getDateWITA()}" required class="${inp}">
+            </div>
+            <div>
+                <label for="tt-p-catatan" class="${lbl}">CATATAN HASIL PERTEMUAN (opsional)</label>
+                <textarea id="tt-p-catatan" rows="3" maxlength="300" class="${inp}" placeholder="Contoh: orang tua hadir, siswa berjanji memperbaiki kehadiran">${escapeHtml(p ? p.catatan : "")}</textarea>
+            </div>
+            <button type="submit" id="btn-save-tatib-panggilan" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Panggilan</button>
+        </form>`;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+async function simpanTatibPanggilan(e, siswaId, id) {
+    e.preventDefault();
+    const v = (el) => String((document.getElementById(el) || {}).value || "").trim();
+    const tanggal = v("tt-p-tanggal");
+    if (!tanggal) return;
+    const payload = id
+        ? { id, tanggal, catatan: v("tt-p-catatan") }
+        : { siswa_id: siswaId, tahap: v("tt-p-tahap"), tanggal, catatan: v("tt-p-catatan") };
+    const btn = document.getElementById("btn-save-tatib-panggilan");
+    if (btn) { btn.disabled = true; btn.classList.add("opacity-60"); }
+    const res = await apiCall("saveTatibPanggilan", payload, true);
+    if (res && res.status === "success") {
+        closeModal();
+        showToast(res.message || "Panggilan dicatat.");
+        await segarkanSetelahPanggilan();
+        openDetailTatib(siswaId);
+        return;
+    }
+    if (btn) { btn.disabled = false; btn.classList.remove("opacity-60"); }
+    if (res && res.status === "error") {
+        Swal.fire({ icon: "warning", title: "Tidak Tersimpan", text: res.message || "Ditolak server.", confirmButtonColor: "#2563eb" });
+    } else {
+        showToast("Koneksi bermasalah. Panggilan belum tersimpan.", "warning");
+    }
+}
+
+async function hapusTatibPanggilan(id) {
+    const p = (tatibPanggilan || []).find(x => String(x.id) === String(id));
+    if (!p) return;
+    const ok = await Swal.fire({
+        icon: "warning", title: "Hapus catatan panggilan?",
+        text: `Panggilan ${p.tahap} tanggal ${p.tanggal} dihapus. Notifikasi ambang bisa muncul lagi.`,
+        showCancelButton: true, confirmButtonText: "Ya, Hapus", cancelButtonText: "Batal", confirmButtonColor: "#e11d48"
+    });
+    if (!ok.isConfirmed) return;
+    const res = await apiCall("deleteTatibPanggilan", { id }, true);
+    if (res && res.status === "success") {
+        showToast("Catatan panggilan dihapus.");
+        await segarkanSetelahPanggilan();
+        openDetailTatib(p.siswa_id, true);
+    } else {
+        Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat menghapus.", confirmButtonColor: "#2563eb" });
+    }
 }
 
 function tambahTatibSiswa(siswaId) {
@@ -237,6 +471,7 @@ async function hapusTatib(id) {
     if (res && res.status === "success") {
         showToast("Catatan dihapus.");
         await loadTatibData(true);
+        if (typeof checkStudentNotifications === "function") checkStudentNotifications();
     } else {
         Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat menghapus catatan.", confirmButtonColor: "#2563eb" });
     }
@@ -562,6 +797,7 @@ async function simpanTatibForm(e) {
         closeModal();
         showToast(res.message || "Catatan tata tertib disimpan.");
         await loadTatibData(true);
+        if (typeof checkStudentNotifications === "function") checkStudentNotifications();
         if (ambang.length) ttLaporAmbang(ambang);
         return;
     }
@@ -647,6 +883,7 @@ async function simpanTatibEdit(e, id) {
         closeModal();
         showToast(res.message || "Catatan diperbarui.");
         await loadTatibData(true);
+        if (typeof checkStudentNotifications === "function") checkStudentNotifications();
         if (siswaId) openDetailTatib(siswaId);
         return;
     }
