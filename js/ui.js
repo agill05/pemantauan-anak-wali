@@ -710,3 +710,21 @@ function titleCaseNama(nama) {
 function rapikanInputNama(el) {
     if (el && !el.readOnly) el.value = titleCaseNama(el.value);
 }
+
+/* Animasi perpindahan tab/panel. dir: "left" | "right" | "fade".
+   Dilewati bila pengguna memilih reduced-motion. */
+function animateSwap(el, dir, skip) {
+    if (!el) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const cls = dir === "left" ? "swap-in-left" : dir === "right" ? "swap-in-right" : "swap-in-fade";
+    const all = ["swap-in-left", "swap-in-right", "swap-in-fade"];
+    const targets = skip ? Array.from(el.children).slice(skip) : [el];
+    targets.forEach(t => {
+        t.classList.remove(...all);
+        void t.offsetWidth;
+        t.classList.add(cls);
+        t.addEventListener("animationend", e => {
+            if (e.target === t) t.classList.remove(cls);
+        }, { once: true });
+    });
+}

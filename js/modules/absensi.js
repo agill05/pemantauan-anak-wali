@@ -29,8 +29,11 @@ function syncAbsensiTab() {
 }
 
 function setAbsensiTab(tab) {
+    if (tab === absensiTab) return;
+    const dir = tab === 'binaan' ? 'left' : 'right';
     absensiTab = tab;
     renderAbsensiView();
+    animateSwap(document.getElementById("absensi-list-container"), dir, 1);
 }
 
 function absensiSiswaTab(tab) {

@@ -3134,3 +3134,27 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 @media (min-width: 640px) {
     .sidebar-refresh { display: none !important; }
 }
+
+/* ---- Animasi perpindahan tab ---- */
+.swap-in-left { animation: swapInLeft 0.26s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.swap-in-right { animation: swapInRight 0.26s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.swap-in-fade { animation: swapInFade 0.22s ease-out both; }
+
+@keyframes swapInLeft {
+    from { opacity: 0; transform: translateX(16px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes swapInRight {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes swapInFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .swap-in-left, .swap-in-right, .swap-in-fade { animation: none; }
+}

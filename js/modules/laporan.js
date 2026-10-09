@@ -231,6 +231,7 @@ function tanggalPendek(t) {
 }
 
 function setLaporanTab(tab) {
+    const prevTab = laporanTab;
     laporanTab = tab;
     const umum = document.getElementById("laporan-panel-umum");
     const keb = document.getElementById("laporan-panel-kebiasaan");
@@ -246,6 +247,7 @@ function setLaporanTab(tab) {
         b.classList.toggle("text-slate-600", !aktif);
         b.setAttribute("aria-pressed", String(aktif));
     });
+    if (prevTab !== tab) animateSwap(tab === "kebiasaan" ? keb : umum, tab === "kebiasaan" ? "left" : "right");
     if (tab === "kebiasaan") initLaporanKebiasaan();
 }
 

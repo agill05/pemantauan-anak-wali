@@ -1,6 +1,9 @@
 function renderAdminManage() { switchAdminTab("guru"); }
 
 function switchAdminTab(tab) {
+    const ORDER_ADM = ["guru", "siswa", "kelas", "mentor", "sekolah", "kebiasaan", "arsip"];
+    const curAdm = Array.from(document.querySelectorAll(".admin-tab-content")).find(c => !c.classList.contains("hidden"));
+    const prevAdm = curAdm ? curAdm.id.replace("admin-tab-", "") : null;
     document.querySelectorAll(".admin-tab-content").forEach(c => c.classList.add("hidden"));
     document.querySelectorAll(".admin-tab-btn").forEach(b => {
         b.classList.remove("bg-white", "text-primary", "shadow-sm", "bg-surface");
@@ -16,6 +19,7 @@ function switchAdminTab(tab) {
         targetBtn.classList.remove("text-slate-600");
     }
 
+    if (prevAdm && prevAdm !== tab) animateSwap(target, ORDER_ADM.indexOf(tab) > ORDER_ADM.indexOf(prevAdm) ? "left" : "right");
     if (tab === "guru") renderAdminGuru();
     if (tab === "siswa") renderAdminSiswa();
     if (tab === "kelas") renderAdminKelas();

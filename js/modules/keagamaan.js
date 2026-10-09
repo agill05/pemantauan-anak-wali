@@ -93,6 +93,7 @@ function hitungSkorKeagamaan(hafalanList = []) {
 }
 
 function setKeagamaanKategori(kat) {
+    const prevKat = keagamaanKategoriFilter;
     keagamaanKategoriFilter = (kat === "semua" || KEAGAMAAN_KATEGORI[kat]) ? kat : "semua";
     document.querySelectorAll("#keagamaan-kategori-tabs .kag-tab-btn").forEach(btn => {
         const on = btn.getAttribute("data-kat") === keagamaanKategoriFilter;
@@ -100,6 +101,10 @@ function setKeagamaanKategori(kat) {
         btn.classList.toggle("text-slate-600", !on);
     });
     renderKeagamaanView();
+    if (prevKat !== keagamaanKategoriFilter) {
+        const urut = Array.from(document.querySelectorAll("#keagamaan-kategori-tabs .kag-tab-btn")).map(b => b.getAttribute("data-kat"));
+        animateSwap(document.getElementById("keagamaan-container"), urut.indexOf(keagamaanKategoriFilter) > urut.indexOf(prevKat) ? "left" : "right");
+    }
 }
 
 async function loadKeagamaanData(forceRefresh = false) {

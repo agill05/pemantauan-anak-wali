@@ -1,4 +1,6 @@
 function switchAkademikTab(tab) {
+    const tgtPre = document.getElementById(`akd-tab-${tab}`);
+    const berubahAkd = !!(tgtPre && tgtPre.classList.contains("hidden"));
     document.querySelectorAll(".akd-tab-content").forEach(c => c.classList.add("hidden"));
     document.querySelectorAll(".akd-tab-btn").forEach(b => {
         b.classList.remove("bg-white", "text-primary", "shadow-sm", "bg-surface");
@@ -14,6 +16,7 @@ function switchAkademikTab(tab) {
         targetBtn.classList.remove("text-slate-600");
     }
 
+    if (berubahAkd) animateSwap(target, tab === "prestasi" ? "left" : "right");
     if (tab === "nilai") renderAkademikNilai();
     if (tab === "prestasi") renderAkademikPrestasi();
 }

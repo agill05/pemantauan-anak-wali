@@ -112,12 +112,14 @@ function renderKebiasaanTabs() {
 
 function setKebiasaanTab(tab) {
     if (kebiasaanTab === tab) return;
+    const dirKeb = tab === "kalender" ? "left" : "right";
     kebiasaanTab = tab;
     renderKebiasaanTabs();
     const dateWrap = document.getElementById("kebiasaan-date-wrap");
     if (dateWrap) dateWrap.classList.toggle("hidden", tab === "kalender");
     if (tab === "kalender") loadKalenderKebiasaan();
     else renderKebiasaanView();
+    animateSwap(document.getElementById("kebiasaan-list-container"), dirKeb);
 }
 
 function renderKebiasaanView() {

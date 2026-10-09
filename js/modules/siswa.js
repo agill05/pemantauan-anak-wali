@@ -1,4 +1,7 @@
 function switchTabSiswa(tabName, btnEl) {
+    const ORDER_PROF = ["ringkasan", "keagamaan", "akademik", "catatan"];
+    const curProf = Array.from(document.querySelectorAll(".prof-tab-content")).find(c => !c.classList.contains("hidden"));
+    const prevProf = curProf ? curProf.id.replace("tab-siswa-", "") : null;
     document.querySelectorAll('.prof-tab-btn').forEach(btn => {
         btn.classList.remove('active', 'border-b-2', 'border-blue-600', 'text-blue-600', 'font-bold');
         btn.classList.add('text-slate-500');
@@ -10,6 +13,7 @@ function switchTabSiswa(tabName, btnEl) {
 
     const target = document.getElementById(`tab-siswa-${tabName}`);
     if (target) target.classList.remove('hidden');
+    if (prevProf && prevProf !== tabName) animateSwap(target, ORDER_PROF.indexOf(tabName) > ORDER_PROF.indexOf(prevProf) ? "left" : "right");
 
     if (tabName === 'ringkasan' && appState.activeSiswaDetail) {
         setTimeout(() => renderRadarChartSiswa(appState.activeSiswaDetail), 100);
