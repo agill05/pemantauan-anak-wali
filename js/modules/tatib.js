@@ -541,6 +541,9 @@ async function openModalTatibInput(preSiswaId = null) {
                 <label for="tt-tanggal" class="${lbl}">TANGGAL KEJADIAN</label>
                 <input type="date" id="tt-tanggal" value="${getDateWITA()}" max="${getDateWITA()}" required onchange="ttJadwalkanPratinjau()" class="${inp}">
             </div>
+            <button type="button" onclick="ttImporAlpa()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                <i class="fas fa-calendar-xmark"></i> Impor Alpa dari Presensi (B4)
+            </button>
             <div>
                 <p class="${lbl}">KATEGORI</p>
                 <div id="tt-kat" class="flex gap-1.5 overflow-x-auto pb-1"></div>
@@ -893,4 +896,191 @@ async function simpanTatibEdit(e, id) {
     } else {
         showToast("Koneksi bermasalah. Perubahan belum tersimpan.", "warning");
     }
+}
+
+// ---------- Tahap 8: siswa, dashboard, impor Alpa ----------
+
+const TT_ID_ALPA = "TT-B04";
+let tatibSaya = { ringkasan: null, waktu: 0, memuat: false };
+
+function tatibResetLokal() {
+    tatibRekap = new Map();
+    tatibPanggilan = [];
+    tatibStatistik = null;
+    tatibSaya = { ringkasan: null, waktu: 0, memuat: false };
+}
+
+function tatibBersihkanLokal(ids) {
+    const set = ids instanceof Set ? ids : new Set((ids || []).map(String));
+    set.forEach(id => tatibRekap.delete(String(id)));
+    tatibPanggilan = (tatibPanggilan || []).filter(p => !set.has(String(p.siswa_id)));
+    if (appState.user && set.has(String(appState.user.id))) tatibSaya = { ringkasan: null, waktu: 0, memuat: false };
+}
+
+async function tatibMuatSaya(paksa = false) {
+    if (!appState.user || appState.user.role !== "siswa" || tatibSaya.memuat) return;
+    if (!paksa && tatibSaya.waktu && Date.now() - tatibSaya.waktu < 2 * 60 * 1000) return;
+    tatibSaya.memuat = true;
+    try {
+        const res = await apiCall("getTatib", {}, false, 1, true);
+        if (res && res.status === "success" && Array.isArray(res.data)) {
+            appState.tatib = res.data;
+            tatibSaya.ringkasan = res.ringkasan || null;
+            if (res.konfig) tatibKonfig = res.konfig;
+            tatibSaya.waktu = Date.now();
+        }
+    } finally {
+        tatibSaya.memuat = false;
+    }
+    ttRenderKartuSiswa();
+}
+
+function ttRiwayatSaya() {
+    const uid = appState.user ? String(appState.user.id) : "";
+    return (appState.tatib || []).filter(r => String(r.siswa_id) === uid);
+}
+
+function ttPesanSiswa(r) {
+    const k = ttKonfig();
+    if (r.mencapai_batas) return "Poinmu mencapai batas. Segera temui wali kelas.";
+    if (r.tahap >= 1) return `Poin pelanggaranmu sudah melewati ${k["panggilan_" + r.tahap]}. Bicaralah dengan wali kelas atau mentor.`;
+    return "Aman. Pertahankan kedisiplinanmu.";
+}
+
+function ttKartuSiswaHtml(mode) {
+    const r = tatibSaya.ringkasan;
+    if (!r) return `<p class="sd-note">${tatibSaya.memuat || !tatibSaya.waktu ? "Memuat poin tata tertib..." : "Poin tata tertib belum bisa dimuat."}</p>`;
+    const k = ttKonfig();
+    const total = Number(r.total) || 0;
+    const label = r.mencapai_batas ? "Batas tercapai" : (r.tahap >= 1 ? "Perlu perhatian" : "Aman");
+    const badge = r.mencapai_batas ? TT_TAHAP_BADGE[3] : (TT_TAHAP_BADGE[r.tahap] || TT_TAHAP_BADGE[0]);
+    const riwayat = ttRiwayatSaya();
+    const tampil = riwayat.slice(0, mode === "profil" ? 10 : 3);
+    const daftar = tampil.length === 0
+        ? `<p class="text-xs text-slate-400">Belum ada catatan.</p>`
+        : tampil.map(rec => {
+            const peng = String(rec.jenis) === "penghargaan";
+            return `<div class="flex justify-between items-start gap-2 text-xs">
+                <span class="min-w-0 break-words text-slate-700">${escapeHtml(rec.nama)}<small class="block text-[11px] text-slate-400">${escapeHtml(String(rec.tanggal || "").slice(0, 10))}</small></span>
+                <span class="font-extrabold whitespace-nowrap ${peng ? "text-emerald-600" : "text-rose-600"}">${peng ? "\u2212" : "+"}${Number(rec.skor_akhir) || 0}</span>
+            </div>`;
+        }).join("");
+    return `
+        <div class="space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-1.5 text-xs">
+                <span class="font-bold text-slate-700">${total} <span class="text-slate-400 font-semibold">/ ${k.batas_keluar} poin</span></span>
+                <span class="font-bold px-2 py-0.5 rounded-md border ${badge}">${label}</span>
+            </div>
+            ${ttBarProgres(r)}
+            <p class="text-[11px] text-slate-400">Pelanggaran ${Number(r.pelanggaran) || 0} \u2022 Penghargaan ${Number(r.penghargaan) || 0}</p>
+            <p class="text-xs text-slate-600">${escapeHtml(ttPesanSiswa(r))}</p>
+            ${mode === "profil" ? `<div class="pt-1">${ttRincianKategori(riwayat)}</div>` : ""}
+            <div class="space-y-1.5 pt-2 border-t border-slate-100">${daftar}</div>
+        </div>`;
+}
+
+function ttKartuBerandaHtml() {
+    return `<div id="sd-tatib-card">${sdCard("Poin Tata Tertib", ttKartuSiswaHtml("beranda"))}</div>`;
+}
+
+function ttProfilTatibHtml(siswa) {
+    if (!appState.user || appState.user.role !== "siswa" || String(siswa.id) !== String(appState.user.id)) return "";
+    setTimeout(() => tatibMuatSaya(true), 0);
+    return `<div id="profil-tatib-card" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-gavel text-amber-500 mr-1.5"></i>Poin Tata Tertib</h4>
+        ${ttKartuSiswaHtml("profil")}
+    </div>`;
+}
+
+function ttRenderKartuSiswa() {
+    const home = document.getElementById("sd-tatib-card");
+    if (home) home.outerHTML = ttKartuBerandaHtml();
+    const prof = document.getElementById("profil-tatib-card");
+    if (prof) {
+        prof.innerHTML = `<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-gavel text-amber-500 mr-1.5"></i>Poin Tata Tertib</h4>${ttKartuSiswaHtml("profil")}`;
+    }
+}
+
+// Dashboard staf: panggilan orang tua yang belum dan sudah ditangani.
+function tatibRenderStatusDashboard(res) {
+    let box = document.getElementById("dash-tatib-status");
+    const role = appState.user && appState.user.role;
+    if (!role || role === "siswa" || role === "ortu" || !res || res.status !== "success" || !Array.isArray(res.data)) {
+        if (box) box.remove();
+        return;
+    }
+    if (!box) {
+        const anchor = document.getElementById("dash-section-agenda");
+        if (!anchor) return;
+        anchor.insertAdjacentHTML("beforebegin", `<div id="dash-tatib-status"></div>`);
+        box = document.getElementById("dash-tatib-status");
+    }
+    let perlu = 0, ditangani = 0, batas = 0;
+    res.data.forEach(r => {
+        const s = (appState.siswa || []).find(x => String(x.id) === String(r.siswa_id));
+        if (!s || (typeof isSiswaInPeran === "function" && !isSiswaInPeran(s))) return;
+        const tertunda = Array.isArray(r.panggilan_tertunda) ? r.panggilan_tertunda : [];
+        if (tertunda.length > 0) perlu++;
+        else if ((Number(r.tahap) || 0) >= 1) ditangani++;
+        if (r.mencapai_batas) batas++;
+    });
+    const sel = (n, label, warna) => `<div class="rounded-xl border border-slate-100 p-2 text-center ${warna}"><p class="text-lg font-black leading-tight">${n}</p><p class="text-[11px] font-bold">${label}</p></div>`;
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-2 px-1">
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tata Tertib: Panggilan Orang Tua</h2>
+            <button type="button" class="dash-section-link" onclick="switchView('tatib')">Lihat Semua <i class="fas fa-chevron-right text-[10px]"></i></button>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+            ${sel(perlu, "Belum ditangani", "bg-violet-50 text-violet-700")}
+            ${sel(ditangani, "Sudah ditangani", "bg-emerald-50 text-emerald-700")}
+            ${sel(batas, "Mencapai batas", "bg-rose-50 text-rose-700")}
+        </div>`;
+}
+
+// Impor saran Alpa dari presensi: pilih siswa Alpa pada tanggal terpilih, item B4. Tetap perlu Simpan.
+async function ttImporAlpa() {
+    if (!ttForm) return;
+    const tanggal = (document.getElementById("tt-tanggal") || {}).value || "";
+    if (!tanggal) { showToast("Isi tanggal kejadian dulu.", "warning"); return; }
+    const m = tatibMaster.master.find(x => x.id === TT_ID_ALPA);
+    if (!m || !m.aktif) {
+        Swal.fire({ icon: "info", title: "Item B4 Tidak Ada", text: "Item Alpa (B4) tidak ditemukan atau tidak aktif di daftar tata tertib.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const res = await apiCall("getAbsensi", { tanggal }, false, 1, true);
+    if (!res || res.status !== "success" || !Array.isArray(res.data)) {
+        showToast("Presensi tidak dapat dimuat.", "warning");
+        return;
+    }
+    const boleh = new Set(ttForm.writable.map(s => String(s.id)));
+    const sudah = new Set((appState.tatib || [])
+        .filter(r => r.master_id === TT_ID_ALPA && String(r.tanggal).slice(0, 10) === tanggal)
+        .map(r => String(r.siswa_id)));
+    const ids = Array.from(new Set(res.data
+        .filter(a => String(a.status) === "A")
+        .map(a => String(a.siswa_id))
+        .filter(id => boleh.has(id) && !sudah.has(id))));
+    if (ids.length === 0) {
+        showToast("Tidak ada siswa Alpa yang belum tercatat pada tanggal ini.", "info");
+        return;
+    }
+    const nama = id => (ttCariSiswa(id) || {}).nama || "Siswa";
+    const daftar = ids.slice(0, 8).map(id => escapeHtml(nama(id))).join(", ") + (ids.length > 8 ? ` dan ${ids.length - 8} lainnya` : "");
+    const ok = await Swal.fire({
+        icon: "question", title: `${ids.length} siswa Alpa`,
+        html: `<p style="font-size:13px">${daftar}</p><p style="font-size:12px;margin-top:6px">Pilih mereka dengan item B4 (${m.skor_min} poin)?</p>`,
+        showCancelButton: true, confirmButtonText: "Pilih", cancelButtonText: "Batal", confirmButtonColor: "#2563eb"
+    });
+    if (!ok.isConfirmed || !ttForm) return;
+    ids.forEach(id => ttForm.siswa.add(id));
+    ttForm.kat = m.kategori;
+    ttForm.masterId = m.id;
+    ttForm.cariItem = "";
+    const cari = document.getElementById("tt-cari-item");
+    if (cari) cari.value = "";
+    ttRenderSiswa();
+    ttRenderKategori();
+    ttRenderItem();
+    ttRenderSkor();
+    ttJadwalkanPratinjau();
 }

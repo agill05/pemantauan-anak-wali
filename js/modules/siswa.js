@@ -132,6 +132,8 @@ async function openProfilSiswa(siswaTarget) {
                     </div>
                 </div>
 
+                ${typeof ttProfilTatibHtml === "function" ? ttProfilTatibHtml(siswa) : ""}
+
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2">
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fas fa-star text-amber-500 mr-1.5"></i>7 Kebiasaan Hebat</h4>
                     <div class="divide-y divide-slate-100">

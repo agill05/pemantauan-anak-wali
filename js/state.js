@@ -106,7 +106,7 @@ function bersihkanJejakSiswaLokal(daftarId) {
     const idSiswa = r => String(r && (r.siswa_id !== undefined ? r.siswa_id : (r.siswaId !== undefined ? r.siswaId : "")));
     const bukanTerhapus = r => !ids.has(idSiswa(r));
 
-    ["absensi", "absensiMentor", "kebiasaan", "keagamaan", "akademik", "prestasi", "pembinaan", "jurnal", "currentNotifications", "handledNotifications", "notifDitangani"].forEach(k => {
+    ["absensi", "absensiMentor", "kebiasaan", "keagamaan", "akademik", "prestasi", "pembinaan", "jurnal", "tatib", "currentNotifications", "handledNotifications", "notifDitangani"].forEach(k => {
         if (Array.isArray(appState[k])) appState[k] = appState[k].filter(bukanTerhapus);
     });
     ["siswa", "myStudents", "laporanRekap"].forEach(k => {
@@ -114,6 +114,7 @@ function bersihkanJejakSiswaLokal(daftarId) {
     });
     const det = appState.activeSiswaDetail;
     if (det && det.siswa && ids.has(String(det.siswa.id))) appState.activeSiswaDetail = null;
+    if (typeof tatibBersihkanLokal === "function") tatibBersihkanLokal(ids);
 
     saveAppStateToLocal();
 
@@ -143,6 +144,7 @@ function bersihkanJejakSiswaLokal(daftarId) {
 
 function resetCacheCatatanGuru() {
     ["jurnal", "pembinaan", "prestasi", "keagamaan", "tatib"].forEach(k => { appState[k] = []; });
+    if (typeof tatibResetLokal === "function") tatibResetLokal();
     ["jurnal", "pembinaan", "keagamaan", "akademik"].forEach(k => { lastFetchTimes[k] = 0; });
     appState.notifDitangani = [];
     try { localStorage.removeItem("notif_ditangani_cache"); } catch (e) { }

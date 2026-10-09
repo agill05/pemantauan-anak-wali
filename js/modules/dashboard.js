@@ -259,10 +259,12 @@ function renderSiswaHome() {
         sdSapaanCard(u),
         sdMisiCard(today),
         sdBadgeCard(today, absBulan, hafalan),
+        typeof ttKartuBerandaHtml === "function" ? ttKartuBerandaHtml() : "",
         `<div class="sd-grid2">${sdHadirCard(absBulan)}${sdNilaiCard(nilai)}</div>`,
         sdTrenCard(today),
         `<div class="sd-grid2">${sdHafalanCard(hafalan)}${sdPrestasiCard(prestasi)}</div>`
     ].join("");
+    if (typeof tatibMuatSaya === "function") tatibMuatSaya();
 }
 
 function renderPrioritySectionSiswa() {
@@ -720,6 +722,8 @@ async function checkStudentNotifications() {
             }));
         });
     }
+
+    if (typeof tatibRenderStatusDashboard === 'function') tatibRenderStatusDashboard(resTatib);
 
     const levelOrder = { 'kritis': 3, 'sedang': 2, 'rendah': 1 };
     activeList.sort((a, b) => levelOrder[b.level] - levelOrder[a.level]);
