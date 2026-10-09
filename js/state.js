@@ -44,6 +44,7 @@ let appState = {
     akademik: [],
     prestasi: [],
     pembinaan: [],
+    tatib: [],
     activeSiswaDetail: null,
     laporanRekap: [],
     currentNotifications: [],
@@ -141,7 +142,7 @@ function bersihkanJejakSiswaLokal(daftarId) {
 }
 
 function resetCacheCatatanGuru() {
-    ["jurnal", "pembinaan", "prestasi", "keagamaan"].forEach(k => { appState[k] = []; });
+    ["jurnal", "pembinaan", "prestasi", "keagamaan", "tatib"].forEach(k => { appState[k] = []; });
     ["jurnal", "pembinaan", "keagamaan", "akademik"].forEach(k => { lastFetchTimes[k] = 0; });
     appState.notifDitangani = [];
     try { localStorage.removeItem("notif_ditangani_cache"); } catch (e) { }
@@ -176,8 +177,8 @@ const PERAN_LABEL = { wali: "Wali Kelas", mentor: "Mentor", semua: "Semua" };
 const PERAN_STORAGE_PREFIX = "peran_aktif_";
 
 const WRITE_KATEGORI_CLIENT = {
-    wali: new Set(["siswa", "ambil_siswa", "absensi", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan"]),
-    mentor: new Set(["ambil_siswa", "absensi_mentor", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan"]),
+    wali: new Set(["siswa", "ambil_siswa", "absensi", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan", "tatib"]),
+    mentor: new Set(["ambil_siswa", "absensi_mentor", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan", "tatib"]),
     self: new Set(["kebiasaan", "jurnal"])
 };
 

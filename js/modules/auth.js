@@ -819,6 +819,7 @@ function renderSidebarMenu(role) {
 
         html += section("Pembinaan");
         html += item("pembinaan", "fa-user-edit", "Catatan Pembinaan", "sidebar-badge-pembinaan");
+        html += item("tatib", "fa-gavel", "Tata Tertib");
         html += item("siswa", "fa-users", "Data Siswa");
 
         html += section("Lainnya");

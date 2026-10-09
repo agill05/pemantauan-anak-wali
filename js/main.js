@@ -1,5 +1,5 @@
 function canAccessView(role, viewId) {
-    const staffOnly = ["siswa", "laporan"];
+    const staffOnly = ["siswa", "laporan", "tatib"];
     if (viewId === "admin-manage" || viewId === "arsip") return role === "admin";
     if (viewId === "arsip-saya") return role === "siswa" || role === "guru" || role === "kepsek";
     if (viewId === "jurnal") return true;
@@ -42,6 +42,7 @@ function switchView(viewId) {
     if (viewId === "karakter") loadKeagamaanData();
     if (viewId === "akademik") loadAkademikData();
     if (viewId === "pembinaan") loadPembinaanData();
+    if (viewId === "tatib") loadTatibData();
     if (viewId === "laporan") loadLaporanRekap();
     if (viewId === "siswa") renderSiswaView();
     if (viewId === "admin-manage") renderAdminManage();
@@ -121,6 +122,14 @@ function _refreshAllSiswaDropdowns() {
                 enhanceSiswaSelect(selPembinaan);
     }
 
+    const selTatib = document.getElementById("tatib-siswa-filter");
+    if (selTatib && siswaList.length > 0) {
+        const prev = selTatib.value;
+        selTatib.innerHTML = `<option value="">-- Semua Siswa --</option>` + siswaList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+        if (prev && Array.from(selTatib.options).some(o => o.value === prev)) selTatib.value = prev;
+        enhanceSiswaSelect(selTatib);
+    }
+
     const activeView = document.querySelector(".view-section.active");
     if (activeView) {
         const viewId = activeView.id.replace("view-", "");
@@ -129,6 +138,7 @@ function _refreshAllSiswaDropdowns() {
         else if (viewId === "karakter") renderKeagamaanView();
         else if (viewId === "akademik") { renderAkademikNilai(); renderAkademikPrestasi(); }
         else if (viewId === "pembinaan") renderPembinaanView();
+        else if (viewId === "tatib") renderTatibView();
         else if (viewId === "siswa") renderSiswaView();
     }
 }
@@ -279,6 +289,7 @@ function startDataPolling() {
                 case "karakter": await loadKeagamaanData(true); break;
                 case "akademik": await loadAkademikData(true); break;
                 case "pembinaan": await loadPembinaanData(true); break;
+                case "tatib": await loadTatibData(true); break;
                 case "laporan": await loadLaporanRekap(true); break;
             }
             _lastVersiSheet = sigVersi;
