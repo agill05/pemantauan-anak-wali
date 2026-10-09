@@ -1,7 +1,7 @@
 function renderAdminManage() { switchAdminTab("guru"); }
 
 function switchAdminTab(tab) {
-    const ORDER_ADM = ["guru", "siswa", "kelas", "mentor", "sekolah", "kebiasaan"];
+    const ORDER_ADM = ["guru", "siswa", "kelas", "mentor", "sekolah", "kebiasaan", "tatib"];
     const curAdm = Array.from(document.querySelectorAll(".admin-tab-content")).find(c => !c.classList.contains("hidden"));
     const prevAdm = curAdm ? curAdm.id.replace("admin-tab-", "") : null;
     document.querySelectorAll(".admin-tab-content").forEach(c => c.classList.add("hidden"));
@@ -26,6 +26,7 @@ function switchAdminTab(tab) {
     if (tab === "mentor") renderAdminMentor();
     if (tab === "sekolah") renderAdminSekolah();
     if (tab === "kebiasaan") renderAdminKebiasaan();
+    if (tab === "tatib") renderAdminTatib();
 }
 
 function renderAdminSekolah() {
@@ -923,6 +924,318 @@ async function simpanFormKebiasaan(e, id) {
     } else if (btn) {
         btn.disabled = false;
         btn.classList.remove("opacity-60");
+    }
+}
+
+// ===== Tata Tertib (admin): ambang poin + master item =====
+let adminTatib = { master: [], konfig: null, kategori: { A: "Kelakuan", B: "Kerajinan", C: "Kerapian", D: "Penghargaan" } };
+let adminTatibMemuat = false;
+let adminTatibMenyimpan = false;
+let adminTatibDimuat = false;
+let adminTatibFilter = "semua";
+let adminTatibCari = "";
+
+const TATIB_MAKS_ITEM_ADMIN = 300;
+const TATIB_SYARAT_LABEL = { "": "Semua siswa", putra: "Putra", putri: "Putri", muslim: "Muslim" };
+const TATIB_WARNA_KAT = {
+    A: "text-rose-600 bg-rose-50",
+    B: "text-amber-600 bg-amber-50",
+    C: "text-sky-600 bg-sky-50",
+    D: "text-emerald-600 bg-emerald-50"
+};
+
+function terapkanTatibAdmin(data) {
+    if (!data) return;
+    if (Array.isArray(data.master)) adminTatib.master = data.master.slice();
+    if (data.konfig) adminTatib.konfig = data.konfig;
+    if (data.kategori) adminTatib.kategori = data.kategori;
+    adminTatibDimuat = true;
+    isiFormTatibKonfig();
+}
+
+async function renderAdminTatib(force = false) {
+    const list = document.getElementById("admin-tatib-list");
+    if (!list) return;
+    if (adminTatibDimuat) gambarAdminTatib();
+    else renderSkeleton("admin-tatib-list", 3);
+    if (adminTatibMemuat || (!force && adminTatibDimuat)) return;
+
+    adminTatibMemuat = true;
+    const res = await apiCall("getTatibMaster", { semua: true }, false);
+    adminTatibMemuat = false;
+    if (res && res.status === "success" && res.data && Array.isArray(res.data.master)) {
+        terapkanTatibAdmin(res.data);
+        gambarAdminTatib();
+    } else if (!adminTatibDimuat) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-wifi text-2xl mb-2"></i><p class="text-xs text-slate-500">Data tata tertib gagal dimuat. Periksa koneksi lalu buka tab ini lagi.</p></div>`;
+    }
+}
+
+function isiFormTatibKonfig() {
+    const k = adminTatib.konfig;
+    if (!k) return;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set("m-tt-p1", k.panggilan_1);
+    set("m-tt-p2", k.panggilan_2);
+    set("m-tt-p3", k.panggilan_3);
+    set("m-tt-batas", k.batas_keluar);
+    set("m-tt-pengali", k.pengali_ulang);
+}
+
+function gambarAdminTatib() {
+    const data = adminTatib.master;
+    const aktif = data.filter(m => m.aktif !== false).length;
+    const per = { A: 0, B: 0, C: 0, D: 0 };
+    data.forEach(m => { if (per[m.kategori] !== undefined) per[m.kategori]++; });
+
+    const ringkas = document.getElementById("admin-tatib-ringkas");
+    if (ringkas) ringkas.textContent = `${aktif} aktif dari ${data.length} item (maks. ${TATIB_MAKS_ITEM_ADMIN})`;
+
+    const btnTambah = document.getElementById("btn-tambah-tatib");
+    if (btnTambah) {
+        const penuh = data.length >= TATIB_MAKS_ITEM_ADMIN;
+        btnTambah.disabled = penuh;
+        btnTambah.classList.toggle("opacity-60", penuh);
+        btnTambah.classList.toggle("cursor-not-allowed", penuh);
+        btnTambah.title = penuh ? "Batas " + TATIB_MAKS_ITEM_ADMIN + " item sudah tercapai" : "";
+    }
+
+    const filter = document.getElementById("admin-tatib-filter");
+    if (filter) {
+        const chip = (kode, label, jumlah) => {
+            const on = adminTatibFilter === kode;
+            return `<button type="button" onclick="setTatibFilter('${kode}')" aria-pressed="${on}"
+                class="tatib-chip shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition ${on ? "bg-primary text-white" : "bg-white text-slate-600 border border-slate-200"}">${escapeHtml(label)} (${jumlah})</button>`;
+        };
+        filter.innerHTML = chip("semua", "Semua", data.length) +
+            Object.keys(adminTatib.kategori).map(k => chip(k, k + " \u2022 " + adminTatib.kategori[k], per[k] || 0)).join("");
+    }
+    gambarTatibList();
+}
+
+function gambarTatibList() {
+    const list = document.getElementById("admin-tatib-list");
+    if (!list) return;
+    const cari = adminTatibCari;
+    const tampil = adminTatib.master.filter(m => {
+        if (adminTatibFilter !== "semua" && m.kategori !== adminTatibFilter) return false;
+        if (!cari) return true;
+        return (String(m.nama) + " " + m.id + " " + String(m.penanggung_jawab)).toLowerCase().includes(cari);
+    });
+    const bolehGeser = adminTatibFilter !== "semua" && !cari;
+
+    list.innerHTML = tampil.map((m, i) => {
+        const on = m.aktif !== false;
+        const skor = m.skor_min === m.skor_max ? `${m.skor_min} poin` : `${m.skor_min}\u2013${m.skor_max} poin`;
+        const syarat = m.syarat ? ` \u2022 ${escapeHtml(TATIB_SYARAT_LABEL[m.syarat] || m.syarat)}` : "";
+        const warna = TATIB_WARNA_KAT[m.kategori] || "text-slate-600 bg-slate-100";
+        const idq = escapeHtml(m.id);
+        const panah = bolehGeser ? `
+                    <button type="button" onclick="geserTatib('${idq}', -1)" ${i === 0 ? "disabled" : ""} class="w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 disabled:opacity-30" aria-label="Naikkan urutan"><i class="fas fa-arrow-up text-xs"></i></button>
+                    <button type="button" onclick="geserTatib('${idq}', 1)" ${i === tampil.length - 1 ? "disabled" : ""} class="w-8 h-8 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 disabled:opacity-30" aria-label="Turunkan urutan"><i class="fas fa-arrow-down text-xs"></i></button>` : "";
+        return `
+            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3 ${on ? "" : "opacity-60"}">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-[11px] font-extrabold ${warna}">${idq}</div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold text-slate-800 break-words">${escapeHtml(m.nama)}</p>
+                    <p class="text-[11px] text-slate-400 break-words">${skor} \u2022 ${escapeHtml(m.penanggung_jawab || "-")}${syarat} \u2022 ${on ? "Aktif" : "Nonaktif"}</p>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">${panah}
+                    <button type="button" onclick="openModalTatib('${idq}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100" aria-label="Ubah item tata tertib"><i class="fas fa-pen text-xs"></i></button>
+                </div>
+            </div>`;
+    }).join("") || `<div class="empty-state"><p class="text-xs text-slate-500">${adminTatib.master.length === 0 ? "Belum ada item. Jalankan setupTatib() di editor Apps Script." : "Tidak ada item yang cocok."}</p></div>`;
+}
+
+function setTatibFilter(kode) {
+    adminTatibFilter = kode;
+    gambarAdminTatib();
+}
+
+function setTatibCari(nilai) {
+    adminTatibCari = String(nilai || "").trim().toLowerCase();
+    gambarTatibList();
+}
+
+async function kirimTatibMaster(items) {
+    if (adminTatibMenyimpan) return null;
+    adminTatibMenyimpan = true;
+    const res = await apiCall("saveTatibMaster", { items }, true);
+    adminTatibMenyimpan = false;
+    if (res && res.status === "success") {
+        if (res.data) terapkanTatibAdmin(res.data);
+        gambarAdminTatib();
+        return res;
+    }
+    if (res && res.status === "error") {
+        Swal.fire({ icon: "warning", title: "Tidak Tersimpan", text: res.message || "Ditolak server.", confirmButtonColor: "#2563eb" });
+    } else {
+        showToast("Koneksi bermasalah. Perubahan belum tersimpan.", "warning");
+    }
+    return null;
+}
+
+async function geserTatib(id, arah) {
+    const sekat = adminTatib.master.filter(m => m.kategori === (adminTatib.master.find(x => x.id === id) || {}).kategori);
+    const idx = sekat.findIndex(m => m.id === id);
+    const a = sekat[idx];
+    const b = sekat[idx + arah];
+    if (!a || !b) return;
+    const urutA = Number(a.urutan) || (idx + 1);
+    let urutB = Number(b.urutan) || (idx + arah + 1);
+    if (urutA === urutB) urutB = urutA + arah;
+    const res = await kirimTatibMaster([
+        { id: a.id, urutan: urutB },
+        { id: b.id, urutan: urutA }
+    ]);
+    if (res) showToast("Urutan diperbarui.");
+}
+
+function openModalTatib(id = null) {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+    if (!id && adminTatib.master.length >= TATIB_MAKS_ITEM_ADMIN) {
+        Swal.fire({ icon: "info", title: "Batas Tercapai", text: "Maksimal " + TATIB_MAKS_ITEM_ADMIN + " item tata tertib.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const m = id ? adminTatib.master.find(x => String(x.id) === String(id)) : null;
+    if (id && !m) return;
+    const inp = "w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none";
+    const lbl = "block text-xs font-bold text-slate-500 mb-1";
+    const katAwal = m ? m.kategori : (adminTatib.kategori[adminTatibFilter] ? adminTatibFilter : "A");
+    const katOpts = Object.keys(adminTatib.kategori).map(k =>
+        `<option value="${k}" ${k === katAwal ? "selected" : ""}>${k} \u2022 ${escapeHtml(adminTatib.kategori[k])}</option>`).join("");
+    const syaratOpts = Object.keys(TATIB_SYARAT_LABEL).map(s =>
+        `<option value="${s}" ${(m ? m.syarat : "") === s ? "selected" : ""}>${TATIB_SYARAT_LABEL[s]}</option>`).join("");
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-slate-800">${m ? "Ubah Item " + escapeHtml(m.id) : "Tambah Item Tata Tertib"}</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="simpanFormTatib(event, '${m ? escapeHtml(m.id) : ""}')" class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+            <div><label for="m-tt-kategori" class="${lbl}">KATEGORI</label>
+                <select id="m-tt-kategori" class="${inp}" ${m ? "disabled" : ""}>${katOpts}</select>
+                ${m ? `<p class="text-[10px] text-slate-400 mt-0.5">*Kategori dan kode tetap dan tidak dapat diubah.</p>` : ""}</div>
+            <div><label for="m-tt-nama" class="${lbl}">NAMA PELANGGARAN / PENGHARGAAN</label>
+                <textarea id="m-tt-nama" rows="3" maxlength="250" required class="${inp}">${escapeHtml(m ? m.nama : "")}</textarea></div>
+            <div class="grid grid-cols-2 gap-2">
+                <div><label for="m-tt-min" class="${lbl}">SKOR MINIMUM</label>
+                    <input type="number" id="m-tt-min" min="1" max="100" step="1" required value="${m ? m.skor_min : ""}" class="${inp}"></div>
+                <div><label for="m-tt-max" class="${lbl}">SKOR MAKSIMUM</label>
+                    <input type="number" id="m-tt-max" min="1" max="100" step="1" required value="${m ? m.skor_max : ""}" class="${inp}"></div>
+            </div>
+            <div><label for="m-tt-pj" class="${lbl}">PENANGGUNG JAWAB</label>
+                <input type="text" id="m-tt-pj" maxlength="60" value="${escapeHtml(m ? m.penanggung_jawab : "Semua Guru")}" class="${inp}"></div>
+            <div><label for="m-tt-syarat" class="${lbl}">BERLAKU UNTUK</label>
+                <select id="m-tt-syarat" class="${inp}">${syaratOpts}</select></div>
+            <div><label for="m-tt-catatan" class="${lbl}">CATATAN ATURAN</label>
+                <input type="text" id="m-tt-catatan" maxlength="300" value="${escapeHtml(m ? m.catatan_aturan : "")}" class="${inp}"></div>
+            <div><label for="m-tt-aktif" class="${lbl}">STATUS</label>
+                <select id="m-tt-aktif" class="${inp}">
+                    <option value="Aktif" ${!m || m.aktif !== false ? "selected" : ""}>Aktif</option>
+                    <option value="Nonaktif" ${m && m.aktif === false ? "selected" : ""}>Nonaktif</option>
+                </select></div>
+            <button type="submit" id="btn-save-tatib" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Item</button>
+        </form>`;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+function bulatTatib_(teks, maks) {
+    const s = String(teks === undefined || teks === null ? "" : teks).trim();
+    if (!/^\d+$/.test(s)) return null;
+    const n = Number(s);
+    return n >= 1 && n <= maks ? n : null;
+}
+
+async function simpanFormTatib(e, id) {
+    e.preventDefault();
+    const v = (el) => String((document.getElementById(el) || {}).value || "").trim();
+    const nama = v("m-tt-nama");
+    if (!nama) return;
+    const skorMin = bulatTatib_(v("m-tt-min"), 100);
+    const skorMax = bulatTatib_(v("m-tt-max"), 100);
+    if (skorMin === null || skorMax === null) {
+        Swal.fire({ icon: "warning", title: "Skor Tidak Valid", text: "Skor harus bilangan bulat 1-100.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    if (skorMin > skorMax) {
+        Swal.fire({ icon: "warning", title: "Skor Tidak Valid", text: "Skor minimum tidak boleh lebih besar dari maksimum.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const item = {
+        nama,
+        skor_min: skorMin,
+        skor_max: skorMax,
+        penanggung_jawab: v("m-tt-pj") || "Semua Guru",
+        syarat: v("m-tt-syarat"),
+        catatan_aturan: v("m-tt-catatan"),
+        aktif: v("m-tt-aktif") === "Nonaktif" ? "Nonaktif" : "Aktif"
+    };
+    if (id) item.id = id;
+    else item.kategori = v("m-tt-kategori");
+
+    if (id && item.aktif === "Nonaktif") {
+        const ok = await Swal.fire({
+            icon: "question", title: "Nonaktifkan item?",
+            text: "Item tidak muncul lagi di input baru. Catatan lama tetap tersimpan dan item bisa diaktifkan kembali.",
+            showCancelButton: true, confirmButtonText: "Ya, nonaktifkan", cancelButtonText: "Batal", confirmButtonColor: "#2563eb"
+        });
+        if (!ok.isConfirmed) return;
+    }
+
+    const btn = document.getElementById("btn-save-tatib");
+    if (btn) { btn.disabled = true; btn.classList.add("opacity-60"); }
+    const res = await kirimTatibMaster([item]);
+    if (res) {
+        closeModal();
+        showToast(res.message || "Item tata tertib disimpan.");
+    } else if (btn) {
+        btn.disabled = false;
+        btn.classList.remove("opacity-60");
+    }
+}
+
+async function simpanTatibKonfig(e) {
+    e.preventDefault();
+    if (adminTatibMenyimpan) return;
+    const ambil = (id, maks) => bulatTatib_((document.getElementById(id) || {}).value, maks);
+    const p1 = ambil("m-tt-p1", 500);
+    const p2 = ambil("m-tt-p2", 500);
+    const p3 = ambil("m-tt-p3", 500);
+    const batas = ambil("m-tt-batas", 500);
+    const pengali = ambil("m-tt-pengali", 10);
+    const peringatan = (text) => Swal.fire({ icon: "warning", title: "Ambang Tidak Valid", text, confirmButtonColor: "#2563eb" });
+    if (p1 === null || p2 === null || p3 === null || batas === null) {
+        peringatan("Ambang poin harus bilangan bulat 1-500.");
+        return;
+    }
+    if (pengali === null) {
+        peringatan("Pengali harus bilangan bulat 1-10.");
+        return;
+    }
+    if (!(p1 < p2 && p2 < p3 && p3 < batas)) {
+        peringatan("Urutan ambang harus: Panggilan I < II < III < Batas keluar.");
+        return;
+    }
+
+    const btn = document.getElementById("btn-save-tatib-konfig");
+    if (btn) { btn.disabled = true; btn.classList.add("opacity-60"); }
+    adminTatibMenyimpan = true;
+    const res = await apiCall("saveTatibKonfig", {
+        panggilan_1: p1, panggilan_2: p2, panggilan_3: p3, batas_keluar: batas, pengali_ulang: pengali
+    }, true);
+    adminTatibMenyimpan = false;
+    if (btn) { btn.disabled = false; btn.classList.remove("opacity-60"); }
+
+    if (res && res.status === "success") {
+        if (res.data) adminTatib.konfig = res.data;
+        isiFormTatibKonfig();
+        showToast(res.message || "Ambang tata tertib disimpan.");
+    } else if (res && res.status === "error") {
+        Swal.fire({ icon: "warning", title: "Tidak Tersimpan", text: res.message || "Ditolak server.", confirmButtonColor: "#2563eb" });
+    } else {
+        showToast("Koneksi bermasalah. Perubahan belum tersimpan.", "warning");
     }
 }
 

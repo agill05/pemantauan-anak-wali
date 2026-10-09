@@ -702,6 +702,8 @@
                     class="admin-tab-btn flex-1 px-3 whitespace-nowrap py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Sekolah</button>
                 <button onclick="switchAdminTab('kebiasaan')" id="btn-admin-tab-kebiasaan"
                     class="admin-tab-btn flex-1 px-3 whitespace-nowrap py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Kebiasaan</button>
+                <button onclick="switchAdminTab('tatib')" id="btn-admin-tab-tatib"
+                    class="admin-tab-btn flex-1 px-3 whitespace-nowrap py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Tata Tertib</button>
             </div>
 
             <div id="admin-tab-guru" class="admin-tab-content space-y-3">
@@ -807,6 +809,34 @@
                     <button id="btn-tambah-kebiasaan" onclick="openModalKebiasaan()" class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-plus mr-1"></i> Kebiasaan</button>
                 </div>
                 <div id="admin-kebiasaan-list" class="space-y-2"></div>
+            </div>
+
+            <div id="admin-tab-tatib" class="admin-tab-content space-y-3 hidden">
+                <p class="text-xs text-slate-500">Atur ambang poin dan daftar item tata tertib (kategori A Kelakuan, B Kerajinan, C Kerapian, D Penghargaan). Item tidak dapat dihapus. Item yang dinonaktifkan hilang dari input baru, tetapi catatan lama tetap tersimpan.</p>
+                <form id="admin-tatib-konfig" onsubmit="simpanTatibKonfig(event)" class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                    <p class="text-xs font-bold text-slate-700">Ambang Poin Pelanggaran</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label for="m-tt-p1" class="block text-xs font-bold text-slate-500 mb-1">PANGGILAN I</label>
+                            <input type="number" id="m-tt-p1" min="1" max="500" step="1" required class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></div>
+                        <div><label for="m-tt-p2" class="block text-xs font-bold text-slate-500 mb-1">PANGGILAN II</label>
+                            <input type="number" id="m-tt-p2" min="1" max="500" step="1" required class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></div>
+                        <div><label for="m-tt-p3" class="block text-xs font-bold text-slate-500 mb-1">PANGGILAN III</label>
+                            <input type="number" id="m-tt-p3" min="1" max="500" step="1" required class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></div>
+                        <div><label for="m-tt-batas" class="block text-xs font-bold text-slate-500 mb-1">BATAS KELUAR</label>
+                            <input type="number" id="m-tt-batas" min="1" max="500" step="1" required class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></div>
+                        <div class="col-span-2"><label for="m-tt-pengali" class="block text-xs font-bold text-slate-500 mb-1">PENGALI PELANGGARAN BERULANG</label>
+                            <input type="number" id="m-tt-pengali" min="1" max="10" step="1" required class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                            <p class="text-[10px] text-slate-400 mt-0.5">Berlaku mulai kejadian kedua untuk item yang sama. Urutan ambang: I &lt; II &lt; III &lt; Batas keluar.</p></div>
+                    </div>
+                    <button type="submit" id="btn-save-tatib-konfig" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Ambang</button>
+                </form>
+                <div class="flex justify-between items-center gap-2">
+                    <span id="admin-tatib-ringkas" class="text-xs font-semibold text-slate-500"></span>
+                    <button id="btn-tambah-tatib" onclick="openModalTatib()" class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-plus mr-1"></i> Item</button>
+                </div>
+                <input type="search" id="admin-tatib-cari" oninput="setTatibCari(this.value)" placeholder="Cari item tata tertib..." aria-label="Cari item tata tertib" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                <div id="admin-tatib-filter" class="flex gap-2 overflow-x-auto pb-1"></div>
+                <div id="admin-tatib-list" class="space-y-2"></div>
             </div>
 
         </div>
