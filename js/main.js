@@ -1,6 +1,6 @@
 function canAccessView(role, viewId) {
     const staffOnly = ["siswa", "laporan"];
-    if (viewId === "admin-manage") return role === "admin";
+    if (viewId === "admin-manage" || viewId === "arsip") return role === "admin";
     if (viewId === "jurnal") return true;
     if (staffOnly.includes(viewId)) return role === "admin" || role === "guru" || role === "kepsek";
     return true;
@@ -44,6 +44,7 @@ function switchView(viewId) {
     if (viewId === "laporan") loadLaporanRekap();
     if (viewId === "siswa") renderSiswaView();
     if (viewId === "admin-manage") renderAdminManage();
+    if (viewId === "arsip") renderAdminArsip();
 }
 
 function renderPeranSwitcher() {

@@ -2859,7 +2859,7 @@ body:not(.dark) #view-admin-manage .text-violet-700 {
     color: var(--primary-hover);
 }
 
-:is(#view-admin-manage, #modal-content-box) :is(.text-\[10px\], .text-\[11px\]) {
+:is(#view-admin-manage, #view-arsip, #modal-content-box) :is(.text-\[10px\], .text-\[11px\]) {
     font-size: 0.75rem;
     line-height: 1rem;
 }
@@ -2969,7 +2969,8 @@ body.dark #arsip-lihat-tabel thead th {
     }
 }
 
-#view-admin-manage :is(button, input, select):focus-visible {
+#view-admin-manage :is(button, input, select):focus-visible,
+#view-arsip :is(button, input, select):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }

@@ -1,7 +1,7 @@
 function renderAdminManage() { switchAdminTab("guru"); }
 
 function switchAdminTab(tab) {
-    const ORDER_ADM = ["guru", "siswa", "kelas", "mentor", "sekolah", "kebiasaan", "arsip"];
+    const ORDER_ADM = ["guru", "siswa", "kelas", "mentor", "sekolah", "kebiasaan"];
     const curAdm = Array.from(document.querySelectorAll(".admin-tab-content")).find(c => !c.classList.contains("hidden"));
     const prevAdm = curAdm ? curAdm.id.replace("admin-tab-", "") : null;
     document.querySelectorAll(".admin-tab-content").forEach(c => c.classList.add("hidden"));
@@ -26,7 +26,6 @@ function switchAdminTab(tab) {
     if (tab === "mentor") renderAdminMentor();
     if (tab === "sekolah") renderAdminSekolah();
     if (tab === "kebiasaan") renderAdminKebiasaan();
-    if (tab === "arsip") renderAdminArsip();
 }
 
 function renderAdminSekolah() {

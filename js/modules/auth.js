@@ -823,6 +823,7 @@ function renderSidebarMenu(role) {
         html += section("Lainnya");
         html += item("laporan", "fa-file-invoice", "Laporan");
         if (role === "admin") {
+            html += item("arsip", "fa-box-archive", "Arsip");
             html += item("admin-manage", "fa-user-cog", "Master Data");
         }
     }
