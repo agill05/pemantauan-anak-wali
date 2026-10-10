@@ -82,11 +82,43 @@ setLaporanTab = function (tab) {
     }
 };
 
-function tlOpsiTahunAjaran() {
-    const d = (typeof arsipTahunAjaranDefault === "function") ? arsipTahunAjaranDefault() : null;
-    const awal = d ? Number(d.ta.slice(0, 4)) : new Date().getFullYear() - 1;
-    const ta = n => `${n}/${n + 1}`;
-    return [["", "Kumulatif (semua waktu)"], [ta(awal), "TA " + ta(awal)], [ta(awal - 1), "TA " + ta(awal - 1)]];
+const TL_BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+// Hitung rentang periode dari pilihan dropdown. kunci: "" | "ta" | "semester" | "bulan".
+function tlHitungPeriode(kunci) {
+    const tgl = String(getDateWITA());
+    const th = Number(tgl.slice(0, 4));
+    const bln = Number(tgl.slice(5, 7));
+    const p2 = n => String(n).padStart(2, "0");
+    const awal = bln >= 7 ? th : th - 1;
+    const ta = `${awal}/${awal + 1}`;
+    if (kunci === "ta") {
+        return { kunci: "ta", label: "Tahun ajaran " + ta, kolom: "Poin TA", payload: { tahun_ajaran: ta } };
+    }
+    if (kunci === "semester") {
+        const ganjil = bln >= 7;
+        return {
+            kunci: "semester", label: `Semester ${ganjil ? "Ganjil" : "Genap"} ${ta}`, kolom: "Poin Semester",
+            payload: ganjil ? { dari: `${awal}-07-01`, sampai: `${awal}-12-31` } : { dari: `${th}-01-01`, sampai: `${th}-06-30` }
+        };
+    }
+    if (kunci === "bulan") {
+        const akhir = new Date(Date.UTC(th, bln, 0)).getUTCDate();
+        return {
+            kunci: "bulan", label: `${TL_BULAN[bln - 1]} ${th}`, kolom: "Poin Bulan",
+            payload: { dari: `${th}-${p2(bln)}-01`, sampai: `${th}-${p2(bln)}-${p2(akhir)}` }
+        };
+    }
+    return { kunci: "", label: "Kumulatif", kolom: "", payload: {} };
+}
+
+function tlOpsiPeriode() {
+    return [
+        ["", "Kumulatif (semua waktu)"],
+        ["ta", "TA " + tlHitungPeriode("ta").label.replace("Tahun ajaran ", "")],
+        ["semester", tlHitungPeriode("semester").label],
+        ["bulan", "Bulan ini (" + tlHitungPeriode("bulan").label + ")"]
+    ];
 }
 
 function tlInit() {
@@ -97,7 +129,7 @@ function tlInit() {
     }
     const ta = document.getElementById("lt-ta");
     if (ta && ta.options.length === 0) {
-        ta.innerHTML = tlOpsiTahunAjaran().map(o => `<option value="${escapeHtml(o[0])}">${escapeHtml(o[1])}</option>`).join("");
+        ta.innerHTML = tlOpsiPeriode().map(o => `<option value="${escapeHtml(o[0])}">${escapeHtml(o[1])}</option>`).join("");
     }
     if (tlData) renderLaporanTatib();
     else muatLaporanTatib(true);
@@ -106,13 +138,14 @@ function tlInit() {
 async function muatLaporanTatib(paksa) {
     if (tlMemuat) return;
     const ta = tlVal("lt-ta");
+    const per = tlHitungPeriode(ta);
     if (!paksa && tlData && tlData.ta === ta) { renderLaporanTatib(); return; }
     tlMemuat = true;
     renderSkeleton("lt-container", 3);
-    const res = await apiCall("getRekapTatib", ta ? { tahun_ajaran: ta } : {}, false);
+    const res = await apiCall("getRekapTatib", per.payload, false);
     tlMemuat = false;
     if (res && res.status === "success" && Array.isArray(res.data)) {
-        tlData = { ta: ta, data: res.data, konfig: res.konfig || ttKonfig() };
+        tlData = { ta: ta, label: per.label, kolom: per.kolom, data: res.data, konfig: res.konfig || ttKonfig() };
         renderLaporanTatib();
     } else {
         const el = document.getElementById("lt-container");
@@ -213,7 +246,7 @@ function renderLaporanTatib() {
                 <div class="space-y-1">
                     <p class="text-xs font-bold text-slate-700">${Number(r.total) || 0} <span class="text-slate-400 font-semibold">/ ${tlData.konfig.batas_keluar} poin</span></p>
                     ${ttBarProgres(r)}
-                    <p class="text-[11px] text-slate-400">Pelanggaran ${Number(r.pelanggaran) || 0} \u2022 Penghargaan ${Number(r.penghargaan) || 0}${adaTa && r.periode ? ` \u2022 Poin ${escapeHtml(tlData.ta)}: ${Number(r.periode.total) || 0}` : ""}</p>
+                    <p class="text-[11px] text-slate-400">Pelanggaran ${Number(r.pelanggaran) || 0} \u2022 Penghargaan ${Number(r.penghargaan) || 0}${adaTa && r.periode ? ` \u2022 ${escapeHtml(tlData.kolom)}: ${Number(r.periode.total) || 0}` : ""}</p>
                     <p class="text-[11px] text-slate-500">Panggilan dicatat: ${(r.panggilan_tercatat || []).length ? escapeHtml((r.panggilan_tercatat || []).join(", ")) : "-"}${tert.length ? ` \u2022 <b class="text-violet-700">belum: ${escapeHtml(tert.join(", "))}</b>` : ""}</p>
                 </div>
                 ${bisaSurat && r.tahap >= 1 ? `
@@ -237,7 +270,7 @@ function tlHtmlRekap(base, rows) {
     const kelasFilter = getEffectiveKelasFilter(tlVal("lt-kelas"));
     const info = pdfInfoBlock([
         { label: "Kelas", value: kelasFilter ? tlNamaKelas(kelasFilter) : "Semua kelas" },
-        { label: "Periode", value: adaTa ? "Tahun Ajaran " + tlData.ta : "Kumulatif" },
+        { label: "Periode", value: tlData.label },
         { label: "Ambang", value: `Panggilan I ${tlData.konfig.panggilan_1}, II ${tlData.konfig.panggilan_2}, III ${tlData.konfig.panggilan_3}, batas ${tlData.konfig.batas_keluar} poin` }
     ]);
     const c = v => `<td style="text-align: center;">${v}</td>`;
@@ -250,7 +283,7 @@ function tlHtmlRekap(base, rows) {
         <table><thead><tr>${th("No", 30)}${th("Kelas")}${th("Siswa", 50)}${th("Aman", 50)}${th("P I", 45)}${th("P II", 45)}${th("P III", 45)}${th("Batas", 50)}${th("Belum Dicatat", 85)}</tr></thead>
         <tbody>${ringkasan || `<tr><td colspan="9" style="text-align: center;">Tidak ada data</td></tr>`}</tbody></table>
         <h4>B. Daftar Siswa</h4>
-        <table><thead><tr>${th("No", 30)}<th style="text-align: left;">Nama Siswa</th>${th("Kelas", 55)}${th("Pelanggaran", 75)}${th("Penghargaan", 80)}${th("Total", 45)}${adaTa ? th("Poin TA", 55) : ""}${th("Status", 95)}${th("Panggilan Dicatat", 100)}</tr></thead>
+        <table><thead><tr>${th("No", 30)}<th style="text-align: left;">Nama Siswa</th>${th("Kelas", 55)}${th("Pelanggaran", 75)}${th("Penghargaan", 80)}${th("Total", 45)}${adaTa ? th(e(tlData.kolom), 75) : ""}${th("Status", 95)}${th("Panggilan Dicatat", 100)}</tr></thead>
         <tbody>${detail || `<tr><td colspan="${adaTa ? 9 : 8}" style="text-align: center;">Tidak ada data</td></tr>`}</tbody></table>
         <p><b>Keterangan:</b> Total = poin pelanggaran dikurangi penghargaan (minimal 0). P I/II/III = tahap Panggilan Orang Tua.</p>`;
 }
@@ -282,7 +315,7 @@ async function eksporLaporanTatibCSV() {
     if (!d) return;
     const adaTa = !!tlData.ta;
     const kepala = ["No", "Nama Siswa", "Kelas", "Jumlah Catatan", "Pelanggaran", "Penghargaan", "Total"]
-        .concat(adaTa ? ["Poin " + tlData.ta] : []).concat(["Status", "Panggilan Dicatat", "Panggilan Belum Dicatat"]);
+        .concat(adaTa ? ["Poin " + tlData.label] : []).concat(["Status", "Panggilan Dicatat", "Panggilan Belum Dicatat"]);
     let csv = "\uFEFF" + kepala.map(csvSel).join(",") + "\n";
     d.rows.forEach((r, i) => {
         const baris = [i + 1, tlNamaSiswa(r.siswa_id), tlNamaKelas(r.kelas_id), r.jumlah_catatan, r.pelanggaran, r.penghargaan, r.total]
