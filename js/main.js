@@ -196,15 +196,18 @@ window.addEventListener("DOMContentLoaded", async () => {
             });
             return;
         } else if (res && res.status === "expired") {
-            showExpiredMagicLinkScreen(res.message, { wali_nama: res.wali_nama, wali_hp: res.wali_hp, siswa_nama: res.siswa_nama });
+            blokirAksesOrtu(res.message, { wali_nama: res.wali_nama, wali_hp: res.wali_hp, siswa_nama: res.siswa_nama });
             return;
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Tautan Tidak Valid',
-                text: res?.message || 'Tautan pemantauan tidak valid.',
-                confirmButtonColor: '#2563eb'
-            });
+            // Tautan salah atau gagal diperiksa: tetap blokir, jangan lanjut ke login/app shell.
+            if (!res) {
+                blokirAksesOrtu("Tidak dapat memeriksa tautan. Periksa koneksi internet lalu muat ulang halaman.", null,
+                    { judul: "Gagal Memuat", ikon: "fa-wifi-slash", reload: true, keterangan: "Data anak didik tidak ditampilkan sebelum tautan berhasil diperiksa." });
+            } else {
+                blokirAksesOrtu(res.message || "Tautan pemantauan tidak valid.", null,
+                    { judul: "Tautan Tidak Valid", ikon: "fa-ban", keterangan: "Tautan rusak atau tidak lengkap. Silakan minta tautan baru kepada Wali Kelas." });
+            }
+            return;
         }
     }
 

@@ -269,27 +269,40 @@ function startMagicExpiryWatch(token, serverTime, kontak) {
         clearInterval(magicExpiryTimer);
         magicExpiryTimer = null;
         document.removeEventListener("visibilitychange", cek);
-        tutupProfilOrtuKedaluwarsa(kontak);
+        blokirAksesOrtu("Tautan pemantauan sudah kedaluwarsa (berlaku 15 menit). Silakan minta tautan baru kepada Wali Kelas.", kontak);
     };
     magicExpiryTimer = setInterval(cek, 1000);
     document.addEventListener("visibilitychange", cek);
 }
 
-function tutupProfilOrtuKedaluwarsa(kontak) {
+// Blokir total akses ortu: sembunyikan seluruh app shell, hapus data di memori, tampilkan layar blokir.
+// Wajib lepas class "has-session": CSS-nya memaksa header/konten/nav tampil dan menyembunyikan #view-login.
+function blokirAksesOrtu(message, kontak = null, opsi = {}) {
+    clearInterval(magicExpiryTimer);
+    magicExpiryTimer = null;
     try { if (typeof closeModal === "function") closeModal(); } catch (e) { }
     try { if (window.Swal && Swal.isVisible()) Swal.close(); } catch (e) { }
-    document.getElementById("main-header")?.classList.add("hidden");
-    document.getElementById("main-content")?.classList.add("hidden");
-    try { appState.user = null; } catch (e) { }
-    showExpiredMagicLinkScreen("Tautan pemantauan sudah kedaluwarsa (berlaku 15 menit). Silakan minta tautan baru kepada Wali Kelas.", kontak);
+
+    document.documentElement.classList.remove("has-session");
+    ["main-header", "main-content", "bottom-nav", "sidebar", "btn-toggle-sidebar"].forEach(id => {
+        document.getElementById(id)?.classList.add("hidden");
+    });
+    try { appState.user = null; appState.token = null; } catch (e) { }
+
+    showExpiredMagicLinkScreen(message, kontak, opsi);
 }
 
-function showExpiredMagicLinkScreen(message = "Tautan pemantauan sudah kedaluwarsa.", kontak = null) {
+function showExpiredMagicLinkScreen(message = "Tautan pemantauan sudah kedaluwarsa.", kontak = null, opsi = {}) {
     const loginView = document.getElementById("view-login");
     if (!loginView) return;
 
     loginView.classList.remove("hidden");
     loginView.classList.add("active");
+
+    const judul = opsi.judul || "Akses Kedaluwarsa";
+    const ikon = opsi.ikon || "fa-hourglass-end";
+    const keterangan = opsi.keterangan ||
+        "Untuk menjaga privasi dan keamanan data anak didik, tautan pemantauan dibatasi maksimal 15 menit. Silakan hubungi Wali Kelas untuk meminta tautan baru.";
 
     const waNomor = kontak && kontak.wali_hp ? toWhatsAppNumber(kontak.wali_hp) : "";
     const waTeks = encodeURIComponent(
@@ -299,30 +312,36 @@ function showExpiredMagicLinkScreen(message = "Tautan pemantauan sudah kedaluwar
     const waLink = waNomor ? `https://api.whatsapp.com/send?phone=${waNomor}&text=${waTeks}` : "";
     const namaWali = kontak && kontak.wali_nama ? escapeHtml(kontak.wali_nama) : "Wali Kelas";
 
-    const aksi = waLink
-        ? `<a href="${waLink}" target="_blank" rel="noopener"
+    let aksi;
+    if (opsi.reload) {
+        aksi = `<button onclick="window.location.reload()"
+                class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-2">
+                <i class="fas fa-rotate-right"></i> Muat Ulang
+            </button>`;
+    } else if (waLink) {
+        aksi = `<a href="${waLink}" target="_blank" rel="noopener"
                 class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
                 <i class="fab fa-whatsapp text-base"></i> Hubungi ${namaWali} via WhatsApp
-            </a>`
-        : `<p class="text-[11px] text-slate-400">Nomor WhatsApp Wali Kelas belum tersedia. Silakan hubungi sekolah.</p>`;
+            </a>`;
+    } else {
+        aksi = `<p class="text-[11px] text-slate-400">Silakan hubungi Wali Kelas atau sekolah.</p>`;
+    }
 
     loginView.innerHTML = `
         <div class="w-full max-w-sm px-4">
             <div class="text-center mb-6">
                 <div class="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center text-4xl mx-auto shadow-md border border-rose-100 mb-4">
-                    <i class="fas fa-hourglass-end"></i>
+                    <i class="fas ${ikon}"></i>
                 </div>
-                <h1 class="text-xl font-black text-slate-800 mb-1">Akses Kedaluwarsa</h1>
+                <h1 class="text-xl font-black text-slate-800 mb-1">${escapeHtml(judul)}</h1>
                 <p class="text-xs text-slate-500">Pemantauan Anak Wali – SMPN 1 Talaga Jaya</p>
             </div>
 
             <div class="bg-surface p-6 rounded-3xl border border-slate-100 shadow-sm text-center space-y-4">
                 <div class="bg-rose-50 text-rose-700 text-xs p-3 rounded-2xl border border-rose-100 leading-relaxed font-medium">
-                    <i class="fas fa-shield-alt mr-1 text-rose-600"></i> ${escapeHtml(message || 'Tautan ini telah melewati batas waktu aman 15 menit.')}
+                    <i class="fas fa-shield-alt mr-1 text-rose-600"></i> ${escapeHtml(message || "Tautan ini telah melewati batas waktu aman 15 menit.")}
                 </div>
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    Untuk menjaga privasi dan keamanan data anak didik, tautan pemantauan dibatasi maksimal 15 menit. Silakan hubungi Wali Kelas untuk meminta tautan baru.
-                </p>
+                <p class="text-xs text-slate-500 leading-relaxed">${escapeHtml(keterangan)}</p>
                 <div class="pt-2">${aksi}</div>
             </div>
         </div>
