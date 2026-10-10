@@ -137,22 +137,85 @@ function sdSapaanCard(u) {
         </div></div>`;
 }
 
-function sdMisiCard(today) {
-    const total = (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
-    const sudah = sdMine(appState.kebiasaan).filter(k => sdTgl(k) === today && k.status === "Sudah").length;
-    const jurnal = sdMine(appState.jurnal).some(j => sdTgl(j) === today);
-    const ibadah = sdMine(appState.keagamaan).some(j => sdTgl(j) === today);
+function sdMisiTotal() {
+    return (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
+}
+
+function sdMisiHitung(today) {
+    const uid = String(appState.user.id);
+    const aktif = new Set((typeof MASTER_KEBIASAAN !== "undefined" ? MASTER_KEBIASAAN : []).map(k => String(k.id)));
+    const m = appState.misi && appState.misi.tanggal === today ? appState.misi : null;
+    const peta = {};
+    if (m) {
+        (m.kebiasaan || []).forEach(k => {
+            if (String(k.siswa_id) === uid && sdTgl(k) === today) peta[String(k.kebiasaan_id)] = k.status;
+        });
+    }
+    sdMine(appState.kebiasaan).forEach(k => {
+        if (sdTgl(k) === today) peta[String(k.kebiasaan_id)] = k.status;
+    });
+    const sudah = Object.keys(peta).filter(id => peta[id] === "Sudah" && aktif.has(id)).length;
+    const jurnal = !!(m && m.jurnal) || sdMine(appState.jurnal).some(j => sdTgl(j) === today);
+    return { sudah, jurnal, siap: !!(m && m.siap), gagal: !!(m && m.gagal) };
+}
+
+function sdMisiIsi(today) {
+    const total = sdMisiTotal();
+    const h = sdMisiHitung(today);
+    if (!h.siap && h.sudah === 0 && !h.jurnal) {
+        return sdCard("Misi Hari Ini", `<p class="sd-note" style="margin:0"><i class="fas fa-circle-notch fa-spin mr-1.5"></i>Memuat misi hari ini...</p>`);
+    }
     const tugas = [
-        { ok: sudah >= total, label: "Isi kebiasaan harian", info: `${Math.min(sudah, total)}/${total}`, view: "kebiasaan" },
-        { ok: jurnal, label: "Tulis jurnal hari ini", info: jurnal ? "Selesai" : "Belum", view: "jurnal" },
-        { ok: ibadah, label: "Catat ibadah hari ini", info: ibadah ? "Selesai" : "Belum", view: "karakter" }
+        { ok: h.sudah >= total, label: "Isi kebiasaan harian", info: `${Math.min(h.sudah, total)}/${total}`, view: "kebiasaan" },
+        { ok: h.jurnal, label: "Tulis jurnal hari ini", info: h.jurnal ? "Selesai" : "Belum", view: "jurnal" }
     ];
-    const poin = Math.min(sudah / total, 1) + (jurnal ? 1 : 0) + (ibadah ? 1 : 0);
-    const pct = Math.round(poin / 3 * 100);
+    const poin = Math.min(h.sudah / total, 1) + (h.jurnal ? 1 : 0);
+    const pct = Math.round(poin / tugas.length * 100);
     const rows = tugas.map(t => `<button type="button" class="sd-task ${t.ok ? "done" : ""}" onclick="switchView('${t.view}')">
         <span><i class="fas ${t.ok ? "fa-circle-check" : "fa-circle"} mr-1.5"></i>${t.label}</span><small>${t.info}</small></button>`).join("");
+    const catatan = pct >= 100 ? "Hebat! Semua misi hari ini selesai." : "Yuk selesaikan misimu hari ini!";
+    const sinkron = h.gagal ? `<p class="sd-note">Data belum tersinkron dengan server. Akan dicoba lagi otomatis.</p>` : "";
     return sdCard("Misi Hari Ini", `<div class="sd-mission"><div class="sd-ring" style="--p:${pct}"><span>${pct}%</span></div>
-        <p class="sd-note" style="margin:0">${pct >= 100 ? "Hebat! Semua misi hari ini selesai." : "Yuk selesaikan misimu hari ini!"}</p></div>${rows}`);
+        <p class="sd-note" style="margin:0">${catatan}</p></div>${rows}${sinkron}`);
+}
+
+function sdMisiCard(today) {
+    return `<div id="sd-misi-wrap">${sdMisiIsi(today)}</div>`;
+}
+
+let misiSedangMuat = null;
+function muatMisiHariIni() {
+    if (!appState.user || appState.user.role !== "siswa") return Promise.resolve();
+    if (misiSedangMuat) return misiSedangMuat;
+    const today = getDateWITA();
+    const uid = String(appState.user.id);
+    misiSedangMuat = (async () => {
+        try {
+            const [, resK, resJ] = await Promise.all([
+                typeof ensureKonfigKebiasaan === "function" ? ensureKonfigKebiasaan().catch(() => null) : null,
+                apiCall("getKebiasaan", { tanggal: today }, false),
+                apiCall("getJurnal", { siswa_id: uid, dari: today, sampai: today }, false)
+            ]);
+            if (!appState.user || String(appState.user.id) !== uid) return;
+            const kOk = !!(resK && resK.status === "success" && Array.isArray(resK.data));
+            const jOk = !!(resJ && resJ.status === "success" && Array.isArray(resJ.data));
+            const lama = appState.misi && appState.misi.tanggal === today ? appState.misi : null;
+            appState.misi = {
+                tanggal: today,
+                kebiasaan: kOk ? resK.data : (lama ? lama.kebiasaan : []),
+                jurnal: jOk ? resJ.data.some(j => sdTgl(j) === today) : !!(lama && lama.jurnal),
+                siap: true,
+                gagal: !(kOk && jOk)
+            };
+            const wrap = document.getElementById("sd-misi-wrap");
+            if (wrap) wrap.innerHTML = sdMisiIsi(today);
+        } catch (e) {
+            console.error("Gagal memuat misi hari ini:", e);
+        } finally {
+            misiSedangMuat = null;
+        }
+    })();
+    return misiSedangMuat;
 }
 
 function sdHitungStreak(today) {

@@ -305,6 +305,7 @@ async function pollDataSekali() {
                 case "dashboard":
                     await loadAbsensiData(true);
                     renderDashboard();
+                    if (appState.user.role === "siswa" && typeof muatMisiHariIni === "function") await muatMisiHariIni();
                     if (appState.user.role === "siswa" && typeof tatibMuatSaya === "function") await tatibMuatSaya(true);
                     break;
                 case "absensi": await loadAbsensiData(true); break;
