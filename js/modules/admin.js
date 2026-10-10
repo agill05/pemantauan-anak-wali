@@ -34,6 +34,7 @@ function renderAdminSekolah() {
     const nip = document.getElementById("m-skl-nip-kepsek");
     if (nama) nama.value = appState.pengaturan?.nama_kepsek || "";
     if (nip) nip.value = appState.pengaturan?.nip_kepsek || "";
+    renderAdminSemester();
     const ksUser = document.getElementById("m-ks-username");
     const ksPass = document.getElementById("m-ks-password");
     if (ksPass) ksPass.value = "";
@@ -41,6 +42,78 @@ function renderAdminSekolah() {
         apiCall("getAkunKepsek", {}, false).then(res => {
             if (res && res.status === "success") ksUser.value = res.data.username || "";
         });
+    }
+}
+
+// ---------- Kalender semester (admin) ----------
+
+const SEM_BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+const SEM_MAKS_HARI = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function semIsiSelect(idTgl, idBln, bulanDari, bulanSampai, nilaiMD) {
+    const tgl = document.getElementById(idTgl);
+    const bln = document.getElementById(idBln);
+    if (!tgl || !bln) return;
+    const [mm, dd] = String(nilaiMD).split("-").map(Number);
+    tgl.innerHTML = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+    let opsi = "";
+    for (let b = bulanDari; b <= bulanSampai; b++) opsi += `<option value="${b}">${SEM_BULAN[b - 1]}</option>`;
+    bln.innerHTML = opsi;
+    bln.value = String(mm);
+    tgl.value = String(dd);
+}
+
+function semAmbil(idTgl, idBln) {
+    const t = Number((document.getElementById(idTgl) || {}).value);
+    const b = Number((document.getElementById(idBln) || {}).value);
+    if (!t || !b) return "";
+    return String(b).padStart(2, "0") + "-" + String(t).padStart(2, "0");
+}
+
+function semFormat(md) {
+    const [b, t] = String(md).split("-").map(Number);
+    return `${t} ${SEM_BULAN[b - 1]}`;
+}
+
+function renderAdminSemester() {
+    const p = appState.pengaturan || {};
+    semIsiSelect("m-sem-ganjil-tgl", "m-sem-ganjil-bln", 7, 12, p.semester_ganjil_mulai || "07-01");
+    semIsiSelect("m-sem-genap-tgl", "m-sem-genap-bln", 1, 6, p.semester_genap_mulai || "01-01");
+    semRingkas();
+}
+
+function semRingkas() {
+    const el = document.getElementById("m-sem-ringkas");
+    if (!el) return;
+    const gj = semAmbil("m-sem-ganjil-tgl", "m-sem-ganjil-bln");
+    const gn = semAmbil("m-sem-genap-tgl", "m-sem-genap-bln");
+    if (!gj || !gn) { el.textContent = ""; return; }
+    const akhirGanjil = semesterHariSebelum("2001-" + gn).slice(5);
+    const akhirGenap = semesterHariSebelum("2001-" + gj).slice(5);
+    el.innerHTML = `<b>Ganjil:</b> ${escapeHtml(semFormat(gj))} s.d. ${escapeHtml(semFormat(akhirGanjil))}<br><b>Genap:</b> ${escapeHtml(semFormat(gn))} s.d. ${escapeHtml(semFormat(akhirGenap))}`;
+}
+
+async function saveSemesterForm(e) {
+    e.preventDefault();
+    const gj = semAmbil("m-sem-ganjil-tgl", "m-sem-ganjil-bln");
+    const gn = semAmbil("m-sem-genap-tgl", "m-sem-genap-bln");
+    const valid = md => { const [b, t] = md.split("-").map(Number); return t >= 1 && t <= SEM_MAKS_HARI[b - 1]; };
+    if (!gj || !gn || !valid(gj) || !valid(gn)) {
+        Swal.fire({ icon: "warning", title: "Tanggal tidak valid", text: "Periksa tanggal dan bulan awal semester.", confirmButtonColor: "#2563eb" });
+        return;
+    }
+    const btn = document.getElementById("btn-save-semester");
+    const html = btn ? btn.innerHTML : "";
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...'; }
+    const res = await apiCall("saveSemester", { semester_ganjil_mulai: gj, semester_genap_mulai: gn }, true);
+    if (btn) { btn.disabled = false; btn.innerHTML = html; }
+    if (res && res.status === "success") {
+        appState.pengaturan = { ...appState.pengaturan, semester_ganjil_mulai: gj, semester_genap_mulai: gn };
+        saveAppStateToLocal();
+        if (typeof tlData !== "undefined") tlData = null;
+        showToast(res.message || "Kalender semester tersimpan!");
+    } else {
+        Swal.fire({ icon: "error", title: "Gagal Menyimpan", text: (res && res.message) || "Terjadi kesalahan.", confirmButtonColor: "#2563eb" });
     }
 }
 
@@ -1311,11 +1384,8 @@ function arsipTampilPanel(nama) {
 }
 
 function arsipTahunAjaranDefault() {
-    const tgl = String(getDateWITA());
-    const th = Number(tgl.slice(0, 4));
-    const bln = Number(tgl.slice(5, 7));
-    const awal = bln >= 7 ? th : th - 1;
-    return { ta: awal + "/" + (awal + 1), semester: bln >= 7 ? "Ganjil" : "Genap" };
+    const k = kalenderSemester();
+    return { ta: k.ta, semester: k.semester };
 }
 
 function arsipGambarJenis() {

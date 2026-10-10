@@ -821,6 +821,31 @@
                     <button type="submit" id="btn-save-sekolah" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Data &amp; Akun Kepala Sekolah</button>
                     <button type="button" onclick="resetPasswordKepsek()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl border border-rose-200 text-xs">Reset Password Kepala Sekolah</button>
                 </form>
+
+                <form onsubmit="saveSemesterForm(event)" class="space-y-3 bg-white p-3.5 rounded-2xl border border-slate-100">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-600 uppercase">Kalender Semester</p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">Tanggal mulai tiap semester, berlaku setiap tahun. Dipakai untuk periode Semester dan Tahun Ajaran di Laporan Tata Tertib dan untuk isian awal Arsip Semester. Tahun ajaran dimulai bersama Semester Ganjil.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="m-sem-ganjil-tgl" class="block text-xs font-bold text-slate-500 mb-1">GANJIL MULAI</label>
+                            <div class="flex gap-1.5">
+                                <select id="m-sem-ganjil-tgl" onchange="semRingkas()" class="w-16 bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></select>
+                                <select id="m-sem-ganjil-bln" aria-label="Bulan mulai Semester Ganjil" onchange="semRingkas()" class="flex-1 bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></select>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="m-sem-genap-tgl" class="block text-xs font-bold text-slate-500 mb-1">GENAP MULAI</label>
+                            <div class="flex gap-1.5">
+                                <select id="m-sem-genap-tgl" onchange="semRingkas()" class="w-16 bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></select>
+                                <select id="m-sem-genap-bln" aria-label="Bulan mulai Semester Genap" onchange="semRingkas()" class="flex-1 bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <p id="m-sem-ringkas" class="text-[11px] text-slate-600 bg-slate-50 rounded-xl px-3 py-2 leading-relaxed"></p>
+                    <button type="submit" id="btn-save-semester" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs">Simpan Kalender Semester</button>
+                </form>
             </div>
 
             <div id="admin-tab-kebiasaan" class="admin-tab-content space-y-3 hidden">

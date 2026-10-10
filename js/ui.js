@@ -69,6 +69,33 @@ function getDateWITA() {
     return `${y}-${m}-${d}`;
 }
 
+// Hari sebelum tanggal ISO (YYYY-MM-DD).
+function semesterHariSebelum(iso) {
+    const d = new Date(Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)) - 1));
+    return d.toISOString().slice(0, 10);
+}
+
+// Kalender semester berdasarkan pengaturan admin (appState.pengaturan). Bawaan: Ganjil 07-01, Genap 01-01.
+// Mengembalikan semester aktif pada tanggal tgl (bawaan: hari ini WITA) beserta rentang tanggalnya.
+function kalenderSemester(tgl) {
+    const t = String(tgl || getDateWITA());
+    const th = Number(t.slice(0, 4));
+    const md = t.slice(5, 10);
+    const p = (typeof appState !== "undefined" && appState && appState.pengaturan) || {};
+    const gj = /^(0[7-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(p.semester_ganjil_mulai || "") ? p.semester_ganjil_mulai : "07-01";
+    const gn = /^(0[1-6])-(0[1-9]|[12]\d|3[01])$/.test(p.semester_genap_mulai || "") ? p.semester_genap_mulai : "01-01";
+
+    const ganjil = md >= gj || md < gn;
+    const awal = md >= gj ? th : th - 1;
+    return {
+        ta: `${awal}/${awal + 1}`,
+        semester: ganjil ? "Ganjil" : "Genap",
+        tahun: { dari: `${awal}-${gj}`, sampai: semesterHariSebelum(`${awal + 1}-${gj}`) },
+        ganjil: { dari: `${awal}-${gj}`, sampai: semesterHariSebelum(`${awal + 1}-${gn}`) },
+        genap: { dari: `${awal + 1}-${gn}`, sampai: semesterHariSebelum(`${awal + 1}-${gj}`) }
+    };
+}
+
 function formatDisplayTime(val) {
     if (!val || val === 'null' || val === 'undefined') return 'Belum Absen';
     const str = String(val).trim();

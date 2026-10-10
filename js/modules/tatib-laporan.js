@@ -85,22 +85,19 @@ setLaporanTab = function (tab) {
 const TL_BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 // Hitung rentang periode dari pilihan dropdown. kunci: "" | "ta" | "semester" | "bulan".
+// Rentang TA dan semester mengikuti Kalender Semester di Master Data > Sekolah.
 function tlHitungPeriode(kunci) {
     const tgl = String(getDateWITA());
     const th = Number(tgl.slice(0, 4));
     const bln = Number(tgl.slice(5, 7));
     const p2 = n => String(n).padStart(2, "0");
-    const awal = bln >= 7 ? th : th - 1;
-    const ta = `${awal}/${awal + 1}`;
+    const k = kalenderSemester(tgl);
     if (kunci === "ta") {
-        return { kunci: "ta", label: "Tahun ajaran " + ta, kolom: "Poin TA", payload: { tahun_ajaran: ta } };
+        return { kunci: "ta", label: "Tahun ajaran " + k.ta, kolom: "Poin TA", payload: { dari: k.tahun.dari, sampai: k.tahun.sampai } };
     }
     if (kunci === "semester") {
-        const ganjil = bln >= 7;
-        return {
-            kunci: "semester", label: `Semester ${ganjil ? "Ganjil" : "Genap"} ${ta}`, kolom: "Poin Semester",
-            payload: ganjil ? { dari: `${awal}-07-01`, sampai: `${awal}-12-31` } : { dari: `${th}-01-01`, sampai: `${th}-06-30` }
-        };
+        const r = k.semester === "Ganjil" ? k.ganjil : k.genap;
+        return { kunci: "semester", label: `Semester ${k.semester} ${k.ta}`, kolom: "Poin Semester", payload: { dari: r.dari, sampai: r.sampai } };
     }
     if (kunci === "bulan") {
         const akhir = new Date(Date.UTC(th, bln, 0)).getUTCDate();
