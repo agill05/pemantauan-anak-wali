@@ -298,6 +298,7 @@ function showExpiredMagicLinkScreen(message = "Tautan pemantauan sudah kedaluwar
 
     loginView.classList.remove("hidden");
     loginView.classList.add("active");
+    loginView.style.cssText = "display:flex;align-items:center;justify-content:center;min-height:100dvh;overflow-y:auto;";
 
     const judul = opsi.judul || "Akses Kedaluwarsa";
     const ikon = opsi.ikon || "fa-hourglass-end";
@@ -316,19 +317,19 @@ function showExpiredMagicLinkScreen(message = "Tautan pemantauan sudah kedaluwar
     if (opsi.reload) {
         aksi = `<button onclick="window.location.reload()"
                 class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-2">
-                <i class="fas fa-rotate-right"></i> Muat Ulang
+                <i class="fas fa-rotate-right shrink-0"></i> <span>Muat Ulang</span>
             </button>`;
     } else if (waLink) {
         aksi = `<a href="${waLink}" target="_blank" rel="noopener"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
-                <i class="fab fa-whatsapp text-base"></i> Hubungi ${namaWali} via WhatsApp
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
+                <i class="fab fa-whatsapp text-lg shrink-0"></i> <span class="text-center leading-snug">Hubungi ${namaWali} via WhatsApp</span>
             </a>`;
     } else {
         aksi = `<p class="text-[11px] text-slate-400">Silakan hubungi Wali Kelas atau sekolah.</p>`;
     }
 
     loginView.innerHTML = `
-        <div class="w-full max-w-sm px-4">
+        <div class="m-auto w-full max-w-sm px-4 py-8">
             <div class="text-center mb-6">
                 <div class="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center text-4xl mx-auto shadow-md border border-rose-100 mb-4">
                     <i class="fas ${ikon}"></i>
