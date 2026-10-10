@@ -1,6 +1,6 @@
 :root {
     /* Lebar maksimal daftar kartu di PC (satu kolom). Ubah nilai ini untuk melebarkan atau menyempitkan semua daftar. */
-    --daftar-maks: 60rem;
+    --daftar-maks: 100%;
     --primary: #2563eb;
     --primary-hover: #1d4ed8;
     --primary-light: #eff6ff;
@@ -3321,4 +3321,65 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 /* Daftar kartu PC satu kolom: bilah pilih/hapus massal selalu satu baris penuh, bukan sel grid. */
 [data-bulk-bar] {
     grid-column: 1 / -1;
+}
+
+/* PC tahap 2: kartu daftar selebar penuh disusun mendatar (nama | ringkasan | aksi). */
+@media (min-width: 768px) {
+    .gs-card {
+        display: grid;
+        grid-template-columns: minmax(9rem, 14rem) minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 1.5rem;
+    }
+
+    .gs-card>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    .gs-card-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.375rem;
+    }
+
+    .gs-card-head>.flex {
+        justify-content: flex-start;
+    }
+
+    .gs-card-body {
+        max-width: 36rem;
+    }
+
+    .gs-card-foot {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+        padding-top: 0;
+        border-top: 0;
+        white-space: nowrap;
+    }
+}
+
+/* Ringkasan kelas (dashboard): nama kiri, bar dan statistik kanan. */
+@media (min-width: 768px) {
+    #dash-kelas-list>div {
+        display: grid;
+        grid-template-columns: minmax(10rem, 18rem) minmax(0, 1fr);
+        column-gap: 1.5rem;
+        align-items: center;
+    }
+
+    #dash-kelas-list>div>div:first-child {
+        grid-row: 1 / span 2;
+    }
+
+    #dash-kelas-list>div>div:not(:first-child) {
+        grid-column: 2;
+        margin-top: 0;
+    }
+
+    #dash-kelas-list>div>.sd-stat {
+        margin-top: 0.5rem;
+    }
 }

@@ -81,18 +81,18 @@ function gsRenderCard(g, ringkasanHtml, aksiDetail) {
     const kelas = gsNamaKelas(g.siswa);
     const peran = g.siswa ? renderPeranChip(g.siswa) : "";
     const terakhir = g.records[0] ? g.records[0].tanggal : "";
+    const badan = [ringkasanHtml || "", gsRenderKontributor(g.records)].filter(Boolean).join("");
     return `
-        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-            <div class="flex justify-between items-start gap-2">
+        <div class="gs-card bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+            <div class="gs-card-head flex justify-between items-start gap-2">
                 <div class="min-w-0">
                     <h4 class="font-bold text-xs text-slate-800 truncate">${escapeHtml(gsNamaSiswa(g))}</h4>
                     <p class="text-xs text-slate-400">${escapeHtml(kelas)}</p>
                 </div>
                 <div class="flex flex-wrap justify-end gap-1">${peran}</div>
             </div>
-            ${ringkasanHtml || ""}
-            ${gsRenderKontributor(g.records)}
-            <div class="flex justify-between items-center pt-1 border-t border-slate-50">
+            ${badan ? `<div class="gs-card-body space-y-2 min-w-0">${badan}</div>` : ""}
+            <div class="gs-card-foot flex justify-between items-center pt-1 border-t border-slate-50">
                 <span class="text-xs text-slate-400">${g.records.length} catatan${terakhir ? " · update " + escapeHtml(terakhir) : ""}</span>
                 <button onclick="${aksiDetail}('${escapeHtml(g.siswaId)}')" class="text-xs font-bold text-blue-600">Detail <i class="fas fa-chevron-right text-[9px]"></i></button>
             </div>
