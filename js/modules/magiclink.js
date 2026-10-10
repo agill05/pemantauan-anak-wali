@@ -52,7 +52,7 @@ function refreshMagicLinkButton() {
         btn.classList.remove("bg-emerald-600", "hover:bg-emerald-700");
         btn.classList.add("bg-amber-600", "hover:bg-amber-700");
         btn.title = "";
-        btn.innerHTML = `<i class="fas fa-magic"></i> Bagikan Magic Link (15 Menit)`;
+        btn.innerHTML = `<i class="fas fa-paper-plane"></i> Kirim Link ke Ortu (15 Menit)`;
     };
 
     const aktif = getActiveMagicLink(siswa.id);
@@ -91,7 +91,7 @@ async function generateAndShareMagicLink() {
     }
 
     if (!canWrite("magiclink", siswa)) {
-        Swal.fire({ icon: 'info', title: 'Tidak Diizinkan', text: 'Magic link orang tua hanya dapat dibuat oleh wali kelas, mentor siswa, atau admin.', confirmButtonColor: '#2563eb' });
+        Swal.fire({ icon: 'info', title: 'Tidak Diizinkan', text: 'Link orang tua hanya dapat dibuat oleh wali kelas, mentor siswa, atau admin.', confirmButtonColor: '#2563eb' });
         return;
     }
 
@@ -101,7 +101,7 @@ async function generateAndShareMagicLink() {
         return;
     }
 
-    showLoading("Membuat Magic Link Orang Tua...");
+    showLoading("Menyiapkan Link Orang Tua...");
     let magicToken = null;
     let errorMessage = "";
 
@@ -122,7 +122,7 @@ async function generateAndShareMagicLink() {
     hideLoading();
 
     if (!magicToken) {
-        Swal.fire({ icon: 'error', title: 'Gagal Membuat Link', text: errorMessage || 'Magic link tidak dapat dibuat.', confirmButtonColor: '#2563eb' });
+        Swal.fire({ icon: 'error', title: 'Gagal Membuat Link', text: errorMessage || 'Link tidak dapat dibuat.', confirmButtonColor: '#2563eb' });
         return;
     }
 
@@ -158,10 +158,10 @@ function tampilkanModalMagicLink(siswa, magicUrl, expiry) {
         <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
-                    <i class="fas fa-magic"></i>
+                    <i class="fas fa-paper-plane"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800">Bagikan Magic Link Orang Tua</h3>
+                    <h3 class="text-sm font-bold text-slate-800">Kirim Link ke Orang Tua</h3>
                     <p class="text-[11px] text-slate-400">Siswa: ${escapeHtml(siswa.nama)}</p>
                 </div>
             </div>
