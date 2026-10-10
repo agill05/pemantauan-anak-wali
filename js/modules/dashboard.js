@@ -525,6 +525,31 @@ function renderHandledNote(n) {
     return `<p class="text-[11px] text-slate-500 italic">Catatan: ${escapeHtml(catatan)}</p>`;
 }
 
+// Teks pembinaan dari notifikasi: lebih spesifik dan tanpa awalan yang menumpuk.
+function notifBersihkanAwalan(teks, awalan) {
+    let hasil = String(teks || '').trim();
+    const kunci = awalan.toLowerCase();
+    while (hasil.toLowerCase().startsWith(kunci)) {
+        hasil = hasil.slice(awalan.length).replace(/^[\s:]+/, '');
+    }
+    return hasil.trim();
+}
+
+function notifDaftarMapelDibawahKKTP(siswaId) {
+    const nama = (appState.akademik || [])
+        .filter(a => String(a.siswa_id) === String(siswaId) && Number(a.nilai_akhir) < Number(a.kktp))
+        .map(a => String(a.mapel || '').trim())
+        .filter(Boolean);
+    return Array.from(new Set(nama));
+}
+
+function notifTeksMapel(siswaId, jumlah) {
+    const daftar = notifDaftarMapelDibawahKKTP(siswaId);
+    if (daftar.length === 0) return '';
+    const tampil = daftar.slice(0, 5).join(', ') + (daftar.length > 5 ? ` dan ${daftar.length - 5} lainnya` : '');
+    return ` (${tampil})`;
+}
+
 async function checkStudentNotifications() {
     if (!appState.user || appState.user.role === 'ortu') return;
 
@@ -602,7 +627,7 @@ async function checkStudentNotifications() {
                 category: 'Akademik',
                 title: 'Nilai di Bawah KKTP',
                 desc: `${isSiswa ? 'Kamu' : item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah standar KKTP.`,
-                defaultPembinaan: `Bimbingan belajar khusus: ${item.dibawah_kktp} mata pelajaran belum tuntas KKTP.`
+                defaultPembinaan: `Bimbingan belajar khusus: ${item.dibawah_kktp} mata pelajaran belum tuntas KKTP${notifTeksMapel(item.id, item.dibawah_kktp)}.`
             });
         } else if (item.dibawah_kktp === 1) {
             processNotifItem({
@@ -612,7 +637,7 @@ async function checkStudentNotifications() {
                 category: 'Akademik',
                 title: 'Peringatan KKTP',
                 desc: `${isSiswa ? 'Kamu' : item.nama} memiliki 1 mata pelajaran yang belum memenuhi KKTP.`,
-                defaultPembinaan: `Bimbingan akademik untuk 1 mapel yang belum tuntas KKTP.`
+                defaultPembinaan: `Bimbingan akademik untuk 1 mapel yang belum tuntas KKTP${notifTeksMapel(item.id, 1)}.`
             });
         }
     });
@@ -633,7 +658,7 @@ async function checkStudentNotifications() {
                     category: 'Kebiasaan',
                     title: 'Belum Beribadah/Shalat',
                     desc: `${isSiswa ? 'Kamu' : s.nama} tercatat belum melaksanakan ibadah pada pantauan hari ini.`,
-                    defaultPembinaan: `Pembinaan karakter: Pembiasaan ibadah harian.`
+                    defaultPembinaan: `Pembinaan karakter: pembiasaan ibadah harian, tercatat belum beribadah pada ${formatTanggalLabel(todayStr)}.`
                 });
             }
         });
@@ -681,7 +706,8 @@ async function checkStudentNotifications() {
                     category: 'Pembinaan',
                     title: `Catatan Pembinaan (${p.status})`,
                     desc: `Kasus "${p.permasalahan}" ${isSiswa ? 'kamu' : 'untuk ' + s.nama} masih dalam status ${p.status}.`,
-                    defaultPembinaan: `Tindak lanjut pembinaan: ${p.permasalahan}`
+                    defaultPembinaan: `Tindak lanjut pembinaan: ${notifBersihkanAwalan(p.permasalahan, 'Tindak lanjut pembinaan')}`,
+                    pbnJenis: p.jenis
                 });
             }
         });
@@ -891,7 +917,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
                         <button onclick="hubungiOrtu('${n.siswa.id}')" class="px-2.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-emerald-700 flex items-center gap-1">
                             <i class="fab fa-whatsapp"></i> WA Ortu
                         </button>
-                        <button onclick="openQuickPembinaan('${n.siswa.id}', '${escapeHtml(n.defaultPembinaan)}', '${n.id}')" class="px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 flex items-center gap-1">
+                        <button onclick="openPembinaanDariNotif('${escapeHtml(String(n.id))}')" class="px-2.5 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-rose-700 flex items-center gap-1">
                             <i class="fas fa-edit"></i> Buat Catatan Pembinaan
                         </button>
                         ${n.tatibTahap && typeof tatibBisaCatatPanggilan === 'function' && tatibBisaCatatPanggilan(n.siswa.id) ? `

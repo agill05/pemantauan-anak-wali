@@ -148,19 +148,67 @@ function tambahPembinaanSiswa(siswaId) {
     openModalPembinaan(null, siswaId);
 }
 
-function openModalPembinaan(id = null, preSiswaId = null) {
+const PBN_JENIS = ['Sikap', 'Akademik', 'Kehadiran', 'Sosial'];
+const PBN_STATUS = ['Pemantauan', 'Dalam Pembinaan', 'Perlu Tindak Lanjut', 'Selesai'];
+const PBN_JENIS_DARI_KATEGORI = { 'Kedisiplinan': 'Kehadiran', 'Akademik': 'Akademik', 'Kebiasaan': 'Sikap', 'Keagamaan': 'Sikap', 'Tata Tertib': 'Sikap' };
+const PBN_STATUS_DARI_LEVEL = { kritis: 'Perlu Tindak Lanjut', sedang: 'Dalam Pembinaan', rendah: 'Pemantauan' };
+const PBN_HARI_PANTAU = { kritis: 3, sedang: 7, rendah: 14 };
+let pbnFormDariNotif = false;
+
+// Jadwal pantau = hari ini + 3/7/14 hari menurut level. Sabtu atau Minggu digeser ke Senin.
+function pbnJadwalDariLevel(level) {
+    const [y, m, d] = String(getDateWITA()).slice(0, 10).split('-').map(Number);
+    const t = new Date(Date.UTC(y, m - 1, d + (PBN_HARI_PANTAU[level] || 7)));
+    const hari = t.getUTCDay();
+    if (hari === 6) t.setUTCDate(t.getUTCDate() + 2);
+    else if (hari === 0) t.setUTCDate(t.getUTCDate() + 1);
+    return t.toISOString().slice(0, 10);
+}
+
+function pbnIsianDariNotif(n) {
+    const jenisAsal = PBN_JENIS.includes(n.pbnJenis) ? n.pbnJenis : '';
+    return {
+        jenis: jenisAsal || PBN_JENIS_DARI_KATEGORI[n.category] || 'Sikap',
+        status: PBN_STATUS_DARI_LEVEL[n.level] || 'Pemantauan',
+        masalah: n.defaultPembinaan || '',
+        pantau: pbnJadwalDariLevel(n.level)
+    };
+}
+
+// Dari notifikasi: hanya ID yang dikirim lewat atribut onclick, data dicari dari state.
+function openPembinaanDariNotif(notifId) {
+    const n = (appState.currentNotifications || []).find(x => String(x.id) === String(notifId));
+    if (!n) {
+        showToast("Notifikasi tidak ditemukan. Buka ulang daftar notifikasi.", "warning");
+        return;
+    }
+    closeModal();
+    const dibuka = openModalPembinaan(null, n.siswa.id, Object.assign({ siswaId: n.siswa.id, siswaNama: n.siswa.nama }, pbnIsianDariNotif(n)));
+    if (dibuka !== false) setPendingPembinaanNotif(n.id, n.siswa.id);
+}
+
+function openModalPembinaan(id = null, preSiswaId = null, prefill = null) {
     const box = document.getElementById("modal-content-box");
-    if (!box) return;
+    if (!box) return false;
     box.dataset.gs = "";
+    pbnFormDariNotif = !!prefill && !id;
+    setPendingPembinaanNotif("", "");
 
     const writable = getSiswaWritable('pembinaan');
     if (!id && writable.length === 0) {
         Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Tidak ada siswa yang dapat Anda beri catatan pembinaan.', confirmButtonColor: '#2563eb' });
-        return;
+        return false;
+    }
+
+    if (prefill && !writable.some(s => String(s.id) === String(prefill.siswaId))) {
+        Swal.fire({ icon: 'info', title: 'Akses Ditolak', text: 'Anda tidak dapat memberi catatan pembinaan untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        return false;
     }
 
     const rec = id ? appState.pembinaan.find(x => String(x.id) === String(id)) : null;
-    const draft = !id ? getFormDraft("pembinaan") : null;
+    // Alur dari notifikasi tidak memakai draf lama supaya isian otomatis tidak tertimpa.
+    const draft = (!id && !prefill) ? getFormDraft("pembinaan") : null;
+    const pre = prefill || {};
 
     const siswaOpts = sortSiswa(writable).map(s =>
         `<option value="${s.id}" ${(draft?.['m-pbn-siswa'] || rec?.siswa_id || preSiswaId) == s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`
@@ -175,26 +223,33 @@ function openModalPembinaan(id = null, preSiswaId = null) {
         </div>
         <form onsubmit="savePembinaanForm(event, '${id || ''}')" class="space-y-3">
             <div>
+                ${prefill ? `
+                <p class="block text-xs font-bold text-slate-500 mb-1">SISWA</p>
+                <div class="w-full bg-slate-100 border border-slate-200 p-2.5 rounded-xl text-xs font-bold text-slate-600 flex items-center justify-between gap-2">
+                    <span class="min-w-0 truncate">${escapeHtml(pre.siswaNama || '')}</span>
+                    <i class="fas fa-lock text-slate-400 shrink-0" title="Siswa terkunci dari notifikasi"></i>
+                </div>
+                <input type="hidden" id="m-pbn-siswa" value="${escapeHtml(String(pre.siswaId))}">` : `
                 <label for="m-pbn-siswa" class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
-                <select id="m-pbn-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>
+                <select id="m-pbn-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${siswaOpts}</select>`}
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label for="m-pbn-jenis" class="block text-xs font-bold text-slate-500 mb-1">JENIS</label>
                     <select id="m-pbn-jenis" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                        ${['Sikap', 'Akademik', 'Kehadiran', 'Sosial'].map(j => `<option value="${j}" ${(draft?.['m-pbn-jenis'] || rec?.jenis) === j ? 'selected' : ''}>${j}</option>`).join('')}
+                        ${PBN_JENIS.map(j => `<option value="${j}" ${(pre.jenis || draft?.['m-pbn-jenis'] || rec?.jenis) === j ? 'selected' : ''}>${j}</option>`).join('')}
                     </select>
                 </div>
                 <div>
                     <label for="m-pbn-status" class="block text-xs font-bold text-slate-500 mb-1">STATUS</label>
                     <select id="m-pbn-status" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
-                        ${['Pemantauan', 'Dalam Pembinaan', 'Perlu Tindak Lanjut', 'Selesai'].map(st => `<option value="${st}" ${String(draft?.['m-pbn-status'] || rec?.status).toLowerCase() === st.toLowerCase() ? 'selected' : ''}>${st}</option>`).join('')}
+                        ${PBN_STATUS.map(st => `<option value="${st}" ${String(pre.status || draft?.['m-pbn-status'] || rec?.status).toLowerCase() === st.toLowerCase() ? 'selected' : ''}>${st}</option>`).join('')}
                     </select>
                 </div>
             </div>
             <div>
                 <label for="m-pbn-masalah" class="block text-xs font-bold text-slate-500 mb-1">DESKRIPSI PERMASALAHAN / CATATAN</label>
-                <textarea id="m-pbn-masalah" rows="3" placeholder="Jelaskan kasus..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${escapeHtml(draft?.['m-pbn-masalah'] || rec?.permasalahan || '')}</textarea>
+                <textarea id="m-pbn-masalah" rows="3" placeholder="Jelaskan kasus..." class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${escapeHtml(pre.masalah || draft?.['m-pbn-masalah'] || rec?.permasalahan || '')}</textarea>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -203,7 +258,7 @@ function openModalPembinaan(id = null, preSiswaId = null) {
                 </div>
                 <div>
                     <label for="m-pbn-pantau" class="block text-xs font-bold text-slate-500 mb-1">JADWAL PANTAU</label>
-                    <input type="date" id="m-pbn-pantau" value="${draft?.['m-pbn-pantau'] || rec?.jadwal_pantau || ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                    <input type="date" id="m-pbn-pantau" value="${pre.pantau || draft?.['m-pbn-pantau'] || rec?.jadwal_pantau || ''}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
             <button type="submit" id="btn-save-pembinaan" class="w-full bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Catatan Pembinaan</button>
@@ -212,7 +267,7 @@ function openModalPembinaan(id = null, preSiswaId = null) {
 
     document.getElementById("modal-container")?.classList.remove("hidden");
 
-    if (!id) {
+    if (!id && !prefill) {
         const fields = ['m-pbn-siswa', 'm-pbn-jenis', 'm-pbn-status', 'm-pbn-masalah', 'm-pbn-pantau'];
         attachAutoSaveDraft("pembinaan", fields);
         if (draft) showDraftIndicator(true);
@@ -267,7 +322,8 @@ async function savePembinaanForm(e, id) {
             appState.pembinaan.push(savedRecord);
         }
 
-        clearFormDraft("pembinaan");
+        if (!pbnFormDariNotif) clearFormDraft("pembinaan");
+        pbnFormDariNotif = false;
         saveAppStateToLocal();
         renderPembinaanView();
         closeModal();
