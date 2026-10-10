@@ -169,7 +169,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const magicToken = urlParams.get('magic_token');
 
     if (magicToken) {
-        showLoading("Memvalidasi Magic Link Orang Tua...");
+        showLoading("Memeriksa tautan pemantauan...");
         const res = await apiCall("getMagicLinkData", { magic_token: magicToken }, false);
         hideLoading();
 
@@ -188,15 +188,21 @@ window.addEventListener("DOMContentLoaded", async () => {
             appState.user = { role: 'ortu', nama: 'Orang Tua / Wali' };
             applyRoleUI('ortu');
             renderMagicLinkProfilView(res.data);
+            const info = (res.data && res.data.info) || {};
+            startMagicExpiryWatch(magicToken, res.server_time, {
+                wali_nama: info.wali_nama,
+                wali_hp: info.wali_hp,
+                siswa_nama: res.data && res.data.siswa ? res.data.siswa.nama : ""
+            });
             return;
         } else if (res && res.status === "expired") {
-            showExpiredMagicLinkScreen(res.message);
+            showExpiredMagicLinkScreen(res.message, { wali_nama: res.wali_nama, wali_hp: res.wali_hp, siswa_nama: res.siswa_nama });
             return;
         } else {
             Swal.fire({
                 icon: 'error',
                 title: 'Tautan Tidak Valid',
-                text: res?.message || 'Tautan Magic Link tidak valid.',
+                text: res?.message || 'Tautan pemantauan tidak valid.',
                 confirmButtonColor: '#2563eb'
             });
         }

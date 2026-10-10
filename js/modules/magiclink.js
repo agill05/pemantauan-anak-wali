@@ -254,12 +254,57 @@ function renderMagicLinkProfilView(detailData) {
     if (backBtn) backBtn.classList.add("hidden");
 }
 
-function showExpiredMagicLinkScreen(message = "Tautan Magic Link telah kedaluwarsa.") {
+let magicExpiryTimer = null;
+let magicClockOffset = 0;
+
+// Dipanggil sekali setelah tautan valid dibuka. Saat waktu habis, halaman diganti layar kedaluwarsa.
+function startMagicExpiryWatch(token, serverTime, kontak) {
+    clearInterval(magicExpiryTimer);
+    const expiry = decodeMagicExpiry(token);
+    if (!expiry) return;
+    magicClockOffset = serverTime ? (Number(serverTime) - Date.now()) : 0;
+
+    const cek = () => {
+        if (Date.now() + magicClockOffset < expiry) return;
+        clearInterval(magicExpiryTimer);
+        magicExpiryTimer = null;
+        document.removeEventListener("visibilitychange", cek);
+        tutupProfilOrtuKedaluwarsa(kontak);
+    };
+    magicExpiryTimer = setInterval(cek, 1000);
+    document.addEventListener("visibilitychange", cek);
+}
+
+function tutupProfilOrtuKedaluwarsa(kontak) {
+    try { if (typeof closeModal === "function") closeModal(); } catch (e) { }
+    try { if (window.Swal && Swal.isVisible()) Swal.close(); } catch (e) { }
+    document.getElementById("main-header")?.classList.add("hidden");
+    document.getElementById("main-content")?.classList.add("hidden");
+    try { appState.user = null; } catch (e) { }
+    showExpiredMagicLinkScreen("Tautan pemantauan sudah kedaluwarsa (berlaku 15 menit). Silakan minta tautan baru kepada Wali Kelas.", kontak);
+}
+
+function showExpiredMagicLinkScreen(message = "Tautan pemantauan sudah kedaluwarsa.", kontak = null) {
     const loginView = document.getElementById("view-login");
     if (!loginView) return;
 
     loginView.classList.remove("hidden");
     loginView.classList.add("active");
+
+    const waNomor = kontak && kontak.wali_hp ? toWhatsAppNumber(kontak.wali_hp) : "";
+    const waTeks = encodeURIComponent(
+        `Assalamu'alaikum.\n\nSaya orang tua/wali dari ananda *${(kontak && kontak.siswa_nama) || ""}*. ` +
+        `Tautan pemantauan sudah kedaluwarsa. Mohon dikirimkan tautan baru. Terima kasih.`
+    );
+    const waLink = waNomor ? `https://api.whatsapp.com/send?phone=${waNomor}&text=${waTeks}` : "";
+    const namaWali = kontak && kontak.wali_nama ? escapeHtml(kontak.wali_nama) : "Wali Kelas";
+
+    const aksi = waLink
+        ? `<a href="${waLink}" target="_blank" rel="noopener"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
+                <i class="fab fa-whatsapp text-base"></i> Hubungi ${namaWali} via WhatsApp
+            </a>`
+        : `<p class="text-[11px] text-slate-400">Nomor WhatsApp Wali Kelas belum tersedia. Silakan hubungi sekolah.</p>`;
 
     loginView.innerHTML = `
         <div class="w-full max-w-sm px-4">
@@ -276,14 +321,9 @@ function showExpiredMagicLinkScreen(message = "Tautan Magic Link telah kedaluwar
                     <i class="fas fa-shield-alt mr-1 text-rose-600"></i> ${escapeHtml(message || 'Tautan ini telah melewati batas waktu aman 15 menit.')}
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">
-                    Untuk menjaga privasi dan keamanan data anak didik, tautan pemantauan orang tua dibatasi maksimal 15 menit. Silakan hubungi Wali Kelas jika Anda memerlukan tautan pemantauan baru.
+                    Untuk menjaga privasi dan keamanan data anak didik, tautan pemantauan dibatasi maksimal 15 menit. Silakan hubungi Wali Kelas untuk meminta tautan baru.
                 </p>
-                <div class="pt-2">
-                    <button onclick="window.location.href = window.location.pathname"
-                        class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-2">
-                        <i class="fas fa-sign-in-alt"></i> Masuk Halaman Login
-                    </button>
-                </div>
+                <div class="pt-2">${aksi}</div>
             </div>
         </div>
     `;
