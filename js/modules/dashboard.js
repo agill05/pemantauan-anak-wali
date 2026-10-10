@@ -89,14 +89,12 @@ function renderSiswaDashboardParts() {
     renderPrioritySectionSiswa();
 }
 
-/* Kartu status lama diganti kartu-kartu baru di #dash-siswa-home */
 function renderSiswaStatusCard() {
     const statsContainer = document.getElementById("dash-stats-container");
     if (!statsContainer || !appState.user || appState.user.role !== "siswa") return;
     statsContainer.innerHTML = "";
 }
 
-/* ---------- Helper dashboard siswa ---------- */
 function sdMine(list) {
     const uid = String(appState.user.id);
     return (list || []).filter(x => String(x.siswa_id) === uid);
@@ -118,7 +116,6 @@ function sdCard(title, body, link) {
     const l = link ? `<button type="button" class="sd-link" onclick="switchView('${link[0]}')">${link[1]} <i class="fas fa-chevron-right text-[9px]"></i></button>` : "";
     return `<div class="sd-card"><div class="sd-title"><span>${title}</span>${l}</div>${body}</div>`;
 }
-/* Set tanggal (YYYY-MM-DD) yang punya minimal 1 kebiasaan berstatus Sudah */
 function sdTanggalKebiasaan() {
     const set = {};
     sdMine(appState.kebiasaan).forEach(k => {
@@ -127,7 +124,6 @@ function sdTanggalKebiasaan() {
     return set;
 }
 
-/* ---------- A. Sapaan personal ---------- */
 function sdSapaanCard(u) {
     const kls = (appState.kelas || []).find(k => String(k.id) === String(u.kelas_id));
     const wali = kls ? (appState.guru || []).find(g => String(g.id) === String(kls.guru_id)) : null;
@@ -141,7 +137,6 @@ function sdSapaanCard(u) {
         </div></div>`;
 }
 
-/* ---------- B. Misi hari ini ---------- */
 function sdMisiCard(today) {
     const total = (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
     const sudah = sdMine(appState.kebiasaan).filter(k => sdTgl(k) === today && k.status === "Sudah").length;
@@ -160,7 +155,6 @@ function sdMisiCard(today) {
         <p class="sd-note" style="margin:0">${pct >= 100 ? "Hebat! Semua misi hari ini selesai." : "Yuk selesaikan misimu hari ini!"}</p></div>${rows}`);
 }
 
-/* ---------- C. Streak dan badge ---------- */
 function sdHitungStreak(today) {
     const set = sdTanggalKebiasaan();
     let t = set[today] ? today : sdAddDays(today, -1);
@@ -183,7 +177,6 @@ function sdBadgeCard(today, absBulan, hafalan) {
     return sdCard("Streak & Badge", body);
 }
 
-/* ---------- D. Tren kebiasaan (7 hari, minggu ini vs lalu) ---------- */
 function sdTrenCard(today) {
     const total = (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
     const set = sdTanggalKebiasaan();
@@ -200,7 +193,6 @@ function sdTrenCard(today) {
         <div class="sd-trend">${bars}</div><div class="sd-trend-lbl">${lbl}</div><p class="sd-note">${pesan}</p>`, ["kebiasaan", "Detail"]);
 }
 
-/* ---------- E. Kehadiran bulan ini ---------- */
 function sdHadirCard(absBulan) {
     const c = { H: 0, S: 0, I: 0, A: 0, T: 0 };
     absBulan.forEach(a => { if (c[a.status] !== undefined) c[a.status]++; });
@@ -216,7 +208,6 @@ function sdHadirCard(absBulan) {
     return sdCard("Kehadiran Bulan Ini", body, ["absensi", "Detail"]);
 }
 
-/* ---------- F. Ringkasan nilai ---------- */
 function sdNilaiCard(nilai) {
     if (!nilai.length) return sdCard("Ringkasan Nilai", `<p class="sd-note">Belum ada data nilai.</p>`, ["karakter", "Detail"]);
     const tertinggi = nilai.reduce((a, b) => Number(b.nilai_akhir) > Number(a.nilai_akhir) ? b : a);
@@ -228,7 +219,6 @@ function sdNilaiCard(nilai) {
         <div class="sd-bar"><i style="width:${pct}%"></i></div><p class="sd-note">${info}</p>`, ["karakter", "Detail"]);
 }
 
-/* ---------- G. Progres hafalan ---------- */
 function sdHafalanCard(hafalan) {
     if (!hafalan.length) return sdCard("Progres Hafalan", `<p class="sd-note">Belum ada catatan hafalan.</p>`, ["karakter", "Detail"]);
     const terakhir = hafalan.slice().sort((a, b) => sdTgl(b).localeCompare(sdTgl(a)))[0];
@@ -237,7 +227,6 @@ function sdHafalanCard(hafalan) {
         ${renderInfoRows([{ label: "Status", value: terakhir.status || "-" }, { label: "Lancar", value: lancar + " capaian" }])}`, ["karakter", "Detail"]);
 }
 
-/* ---------- H. Prestasi terbaru ---------- */
 function sdPrestasiCard(prestasi) {
     if (!prestasi.length) return sdCard("Prestasi Terbaru", `<p class="sd-note">Belum ada prestasi tercatat. Terus berusaha!</p>`, ["karakter", "Detail"]);
     const list = prestasi.slice().sort((a, b) => sdTgl(b).localeCompare(sdTgl(a))).slice(0, 3);
@@ -428,8 +417,6 @@ function getHandledRecord(notifId) {
     return rec;
 }
 
-// Ditangani lewat catatan pembinaan: tetap ditangani selama catatan itu ada dan belum Selesai.
-// Tanpa batas 24 jam. Notifikasi harian (kebiasaan) dan data pembinaan yang belum termuat memakai aturan 24 jam.
 function notifDitanganiPembinaanAktif(rec, notifId) {
     if (String(rec.sumber || '') !== 'pembinaan' || !rec.pembinaan_id) return false;
     if (String(notifId).indexOf('_kebiasaan_') !== -1) return false;
@@ -535,7 +522,6 @@ function renderHandledNote(n) {
     return `<p class="text-[11px] text-slate-500 italic">Catatan: ${escapeHtml(catatan)}</p>`;
 }
 
-// Teks pembinaan dari notifikasi: lebih spesifik dan tanpa awalan yang menumpuk.
 function notifBersihkanAwalan(teks, awalan) {
     let hasil = String(teks || '').trim();
     const kunci = awalan.toLowerCase();

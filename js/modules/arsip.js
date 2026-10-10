@@ -1,7 +1,3 @@
-// Arsip semester: tampilan baca untuk siswa, guru (wali/mentor), dan kepsek.
-// Admin memakai view "arsip" (admin.js). Helper arsip* dari admin.js dipakai ulang.
-// Filter akses dilakukan server (getArsipSaya, getArsipData). UI ini hanya menampilkan.
-
 let arsipSayaDaftar = [];
 let arsipSayaMemuat = false;
 let arsipSayaLihat = null;
@@ -180,7 +176,6 @@ function arsipSayaBuka(i) {
     if (role === "guru") arsipSayaIsiSiswa(arsipSayaLihat);
 }
 
-// Daftar siswa untuk filter guru. Diambil dari arsip Laporan periode yang sama (sudah terfilter server).
 async function arsipSayaIsiSiswa(v) {
     const lap = arsipSayaDaftar.filter(r => String(r.periode_key) === v.periode && r.jenis === "Laporan")[0];
     if (!lap) return;
@@ -317,10 +312,6 @@ async function arsipSayaUnduhCsv() {
     }
 }
 
-// ===== TAHAP 6: LAPORAN SEMESTER ARSIP =====
-// Laporan = snapshot statis per siswa (Arsip_Laporan_<periode>), dibangun admin dari data arsip.
-// Satu baris per siswa, jadi aman dimuat penuh lalu ditampilkan tanpa halaman.
-
 const ARSIP_LAPORAN_PDF_KOLOM = [
     ["nama_siswa", "Siswa", null], ["kelas", "Kelas", 48],
     ["hadir", "H", 26], ["sakit", "S", 26], ["izin", "I", 26], ["alpa", "A", 26],
@@ -345,7 +336,6 @@ function arsipSayaTeksPersen(p) {
     return p === null ? "-" : p + "%";
 }
 
-// Ambil semua baris sheet arsip sesuai filter aktif. Dipakai CSV, PDF, dan laporan.
 async function arsipSayaAmbilSemua(v) {
     let offset = 0, total = Infinity, headers = [], rows = [];
     while (offset < total) {

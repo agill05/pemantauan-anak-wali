@@ -368,7 +368,6 @@ function _kartuGambar(doc, x, y, s, ctx) {
     doc.roundedRect(x + 1.6, y + 1.3, 8.4, 8.4, 1.2, 1.2, "F");
     pdfDrawLogo(doc, ctx.logo, x + 1.8, y + 1.5, 8);
 
-    // Judul + subjudul direntang rata kiri-kanan (x+12 s.d. x+W-3)
     const hx1 = x + 12, hx2 = x + W - 3;
     const rentang = (txt, baseY, style, size) => {
         doc.setFont(PDF_FONT, style);
@@ -380,7 +379,6 @@ function _kartuGambar(doc, x, y, s, ctx) {
     rentang("KARTU AKUN SISWA", y + 5.6, "bold", 13);
     rentang("SMP NEGERI 1 TALAGA JAYA", y + 9, "normal", 7);
 
-    // Garis aksen di bawah header
     doc.setFillColor(250, 204, 21);
     doc.rect(x, y + 11, W, 0.7, "F");
 

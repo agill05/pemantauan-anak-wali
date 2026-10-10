@@ -45,8 +45,6 @@ function renderAdminSekolah() {
     }
 }
 
-// ---------- Kalender semester (admin) ----------
-
 const SEM_BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 const SEM_MAKS_HARI = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
@@ -1000,7 +998,6 @@ async function simpanFormKebiasaan(e, id) {
     }
 }
 
-// ===== Tata Tertib (admin): ambang poin + master item =====
 let adminTatib = { master: [], konfig: null, kategori: { A: "Kelakuan", B: "Kerajinan", C: "Kerapian", D: "Penghargaan" } };
 let adminTatibMemuat = false;
 let adminTatibMenyimpan = false;
@@ -1537,7 +1534,6 @@ function arsipKlasifikasi(res) {
     return "gagal";
 }
 
-// Satu panggilan simulasi per jenis. Hasil: [{ jenis, tipe, data, pesan }]
 async function arsipSimulasiSemua(form, progres) {
     const hasil = [];
     for (let i = 0; i < form.jenis.length; i++) {

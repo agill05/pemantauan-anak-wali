@@ -1,6 +1,3 @@
-// Pilih banyak + hapus massal (bulkDestroy) untuk semua CRUD.
-// Pakai: bulkToolbar(kind, idsTampil) di atas daftar, bulkCheckbox(kind, id) di tiap baris.
-
 const BULK_STATE = {};
 
 function _bulkSt(kind) {
@@ -106,7 +103,6 @@ function _bulkBarInner(kind) {
         </div>`;
 }
 
-// idsTampil = id yang sedang tampil DAN boleh dihapus user ini.
 function bulkToolbar(kind, idsTampil) {
     const st = _bulkSt(kind);
     st.tampil = (idsTampil || []).map(String);
@@ -148,7 +144,6 @@ function bulkReset(kind) {
     st.ids.clear();
 }
 
-// Dipanggil saat modal ditutup: mode pilih di sheet catatan tidak boleh tersisa.
 function bulkResetModal() {
     Object.keys(BULK_CFG).forEach(k => { if (BULK_CFG[k].modal) bulkReset(k); });
 }

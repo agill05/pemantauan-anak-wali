@@ -155,7 +155,6 @@ const PBN_STATUS_DARI_LEVEL = { kritis: 'Perlu Tindak Lanjut', sedang: 'Dalam Pe
 const PBN_HARI_PANTAU = { kritis: 3, sedang: 7, rendah: 14 };
 let pbnFormDariNotif = false;
 
-// Jadwal pantau = hari ini + 3/7/14 hari menurut level. Sabtu atau Minggu digeser ke Senin.
 function pbnJadwalDariLevel(level) {
     const [y, m, d] = String(getDateWITA()).slice(0, 10).split('-').map(Number);
     const t = new Date(Date.UTC(y, m - 1, d + (PBN_HARI_PANTAU[level] || 7)));
@@ -175,7 +174,6 @@ function pbnIsianDariNotif(n) {
     };
 }
 
-// Dari notifikasi: hanya ID yang dikirim lewat atribut onclick, data dicari dari state.
 function openPembinaanDariNotif(notifId) {
     const n = (appState.currentNotifications || []).find(x => String(x.id) === String(notifId));
     if (!n) {
@@ -206,7 +204,6 @@ function openModalPembinaan(id = null, preSiswaId = null, prefill = null) {
     }
 
     const rec = id ? appState.pembinaan.find(x => String(x.id) === String(id)) : null;
-    // Alur dari notifikasi tidak memakai draf lama supaya isian otomatis tidak tertimpa.
     const draft = (!id && !prefill) ? getFormDraft("pembinaan") : null;
     const pre = prefill || {};
 

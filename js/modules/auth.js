@@ -1297,7 +1297,6 @@ async function saveSelfProfileForm(e) {
     }
 }
 
-/* Blokir Ctrl+P dan cetak browser khusus siswa (pengamanan sisi klien) */
 function isSiswaAktif() {
     return document.body && document.body.classList.contains("role-siswa");
 }

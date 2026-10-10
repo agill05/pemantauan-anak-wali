@@ -1,6 +1,3 @@
-/* Modul bersama: tampilan grup per siswa (level 1 card, level 2 detail).
- * Dipakai keagamaan.js, akademik.js (prestasi), pembinaan.js. */
-
 const GS_URUT_LABEL = {
     terbaru: "Terbaru",
     terbanyak: "Paling banyak catatan",
@@ -18,7 +15,6 @@ function gsKunciPembuat(rec) {
     return (sebagai || "wali") + "|" + oleh;
 }
 
-// Kelompokkan catatan per siswa. Hasil: array {siswaId, siswa, records, terakhir}
 function gsGroupBySiswa(records, getSiswaId) {
     const map = new Map();
     (records || []).forEach(rec => {
@@ -44,7 +40,6 @@ function gsUrutkan(groups, mode, skorMendesak) {
     return arr;
 }
 
-// Chip kontributor unik (satu chip per pembuat)
 function gsRenderKontributor(records) {
     const seen = new Set();
     const chips = [];
@@ -76,7 +71,6 @@ function gsNamaKelas(siswa) {
     return k ? k.nama_kelas : "";
 }
 
-// Card level 1. ringkasanHtml = isi spesifik modul. aksiDetail = nama fungsi global (string) yang menerima siswaId.
 function gsRenderCard(g, ringkasanHtml, aksiDetail) {
     const kelas = gsNamaKelas(g.siswa);
     const peran = g.siswa ? renderPeranChip(g.siswa) : "";
@@ -99,7 +93,6 @@ function gsRenderCard(g, ringkasanHtml, aksiDetail) {
         </div>`;
 }
 
-// Sheet level 2. opsi: { judul, ringkasanHtml, bodyHtml, tambahFn (string, tanpa argumen siswa) }
 function gsOpenSheet(g, opsi) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
@@ -120,7 +113,6 @@ function gsOpenSheet(g, opsi) {
     document.getElementById("modal-container")?.classList.remove("hidden");
 }
 
-// Baris catatan di detail: pembuat, tanggal, aksi sesuai hak akses
 function gsRenderBarisCatatan(rec, kategori, isiHtml, editFn, hapusFn) {
     const bisaUbah = !isKepsekUser() && canEditRecord(rec, kategori);
     const cb = bisaUbah ? bulkCheckbox(kategori, rec.id) : "";
@@ -139,7 +131,6 @@ function gsRenderBarisCatatan(rec, kategori, isiHtml, editFn, hapusFn) {
         </div>`;
 }
 
-// Filter tambahan kepsek: kelas + pembuat. Isi <select> dari data, kembalikan html.
 function gsRenderFilterKepsek(prefixId, onChangeFn) {
     if (!isKepsekUser()) return "";
     const kelasOpt = `<option value="">Semua Kelas</option>` + (appState.kelas || [])
@@ -165,7 +156,6 @@ function gsBacaFilterKepsek(prefixId) {
     };
 }
 
-// Terapkan filter kelas dan pembuat pada hasil grup. Catatan difilter per pembuat, grup kosong dibuang.
 function gsTerapkanFilter(groups, f) {
     if (!f) return groups;
     return groups.map(g => {

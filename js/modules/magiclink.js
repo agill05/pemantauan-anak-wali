@@ -257,7 +257,6 @@ function renderMagicLinkProfilView(detailData) {
 let magicExpiryTimer = null;
 let magicClockOffset = 0;
 
-// Dipanggil sekali setelah tautan valid dibuka. Saat waktu habis, halaman diganti layar kedaluwarsa.
 function startMagicExpiryWatch(token, serverTime, kontak) {
     clearInterval(magicExpiryTimer);
     const expiry = decodeMagicExpiry(token);
@@ -275,8 +274,6 @@ function startMagicExpiryWatch(token, serverTime, kontak) {
     document.addEventListener("visibilitychange", cek);
 }
 
-// Blokir total akses ortu: sembunyikan seluruh app shell, hapus data di memori, tampilkan layar blokir.
-// Wajib lepas class "has-session": CSS-nya memaksa header/konten/nav tampil dan menyembunyikan #view-login.
 function blokirAksesOrtu(message, kontak = null, opsi = {}) {
     clearInterval(magicExpiryTimer);
     magicExpiryTimer = null;

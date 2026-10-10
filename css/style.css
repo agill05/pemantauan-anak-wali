@@ -1,5 +1,4 @@
 :root {
-    /* Lebar maksimal daftar kartu di PC (satu kolom). Ubah nilai ini untuk melebarkan atau menyempitkan semua daftar. */
     --daftar-maks: 100%;
     --primary: #2563eb;
     --primary-hover: #1d4ed8;
@@ -3045,7 +3044,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     pointer-events: none;
 }
 
-/* ===== Blokir cetak untuk siswa (Fase 1) ===== */
 @media print {
     body.role-siswa > * {
         display: none !important;
@@ -3060,7 +3058,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* ===== Dashboard siswa ===== */
 .sd-card { background: #fff; border: 1px solid #f1f5f9; border-radius: 1rem; padding: 0.875rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); }
 .sd-title { font-size: 0.6875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
 .sd-grid2 { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
@@ -3096,7 +3093,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 .sd-tl > div::before { content: ""; position: absolute; left: -1.0625rem; top: 0.3rem; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #f59e0b; }
 .sd-tl small { display: block; color: #94a3b8; font-size: 0.625rem; }
 
-/* ===== Baris label : nilai ===== */
 .info-rows { margin-top: 0.25rem; }
 .info-row { display: flex; gap: 0; font-size: 0.75rem; line-height: 1.5; }
 .info-label { flex: 0 0 4.5rem; color: #94a3b8; font-weight: 600; }
@@ -3106,7 +3102,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 .sd-greet .info-sep { color: rgba(255, 255, 255, 0.7); }
 .sd-greet .info-value { color: #fff; }
 
-/* ===== Header mobile: teks tidak terpotong ===== */
 @media (max-width: 1023px) {
     #header-greeting,
     #header-title,
@@ -3126,11 +3121,9 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
 }
 
 @media (max-width: 767px) {
-    /* Tinggi header dinamis, diisi oleh syncHeaderHeight() di ui.js */
     #main-content { padding-top: var(--header-h, 4rem); }
 }
 
-/* Refresh pindah ke sidebar di layar < 640px */
 @media (max-width: 639px) {
     #btn-refresh-header { display: none !important; }
 }
@@ -3138,7 +3131,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     .sidebar-refresh { display: none !important; }
 }
 
-/* ---- Animasi perpindahan tab ---- */
 .swap-in-left { animation: swapInLeft 0.26s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .swap-in-right { animation: swapInRight 0.26s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .swap-in-fade { animation: swapInFade 0.22s ease-out both; }
@@ -3162,7 +3154,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     .swap-in-left, .swap-in-right, .swap-in-fade { animation: none; }
 }
 
-/* Arsip semester (siswa, guru, kepsek) */
 #view-arsip-saya :is(.text-\[10px\], .text-\[11px\]) {
     font-size: 0.75rem;
     line-height: 1rem;
@@ -3239,7 +3230,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* Tata Tertib (admin) */
 #view-admin-manage #btn-tambah-tatib {
     min-height: 2.75rem;
     padding-left: 1rem;
@@ -3318,12 +3308,10 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* Daftar kartu PC satu kolom: bilah pilih/hapus massal selalu satu baris penuh, bukan sel grid. */
 [data-bulk-bar] {
     grid-column: 1 / -1;
 }
 
-/* PC tahap 2: kartu daftar selebar penuh disusun mendatar (nama | ringkasan | aksi). */
 @media (min-width: 768px) {
     .gs-card {
         display: grid;
@@ -3361,7 +3349,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* Ringkasan kelas (dashboard): nama kiri, bar dan statistik kanan. */
 @media (min-width: 768px) {
     #dash-kelas-list>div {
         display: grid;
@@ -3384,10 +3371,8 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* ===== PC tahap 3: halaman Admin (#view-admin-manage). Hanya layar >=768px; HP dan cetak tidak berubah. ===== */
 @media screen and (min-width: 768px) {
 
-    /* Toolbar: cari melebar, tombol CSV dikelompokkan, tombol tambah di ujung kanan. */
     #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa, #admin-tab-mentor, #admin-tab-tatib):not(.hidden) {
         display: flex;
         flex-wrap: wrap;
@@ -3431,7 +3416,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         width: 100%;
     }
 
-    /* Layar sempit (768-1023px): cari + tombol tambah satu baris, kelompok CSV di baris bawah. */
     @media (max-width: 1023px) {
         #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa)>.flex.justify-between>button {
             order: 2;
@@ -3443,7 +3427,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         }
     }
 
-    /* Tab Mentor: cari dan ringkasan satu baris. */
     #view-admin-manage #admin-tab-mentor:not(.hidden)>p {
         flex: 0 0 100%;
     }
@@ -3454,7 +3437,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         max-width: 28rem;
     }
 
-    /* Tab Tata Tertib: cari dan filter kategori satu baris. */
     #view-admin-manage #admin-tab-tatib:not(.hidden)>:is(p, form, .flex.justify-between) {
         flex: 0 0 100%;
     }
@@ -3470,7 +3452,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         padding-bottom: 0;
     }
 
-    /* Kartu Guru, Siswa, Kelas, Mentor: info kiri | chip tengah | aksi kanan. */
     #view-admin-manage :is(#admin-guru-list, #admin-siswa-list, #admin-kelas-list, #admin-mentor-list)>.adm-card {
         display: grid;
         grid-template-columns: auto minmax(11rem, 1.1fr) minmax(0, 1.6fr) auto;
@@ -3522,7 +3503,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         align-self: center;
     }
 
-    /* Kartu Arsip: periode kiri | chip jenis data tengah | tombol kanan. */
     #admin-arsip-list>.adm-arsip {
         display: grid;
         grid-template-columns: minmax(12rem, 20rem) minmax(0, 1fr) auto;
@@ -3543,7 +3523,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         white-space: nowrap;
     }
 
-    /* Kebiasaan dan Tata Tertib: baris ringkas, tidak membungkus. */
     #admin-kebiasaan-list>div,
     #admin-tatib-list>div {
         flex-wrap: nowrap;
@@ -3556,7 +3535,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* Mouse di PC: tombol aksi tidak perlu seukuran target sentuh. */
 @media screen and (min-width: 768px) and (pointer: fine) {
 
     #admin-kebiasaan-list button.w-8,
@@ -3574,9 +3552,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* ===== PC tahap 4: Arsip dan halaman pengaturan Admin. Hanya layar; HP dan cetak tidak berubah. ===== */
-
-/* Toolbar Tata Tertib: cari, ringkasan, tombol Item satu baris; chip kategori di bawahnya. */
 @media screen and (min-width: 768px) {
     #view-admin-manage #admin-tab-tatib:not(.hidden)>.flex.justify-between {
         display: contents;
@@ -3598,13 +3573,11 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         flex: 0 0 100%;
     }
 
-    /* Checklist Jenis Data (Arsip) dua kolom. */
     #arsip-jenis-list {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-/* Lepas batas 44rem; teks pengantar dibatasi 64rem supaya tetap enak dibaca. */
 @media screen and (min-width: 1024px) {
 
     #admin-tab-sekolah>form,
@@ -3621,7 +3594,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         max-width: 64rem;
     }
 
-    /* Ambang Poin Tata Tertib: lima isian dalam satu baris (Pengali memakai dua kolom), tombol di kanan. */
     #view-admin-manage #admin-tatib-konfig>.grid {
         grid-template-columns: repeat(6, minmax(0, 1fr));
     }
@@ -3635,7 +3607,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* Sekolah: dua kartu berdampingan (Kepala Sekolah | Kalender Semester). */
 @media screen and (min-width: 1100px) {
     #view-admin-manage #admin-tab-sekolah:not(.hidden) {
         display: grid;
@@ -3654,7 +3625,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* Arsip: form di kiri; hasil simulasi, progres, dan daftar arsip di kanan. */
 @media screen and (min-width: 1280px) {
     #arsip-panel-utama {
         display: grid;
@@ -3704,7 +3674,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         grid-row: 5;
     }
 
-    /* Di kolom kanan yang sempit, kartu arsip kembali bertumpuk. */
     #admin-arsip-list>.adm-arsip {
         grid-template-columns: minmax(0, 1fr);
         row-gap: 0.625rem;
@@ -3715,7 +3684,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* ===== Overlay proses (showLoading): latar gelap agar teks putih dan spinner terbaca di semua layar. ===== */
 @media screen {
     #loading-overlay {
         background: rgba(15, 23, 42, 0.62);

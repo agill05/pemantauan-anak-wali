@@ -69,14 +69,11 @@ function getDateWITA() {
     return `${y}-${m}-${d}`;
 }
 
-// Hari sebelum tanggal ISO (YYYY-MM-DD).
 function semesterHariSebelum(iso) {
     const d = new Date(Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)) - 1));
     return d.toISOString().slice(0, 10);
 }
 
-// Kalender semester berdasarkan pengaturan admin (appState.pengaturan). Bawaan: Ganjil 07-01, Genap 01-01.
-// Mengembalikan semester aktif pada tanggal tgl (bawaan: hari ini WITA) beserta rentang tanggalnya.
 function kalenderSemester(tgl) {
     const t = String(tgl || getDateWITA());
     const th = Number(t.slice(0, 4));
@@ -623,7 +620,6 @@ function enhanceSiswaSelect(sel) {
     sel.style.cssText = "position:absolute;left:0;bottom:0;width:100%;height:1px;opacity:0;pointer-events:none;";
     wrap.append(inp, list, sel);
 
-    // Tahan blur saat pointer ada di daftar, agar klik/tap tidak kalah balapan dengan close()
     let picking = false;
     let pickTimer = null;
     const holdOpen = () => {
@@ -720,7 +716,6 @@ function enhanceSiswaSelect(sel) {
     }).observe(box, { childList: true });
 })();
 
-/* Baris label : nilai. rows: [{label, value, html?}] */
 function renderInfoRows(rows) {
     const isi = (rows || []).filter(r => r && r.value !== undefined && r.value !== null && r.value !== "").map(r =>
         `<div class="info-row"><span class="info-label">${escapeHtml(r.label)}</span><span class="info-sep" aria-hidden="true">:</span><span class="info-value">${r.html ? r.value : escapeHtml(String(r.value))}</span></div>`
@@ -739,8 +734,6 @@ function rapikanInputNama(el) {
     if (el && !el.readOnly) el.value = titleCaseNama(el.value);
 }
 
-/* Animasi perpindahan tab/panel. dir: "left" | "right" | "fade".
-   Dilewati bila pengguna memilih reduced-motion. */
 function animateSwap(el, dir, skip) {
     if (!el) return;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;

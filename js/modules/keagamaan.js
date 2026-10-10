@@ -52,7 +52,6 @@ function kagLebihBaru(a, b) {
     return String(a.dibuat_pada || "") >= String(b.dibuat_pada || "");
 }
 
-// Status resmi: per siswa + item, ambil catatan terbaru.
 function kagResmi(list = []) {
     const map = new Map();
     list.forEach(h => {

@@ -199,7 +199,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             blokirAksesOrtu(res.message, { wali_nama: res.wali_nama, wali_hp: res.wali_hp, siswa_nama: res.siswa_nama });
             return;
         } else {
-            // Tautan salah atau gagal diperiksa: tetap blokir, jangan lanjut ke login/app shell.
             if (!res) {
                 blokirAksesOrtu("Tidak dapat memeriksa tautan. Periksa koneksi internet lalu muat ulang halaman.", null,
                     { judul: "Gagal Memuat", ikon: "fa-wifi-slash", reload: true, keterangan: "Data anak didik tidak ditampilkan sebelum tautan berhasil diperiksa." });
@@ -280,7 +279,6 @@ function startDataPolling() {
     dataPollingInterval = setInterval(pollDataSekali, DATA_POLL_INTERVAL_MS);
     if (!pollVisibilitasTerpasang) {
         pollVisibilitasTerpasang = true;
-        // kembali ke tab: cek langsung, tidak menunggu siklus berikutnya
         document.addEventListener("visibilitychange", () => { if (!document.hidden) pollDataSekali(); });
     }
 }

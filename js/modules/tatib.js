@@ -1,6 +1,3 @@
-/* Modul Tata Tertib (Tahap 5-6): daftar poin siswa, form input banyak siswa, detail rinci, panggilan orang tua.
- * Memakai grup-siswa.js (gsRenderCard, gsOpenSheet). Notifikasi ambang ada di dashboard.js. */
-
 const TT_KAT_LABEL_BAWAAN = { A: "Kelakuan", B: "Kerajinan", C: "Kerapian", D: "Penghargaan" };
 const TT_KAT_WARNA = {
     A: "text-rose-600 bg-rose-50",
@@ -59,8 +56,6 @@ async function ttPastikanMaster(paksa = false) {
     return tatibMaster.master.length > 0;
 }
 
-// ---------- daftar ----------
-
 async function loadTatibData(forceRefresh = false) {
     const filterSelect = document.getElementById("tatib-siswa-filter");
     if (filterSelect) {
@@ -75,7 +70,6 @@ async function loadTatibData(forceRefresh = false) {
     else renderSkeleton("tatib-list-container", 3);
 
     if (tatibMemuat) {
-        // Muat paksa tidak boleh hilang: antre satu putaran ulang setelah putaran berjalan selesai.
         if (forceRefresh) tatibUlang = true;
         if (tatibMemuatJanji) await tatibMemuatJanji;
         return;
@@ -115,8 +109,6 @@ async function tatibAmbilData_() {
     }
 }
 
-// Segarkan semua data tatib setelah aksi tulis: daftar, rekap, panggilan, kartu siswa,
-// Laporan Tata Tertib, notifikasi, dan modal detail yang terbuka (lewat renderTatibView).
 async function tatibSegarkanSemua() {
     tatibSaya.waktu = 0;
     if (typeof tlTandaiBasi === "function") tlTandaiBasi();
@@ -129,7 +121,6 @@ async function tatibSegarkanSemua() {
     tatibRefreshDetail();
 }
 
-// Dipakai polling: muat ulang data tatib tanpa notifikasi (dashboard sudah memuatnya sendiri).
 async function tatibSegarkanDiam() {
     tatibSaya.waktu = 0;
     if (typeof tlTandaiBasi === "function") tlTandaiBasi();
@@ -138,7 +129,6 @@ async function tatibSegarkanDiam() {
     if (typeof tlSegarkanDiam === "function") await tlSegarkanDiam();
 }
 
-// Pembaruan lokal instan: ubah rekap siswa dari selisih poin, server menetapkan nilai final.
 function ttRekapLokal(siswaId, selisihPel, selisihPeng) {
     const r = tatibRekap.get(String(siswaId));
     if (!r) return;
@@ -234,8 +224,6 @@ function renderTatibView() {
     tatibRefreshDetail();
 }
 
-// ---------- detail (Tahap 6) ----------
-
 function ttDataGrup(siswaId) {
     const base = scopeBySiswaId(appState.tatib, r => r.siswa_id).filter(r => String(r.siswa_id) === String(siswaId));
     const g = gsGroupBySiswa(base, r => r.siswa_id)[0];
@@ -257,7 +245,6 @@ function ttPanggilanSiswa(siswaId) {
         .sort((a, b) => TT_TAHAP_ROMAWI.indexOf(String(a.tahap)) - TT_TAHAP_ROMAWI.indexOf(String(b.tahap)));
 }
 
-// Wali kelas siswa (atau admin) boleh mencatat panggilan orang tua. Kepsek hanya membaca.
 function tatibBisaCatatPanggilan(siswaId) {
     const u = appState.user;
     if (!u || isKepsekUser()) return false;
@@ -406,8 +393,6 @@ function tatibRefreshDetail() {
     openDetailTatib(box.dataset.gsSiswa, true);
 }
 
-// ---------- panggilan orang tua ----------
-
 async function segarkanSetelahPanggilan() {
     await tatibSegarkanSemua();
 }
@@ -544,8 +529,6 @@ async function hapusTatib(id) {
         Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat menghapus catatan.", confirmButtonColor: "#2563eb" });
     }
 }
-
-// ---------- form input (banyak siswa) ----------
 
 async function openModalTatibInput(preSiswaId = null) {
     const box = document.getElementById("modal-content-box");
@@ -893,8 +876,6 @@ function ttLaporAmbang(ambang) {
     });
 }
 
-// ---------- edit satu catatan ----------
-
 async function openModalTatibEdit(id) {
     const box = document.getElementById("modal-content-box");
     const rec = (appState.tatib || []).find(r => String(r.id) === String(id));
@@ -952,7 +933,6 @@ async function simpanTatibEdit(e, id) {
     const cadanganCatatan = appState.tatib;
     const cadanganRekap = tatibRekap;
     if (asli) {
-        // tampilan langsung berubah; server menghitung ulang pengali dan menetapkan nilai final
         const skorBaru = Number(skor);
         const pengali = Number(asli.pengali) || 1;
         const akhirBaru = skorBaru * pengali;
@@ -981,8 +961,6 @@ async function simpanTatibEdit(e, id) {
         showToast("Koneksi bermasalah. Perubahan belum tersimpan.", "warning");
     }
 }
-
-// ---------- Tahap 8: siswa, dashboard, impor Alpa ----------
 
 const TT_ID_ALPA = "TT-B04";
 let tatibSaya = { ringkasan: null, waktu: 0, memuat: false };
@@ -1085,7 +1063,6 @@ function ttRenderKartuSiswa() {
     }
 }
 
-// Dashboard staf: panggilan orang tua yang belum dan sudah ditangani.
 function tatibRenderStatusDashboard(res) {
     let box = document.getElementById("dash-tatib-status");
     const role = appState.user && appState.user.role;
@@ -1121,7 +1098,6 @@ function tatibRenderStatusDashboard(res) {
         </div>`;
 }
 
-// Impor saran Alpa dari presensi: pilih siswa Alpa pada tanggal terpilih, item B4. Tetap perlu Simpan.
 async function ttImporAlpa() {
     if (!ttForm) return;
     const tanggal = (document.getElementById("tt-tanggal") || {}).value || "";
@@ -1169,8 +1145,6 @@ async function ttImporAlpa() {
     ttJadwalkanPratinjau();
 }
 
-
-// ---------- Tata Tertib Sekolah (baca saja, untuk siswa) ----------
 
 let ttBacaKata = "";
 

@@ -1,6 +1,3 @@
-/* Tahap 7: Rekap poin tata tertib per kelas (tab di Laporan) + PDF Surat Panggilan Orang Tua.
- * Dimuat SETELAH laporan.js dan tatib.js. Tidak mengubah file lain selain membungkus setLaporanTab. */
-
 let tlData = null;
 let tlMemuat = false;
 let tlUlang = false;
@@ -85,8 +82,6 @@ setLaporanTab = function (tab) {
 
 const TL_BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-// Hitung rentang periode dari pilihan dropdown. kunci: "" | "ta" | "semester" | "bulan".
-// Rentang TA dan semester mengikuti Kalender Semester di Master Data > Sekolah.
 function tlHitungPeriode(kunci) {
     const tgl = String(getDateWITA());
     const th = Number(tgl.slice(0, 4));
@@ -133,7 +128,6 @@ function tlInit() {
     else muatLaporanTatib(true, !!tlData);
 }
 
-// Data laporan dianggap basi setelah ada tulis tatib. Data lama tetap tampil sampai data baru tiba.
 function tlTandaiBasi() {
     if (tlData) tlData.basi = true;
 }
@@ -143,14 +137,12 @@ function tlTabTerbuka() {
     return typeof laporanTab !== "undefined" && laporanTab === "tatib" && !!view && view.classList.contains("active");
 }
 
-// Muat ulang laporan tanpa skeleton, hanya bila tab Tata Tertib sedang terbuka. Selain itu cukup ditandai basi.
 async function tlSegarkanDiam() {
     if (tlData) tlData.basi = true;
     if (!tlTabTerbuka()) return;
     await muatLaporanTatib(true, true);
 }
 
-// diam: tanpa skeleton dan tanpa menimpa tampilan dengan pesan gagal bila data lama masih ada.
 async function muatLaporanTatib(paksa, diam) {
     if (tlMemuat) {
         if (paksa) tlUlang = true;
@@ -191,7 +183,6 @@ function tlNamaKelas(id) {
     return k ? k.nama_kelas : "-";
 }
 
-// Siswa dalam cakupan peran dan filter kelas (tanpa filter status).
 function tlBase() {
     if (!tlData) return [];
     const kelas = getEffectiveKelasFilter(tlVal("lt-kelas"));
@@ -285,8 +276,6 @@ function renderLaporanTatib() {
     }).join("");
 }
 
-// ---------- rekap: PDF dan CSV ----------
-
 function tlJudul() {
     return isGuruUser() ? "REKAPITULASI POIN TATA TERTIB " + getLabelSiswa().toUpperCase() : "REKAPITULASI POIN TATA TERTIB SISWA";
 }
@@ -354,8 +343,6 @@ async function eksporLaporanTatibCSV() {
     _downloadCSVString(csv, `Rekap_Tata_Tertib_${getDateWITA()}.csv`);
     showToast("File Excel/CSV berhasil diunduh!");
 }
-
-// ---------- Surat Panggilan Orang Tua ----------
 
 function tlHari(tgl) {
     const d = new Date(tgl + "T00:00:00Z");
