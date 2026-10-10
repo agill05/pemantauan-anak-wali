@@ -26,6 +26,8 @@ let tatibKonfig = null;
 let tatibRekap = new Map();
 let tatibStatistik = null;
 let tatibMemuat = false;
+let tatibMemuatJanji = null;
+let tatibUlang = false;
 let ttForm = null;
 let ttPratinjauTimer = null;
 
@@ -72,29 +74,83 @@ async function loadTatibData(forceRefresh = false) {
     if (appState.tatib && appState.tatib.length > 0) renderTatibView();
     else renderSkeleton("tatib-list-container", 3);
 
-    if (tatibMemuat) return;
-    tatibMemuat = true;
-    try {
-        const [resCatatan, resRekap, resPanggilan] = await Promise.all([
-            apiCall("getTatib", {}, false),
-            apiCall("getRekapTatib", {}, false),
-            apiCall("getTatibPanggilan", {}, false, 1, true)
-        ]);
-        if (resPanggilan && resPanggilan.status === "success" && Array.isArray(resPanggilan.data)) {
-            tatibPanggilan = resPanggilan.data;
-        }
-        if (resCatatan && resCatatan.status === "success" && Array.isArray(resCatatan.data)) {
-            appState.tatib = resCatatan.data;
-        }
-        if (resRekap && resRekap.status === "success" && Array.isArray(resRekap.data)) {
-            tatibRekap = new Map(resRekap.data.map(r => [String(r.siswa_id), r]));
-            tatibStatistik = resRekap.statistik || null;
-            if (resRekap.konfig) tatibKonfig = resRekap.konfig;
-        }
-    } finally {
-        tatibMemuat = false;
+    if (tatibMemuat) {
+        // Muat paksa tidak boleh hilang: antre satu putaran ulang setelah putaran berjalan selesai.
+        if (forceRefresh) tatibUlang = true;
+        if (tatibMemuatJanji) await tatibMemuatJanji;
+        return;
     }
-    renderTatibView();
+    tatibMemuat = true;
+    tatibMemuatJanji = (async () => {
+        try {
+            do {
+                tatibUlang = false;
+                await tatibAmbilData_();
+                renderTatibView();
+            } while (tatibUlang);
+        } finally {
+            tatibMemuat = false;
+            tatibMemuatJanji = null;
+        }
+    })();
+    await tatibMemuatJanji;
+}
+
+async function tatibAmbilData_() {
+    const [resCatatan, resRekap, resPanggilan] = await Promise.all([
+        apiCall("getTatib", {}, false),
+        apiCall("getRekapTatib", {}, false),
+        apiCall("getTatibPanggilan", {}, false, 1, true)
+    ]);
+    if (resPanggilan && resPanggilan.status === "success" && Array.isArray(resPanggilan.data)) {
+        tatibPanggilan = resPanggilan.data;
+    }
+    if (resCatatan && resCatatan.status === "success" && Array.isArray(resCatatan.data)) {
+        appState.tatib = resCatatan.data;
+    }
+    if (resRekap && resRekap.status === "success" && Array.isArray(resRekap.data)) {
+        tatibRekap = new Map(resRekap.data.map(r => [String(r.siswa_id), r]));
+        tatibStatistik = resRekap.statistik || null;
+        if (resRekap.konfig) tatibKonfig = resRekap.konfig;
+    }
+}
+
+// Segarkan semua data tatib setelah aksi tulis: daftar, rekap, panggilan, kartu siswa,
+// Laporan Tata Tertib, notifikasi, dan modal detail yang terbuka (lewat renderTatibView).
+async function tatibSegarkanSemua() {
+    tatibSaya.waktu = 0;
+    if (typeof tlTandaiBasi === "function") tlTandaiBasi();
+    await loadTatibData(true);
+    const tugas = [];
+    if (appState.user && appState.user.role === "siswa") tugas.push(tatibMuatSaya(true));
+    if (typeof tlSegarkanDiam === "function") tugas.push(tlSegarkanDiam());
+    if (typeof checkStudentNotifications === "function") tugas.push(checkStudentNotifications());
+    await Promise.allSettled(tugas);
+    tatibRefreshDetail();
+}
+
+// Dipakai polling: muat ulang data tatib tanpa notifikasi (dashboard sudah memuatnya sendiri).
+async function tatibSegarkanDiam() {
+    tatibSaya.waktu = 0;
+    if (typeof tlTandaiBasi === "function") tlTandaiBasi();
+    await loadTatibData(true);
+    if (appState.user && appState.user.role === "siswa") await tatibMuatSaya(true);
+    if (typeof tlSegarkanDiam === "function") await tlSegarkanDiam();
+}
+
+// Pembaruan lokal instan: ubah rekap siswa dari selisih poin, server menetapkan nilai final.
+function ttRekapLokal(siswaId, selisihPel, selisihPeng) {
+    const r = tatibRekap.get(String(siswaId));
+    if (!r) return;
+    const pel = Math.max(0, (Number(r.pelanggaran) || 0) + selisihPel);
+    const peng = Math.max(0, (Number(r.penghargaan) || 0) + selisihPeng);
+    tatibRekap.set(String(siswaId), Object.assign({}, r, { pelanggaran: pel, penghargaan: peng, total: Math.max(0, pel - peng) }));
+}
+
+function ttSelisihRekap(rec, skorBaru) {
+    const lama = Number(rec.skor_akhir) || 0;
+    const baru = skorBaru === null ? 0 : skorBaru;
+    return String(rec.jenis) === "penghargaan" ? [0, baru - lama] : [baru - lama, 0];
 }
 
 function ttBarProgres(rekap) {
@@ -353,8 +409,7 @@ function tatibRefreshDetail() {
 // ---------- panggilan orang tua ----------
 
 async function segarkanSetelahPanggilan() {
-    await loadTatibData(true);
-    if (typeof checkStudentNotifications === "function") checkStudentNotifications();
+    await tatibSegarkanSemua();
 }
 
 async function openModalTatibPanggilan(siswaId, tahap = "", id = null) {
@@ -444,12 +499,17 @@ async function hapusTatibPanggilan(id) {
         showCancelButton: true, confirmButtonText: "Ya, Hapus", cancelButtonText: "Batal", confirmButtonColor: "#e11d48"
     });
     if (!ok.isConfirmed) return;
+    const cadanganPanggilan = tatibPanggilan;
+    tatibPanggilan = (tatibPanggilan || []).filter(x => String(x.id) !== String(id));
+    tatibRefreshDetail();
     const res = await apiCall("deleteTatibPanggilan", { id }, true);
     if (res && res.status === "success") {
         showToast("Catatan panggilan dihapus.");
         await segarkanSetelahPanggilan();
         openDetailTatib(p.siswa_id, true);
     } else {
+        tatibPanggilan = cadanganPanggilan;
+        tatibRefreshDetail();
         Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat menghapus.", confirmButtonColor: "#2563eb" });
     }
 }
@@ -467,12 +527,20 @@ async function hapusTatib(id) {
         showCancelButton: true, confirmButtonText: "Ya, Hapus", cancelButtonText: "Batal", confirmButtonColor: "#e11d48"
     });
     if (!ok.isConfirmed) return;
+    const cadanganCatatan = appState.tatib;
+    const cadanganRekap = tatibRekap;
+    const [dPel, dPeng] = ttSelisihRekap(rec, null);
+    appState.tatib = (appState.tatib || []).filter(r => String(r.id) !== String(id));
+    ttRekapLokal(rec.siswa_id, dPel, dPeng);
+    renderTatibView();
     const res = await apiCall("deleteTatib", { id }, true);
     if (res && res.status === "success") {
         showToast("Catatan dihapus.");
-        await loadTatibData(true);
-        if (typeof checkStudentNotifications === "function") checkStudentNotifications();
+        await tatibSegarkanSemua();
     } else {
+        appState.tatib = cadanganCatatan;
+        tatibRekap = cadanganRekap;
+        renderTatibView();
         Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Tidak dapat menghapus catatan.", confirmButtonColor: "#2563eb" });
     }
 }
@@ -799,8 +867,7 @@ async function simpanTatibForm(e) {
         ttForm = null;
         closeModal();
         showToast(res.message || "Catatan tata tertib disimpan.");
-        await loadTatibData(true);
-        if (typeof checkStudentNotifications === "function") checkStudentNotifications();
+        await tatibSegarkanSemua();
         if (ambang.length) ttLaporAmbang(ambang);
         return;
     }
@@ -880,16 +947,33 @@ async function simpanTatibEdit(e, id) {
     }
     const btn = document.getElementById("btn-save-tatib-edit");
     if (btn) { btn.disabled = true; btn.classList.add("opacity-60"); }
+    const asli = (appState.tatib || []).find(r => String(r.id) === String(id));
+    const siswaId = asli ? asli.siswa_id : undefined;
+    const cadanganCatatan = appState.tatib;
+    const cadanganRekap = tatibRekap;
+    if (asli) {
+        // tampilan langsung berubah; server menghitung ulang pengali dan menetapkan nilai final
+        const skorBaru = Number(skor);
+        const pengali = Number(asli.pengali) || 1;
+        const akhirBaru = skorBaru * pengali;
+        const [dPel, dPeng] = ttSelisihRekap(asli, akhirBaru);
+        appState.tatib = (appState.tatib || []).map(r => String(r.id) === String(id)
+            ? Object.assign({}, r, { tanggal: v("tt-e-tanggal"), skor_dasar: skorBaru, skor_akhir: akhirBaru, keterangan: v("tt-e-ket") })
+            : r);
+        ttRekapLokal(siswaId, dPel, dPeng);
+        renderTatibView();
+    }
     const res = await apiCall("saveTatib", { id, tanggal: v("tt-e-tanggal"), skor_dasar: Number(skor), keterangan: v("tt-e-ket") }, true);
     if (res && res.status === "success") {
-        const siswaId = ((appState.tatib || []).find(r => String(r.id) === String(id)) || {}).siswa_id;
         closeModal();
         showToast(res.message || "Catatan diperbarui.");
-        await loadTatibData(true);
-        if (typeof checkStudentNotifications === "function") checkStudentNotifications();
+        await tatibSegarkanSemua();
         if (siswaId) openDetailTatib(siswaId);
         return;
     }
+    appState.tatib = cadanganCatatan;
+    tatibRekap = cadanganRekap;
+    renderTatibView();
     if (btn) { btn.disabled = false; btn.classList.remove("opacity-60"); }
     if (res && res.status === "error") {
         Swal.fire({ icon: "warning", title: "Tidak Tersimpan", text: res.message || "Ditolak server.", confirmButtonColor: "#2563eb" });

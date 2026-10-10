@@ -262,10 +262,24 @@ function applyTheme(theme) {
     }
 }
 
+let pollBerjalan = false;
+let pollVisibilitasTerpasang = false;
+
 function startDataPolling() {
     if (dataPollingInterval) clearInterval(dataPollingInterval);
 
-    dataPollingInterval = setInterval(async () => {
+    dataPollingInterval = setInterval(pollDataSekali, DATA_POLL_INTERVAL_MS);
+    if (!pollVisibilitasTerpasang) {
+        pollVisibilitasTerpasang = true;
+        // kembali ke tab: cek langsung, tidak menunggu siklus berikutnya
+        document.addEventListener("visibilitychange", () => { if (!document.hidden) pollDataSekali(); });
+    }
+}
+
+async function pollDataSekali() {
+    if (pollBerjalan) return;
+    pollBerjalan = true;
+    try {
         if (!appState.token || !appState.user) return;
         if (document.hidden) return;
 
@@ -284,6 +298,7 @@ function startDataPolling() {
                 case "dashboard":
                     await loadAbsensiData(true);
                     renderDashboard();
+                    if (appState.user.role === "siswa" && typeof tatibMuatSaya === "function") await tatibMuatSaya(true);
                     break;
                 case "absensi": await loadAbsensiData(true); break;
                 case "kebiasaan": await loadKebiasaanData(true); break;
@@ -291,14 +306,19 @@ function startDataPolling() {
                 case "karakter": await loadKeagamaanData(true); break;
                 case "akademik": await loadAkademikData(true); break;
                 case "pembinaan": await loadPembinaanData(true); break;
-                case "tatib": await loadTatibData(true); break;
-                case "laporan": await loadLaporanRekap(true); break;
+                case "tatib": await tatibSegarkanDiam(); break;
+                case "laporan":
+                    await loadLaporanRekap(true);
+                    if (typeof tlSegarkanDiam === "function") await tlSegarkanDiam();
+                    break;
             }
             _lastVersiSheet = sigVersi;
         } catch (e) {
             console.error("Polling error:", e);
         }
-    }, DATA_POLL_INTERVAL_MS);
+    } finally {
+        pollBerjalan = false;
+    }
 }
 
 if ('serviceWorker' in navigator) {

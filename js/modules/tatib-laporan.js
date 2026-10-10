@@ -3,6 +3,7 @@
 
 let tlData = null;
 let tlMemuat = false;
+let tlUlang = false;
 const TL_ROMAWI = ["", "I", "II", "III"];
 
 function tlVal(id) { return String((document.getElementById(id) || {}).value || ""); }
@@ -128,25 +129,55 @@ function tlInit() {
     if (ta && ta.options.length === 0) {
         ta.innerHTML = tlOpsiPeriode().map(o => `<option value="${escapeHtml(o[0])}">${escapeHtml(o[1])}</option>`).join("");
     }
-    if (tlData) renderLaporanTatib();
-    else muatLaporanTatib(true);
+    if (tlData && !tlData.basi) renderLaporanTatib();
+    else muatLaporanTatib(true, !!tlData);
 }
 
-async function muatLaporanTatib(paksa) {
-    if (tlMemuat) return;
-    const ta = tlVal("lt-ta");
-    const per = tlHitungPeriode(ta);
-    if (!paksa && tlData && tlData.ta === ta) { renderLaporanTatib(); return; }
+// Data laporan dianggap basi setelah ada tulis tatib. Data lama tetap tampil sampai data baru tiba.
+function tlTandaiBasi() {
+    if (tlData) tlData.basi = true;
+}
+
+function tlTabTerbuka() {
+    const view = document.getElementById("view-laporan");
+    return typeof laporanTab !== "undefined" && laporanTab === "tatib" && !!view && view.classList.contains("active");
+}
+
+// Muat ulang laporan tanpa skeleton, hanya bila tab Tata Tertib sedang terbuka. Selain itu cukup ditandai basi.
+async function tlSegarkanDiam() {
+    if (tlData) tlData.basi = true;
+    if (!tlTabTerbuka()) return;
+    await muatLaporanTatib(true, true);
+}
+
+// diam: tanpa skeleton dan tanpa menimpa tampilan dengan pesan gagal bila data lama masih ada.
+async function muatLaporanTatib(paksa, diam) {
+    if (tlMemuat) {
+        if (paksa) tlUlang = true;
+        return;
+    }
+    const taAwal = tlVal("lt-ta");
+    if (!paksa && tlData && !tlData.basi && tlData.ta === taAwal) { renderLaporanTatib(); return; }
     tlMemuat = true;
-    renderSkeleton("lt-container", 3);
-    const res = await apiCall("getRekapTatib", per.payload, false);
-    tlMemuat = false;
-    if (res && res.status === "success" && Array.isArray(res.data)) {
-        tlData = { ta: ta, label: per.label, kolom: per.kolom, data: res.data, konfig: res.konfig || ttKonfig() };
-        renderLaporanTatib();
-    } else {
-        const el = document.getElementById("lt-container");
-        if (el) el.innerHTML = `<div class="empty-state"><i class="fas fa-wifi text-2xl mb-2"></i><p class="text-xs text-slate-500">${escapeHtml((res && res.message) || "Rekap gagal dimuat. Periksa koneksi lalu coba lagi.")}</p></div>`;
+    try {
+        do {
+            tlUlang = false;
+            const ta = tlVal("lt-ta");
+            const per = tlHitungPeriode(ta);
+            if (!(diam && tlData)) renderSkeleton("lt-container", 3);
+            const res = await apiCall("getRekapTatib", per.payload, false, 1, !!diam);
+            if (res && res.status === "success" && Array.isArray(res.data)) {
+                tlData = { ta: ta, label: per.label, kolom: per.kolom, data: res.data, konfig: res.konfig || ttKonfig(), basi: false };
+                renderLaporanTatib();
+            } else if (tlData && diam) {
+                renderLaporanTatib();
+            } else {
+                const el = document.getElementById("lt-container");
+                if (el) el.innerHTML = `<div class="empty-state"><i class="fas fa-wifi text-2xl mb-2"></i><p class="text-xs text-slate-500">${escapeHtml((res && res.message) || "Rekap gagal dimuat. Periksa koneksi lalu coba lagi.")}</p></div>`;
+            }
+        } while (tlUlang);
+    } finally {
+        tlMemuat = false;
     }
 }
 
@@ -287,7 +318,7 @@ function tlHtmlRekap(base, rows) {
 
 async function tlSiapkan() {
     if (blokirSiswaPdf()) return null;
-    if (!tlData) await muatLaporanTatib(true);
+    if (!tlData || tlData.basi) await muatLaporanTatib(true, !!tlData);
     if (!tlData) return null;
     const rows = tlFiltered();
     if (rows.length === 0) {
@@ -383,6 +414,7 @@ function tlHtmlSurat(o) {
 async function tlSuratPanggilan(siswaId) {
     if (blokirSiswaPdf()) return;
     if (!pdfLibReady()) return;
+    if (!tlData || tlData.basi) await muatLaporanTatib(true, !!tlData);
     const row = tlData && tlData.data.find(r => String(r.siswa_id) === String(siswaId));
     const siswa = (appState.siswa || []).find(s => String(s.id) === String(siswaId));
     if (!row || !siswa) return;
