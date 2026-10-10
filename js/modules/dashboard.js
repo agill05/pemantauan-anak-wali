@@ -423,8 +423,18 @@ async function fetchNotifDitangani() {
 function getHandledRecord(notifId) {
     const rec = (appState.notifDitangani || []).find(r => String(r.id) === String(notifId));
     if (!rec) return null;
+    if (notifDitanganiPembinaanAktif(rec, notifId)) return rec;
     if (Date.now() - Number(rec.ditangani_at) >= SNOOZE_24H_MS) return null;
     return rec;
+}
+
+// Ditangani lewat catatan pembinaan: tetap ditangani selama catatan itu ada dan belum Selesai.
+// Tanpa batas 24 jam. Notifikasi harian (kebiasaan) dan data pembinaan yang belum termuat memakai aturan 24 jam.
+function notifDitanganiPembinaanAktif(rec, notifId) {
+    if (String(rec.sumber || '') !== 'pembinaan' || !rec.pembinaan_id) return false;
+    if (String(notifId).indexOf('_kebiasaan_') !== -1) return false;
+    const p = (appState.pembinaan || []).find(x => String(x.id) === String(rec.pembinaan_id));
+    return !!p && String(p.status).toLowerCase() !== 'selesai';
 }
 
 function saveNotifDitangani(n, extra = {}) {
