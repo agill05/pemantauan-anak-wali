@@ -237,7 +237,7 @@ function tlHtmlRekap(base, rows) {
     const kelasFilter = getEffectiveKelasFilter(tlVal("lt-kelas"));
     const info = pdfInfoBlock([
         { label: "Kelas", value: kelasFilter ? tlNamaKelas(kelasFilter) : "Semua kelas" },
-        { label: "Periode", value: adaTa ? "Tahun ajaran " + tlData.ta : "Kumulatif" },
+        { label: "Periode", value: adaTa ? "Tahun Ajaran " + tlData.ta : "Kumulatif" },
         { label: "Ambang", value: `Panggilan I ${tlData.konfig.panggilan_1}, II ${tlData.konfig.panggilan_2}, III ${tlData.konfig.panggilan_3}, batas ${tlData.konfig.batas_keluar} poin` }
     ]);
     const c = v => `<td style="text-align: center;">${v}</td>`;
