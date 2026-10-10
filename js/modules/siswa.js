@@ -65,13 +65,19 @@ async function openProfilSiswa(siswaTarget) {
     document.getElementById("btn-magiclink-profil")?.classList.toggle("hidden", !(isAdminUser() || isGuruUser()) || !canWrite("magiclink", siswa));
     if (typeof refreshMagicLinkButton === "function") refreshMagicLinkButton();
 
+    const info = detailData.info || {};
+    const namaKelas = kls ? kls.nama_kelas : (info.kelas_nama || "-");
     const mentor = siswa.mentor_id ? (appState.guru || []).find(g => String(g.id) === String(siswa.mentor_id)) : null;
+    const namaMentor = mentor ? mentor.nama : (info.mentor_nama || "");
+    const waliKls = kls && kls.guru_id ? (appState.guru || []).find(g => String(g.id) === String(kls.guru_id)) : null;
+    const namaWali = waliKls ? waliKls.nama : (info.wali_nama || "");
     const staf = isStafLihat();
-    const infoMentor = staf ? {
+    const infoWali = { label: "Wali Kelas", value: namaWali || "-" };
+    const infoMentor = {
         label: "Mentor",
-        value: `${mentor ? escapeHtml(mentor.nama) : (siswa.mentor_id ? '-' : 'Belum ada')} <span class="ml-1">${renderPeranChip(siswa)}</span>`,
+        value: `${namaMentor ? escapeHtml(namaMentor) : (siswa.mentor_id ? '-' : 'Belum ada')}${staf ? ` <span class="ml-1">${renderPeranChip(siswa)}</span>` : ''}`,
         html: true
-    } : null;
+    };
 
     const totalHadir = absensi.filter(a => a.status === 'H').length;
     const totalSakit = absensi.filter(a => a.status === 'S').length;
@@ -85,7 +91,8 @@ async function openProfilSiswa(siswaTarget) {
                 <h3 class="font-bold text-base text-slate-800">${escapeHtml(siswa.nama)}</h3>
                 ${renderInfoRows([
                     {label:"NISN",value:siswa.nisn || "-"},
-                    {label:"Kelas",value:kls ? kls.nama_kelas : "-"},
+                    {label:"Kelas",value:namaKelas},
+                    infoWali,
                     {label:"Ortu/Wali",value:siswa.nama_ortu || normalizePhone(siswa.no_hp_ortu) || "-"},
                     infoMentor
                 ])}
