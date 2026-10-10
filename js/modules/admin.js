@@ -188,14 +188,14 @@ function renderAdminGuru() {
     }
 
     list.innerHTML = bulkToolbar("guru", filtered.map(g => String(g.id))) + filtered.map(g => `
-        <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
+        <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
             ${bulkCheckbox("guru", g.id)}
-            <div class="flex-1 min-w-0">
+            <div class="adm-main flex-1 min-w-0">
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(g.nama)}</h4>
-                <p class="text-xs text-slate-400">Username: ${escapeHtml(g.username)} | NIP: ${escapeHtml(g.nip || '-')}</p>
+                <p class="adm-sub text-xs text-slate-400">Username: ${escapeHtml(g.username)} | NIP: ${escapeHtml(g.nip || '-')}</p>
                 ${renderPeranBadgesGuru(g)}
             </div>
-            <div class="flex gap-1">
+            <div class="adm-act flex gap-1">
                 <button onclick="openModalGuru('${escapeHtml(g.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data guru"><i class="fas fa-edit"></i></button>
                 <button onclick="deleteGuru('${escapeHtml(g.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus data guru"><i class="fas fa-trash"></i></button>
             </div>
@@ -224,7 +224,7 @@ function renderPeranBadgesGuru(g) {
     const badges = [];
     if (kls) badges.push(`<span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold">Wali ${escapeHtml(kls.nama_kelas)}</span>`);
     if (n > 0) badges.push(`<span class="px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-700 text-[10px] font-bold">Mentor ${n} siswa</span>`);
-    return badges.length ? `<div class="flex flex-wrap gap-1 mt-1">${badges.join("")}</div>` : "";
+    return badges.length ? `<div class="adm-chips flex flex-wrap gap-1 mt-1">${badges.join("")}</div>` : "";
 }
 
 function renderAdminSiswa() {
@@ -241,14 +241,14 @@ function renderAdminSiswa() {
     }
 
     list.innerHTML = bulkToolbar("siswa", filtered.map(s => String(s.id))) + filtered.map(s => `
-        <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
+        <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
             ${bulkCheckbox("siswa", s.id)}
-            <div class="flex-1 min-w-0">
+            <div class="adm-main flex-1 min-w-0">
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
-                <p class="text-xs text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
-                <p class="text-xs text-slate-400">Mentor: ${escapeHtml(getNamaMentorSiswa(s))}</p>
+                <p class="adm-sub text-xs text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
+                <p class="adm-chips text-xs text-slate-400">Mentor: ${escapeHtml(getNamaMentorSiswa(s))}</p>
             </div>
-            <div class="flex gap-1">
+            <div class="adm-act flex gap-1">
                 <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data siswa"><i class="fas fa-edit"></i></button>
                 <button onclick="deleteSiswa('${escapeHtml(s.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus data siswa"><i class="fas fa-trash"></i></button>
             </div>
@@ -275,13 +275,13 @@ function renderAdminMentor() {
     list.innerHTML = filtered.map(g => {
         const n = getBinaanCount(g.id);
         return `
-        <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
-            <div>
+        <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
+            <div class="adm-main">
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(g.nama)}</h4>
-                <p class="text-xs text-slate-400">Anak binaan: ${n} siswa</p>
+                <p class="adm-sub text-xs text-slate-400">Anak binaan: ${n} siswa</p>
                 ${renderPeranBadgesGuru(g)}
             </div>
-            <button onclick="openModalMentor('${escapeHtml(g.id)}')" class="px-3 py-2 bg-violet-50 text-violet-700 rounded-lg text-xs font-bold" aria-label="Atur anak binaan guru">
+            <button onclick="openModalMentor('${escapeHtml(g.id)}')" class="adm-act px-3 py-2 bg-violet-50 text-violet-700 rounded-lg text-xs font-bold" aria-label="Atur anak binaan guru">
                 <i class="fas fa-user-tag mr-1"></i> Atur
             </button>
         </div>`;
@@ -452,13 +452,13 @@ function renderAdminKelas() {
     list.innerHTML = bulkBarKelas + appState.kelas.map(k => {
         const wali = appState.guru.find(g => String(g.id) === String(k.guru_id));
         return `
-            <div class="bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
+            <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
                 ${bulkCheckbox("kelas", k.id)}
-                <div class="flex-1 min-w-0">
+                <div class="adm-main flex-1 min-w-0">
                     <h4 class="font-bold text-xs text-slate-800">Kelas ${escapeHtml(k.nama_kelas)}</h4>
-                    <p class="text-xs text-slate-400">Wali Kelas: ${wali ? escapeHtml(wali.nama) : 'Belum ditentukan'}</p>
+                    <p class="adm-chips text-xs text-slate-400">Wali Kelas: ${wali ? escapeHtml(wali.nama) : 'Belum ditentukan'}</p>
                 </div>
-                <div class="flex gap-1">
+                <div class="adm-act flex gap-1">
                     <button onclick="openModalKelas('${escapeHtml(k.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data kelas"><i class="fas fa-edit"></i></button>
                     <button onclick="deleteKelas('${escapeHtml(k.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus data kelas"><i class="fas fa-trash"></i></button>
                 </div>
@@ -1469,7 +1469,7 @@ function arsipGambarDaftar() {
         }).join("");
         const ta = escapeHtml(g.ta), sem = escapeHtml(g.sem);
         return `
-        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+        <div class="adm-arsip bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2">
             <div class="min-w-0">
                 <p class="text-xs font-bold text-slate-800">${sem} ${ta}</p>
                 <p class="text-[11px] text-slate-400">${g.baris.length} arsip \u2022 ${total} baris \u2022 sampai ${escapeHtml(pertama.sampai_tanggal || "-")}</p>

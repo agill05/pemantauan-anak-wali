@@ -3383,3 +3383,193 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         margin-top: 0.5rem;
     }
 }
+
+/* ===== PC tahap 3: halaman Admin (#view-admin-manage). Hanya layar >=768px; HP dan cetak tidak berubah. ===== */
+@media screen and (min-width: 768px) {
+
+    /* Toolbar: cari melebar, tombol CSV dikelompokkan, tombol tambah di ujung kanan. */
+    #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa, #admin-tab-mentor, #admin-tab-tatib):not(.hidden) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa, #admin-tab-mentor, #admin-tab-tatib):not(.hidden)>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa)>.flex.justify-between {
+        display: contents;
+    }
+
+    #view-admin-manage :is(#search-guru-input, #search-admin-siswa-input) {
+        order: 1;
+        flex: 1 1 16rem;
+        min-width: 14rem;
+    }
+
+    #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa)>.overflow-x-auto {
+        order: 2;
+        flex: 0 1 auto;
+        gap: 0.375rem;
+        padding: 0.25rem;
+        background: var(--background);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-control);
+    }
+
+    #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa)>.flex.justify-between>button {
+        order: 3;
+        flex: 0 0 auto;
+    }
+
+    #view-admin-manage :is(#admin-guru-list, #admin-siswa-list, #admin-kelas-list, #admin-mentor-list, #admin-kebiasaan-list, #admin-arsip-list, #admin-tatib-list) {
+        order: 4;
+        flex: 0 0 100%;
+        width: 100%;
+    }
+
+    /* Layar sempit (768-1023px): cari + tombol tambah satu baris, kelompok CSV di baris bawah. */
+    @media (max-width: 1023px) {
+        #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa)>.flex.justify-between>button {
+            order: 2;
+        }
+
+        #view-admin-manage :is(#admin-tab-guru, #admin-tab-siswa)>.overflow-x-auto {
+            order: 3;
+            flex: 1 1 100%;
+        }
+    }
+
+    /* Tab Mentor: cari dan ringkasan satu baris. */
+    #view-admin-manage #admin-tab-mentor:not(.hidden)>p {
+        flex: 0 0 100%;
+    }
+
+    #view-admin-manage #search-mentor-input {
+        width: auto;
+        flex: 1 1 16rem;
+        max-width: 28rem;
+    }
+
+    /* Tab Tata Tertib: cari dan filter kategori satu baris. */
+    #view-admin-manage #admin-tab-tatib:not(.hidden)>:is(p, form, .flex.justify-between) {
+        flex: 0 0 100%;
+    }
+
+    #view-admin-manage #admin-tatib-cari {
+        width: auto;
+        flex: 1 1 16rem;
+        max-width: 24rem;
+    }
+
+    #view-admin-manage #admin-tatib-filter {
+        flex: 1 1 20rem;
+        padding-bottom: 0;
+    }
+
+    /* Kartu Guru, Siswa, Kelas, Mentor: info kiri | chip tengah | aksi kanan. */
+    #view-admin-manage :is(#admin-guru-list, #admin-siswa-list, #admin-kelas-list, #admin-mentor-list)>.adm-card {
+        display: grid;
+        grid-template-columns: auto minmax(11rem, 1.1fr) minmax(0, 1.6fr) auto;
+        grid-template-areas:
+            "cb name chips act"
+            "cb sub chips act";
+        column-gap: 0;
+        row-gap: 0.125rem;
+        align-items: center;
+        padding: 0.625rem 1rem;
+        min-height: 0;
+    }
+
+    #view-admin-manage .adm-card>[data-bulk-cb] {
+        grid-area: cb;
+        margin-right: 0.875rem;
+    }
+
+    #view-admin-manage .adm-card>.adm-main {
+        display: contents;
+    }
+
+    #view-admin-manage .adm-card .adm-main>h4 {
+        grid-area: name;
+        font-size: 0.875rem;
+        padding-right: 1.25rem;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    #view-admin-manage .adm-card .adm-main>.adm-sub {
+        grid-area: sub;
+        padding-right: 1.25rem;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    #view-admin-manage .adm-card .adm-main>.adm-chips {
+        grid-area: chips;
+        margin-top: 0 !important;
+        padding-right: 1.25rem;
+        min-width: 0;
+        align-self: center;
+    }
+
+    #view-admin-manage .adm-card>.adm-act {
+        grid-area: act;
+        justify-self: end;
+        align-self: center;
+    }
+
+    /* Kartu Arsip: periode kiri | chip jenis data tengah | tombol kanan. */
+    #admin-arsip-list>.adm-arsip {
+        display: grid;
+        grid-template-columns: minmax(12rem, 20rem) minmax(0, 1fr) auto;
+        column-gap: 1.5rem;
+        align-items: center;
+        padding: 0.75rem 1rem;
+    }
+
+    #admin-arsip-list>.adm-arsip>* {
+        margin-top: 0 !important;
+        min-width: 0;
+    }
+
+    #admin-arsip-list>.adm-arsip>.grid {
+        display: flex;
+        gap: 0.5rem;
+        padding-top: 0;
+        white-space: nowrap;
+    }
+
+    /* Kebiasaan dan Tata Tertib: baris ringkas, tidak membungkus. */
+    #admin-kebiasaan-list>div,
+    #admin-tatib-list>div {
+        flex-wrap: nowrap;
+        padding: 0.5rem 1rem;
+    }
+
+    #admin-kebiasaan-list>div>.min-w-0,
+    #admin-tatib-list>div>.min-w-0 {
+        flex: 1 1 0;
+    }
+}
+
+/* Mouse di PC: tombol aksi tidak perlu seukuran target sentuh. */
+@media screen and (min-width: 768px) and (pointer: fine) {
+
+    #admin-kebiasaan-list button.w-8,
+    #admin-tatib-list button.w-8 {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+
+    #view-admin-manage .adm-card .adm-act button:not(.w-8) {
+        min-height: 2.25rem;
+    }
+
+    #view-admin-manage .adm-card>button.adm-act {
+        min-height: 2.25rem;
+    }
+}
