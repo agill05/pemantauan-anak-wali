@@ -1084,3 +1084,89 @@ async function ttImporAlpa() {
     ttRenderSkor();
     ttJadwalkanPratinjau();
 }
+
+
+// ---------- Tata Tertib Sekolah (baca saja, untuk siswa) ----------
+
+let ttBacaKata = "";
+
+async function renderTatibBaca() {
+    const list = document.getElementById("tatib-baca-list");
+    if (!list) return;
+    if (tatibMaster.master.length === 0) renderSkeleton("tatib-baca-list", 3);
+    const ok = await ttPastikanMaster();
+    if (!ok || tatibMaster.master.length === 0) {
+        const info = document.getElementById("tatib-baca-info");
+        if (info) info.innerHTML = "";
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-wifi text-2xl mb-2"></i>
+            <p class="text-xs text-slate-500">Tata tertib belum bisa dimuat. Periksa koneksi lalu coba lagi.</p>
+            <button type="button" onclick="renderTatibBaca()" class="mt-2 text-xs font-bold text-blue-600"><i class="fas fa-rotate mr-1"></i> Muat ulang</button></div>`;
+        return;
+    }
+    ttBacaRenderInfo();
+    ttBacaRenderList();
+}
+
+function ttBacaCari(nilai) {
+    ttBacaKata = String(nilai || "").trim().toLowerCase();
+    ttBacaRenderList();
+}
+
+function ttBacaRenderInfo() {
+    const el = document.getElementById("tatib-baca-info");
+    if (!el) return;
+    const k = ttKonfig();
+    el.innerHTML = `
+        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3 space-y-1">
+            <p class="text-xs font-bold text-amber-700"><i class="fas fa-circle-info mr-1"></i> Cara kerja poin</p>
+            <p class="text-xs text-amber-800">Setiap pelanggaran menambah poin. Penghargaan mengurangi poin. Total poin tidak kurang dari 0.</p>
+            <p class="text-xs text-amber-800">Panggilan orang tua tahap I pada ${Number(k.panggilan_1) || 0} poin, tahap II pada ${Number(k.panggilan_2) || 0} poin, tahap III pada ${Number(k.panggilan_3) || 0} poin. Batas akumulasi ${Number(k.batas_keluar) || 0} poin.</p>
+        </div>`;
+}
+
+function ttBacaRenderList() {
+    const list = document.getElementById("tatib-baca-list");
+    if (!list) return;
+    const kata = ttBacaKata;
+    const items = tatibMaster.master.filter(m => {
+        if (m.aktif === false) return false;
+        if (!kata) return true;
+        const syarat = m.syarat ? (TT_SYARAT_LABEL[m.syarat] || m.syarat) : "";
+        return `${m.kategori}${m.no} ${m.nama} ${m.catatan_aturan || ""} ${syarat} ${ttNamaKategori(m.kategori)}`.toLowerCase().includes(kata);
+    });
+    if (items.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="fas fa-magnifying-glass text-2xl mb-2"></i><p class="text-xs text-slate-500">${kata ? "Tidak ada aturan yang cocok dengan pencarian." : "Belum ada aturan tata tertib."}</p></div>`;
+        return;
+    }
+    const kategoriUrut = Array.from(new Set(items.map(m => m.kategori)));
+    list.innerHTML = kategoriUrut.map(kat => {
+        const daftar = items.filter(m => m.kategori === kat);
+        const warna = TT_KAT_WARNA[kat] || "text-slate-600 bg-slate-50";
+        const baris = daftar.map(m => {
+            const penghargaan = m.jenis === "penghargaan";
+            const skor = m.skor_min === m.skor_max ? `${m.skor_min}` : `${m.skor_min}\u2013${m.skor_max}`;
+            const skorTeks = penghargaan ? `\u2212${skor} poin` : `+${skor} poin`;
+            const skorWarna = penghargaan ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-rose-700 bg-rose-50 border-rose-200";
+            const syarat = m.syarat ? `<span class="inline-block text-[10px] font-bold text-slate-500 bg-slate-100 rounded-md px-1.5 py-0.5 mr-1">Khusus ${escapeHtml(TT_SYARAT_LABEL[m.syarat] || m.syarat)}</span>` : "";
+            return `
+                <li class="flex items-start gap-3 p-3">
+                    <span class="shrink-0 text-[11px] font-bold rounded-lg px-2 py-1 ${warna}">${escapeHtml(kat + m.no)}</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-semibold text-slate-700 break-words">${escapeHtml(m.nama)}</p>
+                        ${m.catatan_aturan ? `<p class="text-[11px] text-slate-400 break-words mt-0.5">${escapeHtml(m.catatan_aturan)}</p>` : ""}
+                        ${syarat ? `<p class="mt-1">${syarat}</p>` : ""}
+                    </div>
+                    <span class="shrink-0 text-[11px] font-bold border rounded-lg px-2 py-1 ${skorWarna}">${escapeHtml(skorTeks)}</span>
+                </li>`;
+        }).join("");
+        return `
+            <details class="bg-surface rounded-2xl border border-slate-100 shadow-sm overflow-hidden" open>
+                <summary class="flex items-center gap-2 px-3 py-3 cursor-pointer select-none">
+                    <span class="text-[11px] font-bold rounded-lg px-2 py-1 ${warna}">${escapeHtml(kat)}</span>
+                    <span class="text-sm font-bold text-slate-800 flex-1">${escapeHtml(ttNamaKategori(kat))}</span>
+                    <span class="text-[11px] text-slate-400">${daftar.length} aturan</span>
+                </summary>
+                <ul class="divide-y divide-slate-100 border-t border-slate-100">${baris}</ul>
+            </details>`;
+    }).join("");
+}

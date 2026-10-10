@@ -808,6 +808,7 @@ function renderSidebarMenu(role) {
         html += item("jurnal", "fa-book-open", "Jurnal Harian");
         html += item("karakter", "fa-quran", "Keagamaan");
         html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
+        html += item("tatib-baca", "fa-gavel", "Tata Tertib");
         html += item("arsip-saya", "fa-box-archive", "Arsip Semester");
     } else if (role !== "ortu") {
         html += section("Pemantauan");
