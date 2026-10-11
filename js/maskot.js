@@ -367,17 +367,123 @@ function mountMaskot(root) {
     });
 }
 
-/* Klik maskot = melompat */
-document.addEventListener("click", function (e) {
-    var svg = e.target.closest && e.target.closest(".mk");
-    if (!svg) return;
+/* Gerak hidup maskot: reaksi klik acak, gerakan iseng saat diam, dan mata mengikuti jari atau kursor.
+ * Semua mati bila pengguna memilih prefers-reduced-motion. Kelas sementara: mk-rx-* (klik), mk-id-* (iseng), mk-track (mata). */
+function maskotGerakDiam() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+/* Durasi (ms) tiap gerakan sementara, dipakai untuk membersihkan kelas */
+var MASKOT_DURASI = { spin: 800, nod: 900, flap: 700, tilt: 1300, wink: 700, pusing: 1500, menguap: 2100, menoleh: 2600, meregang: 1500, kedip: 1900 };
+var MASKOT_REAKSI = ["hop", "spin", "nod", "flap", "tilt", "wink"];
+var maskotKlikRiwayat = { n: 0, t: 0, terakhir: "" };
+
+function maskotBersihkan(svg) {
+    Array.prototype.slice.call(svg.classList).forEach(function (k) {
+        if (k.indexOf("mk-rx-") === 0 || k.indexOf("mk-id-") === 0) svg.classList.remove(k);
+    });
+    clearTimeout(svg._mkTimer);
+}
+
+/* Jalankan satu gerakan sementara: kelas awalan mk-rx- (klik) atau mk-id- (iseng) */
+function maskotMainkan(svg, awalan, nama) {
+    maskotBersihkan(svg);
+    void svg.getBoundingClientRect();
+    svg.classList.add(awalan + nama);
+    svg._mkTimer = setTimeout(function () { svg.classList.remove(awalan + nama); }, MASKOT_DURASI[nama] || 1000);
+}
+
+function maskotLompat(svg) {
     var hop = svg.querySelector(".mk-hop, .mk-o-hop, .mk-t-hop, .mk-r-hop, .mk-c-hop");
-    if (!hop) return;
+    if (!hop) return false;
     hop.classList.remove("go");
     void hop.getBoundingClientRect();
     hop.classList.add("go");
     hop.addEventListener("animationend", function () { hop.classList.remove("go"); }, { once: true });
+    return true;
+}
+
+/* Klik maskot = reaksi acak (melompat, berputar, mengangguk, mengepak, penasaran, mengedip). Klik beruntun 5 kali = pusing. */
+document.addEventListener("click", function (e) {
+    var svg = e.target.closest && e.target.closest(".mk");
+    if (!svg || maskotGerakDiam()) return;
+    var r = maskotKlikRiwayat, now = Date.now();
+    r.n = (now - r.t < 700) ? r.n + 1 : 1;
+    r.t = now;
+    maskotBersihkan(svg);
+    svg.classList.remove("mk-track");
+    var lk = svg.querySelector(".mk-look, .mk-o-look");
+    if (lk) lk.style.transform = "";
+    if (r.n >= 5) {
+        r.n = 0;
+        r.terakhir = "pusing";
+        maskotMainkan(svg, "mk-rx-", "pusing");
+        return;
+    }
+    var pilihan = MASKOT_REAKSI.filter(function (x) { return x !== r.terakhir; });
+    var nama = pilihan[Math.floor(Math.random() * pilihan.length)];
+    r.terakhir = nama;
+    if (nama === "hop") { if (!maskotLompat(svg)) maskotMainkan(svg, "mk-rx-", "spin"); }
+    else maskotMainkan(svg, "mk-rx-", nama);
 });
+
+/* Gerakan iseng: satu penjadwal global, tiap 10 sampai 30 detik memilih satu maskot yang sedang terlihat. */
+var MASKOT_ISENG = ["menguap", "menoleh", "meregang", "kedip"];
+function maskotTerlihat() {
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    return Array.prototype.filter.call(document.querySelectorAll("svg.mk"), function (svg) {
+        var b = svg.getBoundingClientRect();
+        return b.width >= 40 && b.height >= 40 && b.bottom > 0 && b.top < vh &&
+            !svg.classList.contains("mk-track") && !/(^|\s)mk-(rx|id)-/.test(svg.getAttribute("class") || "");
+    });
+}
+function maskotJadwalIseng() {
+    setTimeout(function () {
+        if (!document.hidden && !maskotGerakDiam()) {
+            var daftar = maskotTerlihat();
+            if (daftar.length) {
+                var svg = daftar[Math.floor(Math.random() * daftar.length)];
+                maskotMainkan(svg, "mk-id-", MASKOT_ISENG[Math.floor(Math.random() * MASKOT_ISENG.length)]);
+            }
+        }
+        maskotJadwalIseng();
+    }, 10000 + Math.random() * 20000);
+}
+
+/* Mata mengikuti kursor atau sentuhan terakhir; 2,5 detik setelah berhenti, gerak mata kembali seperti biasa. */
+var maskotLacak = { x: 0, y: 0, rafId: 0, timer: 0 };
+function maskotArahMata() {
+    maskotLacak.rafId = 0;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    Array.prototype.forEach.call(document.querySelectorAll("svg.mk"), function (svg) {
+        var b = svg.getBoundingClientRect();
+        if (b.width < 40 || b.bottom < 0 || b.top > vh) return;
+        if (/(^|\s)mk-(rx|id)-/.test(svg.getAttribute("class") || "")) return;
+        var look = svg.querySelector(".mk-look, .mk-o-look");
+        if (!look) return;
+        var dx = maskotLacak.x - (b.left + b.width / 2), dy = maskotLacak.y - (b.top + b.height * 0.42);
+        var jarak = Math.sqrt(dx * dx + dy * dy) || 1, kuat = Math.min(1, jarak / 160);
+        look.style.transform = "translate(" + (dx / jarak * 7 * kuat).toFixed(1) + "px," + (dy / jarak * 5 * kuat).toFixed(1) + "px)";
+        svg.classList.add("mk-track");
+    });
+    clearTimeout(maskotLacak.timer);
+    maskotLacak.timer = setTimeout(function () {
+        Array.prototype.forEach.call(document.querySelectorAll("svg.mk-track"), function (svg) {
+            svg.classList.remove("mk-track");
+            var look = svg.querySelector(".mk-look, .mk-o-look");
+            if (look) look.style.transform = "";
+        });
+    }, 2500);
+}
+function maskotPantau(e) {
+    if (maskotGerakDiam()) return;
+    maskotLacak.x = e.clientX;
+    maskotLacak.y = e.clientY;
+    if (!maskotLacak.rafId) maskotLacak.rafId = requestAnimationFrame(maskotArahMata);
+}
+document.addEventListener("pointermove", maskotPantau, { passive: true });
+document.addEventListener("pointerdown", maskotPantau, { passive: true });
+maskotJadwalIseng();
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { mountMaskot(); });
 else mountMaskot();

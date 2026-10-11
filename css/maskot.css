@@ -327,6 +327,43 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-pro-l3{animation-delay:.4s}
 @keyframes mk-pro-line{0%,8%{transform:scaleX(.15);opacity:.4}40%,85%{transform:scaleX(1);opacity:1}100%{transform:scaleX(.15);opacity:.4}}
 
+/* Reaksi klik (mk-rx-*), gerakan iseng (mk-id-*), mata mengikuti pointer (mk-track). Dipasang pada <svg class="mk"> oleh maskot.js. */
+.mk.mk-rx-spin,.mk.mk-rx-nod,.mk.mk-rx-flap,.mk.mk-rx-tilt,.mk.mk-rx-pusing,.mk.mk-id-menguap,.mk.mk-id-meregang{transform-origin:50% 100%}
+.mk-rx-spin{animation:mk-rx-spin .8s cubic-bezier(.3,.7,.4,1)}
+@keyframes mk-rx-spin{from{transform:perspective(500px) rotateY(0)}to{transform:perspective(500px) rotateY(360deg)}}
+.mk-rx-nod{animation:mk-rx-nod .9s ease-in-out}
+@keyframes mk-rx-nod{0%,100%{transform:scale(1,1)}20%{transform:scale(1.03,.93)}40%{transform:scale(.99,1.02)}60%{transform:scale(1.03,.94)}80%{transform:scale(1,1.01)}}
+.mk-rx-flap{animation:mk-rx-flap .7s ease-in-out}
+@keyframes mk-rx-flap{0%,100%{transform:rotate(0) translateY(0)}15%{transform:rotate(-7deg) translateY(-8px)}35%{transform:rotate(7deg) translateY(-12px)}55%{transform:rotate(-5deg) translateY(-6px)}75%{transform:rotate(4deg) translateY(-2px)}}
+.mk-rx-tilt{animation:mk-rx-tilt 1.3s ease-in-out}
+@keyframes mk-rx-tilt{0%,100%{transform:rotate(0)}25%,70%{transform:rotate(11deg) translateX(4px)}}
+.mk-rx-tilt .mk-brow,.mk-rx-tilt .mk-o-brow{animation:mk-rx-alis 1.3s ease-in-out}
+@keyframes mk-rx-alis{0%,100%{transform:translateY(0)}25%,70%{transform:translateY(-5px)}}
+.mk-rx-wink .mk-look>g:nth-child(2),.mk-rx-wink .mk-o-look>g:nth-child(2){animation:mk-rx-wink .7s ease-in-out}
+@keyframes mk-rx-wink{0%,100%{transform:scaleY(1)}30%,65%{transform:scaleY(.08)}}
+.mk-rx-pusing{animation:mk-rx-pusing 1.5s ease-in-out}
+@keyframes mk-rx-pusing{0%,100%{transform:rotate(0)}12%{transform:rotate(-9deg)}28%{transform:rotate(9deg)}44%{transform:rotate(-7deg)}60%{transform:rotate(6deg)}76%{transform:rotate(-3deg)}90%{transform:rotate(1deg)}}
+.mk-rx-pusing .mk-look,.mk-rx-pusing .mk-o-look{animation:mk-rx-mata .3s linear 5}
+@keyframes mk-rx-mata{0%{transform:translate(5px,0)}25%{transform:translate(0,5px)}50%{transform:translate(-5px,0)}75%{transform:translate(0,-5px)}100%{transform:translate(5px,0)}}
+
+.mk-id-menguap{animation:mk-id-tarik 2.1s ease-in-out}
+@keyframes mk-id-tarik{0%,100%{transform:scale(1,1)}35%,60%{transform:scale(.99,1.04)}}
+.mk-id-menguap .mk-mouth,.mk-id-menguap .mk-o-mouth,.mk-id-menguap .mk-t-mouth,.mk-id-menguap .mk-x-mouth{animation:mk-id-mulut 2.1s ease-in-out}
+@keyframes mk-id-mulut{0%,100%{transform:scaleY(1)}30%,65%{transform:scaleY(2.1) scaleX(1.12)}}
+.mk-id-menguap .mk-iris,.mk-id-menguap .mk-o-iris,.mk-id-kedip .mk-iris,.mk-id-kedip .mk-o-iris{animation:mk-id-pejam 2.1s ease-in-out}
+.mk-id-kedip .mk-iris,.mk-id-kedip .mk-o-iris{animation:mk-id-kedip 1.9s ease-in-out}
+@keyframes mk-id-pejam{0%,100%{transform:scaleY(1)}28%,68%{transform:scaleY(.12)}}
+@keyframes mk-id-kedip{0%,100%{transform:scaleY(1)}20%,32%{transform:scaleY(.1)}44%,56%{transform:scaleY(1)}68%,80%{transform:scaleY(.1)}}
+.mk-id-menoleh .mk-head,.mk-id-menoleh .mk-o-head,.mk-id-menoleh .mk-t-head,.mk-id-menoleh .mk-r-head,.mk-id-menoleh .mk-c-head{animation:mk-id-kepala 2.6s ease-in-out}
+@keyframes mk-id-kepala{0%,100%{transform:rotate(0)}20%,38%{transform:rotate(-7deg)}58%,78%{transform:rotate(8deg)}}
+.mk-id-menoleh .mk-look,.mk-id-menoleh .mk-o-look{animation:mk-id-mata 2.6s ease-in-out}
+@keyframes mk-id-mata{0%,100%{transform:translate(0,0)}20%,38%{transform:translate(-7px,-1px)}58%,78%{transform:translate(7px,1px)}}
+.mk-id-meregang{animation:mk-id-regang 1.5s ease-in-out}
+@keyframes mk-id-regang{0%,100%{transform:scale(1,1)}40%,65%{transform:scale(.94,1.09) translateY(-4px)}}
+
+/* Mata mengikuti pointer: hentikan gerak lirik bawaan, posisi diatur inline oleh maskot.js */
+.mk.mk-track .mk-look,.mk.mk-track .mk-o-look{animation:none;transition:transform .12s ease-out}
+
 @media (prefers-reduced-motion: reduce){
-  .mk *{animation:none!important}
+  .mk,.mk *{animation:none!important;transition:none!important}
 }
