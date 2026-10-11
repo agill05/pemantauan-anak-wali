@@ -244,7 +244,7 @@ function renderLaporanTatib() {
     }
 
     if (rows.length === 0) {
-        wadah.innerHTML = `<div class="empty-state"><i class="fas fa-filter text-2xl mb-2 text-amber-400"></i><p class="text-xs text-slate-500 font-medium">Tidak ada siswa yang cocok dengan filter.</p></div>`;
+        wadah.innerHTML = maskotKosong("Tidak ada siswa yang cocok dengan filter.", 96, "profil");
         return;
     }
     const adaTa = !!tlData.ta;

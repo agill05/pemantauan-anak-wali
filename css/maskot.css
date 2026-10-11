@@ -311,6 +311,22 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-pbn-chest{animation:mk-pbn-pat 1.4s ease-in-out infinite;transform-origin:0% 0%}
 @keyframes mk-pbn-pat{0%,100%{transform:translate(0,0)}20%{transform:translate(-2px,1px)}40%{transform:translate(0,0)}}
 
+/* Pose profil: kaca pembesar menyisir + kartu profil siswa */
+.mk-pro-arm-l{animation:mk-pro-arm 3.2s ease-in-out infinite;transform-origin:83% 50%}
+@keyframes mk-pro-arm{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(2deg)}}
+.mk-pro-lens{animation:mk-pro-scan 3.2s ease-in-out infinite;transform-origin:2% 98%}
+@keyframes mk-pro-scan{0%,100%{transform:rotate(-5deg) translate(0,0)}50%{transform:rotate(6deg) translate(2px,-3px)}}
+.mk-pro-glint{animation:mk-pro-glint 2.2s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-pro-glint{0%,100%{opacity:.55}50%{opacity:1}}
+.mk-pro-card{animation:mk-pro-sway 3.4s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-pro-sway{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-3px)}}
+.mk-pro-ava{animation:mk-pro-ava 3.4s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-pro-ava{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.mk-pro-line{animation:mk-pro-line 3.4s ease-in-out infinite;transform-origin:0% 50%}
+.mk-pro-l2{animation-delay:.2s}
+.mk-pro-l3{animation-delay:.4s}
+@keyframes mk-pro-line{0%,8%{transform:scaleX(.15);opacity:.4}40%,85%{transform:scaleX(1);opacity:1}100%{transform:scaleX(.15);opacity:.4}}
+
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}
 }

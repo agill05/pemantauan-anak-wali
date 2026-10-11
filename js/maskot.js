@@ -18,7 +18,8 @@
  *       keagamaan (tangan berdoa + Al-Qur'an di rehal: iqro, hafalan doa, capaian keagamaan),
  *       laporan (papan grafik batang + tongkat penunjuk: laporan, rekap, statistik),
  *       notifikasi (lonceng emas berbunyi: notifikasi, pengumuman, peringatan),
- *       pembinaan (gelembung hati + tangan di dada: pembinaan, bimbingan, perhatian).
+ *       pembinaan (gelembung hati + tangan di dada: pembinaan, bimbingan, perhatian),
+ *       profil (kaca pembesar + kartu profil siswa: pencarian siswa, siswa tidak ditemukan, melihat profil).
  */
 function maskotAman(t) {
     if (typeof escapeHtml === "function") return escapeHtml(String(t == null ? "" : t));
@@ -283,8 +284,43 @@ function maskotPembinaan(size) {
     return maskotRangka("pbn", "", gelembung + kiri + kanan, { ukuran: size });
 }
 
+/* Pose "profil": kaca pembesar di sayap kiri dan kartu profil siswa di sayap kanan. Untuk pencarian siswa, siswa tidak ditemukan, dan melihat profil. */
+function maskotProfil(size) {
+    var G = MASKOT_GARIS, S = MASKOT_SAYAP;
+    var kiri = '<g class="mk-pro-arm-l">' +
+        '<path d="M150 276 Q104 290 84 312" fill="none" stroke="' + G + '" stroke-width="40" stroke-linecap="round"/>' +
+        '<path d="M150 276 Q104 290 84 312" fill="none" stroke="' + S + '" stroke-width="32" stroke-linecap="round"/>' +
+        '<path d="M110 300 Q98 306 86 312" fill="none" stroke="' + MASKOT_SAYAP_GELAP + '" stroke-width="8" stroke-linecap="round" opacity=".6"/>' +
+        '<g class="mk-pro-lens">' +
+        '<path d="M100 282 L78 308" stroke="#0F1A33" stroke-width="15" stroke-linecap="round"/><path d="M100 282 L78 308" stroke="#1F2E52" stroke-width="9" stroke-linecap="round"/>' +
+        '<circle cx="128" cy="254" r="41" fill="#0F1A33"/><circle cx="128" cy="254" r="38" fill="#1F2E52"/>' +
+        '<circle cx="128" cy="254" r="31" fill="#D9EEFB"/>' +
+        '<path d="M142 232 A31 31 0 0 1 159 262 L145 258 Z" fill="#B9DDF3" opacity=".7"/>' +
+        '<g class="mk-pro-glint"><path d="M106 246 Q109 232 123 228" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/><circle cx="108" cy="262" r="3.5" fill="#fff"/></g>' +
+        '</g>' +
+        '<path d="M54 312 C50 294 68 286 86 290 C104 294 110 312 102 328 C94 340 70 340 60 330 C56 326 55 320 54 312Z" fill="' + S + '" stroke="' + G + '" stroke-width="4" stroke-linejoin="round"/>' +
+        '<g fill="none" stroke="' + G + '" stroke-width="3" stroke-linecap="round"><path d="M70 296 q10 4 10 16"/><path d="M60 318 q12 -2 20 8"/></g>' +
+        '</g>';
+    var kartu = '<g class="mk-pro-card">' +
+        '<path d="M270 352 Q330 366 352 330" fill="none" stroke="' + G + '" stroke-width="40" stroke-linecap="round"/>' +
+        '<path d="M270 352 Q330 366 352 330" fill="none" stroke="' + S + '" stroke-width="32" stroke-linecap="round"/>' +
+        '<g transform="rotate(3 300 306)">' +
+        '<rect x="244" y="239" width="112" height="134" rx="11" fill="#FDEBD3" stroke="#1B2A4A" stroke-width="5"/>' +
+        '<circle class="mk-pro-ava" cx="300" cy="275" r="15" fill="#2A3C63"/>' +
+        '<path class="mk-pro-ava" d="M274 315 Q274 293 300 293 Q326 293 326 315 Z" fill="#2A3C63"/>' +
+        '<rect class="mk-pro-line mk-pro-l1" x="259" y="320" width="82" height="6" rx="3" fill="#2A3C63"/>' +
+        '<rect class="mk-pro-line mk-pro-l2" x="259" y="333" width="84" height="6" rx="3" fill="#2A3C63"/>' +
+        '<rect class="mk-pro-line mk-pro-l3" x="259" y="346" width="54" height="6" rx="3" fill="#2A3C63"/>' +
+        '</g>' +
+        '<path d="M332 330 C326 310 340 296 356 298 C372 300 380 316 374 334 C368 348 348 352 338 344 C334 340 334 336 332 330Z" fill="' + S + '" stroke="' + G + '" stroke-width="4" stroke-linejoin="round"/>' +
+        '<g fill="none" stroke="' + G + '" stroke-width="3" stroke-linecap="round"><path d="M346 308 q10 4 10 14"/><path d="M336 330 q12 -2 20 8"/></g>' +
+        '</g>';
+    var kilat = maskotPercik(["M356 140 L368 112", "M366 158 L390 140", "M370 180 L394 176"]);
+    return maskotRangka("pro", "", kiri + kartu + kilat, { ukuran: size, bintang: true });
+}
+
 /* Daftar pose. Pose belum tersedia jatuh ke pose pertama (kebiasaan). */
-var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat, kartu: maskotKartu, keagamaan: maskotKeagamaan, laporan: maskotLaporan, notifikasi: maskotNotifikasi, pembinaan: maskotPembinaan };
+var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat, kartu: maskotKartu, keagamaan: maskotKeagamaan, laporan: maskotLaporan, notifikasi: maskotNotifikasi, pembinaan: maskotPembinaan, profil: maskotProfil };
 
 function maskot(pose, ukuran) {
     return (MASKOT_POSE[pose] || maskotKebiasaan)(ukuran);

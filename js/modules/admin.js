@@ -343,7 +343,7 @@ function renderMentorSiswaList() {
 
     const tampil = _mentorSiswaTampil();
     if (tampil.length === 0) {
-        list.innerHTML = `<div class="empty-state"><p class="text-xs">Siswa tidak ditemukan.</p></div>`;
+        list.innerHTML = maskotKosong("Siswa tidak ditemukan.", 80, "profil");
     } else {
         list.innerHTML = tampil.map(s => {
             const sid = String(s.id);

@@ -567,7 +567,7 @@ function renderSiswaView() {
     const filtered = sortSiswa(rawFiltered);
 
     if (filtered.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-search text-xl mb-1"></i><p class="text-xs">Siswa tidak ditemukan.</p></div>`;
+        container.innerHTML = maskotKosong("Siswa tidak ditemukan.", 96, "profil");
         return;
     }
 
@@ -935,7 +935,7 @@ function _renderHasilAmbilSiswa() {
     const q = (document.getElementById("ambil-siswa-q")?.value || "").trim().toLowerCase();
     const daftar = _ambilSiswaHasil.filter(s => !q || String(s.nama || "").toLowerCase().includes(q) || String(s.nisn || "").toLowerCase().includes(q));
     if (daftar.length === 0) {
-        wadah.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Siswa tidak ditemukan.</p>';
+        wadah.innerHTML = maskotKosong("Siswa tidak ditemukan.", 80, "profil");
         return;
     }
 
