@@ -130,13 +130,13 @@ function renderKebiasaanView() {
     if (!container || !selectSiswa) return;
 
     if (getSiswaPeran().length === 0 && appState.user && appState.user.role !== "siswa") {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-user-slash text-2xl mb-2"></i><p class="text-xs text-slate-500">Belum ada data siswa untuk dipantau kebiasaannya.</p></div>`;
+        container.innerHTML = maskotKosong("Belum ada data siswa untuk dipantau kebiasaannya.", 96, "kebiasaan");
         return;
     }
 
     const selectedSiswaId = selectSiswa.value;
     if (!selectedSiswaId) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
+        container.innerHTML = maskotKosong("Silakan pilih siswa terlebih dahulu.", 96, "kebiasaan");
         return;
     }
 
@@ -328,7 +328,7 @@ function renderKebiasaanSemua(container) {
         <div class="space-y-3">
             ${renderBacaSajaBanner("Ringkasan semua siswa. Pilih siswa untuk melihat detail.")}
             ${ringkasan}
-            ${baris || `<div class="empty-state"><p class="text-xs text-slate-500">Belum ada data siswa.</p></div>`}
+            ${baris || maskotKosong("Belum ada data siswa.", 96, "kebiasaan")}
         </div>`;
 }
 
@@ -419,7 +419,7 @@ function simpanKebiasaanItem(siswaId, kebiasaanId, status, jam, detail) {
     const sudah = appState.kebiasaan.filter(k =>
         String(k.siswa_id) === String(siswaId) && String(k.tanggal) === String(tanggal) && k.status === "Sudah").length;
     if (status === "Sudah" && total > 0 && sudah >= total) {
-        owlCelebrate("Luar biasa!", "Semua kebiasaan hari ini tuntas.", "kebiasaan:" + siswaId + ":" + tanggal);
+        maskotRayakan("Luar biasa!", "Semua kebiasaan hari ini tuntas.", "kebiasaan:" + siswaId + ":" + tanggal, "kebiasaan");
     }
 
     antrekanKebiasaan(siswaId, tanggal, kebiasaanId, status, jam, detail);
@@ -586,7 +586,7 @@ async function loadKalenderKebiasaan() {
     const sid = getSiswaKebiasaanTerpilih();
     if (!container) return;
     if (!sid || sid === "ALL") {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
+        container.innerHTML = maskotKosong("Silakan pilih siswa terlebih dahulu.", 96, "kebiasaan");
         return;
     }
     if (!kebiasaanKalender.bulan) kebiasaanKalender.bulan = bulanSekarang();

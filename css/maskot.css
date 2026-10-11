@@ -1,0 +1,54 @@
+/* Maskot burung hantu (set pose baru). Semua kelas diawali mk-; pose khusus mk-<pose>-. */
+.mk{display:block;margin-inline:auto;overflow:visible;flex:none}
+.mk *{transform-box:fill-box}
+
+.mk-hop,.mk-bob{transform-origin:50% 100%}
+.mk-hop.go{animation:mk-hop .6s cubic-bezier(.3,.7,.4,1)}
+@keyframes mk-hop{0%{transform:translateY(0) scale(1,1)}20%{transform:scale(1.05,.92)}55%{transform:translateY(-34px) scale(.97,1.04)}100%{transform:translateY(0) scale(1,1)}}
+.mk-bob{animation:mk-bob 3s ease-in-out infinite}
+@keyframes mk-bob{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-6px) scale(1.01,.99)}}
+.mk-shadow{animation:mk-shadow 3s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-shadow{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(.92);opacity:.6}}
+
+.mk-head{animation:mk-tilt 4.5s ease-in-out infinite;transform-origin:45% 95%}
+@keyframes mk-tilt{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2.5deg)}}
+
+.mk-iris{animation:mk-blink 4.2s infinite;transform-origin:50% 50%}
+@keyframes mk-blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+.mk-look{animation:mk-look 6s ease-in-out infinite}
+@keyframes mk-look{0%,30%,100%{transform:translate(0,0)}40%,60%{transform:translate(-4px,-1px)}75%,90%{transform:translate(3px,2px)}}
+.mk-brow{animation:mk-brow 2.4s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-brow{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.mk-mouth{animation:mk-chirp 2.4s ease-in-out infinite;transform-origin:50% 0}
+@keyframes mk-chirp{0%,60%,100%{transform:scaleY(1)}70%{transform:scaleY(.4)}80%{transform:scaleY(1.15)}90%{transform:scaleY(.5)}}
+.mk-tuft-l,.mk-tuft-r{animation:mk-twitch 5s ease-in-out infinite;transform-origin:50% 100%}
+.mk-tuft-r{animation-delay:1.3s}
+@keyframes mk-twitch{0%,86%,100%{transform:rotate(0)}90%{transform:rotate(-7deg)}94%{transform:rotate(3deg)}}
+.mk-bow{animation:mk-wig 3s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-wig{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+
+/* Pose kebiasaan: sayap terangkat + tujuh bintang */
+.mk-keb-wing{animation:mk-keb-wave 1.8s ease-in-out infinite;transform-origin:95% 72%}
+@keyframes mk-keb-wave{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(7deg)}}
+.mk-keb-arm{animation:mk-keb-pump 2.4s ease-in-out infinite;transform-origin:30% 10%}
+@keyframes mk-keb-pump{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg) translateY(-2px)}}
+.mk-keb-fist{animation:mk-keb-squeeze 2.4s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-keb-squeeze{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.mk-keb-tail{animation:mk-keb-tail 2.6s ease-in-out infinite;transform-origin:0% 30%}
+@keyframes mk-keb-tail{0%,100%{transform:rotate(0)}50%{transform:rotate(6deg)}}
+.mk-keb-star{animation:mk-keb-star 2.1s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-keb-star{0%,100%{transform:scale(.8) rotate(0);opacity:.7}50%{transform:scale(1.18) rotate(16deg);opacity:1}}
+.mk-keb-glint{animation:mk-keb-glint 2s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-keb-glint{0%,100%{transform:scale(.6);opacity:.6}50%{transform:scale(1.15);opacity:1}}
+
+/* Empty state dengan maskot */
+.empty-state .mk{margin-bottom:.25rem}
+[data-maskot]>.mk{max-width:100%}
+/* Jaga dari aturan lama style.css (#loading-overlay>div:first-child memberi border spinner) */
+#loading-overlay>[data-maskot]{border:0!important;width:auto;height:auto}
+/* Latar gelap: halo tipis agar kontur cokelat tua tetap terbaca */
+html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
+
+@media (prefers-reduced-motion: reduce){
+  .mk *{animation:none!important}
+}

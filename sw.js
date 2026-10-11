@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v115";
+const CACHE_NAME = "anak-wali-pwa-v116";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -7,9 +7,11 @@ const ASSETS_TO_CACHE = [
     "./css/style.css",
     "./css/tailwind.css",
     "./css/owl.css",
+    "./css/maskot.css",
     "./js/config.js",
     "./js/state.js",
     "./js/owl.js",
+    "./js/maskot.js",
     "./js/api.js",
     "./js/ui.js",
     "./js/pdf.js",
