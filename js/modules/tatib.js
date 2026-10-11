@@ -215,7 +215,7 @@ function renderTatibView() {
     groups = gsUrutkan(groups, fk ? fk.urut : "mendesak", g => Number(ttRekapSiswa(g.siswaId).total) || 0);
 
     if (groups.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-circle-check text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan tata tertib.</p></div>`;
+        container.innerHTML = owlEmpty("Belum ada catatan tata tertib.");
         tatibRefreshDetail();
         return;
     }
@@ -1193,7 +1193,7 @@ function ttBacaRenderList() {
         return `${m.kategori}${m.no} ${m.nama} ${m.catatan_aturan || ""} ${syarat} ${ttNamaKategori(m.kategori)}`.toLowerCase().includes(kata);
     });
     if (items.length === 0) {
-        list.innerHTML = `<div class="empty-state"><i class="fas fa-magnifying-glass text-2xl mb-2"></i><p class="text-xs text-slate-500">${kata ? "Tidak ada aturan yang cocok dengan pencarian." : "Belum ada aturan tata tertib."}</p></div>`;
+        list.innerHTML = owlEmpty(kata ? "Tidak ada aturan yang cocok dengan pencarian." : "Belum ada aturan tata tertib.");
         return;
     }
     const kategoriUrut = Array.from(new Set(items.map(m => m.kategori)));

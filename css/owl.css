@@ -51,3 +51,7 @@
 @media (prefers-reduced-motion: reduce){
   .owl *{animation:none!important}
 }
+
+/* Jaga dari aturan lama style.css (#loading-overlay>div:first-child memberi border spinner) */
+#loading-overlay>[data-owl]{border:0!important;width:auto;height:auto}
+[data-owl]>.owl{max-width:100%}

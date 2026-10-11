@@ -107,7 +107,7 @@ function arsipSayaGambarDaftar() {
             : role === "guru"
                 ? "Belum ada arsip semester untuk siswa yang kamu dampingi."
                 : "Belum ada arsip semester.";
-        list.innerHTML = `<div class="empty-state"><i class="fas fa-box-archive text-xl mb-1"></i><p class="text-xs">${escapeHtml(teks)}</p></div>`;
+        list.innerHTML = owlEmpty(teks);
         return;
     }
     const penuh = arsipSayaRole() === "kepsek";

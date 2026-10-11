@@ -11,7 +11,6 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="assets/img/logo-sekolah.png">
     <link rel="apple-touch-icon" href="assets/img/logo-sekolah.png">
-    <link rel="stylesheet" href="css/owl.css">
     <title>Aplikasi Pemantauan Anak Wali - SMPN 1 Talaga Jaya</title>
 
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -26,6 +25,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/tailwind.css">
+    <link rel="stylesheet" href="css/owl.css">
     <style>
         @media print {
 
@@ -987,9 +987,9 @@
         <div id="bottom-nav-items" class="flex justify-around items-center h-16"></div>
     </nav>
 
-    <div data-owl="88" class="mb-2"></div>
+    <div id="loading-overlay"
         class="fixed inset-0 z-[100] hidden flex-col items-center justify-center text-white no-print">
-        <div class="w-12 h-12 border-4 border-white/25 border-t-primary rounded-full animate-spin mb-3"></div>
+        <span data-owl="88" class="block mb-2"></span>
         <p id="loading-text" class="text-xs font-semibold tracking-wide">Memproses...</p>
     </div>
 
@@ -999,7 +999,8 @@
         <div class="splash-core flex flex-col items-center gap-3">
             <img src="assets/img/logo-sekolah.png" alt="Logo Sekolah" class="w-20 h-20 object-contain">
             <h2 class="text-base font-extrabold text-primary">SMPN 1 Talaga Jaya</h2>
-            <div data-owl="104" class="-my-1"></div>
+
+            <span data-owl="104" class="block -my-1"></span>
 
             <i id="splash-icon" class="fas fa-key text-primary text-sm" aria-hidden="true"></i>
 

@@ -103,7 +103,7 @@ function renderJurnalView() {
         <div class="space-y-2.5">
             <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide px-1">Riwayat dan Catatan Guru</h3>
             ${riwayat.length === 0 && !ada
-            ? `<div class="empty-state"><i class="fas fa-book text-2xl mb-2"></i><p class="text-xs text-slate-500">owlEmpty("Belum ada jurnal. Tulis jurnal pertamamu hari ini.")</p></div>`
+            ? owlEmpty("Belum ada jurnal. Tulis jurnal pertamamu hari ini.")
             : ""}
             ${ada ? renderKartuJurnal(ada, true) : ""}
             ${riwayat.map(j => renderKartuJurnal(j, false)).join("")}
@@ -306,7 +306,7 @@ function renderJurnalGuruPesan(teks) {
     const list = document.getElementById("jurnal-guru-list");
     const ringkas = document.getElementById("jurnal-guru-ringkas");
     if (ringkas) ringkas.textContent = "";
-    if (list) list.innerHTML = `<div class="empty-state"><i class="fas fa-book-open text-2xl mb-2"></i><p class="text-xs text-slate-500">${escapeHtml(teks)}</p></div>`;
+    if (list) list.innerHTML = owlEmpty(teks);
 }
 
 function jurnalSudahDicatat(j, slots) {
@@ -338,7 +338,7 @@ function renderJurnalGuru() {
     if (ringkas) ringkas.textContent = `${total} jurnal dalam periode. ${belum} belum diberi catatan oleh Anda.`;
 
     if (items.length === 0) {
-        list.innerHTML = `<div class="empty-state"><i class="fas fa-book text-2xl mb-2"></i><p class="text-xs text-slate-500">${filter === "belum" ? "Semua jurnal sudah Anda beri catatan." : "Tidak ada jurnal pada periode ini."}</p></div>`;
+        list.innerHTML = owlEmpty(filter === "belum" ? "Semua jurnal sudah Anda beri catatan." : "Tidak ada jurnal pada periode ini.");
         return;
     }
 
