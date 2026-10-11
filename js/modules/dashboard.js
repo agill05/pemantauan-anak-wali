@@ -174,8 +174,8 @@ function sdBadgeCard(today, absBulan, hafalan) {
         { ok: hadirPenuh, icon: "fa-calendar-check", text: "Hadir Penuh Bulan Ini" },
         { ok: lancar >= 3, icon: "fa-book-quran", text: "Hafalan Lancar" }
     ].map(b => `<span class="sd-badge ${b.ok ? "" : "off"}"><i class="fas ${b.icon}"></i>${b.text}</span>`).join("");
-    const body = `<p class="text-sm font-black text-slate-800"><i class="fas fa-fire text-orange-500 mr-1"></i>${streak} hari berturut-turut</p>
-        <p class="sd-note" style="margin:0.125rem 0 0.5rem">${streak > 0 ? "Pertahankan semangatmu!" : "Isi kebiasaan hari ini untuk mulai streak."}</p>
+    const body = `<div style="display:flex;align-items:center;gap:.5rem"><div style="flex:1;min-width:0"><p class="text-sm font-black text-slate-800"><i class="fas fa-fire text-orange-500 mr-1"></i>${streak} hari berturut-turut</p>
+        <p class="sd-note" style="margin:0.125rem 0 0.5rem">${streak > 0 ? "Pertahankan semangatmu!" : "Isi kebiasaan hari ini untuk mulai streak."}</p></div>${streak > 0 ? maskot("semangat", 72) : ""}</div>
         <div class="sd-badges">${badges}</div>`;
     return sdCard("Streak & Badge", body);
 }

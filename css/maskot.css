@@ -213,6 +213,9 @@
 /* Kartu Misi Hari Ini: maskot di sisi kanan */
 .sd-mission .mk{margin:0 0 0 auto}
 
+/* Kartu Streak: maskot semangat di sisi kanan */
+.sd-card .mk{margin:0 0 0 auto}
+
 /* Empty state dengan maskot */
 .empty-state .mk{margin-bottom:.25rem}
 [data-maskot]>.mk{max-width:100%}
@@ -252,6 +255,13 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-ars-isi>.mk-ars-f:nth-child(3){animation-delay:.6s}
 .mk-ars-isi>.mk-ars-f:nth-child(4){animation-delay:.9s}
 @keyframes mk-ars-peek{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+/* Pose semangat: tangan terkepal terangkat */
+.mk-sem-arm{animation:mk-sem-pump 1.8s ease-in-out infinite;transform-origin:90% 90%}
+@keyframes mk-sem-pump{0%,100%{transform:rotate(-3deg)}45%{transform:rotate(4deg) translateY(-4px)}}
+.mk-sem-fist{animation:mk-sem-squeeze 1.8s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-sem-squeeze{0%,100%{transform:scale(1)}45%{transform:scale(1.1)}}
+.mk-sem-wing-r{animation:mk-ars-hug 3s ease-in-out infinite;transform-origin:50% 0}
 
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}

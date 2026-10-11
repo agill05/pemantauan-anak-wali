@@ -186,8 +186,19 @@ function maskotArsip(size) {
     return maskotRangka("ars", isi, kotak + map + kanan + maskotPercik(["M24 124 L48 138", "M34 98 L52 118", "M54 76 L64 104"]), { ukuran: size });
 }
 
+/* Pose "semangat": tangan terkepal terangkat, alis menukik. Untuk motivasi, tantangan, dan ajakan mulai. */
+function maskotSemangat(size) {
+    var lengan = "M146 268 Q62 292 54 212";
+    var kiri = '<g class="mk-sem-arm"><path d="' + lengan + '" fill="none" stroke="#3A1F14" stroke-width="46" stroke-linecap="round"/><path d="' + lengan + '" fill="none" stroke="' + MASKOT_SAYAP + '" stroke-width="38" stroke-linecap="round"/>' +
+        '<path d="M70 284 Q110 280 140 266" fill="none" stroke="' + MASKOT_SAYAP_GELAP + '" stroke-width="8" stroke-linecap="round" opacity=".7"/>' +
+        '<g class="mk-sem-fist"><path d="M30 196 C24 174 40 158 60 162 C80 166 88 184 82 202 C76 216 58 222 44 214 C36 208 32 204 30 196Z" fill="' + MASKOT_SAYAP + '" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>' +
+        '<g fill="none" stroke="#3A1F14" stroke-width="3" stroke-linecap="round"><path d="M46 172 Q58 176 60 188"/><path d="M34 196 Q48 194 56 204"/><path d="M42 210 Q56 206 64 210"/></g></g></g>';
+    var kanan = '<g class="mk-sem-wing-r"><path d="M252 244 C290 256 308 296 296 332 C290 348 268 348 252 332 C244 300 248 274 246 258 Z" fill="' + MASKOT_SAYAP + '" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><path d="M262 316 C268 330 280 338 292 336 C298 326 298 316 296 308 C284 314 272 316 262 316Z" fill="' + MASKOT_SAYAP_GELAP + '"/></g>';
+    return maskotRangka("sem", "", kanan + kiri + maskotPercik(["M8 150 L30 150", "M14 116 L34 132", "M40 94 L50 120"]), { ukuran: size, alis: "serius" });
+}
+
 /* Daftar pose. Pose belum tersedia jatuh ke pose pertama (kebiasaan). */
-var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip };
+var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat };
 
 function maskot(pose, ukuran) {
     return (MASKOT_POSE[pose] || maskotKebiasaan)(ukuran);
