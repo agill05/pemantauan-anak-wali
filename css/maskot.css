@@ -301,6 +301,16 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 @keyframes mk-not-shake{0%,100%{transform:rotate(0)}15%{transform:rotate(-2deg)}35%{transform:rotate(2deg)}55%{transform:rotate(-1deg)}}
 .mk-not-arm-r{animation:mk-sem-pump 2.4s ease-in-out infinite;transform-origin:0% 100%}
 
+/* Pose pembinaan: gelembung hati + tangan di dada */
+.mk-pbn-bubble{animation:mk-pbn-float 3s ease-in-out infinite;transform-origin:80% 100%}
+@keyframes mk-pbn-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.04)}}
+.mk-pbn-heart{animation:mk-pbn-beat 1.4s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-pbn-beat{0%,100%{transform:scale(1)}20%{transform:scale(1.18)}40%{transform:scale(1)}60%{transform:scale(1.1)}}
+.mk-pbn-arm{animation:mk-pbn-wave 3s ease-in-out infinite;transform-origin:100% 50%}
+@keyframes mk-pbn-wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-4deg) translateY(-3px)}}
+.mk-pbn-chest{animation:mk-pbn-pat 1.4s ease-in-out infinite;transform-origin:0% 0%}
+@keyframes mk-pbn-pat{0%,100%{transform:translate(0,0)}20%{transform:translate(-2px,1px)}40%{transform:translate(0,0)}}
+
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}
 }

@@ -17,7 +17,8 @@
  *       kartu (kartu siswa + kunci emas: kartu akun, akses, kata sandi),
  *       keagamaan (tangan berdoa + Al-Qur'an di rehal: iqro, hafalan doa, capaian keagamaan),
  *       laporan (papan grafik batang + tongkat penunjuk: laporan, rekap, statistik),
- *       notifikasi (lonceng emas berbunyi: notifikasi, pengumuman, peringatan).
+ *       notifikasi (lonceng emas berbunyi: notifikasi, pengumuman, peringatan),
+ *       pembinaan (gelembung hati + tangan di dada: pembinaan, bimbingan, perhatian).
  */
 function maskotAman(t) {
     if (typeof escapeHtml === "function") return escapeHtml(String(t == null ? "" : t));
@@ -267,8 +268,23 @@ function maskotNotifikasi(size) {
     return maskotRangka("not", "", kiri.replace(/^/, "") + lonceng + kanan + suara, { ukuran: size, alis: "serius" });
 }
 
+/* Pose "pembinaan": tangan di dada, tangan terbuka, dan gelembung hati. Untuk pembinaan, bimbingan, dan perhatian. */
+function maskotPembinaan(size) {
+    var gelembung = '<g class="mk-pbn-bubble"><path d="M62 40 C34 40 20 60 20 80 C20 102 38 118 62 118 L86 130 L80 114 C96 108 104 94 104 80 C104 58 88 40 62 40Z" fill="#FDEBD3" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>' +
+        '<path class="mk-pbn-heart" d="M62 98 C38 82 42 62 54 62 C59 62 62 66 62 70 C62 66 65 62 70 62 C82 62 86 82 62 98Z" fill="#E5383B"/></g>';
+    var terbuka = "M146 274 Q96 290 52 270";
+    var kiri = '<g class="mk-pbn-arm"><path d="' + terbuka + '" fill="none" stroke="#3A1F14" stroke-width="40" stroke-linecap="round"/><path d="' + terbuka + '" fill="none" stroke="' + MASKOT_SAYAP + '" stroke-width="32" stroke-linecap="round"/>' +
+        '<path d="M50 252 C34 244 16 252 8 264 C14 266 18 268 20 272 C24 270 28 272 30 276 C34 274 38 276 42 282 C54 282 62 270 60 258 Z" fill="' + MASKOT_SAYAP + '" stroke="#3A1F14" stroke-width="3.5" stroke-linejoin="round"/>' +
+        '<g fill="none" stroke="#3A1F14" stroke-width="3" stroke-linecap="round"><path d="M20 266 q8 -2 14 2"/><path d="M30 274 q6 -2 12 2"/></g></g>';
+    var dada = "M262 272 Q276 308 224 302";
+    var kanan = '<g class="mk-pbn-chest"><path d="' + dada + '" fill="none" stroke="#3A1F14" stroke-width="40" stroke-linecap="round"/><path d="' + dada + '" fill="none" stroke="' + MASKOT_SAYAP + '" stroke-width="32" stroke-linecap="round"/>' +
+        '<path d="M194 290 C194 276 210 270 224 276 C238 282 240 300 230 308 C218 316 198 310 194 298Z" fill="' + MASKOT_SAYAP + '" stroke="#3A1F14" stroke-width="3.5" stroke-linejoin="round"/>' +
+        '<g fill="none" stroke="#3A1F14" stroke-width="3" stroke-linecap="round"><path d="M208 282 q6 6 4 16"/><path d="M220 282 q6 6 4 18"/></g></g>';
+    return maskotRangka("pbn", "", gelembung + kiri + kanan, { ukuran: size });
+}
+
 /* Daftar pose. Pose belum tersedia jatuh ke pose pertama (kebiasaan). */
-var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat, kartu: maskotKartu, keagamaan: maskotKeagamaan, laporan: maskotLaporan, notifikasi: maskotNotifikasi };
+var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat, kartu: maskotKartu, keagamaan: maskotKeagamaan, laporan: maskotLaporan, notifikasi: maskotNotifikasi, pembinaan: maskotPembinaan };
 
 function maskot(pose, ukuran) {
     return (MASKOT_POSE[pose] || maskotKebiasaan)(ukuran);

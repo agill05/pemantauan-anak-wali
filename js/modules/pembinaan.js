@@ -78,7 +78,7 @@ function renderPembinaanView() {
     groups = gsUrutkan(groups, fk ? fk.urut : 'terbaru', g => pbnSkor(pbnStatusTeratas(g.records)));
 
     if (groups.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-user-check text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Tidak ada catatan pembinaan aktif untuk siswa ini.</p></div>`;
+        container.innerHTML = maskotKosong("Tidak ada catatan pembinaan aktif untuk siswa ini.", 96, "pembinaan");
         pbnRefreshDetail();
         return;
     }
@@ -194,12 +194,12 @@ function openModalPembinaan(id = null, preSiswaId = null, prefill = null) {
 
     const writable = getSiswaWritable('pembinaan');
     if (!id && writable.length === 0) {
-        Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Tidak ada siswa yang dapat Anda beri catatan pembinaan.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Tidak Ada Siswa', 'Tidak ada siswa yang dapat Anda beri catatan pembinaan.', 'pembinaan');
         return false;
     }
 
     if (prefill && !writable.some(s => String(s.id) === String(prefill.siswaId))) {
-        Swal.fire({ icon: 'info', title: 'Akses Ditolak', text: 'Anda tidak dapat memberi catatan pembinaan untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Akses Ditolak', 'Anda tidak dapat memberi catatan pembinaan untuk siswa ini.', 'pembinaan');
         return false;
     }
 
@@ -370,7 +370,7 @@ function openQuickPembinaan(siswaId, defaultMasalah, notifId = "") {
 function cetakPDFPembinaan() {
     const filterSiswaId = document.getElementById("pembinaan-siswa-filter")?.value || "";
     if (!filterSiswaId) {
-        Swal.fire({ icon: 'warning', title: 'Pilih Siswa', text: 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Pilih Siswa', 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', 'pembinaan');
         return;
     }
 
@@ -379,7 +379,7 @@ function cetakPDFPembinaan() {
     const filteredPembinaan = (appState.pembinaan || []).filter(item => String(item.siswa_id) === String(filterSiswaId));
 
     if (filteredPembinaan.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada catatan pembinaan untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Data Kosong', 'Belum ada catatan pembinaan untuk siswa ini.', 'pembinaan');
         return;
     }
 
