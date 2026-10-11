@@ -1,6 +1,8 @@
 /* Maskot burung hantu (set pose baru). Semua kelas diawali mk-; pose khusus mk-<pose>-. */
 .mk{display:block;margin-inline:auto;overflow:visible;flex:none}
 .mk *{transform-box:fill-box}
+/* Atribut transform statis memakai sistem koordinat SVG, bukan kotak elemen */
+.mk [transform]{transform-box:view-box;transform-origin:0 0}
 
 .mk-hop,.mk-bob{transform-origin:50% 100%}
 .mk-hop.go{animation:mk-hop .6s cubic-bezier(.3,.7,.4,1)}
@@ -47,7 +49,6 @@
 @keyframes mk-aka-cap{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-2px)}}
 .mk-aka-tassel{animation:mk-aka-tassel 2.4s ease-in-out infinite;transform-origin:50% 0}
 @keyframes mk-aka-tassel{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(9deg)}}
-.mk-aka-arm-l{}
 .mk-aka-cert{animation:mk-aka-cert 2.6s ease-in-out infinite;transform-origin:50% 100%}
 @keyframes mk-aka-cert{0%,100%{transform:rotate(-2deg) translateY(0)}50%{transform:rotate(3deg) translateY(-5px)}}
 .mk-aka-fist-l{animation:mk-keb-squeeze 2.6s ease-in-out infinite;transform-origin:50% 50%}
@@ -55,6 +56,18 @@
 @keyframes mk-aka-star{0%,100%{transform:scale(.88) rotate(0)}50%{transform:scale(1.18) rotate(12deg)}}
 .mk-aka-arm-r{animation:mk-keb-pump 2.4s ease-in-out infinite;transform-origin:30% 10%}
 .mk-aka-fist{animation:mk-keb-squeeze 2.4s ease-in-out infinite;transform-origin:50% 50%}
+
+/* Pose jurnal: menulis di buku */
+.mk-jur-write{animation:mk-jur-write 1.6s ease-in-out infinite}
+@keyframes mk-jur-write{0%,100%{transform:translate(0,0)}20%{transform:translate(5px,2px)}40%{transform:translate(1px,4px)}60%{transform:translate(8px,1px)}80%{transform:translate(3px,5px)}}
+.mk-jur-ink{stroke-dasharray:60;animation:mk-jur-ink 3.2s ease-in-out infinite}
+@keyframes mk-jur-ink{0%,8%{stroke-dashoffset:60}60%,90%{stroke-dashoffset:0}100%{stroke-dashoffset:60}}
+.mk-jur-wing{animation:mk-jur-wing 1.6s ease-in-out infinite;transform-origin:90% 30%}
+@keyframes mk-jur-wing{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+.mk-jur-book{animation:mk-jur-book 3s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-jur-book{0%,100%{transform:rotate(0)}50%{transform:rotate(-1deg)}}
+.mk-jur-arm-r{animation:mk-keb-pump 3s ease-in-out infinite;transform-origin:50% 50%}
+.mk-jur-fist{animation:mk-keb-squeeze 3s ease-in-out infinite;transform-origin:50% 50%}
 
 /* Empty state dengan maskot */
 .empty-state .mk{margin-bottom:.25rem}

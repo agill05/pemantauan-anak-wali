@@ -103,7 +103,7 @@ function renderJurnalView() {
         <div class="space-y-2.5">
             <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide px-1">Riwayat dan Catatan Guru</h3>
             ${riwayat.length === 0 && !ada
-            ? owlEmpty("Belum ada jurnal. Tulis jurnal pertamamu hari ini.")
+            ? maskotKosong("Belum ada jurnal. Tulis jurnal pertamamu hari ini.", 96, "jurnal")
             : ""}
             ${ada ? renderKartuJurnal(ada, true) : ""}
             ${riwayat.map(j => renderKartuJurnal(j, false)).join("")}
@@ -184,7 +184,7 @@ async function simpanJurnal() {
         } else {
             appState.jurnal.unshift({ id: res.id, siswa_id: String(appState.user.id), tanggal: today, mood: jurnalMoodDipilih, isi });
         }
-        showToast("Jurnal tersimpan dan terkirim ke guru.");
+        maskotRayakan("Jurnal terkirim!", "Jurnal hari ini sudah tersimpan dan terkirim ke guru.", "jurnal:" + today, "jurnal");
         renderJurnalView();
         loadJurnalData(true);
     } else {
@@ -338,7 +338,7 @@ function renderJurnalGuru() {
     if (ringkas) ringkas.textContent = `${total} jurnal dalam periode. ${belum} belum diberi catatan oleh Anda.`;
 
     if (items.length === 0) {
-        list.innerHTML = owlEmpty(filter === "belum" ? "Semua jurnal sudah Anda beri catatan." : "Tidak ada jurnal pada periode ini.");
+        list.innerHTML = maskotKosong(filter === "belum" ? "Semua jurnal sudah Anda beri catatan." : "Tidak ada jurnal pada periode ini.", 96, "jurnal");
         return;
     }
 
