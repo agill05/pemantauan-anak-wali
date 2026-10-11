@@ -95,6 +95,124 @@
 @keyframes mk-tat-wag{0%,60%,100%{transform:rotate(0)}15%{transform:rotate(-8deg)}30%{transform:rotate(6deg)}45%{transform:rotate(-4deg)}}
 .mk-tat-tail{animation:mk-keb-tail 2.6s ease-in-out infinite;transform-origin:0% 30%}
 
+/* Pose lama (biasa, piala, pengingat, ceria): dipindah dari owl.css. SVG-nya memakai koordinat tetap (view-box) lewat class mk-vb. */
+.mk-vb *{transform-box:view-box}
+
+.mk-o-hop{transform-origin:210px 360px}
+.mk-o-hop.go{animation:mk-o-hop .6s cubic-bezier(.3,.7,.4,1)}
+@keyframes mk-o-hop{0%{transform:translateY(0) scale(1,1)}20%{transform:scale(1.05,.92)}55%{transform:translateY(-34px) scale(.97,1.04)}100%{transform:translateY(0) scale(1,1)}}
+
+.mk-o-bob{animation:mk-o-bob 3s ease-in-out infinite;transform-origin:210px 360px}
+@keyframes mk-o-bob{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-6px) scale(1.01,.99)}}
+.mk-o-shadow{animation:mk-o-shadow 3s ease-in-out infinite;transform-origin:208px 366px}
+@keyframes mk-o-shadow{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(.92);opacity:.6}}
+
+.mk-o-head{animation:mk-o-tilt 4.5s ease-in-out infinite;transform-origin:210px 240px}
+@keyframes mk-o-tilt{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2.5deg)}}
+
+.mk-o-iris{animation:mk-o-blink 4.2s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes mk-o-blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+.mk-o-look{animation:mk-o-look 6s ease-in-out infinite}
+@keyframes mk-o-look{0%,30%,100%{transform:translate(0,0)}40%,60%{transform:translate(-4px,-1px)}75%,90%{transform:translate(3px,2px)}}
+
+.mk-o-brow{animation:mk-o-brow 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes mk-o-brow{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+.mk-o-mouth{animation:mk-o-chirp 2.4s ease-in-out infinite;transform-origin:198px 182px}
+@keyframes mk-o-chirp{0%,60%,100%{transform:scaleY(1)}70%{transform:scaleY(.4)}80%{transform:scaleY(1.15)}90%{transform:scaleY(.5)}}
+
+.mk-o-tuft-l{animation:mk-o-twitch 5s ease-in-out infinite;transform-origin:150px 80px}
+.mk-o-tuft-r{animation:mk-o-twitch 5s ease-in-out 1.3s infinite;transform-origin:290px 100px}
+@keyframes mk-o-twitch{0%,86%,100%{transform:rotate(0)}90%{transform:rotate(-7deg)}94%{transform:rotate(3deg)}}
+
+.mk-o-bow{animation:mk-o-wig 3s ease-in-out infinite;transform-origin:196px 232px}
+@keyframes mk-o-wig{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+
+.mk-o-arm{animation:mk-o-pump 1.6s ease-in-out infinite;transform-origin:128px 285px}
+@keyframes mk-o-pump{0%,100%{transform:rotate(-7deg)}45%{transform:rotate(5deg) translateY(-3px)}}
+.mk-o-fist{animation:mk-o-squeeze 1.6s ease-in-out infinite;transform-origin:82px 178px}
+@keyframes mk-o-squeeze{0%,100%{transform:scale(1)}45%{transform:scale(1.08)}}
+
+.mk-o-wing-r{animation:mk-o-flap 3s ease-in-out infinite;transform-origin:250px 245px}
+@keyframes mk-o-flap{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+
+.mk-o-spark{animation:mk-o-spark 1.6s ease-out infinite;transform-box:fill-box;transform-origin:right center}
+.mk-o-spark:nth-child(2){animation-delay:.15s}
+.mk-o-spark:nth-child(3){animation-delay:.3s}
+@keyframes mk-o-spark{0%{opacity:0;transform:scale(.4)}25%{opacity:1;transform:scale(1.1)}55%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15) translateX(-4px)}}
+
+/* Versi juara (piala + medali) */
+.mk-t-hop{transform-origin:210px 380px}
+.mk-t-hop.go{animation:mk-o-hop .6s cubic-bezier(.3,.7,.4,1)}
+.mk-t-bob{animation:mk-o-bob 3s ease-in-out infinite;transform-origin:210px 380px}
+.mk-t-shadow{transform-origin:208px 386px}
+.mk-t-head{animation:mk-o-tilt 4.5s ease-in-out infinite;transform-origin:190px 215px}
+.mk-t-tuft-l{animation:mk-o-twitch 5s ease-in-out infinite;transform-origin:100px 80px}
+.mk-t-tuft-r{animation:mk-o-twitch 5s ease-in-out 1.3s infinite;transform-origin:240px 70px}
+.mk-t-mouth{animation:mk-o-chirp 2.4s ease-in-out infinite;transform-origin:198px 156px}
+.mk-t-medal{animation:mk-t-swing 3s ease-in-out infinite;transform-origin:196px 206px}
+@keyframes mk-t-swing{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.mk-t-arm-l{animation:mk-t-pump 1.8s ease-in-out infinite;transform-origin:140px 290px}
+@keyframes mk-t-pump{0%,100%{transform:rotate(-5deg)}45%{transform:rotate(4deg) translateY(-3px)}}
+.mk-t-fist-l{animation:mk-o-squeeze 1.8s ease-in-out infinite;transform-origin:88px 208px}
+.mk-t-arm-r{animation:mk-t-sway 2.2s ease-in-out infinite;transform-origin:280px 290px}
+@keyframes mk-t-sway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}
+.mk-t-trophy{animation:mk-t-lift 2.2s ease-in-out infinite;transform-origin:320px 190px}
+@keyframes mk-t-lift{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(5deg) translateY(-5px)}}
+.mk-t-twinkle{animation:mk-t-twinkle 2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes mk-t-twinkle{0%,100%{transform:scale(.4) rotate(0);opacity:.35}50%{transform:scale(1.1) rotate(25deg);opacity:1}}
+
+/* Kepala yang dipakai ulang di pose lain (tanpa asal transform tetap) */
+.mk-x-tuft-l,.mk-x-tuft-r{transform-box:fill-box;transform-origin:50% 100%;animation:mk-o-twitch 5s ease-in-out infinite}
+.mk-x-tuft-r{animation-delay:1.3s}
+.mk-x-mouth{transform-box:fill-box;transform-origin:50% 0;animation:mk-o-chirp 2.4s ease-in-out infinite}
+
+/* Versi pengingat (papan centang + jam) */
+.mk-r-hop{transform-origin:166px 370px}
+.mk-r-hop.go{animation:mk-o-hop .6s cubic-bezier(.3,.7,.4,1)}
+.mk-r-bob{animation:mk-o-bob 3s ease-in-out infinite;transform-origin:166px 370px}
+.mk-r-shadow{animation:mk-o-shadow 3s ease-in-out infinite;transform-origin:166px 368px}
+.mk-r-head{animation:mk-o-tilt 4.5s ease-in-out infinite;transform-origin:158px 210px}
+.mk-r-bow{animation:mk-o-wig 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.mk-r-point{animation:mk-r-point 1.6s ease-in-out infinite;transform-origin:225px 265px}
+@keyframes mk-r-point{0%,100%{transform:rotate(0)}50%{transform:rotate(-6deg) translate(2px,-3px)}}
+.mk-r-clip{animation:mk-r-clip 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes mk-r-clip{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+.mk-r-check{stroke-dasharray:16;animation:mk-r-check 4s ease-in-out infinite}
+@keyframes mk-r-check{0%,10%{stroke-dashoffset:16}30%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:16}}
+.mk-r-clock{animation:mk-r-ring 3s ease-in-out infinite;transform-origin:330px 108px}
+@keyframes mk-r-ring{0%,82%,100%{transform:rotate(0)}85%{transform:rotate(-6deg)}88%{transform:rotate(6deg)}91%{transform:rotate(-4deg)}94%{transform:rotate(3deg)}}
+.mk-r-min{animation:mk-r-tick 9s linear infinite;transform-origin:330px 108px}
+.mk-r-hour{animation:mk-r-tick 108s linear infinite;transform-origin:330px 108px}
+@keyframes mk-r-tick{to{transform:rotate(360deg)}}
+
+/* Versi ceria (sayap terangkat) */
+.mk-c-hop{transform-origin:206px 390px}
+.mk-c-hop.go{animation:mk-o-hop .6s cubic-bezier(.3,.7,.4,1)}
+.mk-c-bob{animation:mk-c-jump 1.2s ease-in-out infinite;transform-origin:206px 380px}
+@keyframes mk-c-jump{0%,100%{transform:translateY(0) scale(1.02,.97)}45%{transform:translateY(-18px) scale(.98,1.03)}}
+.mk-c-shadow{animation:mk-c-shadow 1.2s ease-in-out infinite;transform-origin:206px 392px}
+@keyframes mk-c-shadow{0%,100%{transform:scale(1);opacity:1}45%{transform:scale(.7);opacity:.5}}
+.mk-c-wing-l{animation:mk-c-flap-l 1.2s ease-in-out infinite;transform-origin:172px 232px}
+@keyframes mk-c-flap-l{0%,100%{transform:rotate(4deg)}45%{transform:rotate(-10deg)}}
+.mk-c-wing-r{animation:mk-c-flap-r 1.2s ease-in-out infinite;transform-origin:248px 238px}
+@keyframes mk-c-flap-r{0%,100%{transform:rotate(-4deg)}45%{transform:rotate(10deg)}}
+.mk-c-head{animation:mk-o-tilt 3s ease-in-out infinite;transform-origin:205px 215px}
+.mk-c-kick{animation:mk-c-kick 1.2s ease-in-out infinite;transform-origin:262px 322px}
+@keyframes mk-c-kick{0%,100%{transform:rotate(0)}45%{transform:rotate(-14deg)}}
+.mk-c-spark{animation:mk-o-spark 1.2s ease-out infinite;transform-box:fill-box;transform-origin:center}
+.mk-c-spark:nth-child(2){animation-delay:.12s}
+.mk-c-spark:nth-child(3){animation-delay:.24s}
+.mk-c-spark:nth-child(4){animation-delay:.36s}
+
+/* Hero login: burung hantu ceria (hanya layar lebar) */
+.mk-lg{display:block;margin-top:1.25rem;animation:mk-lg-rise .6s cubic-bezier(.2,.8,.2,1) 1.3s both}
+.mk-lg .mk{margin:0;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+@media (max-width:899px){.mk-lg{display:none}}
+
+/* Kartu Misi Hari Ini: maskot di sisi kanan */
+.sd-mission .mk{margin:0 0 0 auto}
+
 /* Empty state dengan maskot */
 .empty-state .mk{margin-bottom:.25rem}
 [data-maskot]>.mk{max-width:100%}

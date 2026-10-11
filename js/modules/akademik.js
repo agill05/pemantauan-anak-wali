@@ -257,7 +257,7 @@ function renderAkademikPrestasi() {
     groups = gsUrutkan(groups, fk ? fk.urut : 'terbaru', g => prsSkorTertinggi(g.records));
 
     if (groups.length === 0) {
-        container.innerHTML = owlEmptyTrophy("Belum ada data catatan prestasi untuk siswa ini.");
+        container.innerHTML = maskotKosong("Belum ada data catatan prestasi untuk siswa ini.", 96, "piala");
         prsRefreshDetail();
         return;
     }

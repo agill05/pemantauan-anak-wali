@@ -306,7 +306,7 @@ function renderJurnalGuruPesan(teks) {
     const list = document.getElementById("jurnal-guru-list");
     const ringkas = document.getElementById("jurnal-guru-ringkas");
     if (ringkas) ringkas.textContent = "";
-    if (list) list.innerHTML = owlEmpty(teks);
+    if (list) list.innerHTML = maskotKosong(teks, 96, "biasa");
 }
 
 function jurnalSudahDicatat(j, slots) {

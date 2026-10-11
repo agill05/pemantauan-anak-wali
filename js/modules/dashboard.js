@@ -153,7 +153,7 @@ function sdMisiCard(today) {
     const rows = tugas.map(t => `<button type="button" class="sd-task ${t.ok ? "done" : ""}" onclick="switchView('${t.view}')">
         <span><i class="fas ${t.ok ? "fa-circle-check" : "fa-circle"} mr-1.5"></i>${t.label}</span><small>${t.info}</small></button>`).join("");
     return sdCard("Misi Hari Ini", `<div class="sd-mission"><div class="sd-ring" style="--p:${pct}"><span>${pct}%</span></div>
-        <p class="sd-note" style="margin:0">${pct >= 100 ? "Hebat! Semua misi hari ini selesai." : "Yuk selesaikan misimu hari ini!"}</p>${pct >= 100 ? owlTrophy(72) : owlRemind(72)}</div>${rows}`);
+        <p class="sd-note" style="margin:0">${pct >= 100 ? "Hebat! Semua misi hari ini selesai." : "Yuk selesaikan misimu hari ini!"}</p>${maskot(pct >= 100 ? "piala" : "pengingat", 72)}</div>${rows}`);
 }
 
 function sdHitungStreak(today) {
@@ -387,7 +387,7 @@ function renderPrioritySection(priorityList) {
     if (priorityList.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
-            ${owlCheer(96)}
+            ${maskot("ceria", 96)}
             <p class="text-xs text-slate-500">Semua ${namaSiswa} dalam kondisi baik. Tidak ada indikator perhatian aktif.</p>
           </div>
         `;
@@ -438,7 +438,7 @@ function renderAgendaSection(agendaList) {
     if (!agendaList || agendaList.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
-            ${owlRemind(96)}
+            ${maskot("pengingat", 96)}
             <p class="text-xs text-slate-500 font-semibold">Belum ada agenda pembinaan yang akan datang.</p>
             <p class="text-[11px] text-slate-400 mt-1">Agenda akan muncul di sini setelah dijadwalkan.</p>
           </div>
@@ -712,7 +712,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
         <div class="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
             ${currentList.length === 0 ? `
                 <div class="empty-state">
-                    ${activeTab === 'active' ? owlCheer(96) : '<i class="fas fa-inbox text-slate-300 text-3xl mb-2"></i>'}
+                    ${activeTab === 'active' ? maskot("ceria", 96) : '<i class="fas fa-inbox text-slate-300 text-3xl mb-2"></i>'}
                     <p class="text-xs font-bold text-slate-700">
                         ${activeTab === 'active' ? 'Tidak Ada Notifikasi Baru' : 'Belum Ada Notifikasi Ditandai'}
                     </p>
