@@ -21,7 +21,10 @@
  *       laporan (papan grafik batang + tongkat penunjuk: laporan, rekap, statistik),
  *       notifikasi (lonceng emas berbunyi: notifikasi, pengumuman, peringatan),
  *       pembinaan (gelembung hati + tangan di dada: pembinaan, bimbingan, perhatian),
- *       profil (kaca pembesar + kartu profil siswa: pencarian siswa, siswa tidak ditemukan, melihat profil).
+ *       profil (kaca pembesar + kartu profil siswa: pencarian siswa, siswa tidak ditemukan, melihat profil),
+ *       guru (jas, dasi, tanda pengenal GURU, tongkat penunjuk, papan jalan: gelembung data guru/admin/kepsek),
+ *       siswa (seragam, tas punggung, sayap melambai, buku: gelembung data siswa).
+ * maskotUcapPutar(wadah, ambil, ukuran, jeda) -> gelembung data berputar: tiap giliran memanggil ambil() (data terbaru), urut bobot terbesar dulu.
  */
 function maskotAman(t) {
     if (typeof escapeHtml === "function") return escapeHtml(String(t == null ? "" : t));
@@ -143,6 +146,7 @@ function maskotRangka(kls, belakang, depan, opsi) {
         `<ellipse class="mk-shadow" cx="200" cy="389" rx="96" ry="7" fill="#000" opacity=".12"/>` +
         `<g class="mk-hop"><g class="mk-bob">` +
         `<g fill="#F9A91B" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"><path d="M148 350 h26 l4 18 q14 4 12 14 q-14 6 -26 0 q-14 6 -30 0 q-4 -10 10 -14 Z"/><path transform="translate(400 0) scale(-1 1)" d="M148 350 h26 l4 18 q14 4 12 14 q-14 6 -26 0 q-14 6 -30 0 q-4 -10 10 -14 Z"/></g>` +
+        (o.punggung || '') +
         `<ellipse cx="200" cy="296" rx="90" ry="76" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4"/>` +
         `<ellipse cx="200" cy="308" rx="54" ry="58" fill="#FDEBD3"/>` +
         `<g fill="none" stroke="#E2B98C" stroke-width="4" stroke-linecap="round"><path d="M168 286 q10 12 20 0"/><path d="M204 286 q10 12 20 0"/><path d="M186 316 q10 12 20 0"/><path d="M168 340 q10 12 20 0"/><path d="M204 340 q10 12 20 0"/></g>` +
@@ -164,7 +168,7 @@ function maskotRangka(kls, belakang, depan, opsi) {
         `<path d="M184 192 Q200 178 216 192 Q214 216 200 224 Q186 216 184 192Z" fill="#F9A91B" stroke="#3A1F14" stroke-width="3" stroke-linejoin="round"/>` +
         `<path class="mk-mouth" d="M191 200 Q200 210 209 200 Q207 216 200 218 Q193 214 191 200Z" fill="#F5694A"/>` +
         `</g>` +
-        `<g class="mk-bow" stroke="#0F1A33" stroke-width="3" stroke-linejoin="round" fill="#1F2E52"><path d="M200 268 L158 248 Q150 270 160 288 Z"/><path d="M200 268 L242 248 Q250 270 240 288 Z"/><rect x="186" y="257" width="28" height="22" rx="6"/></g>` +
+        (o.tanpaDasi ? '' : `<g class="mk-bow" stroke="#0F1A33" stroke-width="3" stroke-linejoin="round" fill="#1F2E52"><path d="M200 268 L158 248 Q150 270 160 288 Z"/><path d="M200 268 L242 248 Q250 270 240 288 Z"/><rect x="186" y="257" width="28" height="22" rx="6"/></g>`) +
         (depan || '') +
         `</g></g></svg>`;
 }
@@ -321,8 +325,103 @@ function maskotProfil(size) {
     return maskotRangka("pro", "", kiri + kartu + kilat, { ukuran: size, bintang: true });
 }
 
+/* Pose "guru": jas biru tua, kemeja, dasi panjang, tanda pengenal, tongkat penunjuk, dan papan jalan. Untuk gelembung data guru, admin, dan kepala sekolah. */
+function maskotGuru(size) {
+    var G = MASKOT_GARIS, S = MASKOT_SAYAP, B = "#1E3A8A", BG = "#0F1A33";
+    var badan =
+        '<ellipse cx="200" cy="296" rx="90" ry="76" fill="' + B + '" stroke="' + G + '" stroke-width="4"/>' +
+        '<path d="M168 244 L232 244 L200 324 Z" fill="#FFFFFF" stroke="' + G + '" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M170 258 L200 282 L182 296 Z" fill="#F1F5F9" stroke="' + G + '" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M230 258 L200 282 L218 296 Z" fill="#F1F5F9" stroke="' + G + '" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M146 244 L170 244 L200 324 L168 348 Z" fill="#172554" stroke="' + BG + '" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M254 244 L230 244 L200 324 L232 348 Z" fill="#172554" stroke="' + BG + '" stroke-width="3" stroke-linejoin="round"/>' +
+        '<g class="mk-gur-tie">' +
+        '<path d="M193 276 L207 276 L205 288 L195 288 Z" fill="#B45309" stroke="' + G + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M195 288 L205 288 L214 336 L200 354 L186 336 Z" fill="#D97706" stroke="' + G + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M194 306 L206 301 M192 320 L208 314" stroke="#FCD34D" stroke-width="3" stroke-linecap="round"/></g>' +
+        '<circle cx="200" cy="364" r="3.5" fill="#FCD34D" stroke="' + G + '" stroke-width="2"/>' +
+        '<path d="M132 322 L158 324" stroke="' + BG + '" stroke-width="3.5" stroke-linecap="round"/>' +
+        '<path d="M138 322 L146 311 L154 323 Z" fill="#FFFFFF" stroke="' + G + '" stroke-width="2" stroke-linejoin="round"/>' +
+        '<g class="mk-gur-badge"><rect x="240" y="318" width="36" height="16" rx="3" fill="#FFFFFF" stroke="' + G + '" stroke-width="2"/>' +
+        '<text x="258" y="330" font-family="Arial, sans-serif" font-size="10" font-weight="700" text-anchor="middle" fill="' + B + '">GURU</text></g>';
+    var kiri =
+        '<g class="mk-gur-arm-l">' +
+        '<path d="M146 284 Q104 296 84 262" fill="none" stroke="' + BG + '" stroke-width="40" stroke-linecap="round"/>' +
+        '<path d="M146 284 Q104 296 84 262" fill="none" stroke="' + B + '" stroke-width="32" stroke-linecap="round"/>' +
+        '<g class="mk-gur-ptr"><path d="M84 250 L40 118" stroke="' + G + '" stroke-width="9" stroke-linecap="round"/>' +
+        '<path d="M84 250 L40 118" stroke="#C2873E" stroke-width="5" stroke-linecap="round"/>' +
+        '<circle cx="40" cy="118" r="5.5" fill="#DC2626" stroke="' + G + '" stroke-width="2"/></g>' +
+        '<ellipse cx="84" cy="250" rx="21" ry="19" fill="' + S + '" stroke="' + G + '" stroke-width="4"/>' +
+        '<g fill="none" stroke="' + G + '" stroke-width="3" stroke-linecap="round"><path d="M72 242 q8 2 10 10"/><path d="M82 238 q8 2 8 12"/></g></g>';
+    var kanan =
+        '<g class="mk-gur-arm-r">' +
+        '<path d="M254 284 Q300 300 290 336" fill="none" stroke="' + BG + '" stroke-width="40" stroke-linecap="round"/>' +
+        '<path d="M254 284 Q300 300 290 336" fill="none" stroke="' + B + '" stroke-width="32" stroke-linecap="round"/>' +
+        '<g class="mk-gur-clip"><g transform="translate(326 322) rotate(12)">' +
+        '<rect x="-30" y="-40" width="60" height="80" rx="5" fill="#2B4A82" stroke="' + BG + '" stroke-width="3"/>' +
+        '<rect x="-24" y="-32" width="48" height="68" rx="2" fill="#FFFBF2"/>' +
+        '<rect x="-12" y="-46" width="24" height="12" rx="3" fill="#9AA3B5" stroke="' + BG + '" stroke-width="2.5"/>' +
+        '<rect x="-19" y="-22" width="10" height="10" rx="2" fill="#fff" stroke="#2B4A82" stroke-width="2"/>' +
+        '<path class="mk-gur-check" d="M-17 -17 l3 3.5 l5 -7" fill="none" stroke="#16A34A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M-4 -17 H18" stroke="#5A7BB5" stroke-width="3" stroke-linecap="round"/>' +
+        '<rect x="-19" y="-4" width="10" height="10" rx="2" fill="#fff" stroke="#2B4A82" stroke-width="2"/>' +
+        '<path d="M-4 1 H18" stroke="#5A7BB5" stroke-width="3" stroke-linecap="round"/>' +
+        '<rect x="-19" y="14" width="10" height="10" rx="2" fill="#fff" stroke="#2B4A82" stroke-width="2"/>' +
+        '<path d="M-4 19 H12" stroke="#5A7BB5" stroke-width="3" stroke-linecap="round"/></g></g>' +
+        '<ellipse cx="292" cy="338" rx="20" ry="18" fill="' + S + '" stroke="' + G + '" stroke-width="4"/>' +
+        '<g fill="none" stroke="' + G + '" stroke-width="3" stroke-linecap="round"><path d="M284 326 q8 2 8 12"/><path d="M296 328 q6 4 4 12"/></g></g>';
+    return maskotRangka("gur", badan, kiri + kanan, { ukuran: size, tanpaDasi: true });
+}
+
+/* Pose "siswa": kemeja putih, celana biru, dasi merah, tas punggung, satu sayap terangkat melambai, buku di pelukan. Untuk gelembung data siswa. */
+function maskotSiswa(size) {
+    var G = MASKOT_GARIS, S = MASKOT_SAYAP, BG = "#0F1A33";
+    var punggung =
+        '<g class="mk-sis-pack">' +
+        '<rect x="92" y="236" width="216" height="118" rx="38" fill="#D97706" stroke="' + G + '" stroke-width="4"/>' +
+        '<path d="M178 240 Q200 220 222 240" fill="none" stroke="' + G + '" stroke-width="6" stroke-linecap="round"/>' +
+        '<rect x="82" y="290" width="28" height="48" rx="10" fill="#B45309" stroke="' + G + '" stroke-width="3"/>' +
+        '<rect x="290" y="290" width="28" height="48" rx="10" fill="#B45309" stroke="' + G + '" stroke-width="3"/></g>';
+    var badan =
+        '<ellipse cx="200" cy="296" rx="90" ry="76" fill="#FFFFFF" stroke="' + G + '" stroke-width="4"/>' +
+        '<path d="M123.5 336 A90 76 0 0 0 276.5 336 Z" fill="#2563EB" stroke="' + G + '" stroke-width="4" stroke-linejoin="round"/>' +
+        '<path d="M200 296 L200 336" stroke="#CBD5E1" stroke-width="2.5"/>' +
+        '<circle cx="200" cy="312" r="3" fill="#94A3B8"/><circle cx="200" cy="328" r="3" fill="#94A3B8"/>' +
+        '<rect x="190" y="334" width="20" height="8" rx="2" fill="#FCD34D" stroke="' + G + '" stroke-width="2"/>' +
+        '<path d="M170 258 L200 282 L180 296 Z" fill="#E2E8F0" stroke="' + G + '" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M230 258 L200 282 L220 296 Z" fill="#E2E8F0" stroke="' + G + '" stroke-width="3" stroke-linejoin="round"/>' +
+        '<g class="mk-sis-tie"><path d="M193 282 L207 282 L205 292 L195 292 Z" fill="#B91C1C" stroke="' + G + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M195 292 L205 292 L211 318 L200 328 L189 318 Z" fill="#DC2626" stroke="' + G + '" stroke-width="2.5" stroke-linejoin="round"/></g>' +
+        '<path d="M152 258 Q138 300 150 340" fill="none" stroke="' + G + '" stroke-width="13" stroke-linecap="round"/>' +
+        '<path d="M152 258 Q138 300 150 340" fill="none" stroke="#D97706" stroke-width="8" stroke-linecap="round"/>' +
+        '<path d="M248 258 Q262 300 250 340" fill="none" stroke="' + G + '" stroke-width="13" stroke-linecap="round"/>' +
+        '<path d="M248 258 Q262 300 250 340" fill="none" stroke="#D97706" stroke-width="8" stroke-linecap="round"/>';
+    var kiri =
+        '<g class="mk-sis-arm-l">' +
+        '<g class="mk-sis-book"><g transform="translate(110 334) rotate(-8)">' +
+        '<rect x="-26" y="-34" width="52" height="68" rx="4" fill="#1E3A8A" stroke="' + BG + '" stroke-width="3"/>' +
+        '<rect x="-18" y="-24" width="36" height="14" rx="2" fill="#FFFBF2"/>' +
+        '<path d="M-18 6 H18 M-18 16 H8" stroke="#93C5FD" stroke-width="3" stroke-linecap="round"/></g></g>' +
+        '<path d="M146 282 Q106 296 126 340" fill="none" stroke="' + G + '" stroke-width="38" stroke-linecap="round"/>' +
+        '<path d="M146 282 Q106 296 126 340" fill="none" stroke="' + S + '" stroke-width="30" stroke-linecap="round"/>' +
+        '<ellipse cx="150" cy="282" rx="22" ry="20" fill="#FFFFFF" stroke="' + G + '" stroke-width="3"/>' +
+        '<ellipse cx="132" cy="342" rx="18" ry="16" fill="' + S + '" stroke="' + G + '" stroke-width="3.5"/>' +
+        '<g fill="none" stroke="' + G + '" stroke-width="3" stroke-linecap="round"><path d="M124 334 q6 2 8 10"/></g></g>';
+    var kanan =
+        '<g class="mk-sis-arm">' +
+        '<path d="M254 282 Q322 282 324 204" fill="none" stroke="' + G + '" stroke-width="38" stroke-linecap="round"/>' +
+        '<path d="M254 282 Q322 282 324 204" fill="none" stroke="' + S + '" stroke-width="30" stroke-linecap="round"/>' +
+        '<ellipse cx="256" cy="282" rx="22" ry="20" fill="#FFFFFF" stroke="' + G + '" stroke-width="3"/>' +
+        '<g class="mk-sis-hand">' +
+        '<rect x="306" y="150" width="11" height="30" rx="5.5" fill="' + S + '" stroke="' + G + '" stroke-width="3"/>' +
+        '<rect x="319" y="142" width="11" height="34" rx="5.5" fill="' + S + '" stroke="' + G + '" stroke-width="3"/>' +
+        '<rect x="332" y="150" width="11" height="30" rx="5.5" fill="' + S + '" stroke="' + G + '" stroke-width="3"/>' +
+        '<ellipse cx="325" cy="190" rx="23" ry="24" fill="' + S + '" stroke="' + G + '" stroke-width="3.5"/></g></g>';
+    return maskotRangka("sis", badan, kiri + kanan, { ukuran: size, tanpaDasi: true, punggung: punggung });
+}
+
 /* Daftar pose. Pose belum tersedia jatuh ke pose pertama (kebiasaan). */
-var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat, kartu: maskotKartu, keagamaan: maskotKeagamaan, laporan: maskotLaporan, notifikasi: maskotNotifikasi, pembinaan: maskotPembinaan, profil: maskotProfil };
+var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat, kartu: maskotKartu, keagamaan: maskotKeagamaan, laporan: maskotLaporan, notifikasi: maskotNotifikasi, pembinaan: maskotPembinaan, profil: maskotProfil, guru: maskotGuru, siswa: maskotSiswa };
 
 function maskot(pose, ukuran) {
     return (MASKOT_POSE[pose] || maskotKebiasaan)(ukuran);
@@ -517,11 +616,19 @@ function maskotUcapPilih(kandidat) {
 }
 
 function maskotUcapHtml(u, ukuran) {
-    var aksi = u.view ? ' data-mk-ucap-buka="' + maskotAman(u.view) + '" role="button" tabindex="0"' : "";
+    /* Aksi ketuk (pilih satu): view = buka tampilan, profil = buka profil siswa (id), notif = buka daftar notifikasi. */
+    var aksi = "";
+    if (u.view) aksi = ' data-mk-ucap-buka="' + maskotAman(u.view) + '"';
+    else if (u.profil) aksi = ' data-mk-ucap-profil="' + maskotAman(u.profil) + '"';
+    else if (u.notif) aksi = ' data-mk-ucap-notif="1"';
+    if (aksi) aksi += ' role="button" tabindex="0"';
+    /* tingkat (kritis, sedang, rendah, baik) mewarnai balon; angka tampil sebagai lencana di depan teks. */
+    var tingkat = /^(kritis|sedang|rendah|baik)$/.test(u.tingkat || "") ? ' data-tingkat="' + u.tingkat + '"' : "";
+    var angka = (u.angka !== undefined && u.angka !== null && u.angka !== "") ? '<span class="mk-ucap-angka">' + maskotAman(u.angka) + '</span>' : "";
     return '<div class="mk-ucap-wrap">' +
         '<div class="mk-ucap-mk">' + maskot(u.pose || "ceria", ukuran || 64) + '</div>' +
-        '<div class="mk-ucap"' + aksi + '>' +
-        '<span class="mk-ucap-teks">' + maskotAman(u.teks) + '</span>' +
+        '<div class="mk-ucap"' + tingkat + aksi + '>' +
+        angka + '<span class="mk-ucap-teks">' + maskotAman(u.teks) + '</span>' +
         '<button type="button" class="mk-ucap-tutup" data-mk-ucap-tutup aria-label="Tutup gelembung">&times;</button>' +
         '</div></div>';
 }
@@ -532,6 +639,68 @@ function maskotUcapPasang(wadah, kandidat, ukuran) {
     wadah.innerHTML = u ? maskotUcapHtml(u, ukuran) : "";
     return u;
 }
+
+/* Gelembung data berputar. ambil = fungsi yang mengembalikan kandidat terbaru (dipanggil tiap giliran, jadi angka selalu segar)
+ * atau larik kandidat. Urutan: bobot terbesar dulu, lalu bergantian tiap jeda ms. Berhenti sendiri bila balon ditutup pengguna
+ * atau wadah hilang dari halaman. Mengembalikan { berhenti(), segarkan() }. */
+function maskotUcapPutar(wadah, ambil, ukuran, jeda) {
+    if (!wadah) return null;
+    var ctl = { mati: false }, timer = 0, kunciKini = "", teksKini = "", pernah = false, jedaMs = jeda || 7000;
+    function daftar() {
+        var d = [];
+        try { d = (typeof ambil === "function" ? ambil() : ambil) || []; } catch (e) { d = []; }
+        return d.filter(function (c) { return c && c.teks; })
+            .sort(function (a, b) { return maskotUcapBobot(b) - maskotUcapBobot(a); });
+    }
+    function giliran() {
+        clearTimeout(timer);
+        if (ctl.mati) return;
+        if (!document.body.contains(wadah) || (pernah && !wadah.querySelector(".mk-ucap-wrap"))) { ctl.mati = true; return; }
+        if (!document.hidden) {
+            var d = daftar();
+            if (!d.length) {
+                wadah.innerHTML = "";
+                pernah = false; kunciKini = ""; teksKini = "";
+            } else {
+                var i = -1;
+                for (var k = 0; k < d.length; k++) { if (d[k].kunci === kunciKini) { i = k; break; } }
+                var pilih = d[(i + 1) % d.length];
+                if (d.length === 1 && pilih.kunci === kunciKini) {
+                    if (pilih.teks !== teksKini && wadah.querySelector(".mk-ucap-wrap")) { /* teks berubah: gambar ulang */ } else pilih = null;
+                }
+                if (pilih) {
+                    wadah.innerHTML = maskotUcapHtml(pilih, ukuran);
+                    pernah = true; kunciKini = pilih.kunci || ""; teksKini = pilih.teks;
+                    var svg = wadah.querySelector("svg.mk");
+                    if (svg && !maskotGerakDiam()) {
+                        maskotMainkan(svg, "mk-rx-", pilih.tingkat === "kritis" ? "flap" : pilih.tingkat === "baik" ? "nod" : "tilt");
+                    }
+                }
+            }
+        }
+        timer = setTimeout(giliran, jedaMs);
+    }
+    ctl.berhenti = function () { ctl.mati = true; clearTimeout(timer); };
+    ctl.segarkan = giliran;
+    giliran();
+    return ctl;
+}
+
+/* Ketuk balon: buka profil siswa (data-mk-ucap-profil) atau daftar notifikasi (data-mk-ucap-notif). */
+function maskotUcapAksiBaru(e) {
+    if (!e.target.closest) return;
+    if (e.target.closest("[data-mk-ucap-tutup]")) return;
+    var p = e.target.closest("[data-mk-ucap-profil]");
+    if (p) { if (typeof openProfilSiswa === "function") openProfilSiswa(p.getAttribute("data-mk-ucap-profil")); return; }
+    var n = e.target.closest("[data-mk-ucap-notif]");
+    if (n && typeof openNotificationModal === "function") openNotificationModal();
+}
+document.addEventListener("click", maskotUcapAksiBaru);
+document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var el = e.target.closest && e.target.closest("[data-mk-ucap-profil],[data-mk-ucap-notif]");
+    if (el && e.target === el) { e.preventDefault(); maskotUcapAksiBaru(e); }
+});
 
 document.addEventListener("click", function (e) {
     var tutup = e.target.closest && e.target.closest("[data-mk-ucap-tutup]");

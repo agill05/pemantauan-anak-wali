@@ -20,24 +20,29 @@ function wadahUcapanMaskot() {
     return el;
 }
 
+let ucapanMaskotCtl = null;
+const UCAP_LEVEL = { kritis: 3, sedang: 2, rendah: 1 };
+
+function ucapanNamaSingkat(nama) {
+    return String(nama || "").trim().split(/\s+/).slice(0, 2).join(" ") || "Siswa";
+}
+function ucapanPotong(teks, maks) {
+    const t = String(teks || "").replace(/\s+/g, " ").trim();
+    return t.length > maks ? t.slice(0, maks - 1).trim() + "…" : t;
+}
+
 function kandidatUcapanMaskot() {
     const u = appState.user;
     const daftar = [];
     if (!u) return daftar;
     const today = getDateWITA();
     const jam = typeof getJamWITA === "function" ? getJamWITA() : new Date().getHours();
+    const isSiswa = u.role === "siswa";
+    const pose = isSiswa ? "siswa" : "guru";
+    const tambah = (o) => daftar.push(Object.assign({ pose }, o));
+    const notifAktif = appState.notificationsReady ? (appState.currentNotifications || []) : [];
 
-    const slot = jam < 4 ? "begadang" : jam < 11 ? "pagi" : jam < 15 ? "siang" : jam < 18 ? "sore" : "malam";
-    const sapa = {
-        begadang: "Masih terjaga? Jangan lupa istirahat ya.",
-        pagi: "Selamat pagi! Semoga harimu menyenangkan.",
-        siang: "Selamat siang! Tetap semangat ya.",
-        sore: "Selamat sore! Sebentar lagi waktunya istirahat.",
-        malam: "Selamat malam! Jangan tidur terlalu larut ya."
-    };
-    daftar.push({ kunci: "sapa-" + slot, pose: "ceria", teks: sapa[slot], bobot: slot === "pagi" ? 3 : 1 });
-
-    if (u.role === "siswa") {
+    if (isSiswa) {
         // Hanya bila data hari ini sudah termuat sesi ini, supaya tidak salah menyebut "belum".
         if (misiTerakhirMuat > 0) {
             const total = (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
@@ -45,63 +50,120 @@ function kandidatUcapanMaskot() {
             const jurnal = sdMine(appState.jurnal).some(j => sdTgl(j) === today);
             const streak = sdHitungStreak(today);
             if (sudah < total) {
-                daftar.push({
-                    kunci: "s-kebiasaan", pose: "kebiasaan", view: "kebiasaan", bobot: 3,
-                    teks: sudah === 0 ? "Sudah isi kebiasaan hari ini?" : `Kebiasaan hari ini baru ${sudah} dari ${total}. Yuk lanjut!`
+                tambah({
+                    kunci: "s-kebiasaan", view: "kebiasaan", bobot: 3, tingkat: "sedang", angka: `${sudah}/${total}`,
+                    teks: "kebiasaan hari ini sudah terisi."
                 });
             }
             if (!jurnal) {
-                daftar.push({ kunci: "s-jurnal", pose: "jurnal", view: "jurnal", bobot: jam >= 15 ? 3 : 1, teks: "Jurnal hari ini belum ditulis. Ceritakan harimu, yuk!" });
+                tambah({ kunci: "s-jurnal", view: "jurnal", bobot: jam >= 15 ? 4 : 2, tingkat: "sedang", teks: "Jurnal hari ini belum ditulis." });
             }
             if (sudah >= total && jurnal) {
-                daftar.push({ kunci: "s-selesai", pose: "piala", bobot: 4, teks: "Semua misi hari ini selesai. Hebat sekali!" });
+                tambah({ kunci: "s-selesai", bobot: 3, tingkat: "baik", teks: "Semua misi hari ini selesai: kebiasaan dan jurnal." });
             }
             if (streak >= 2) {
-                daftar.push({
-                    kunci: "s-streak", pose: "semangat", bobot: 2,
-                    teks: streak >= 7 ? `${streak} hari berturut-turut. Konsisten banget!` : `Streak ${streak} hari. Jangan sampai putus ya!`
-                });
+                tambah({ kunci: "s-streak", bobot: 2, tingkat: "baik", angka: streak, teks: "hari streak berturut-turut." });
             }
+        }
+        if (notifAktif.length) {
+            const n = notifAktif.slice().sort((a, b) => (UCAP_LEVEL[b.level] || 0) - (UCAP_LEVEL[a.level] || 0))[0];
+            tambah({
+                kunci: "s-perhatian", notif: true, bobot: n.level === "kritis" ? 6 : 4, tingkat: n.level,
+                teks: `Perlu perhatian: ${ucapanPotong(n.title, 64)}${notifAktif.length > 1 ? ` (+${notifAktif.length - 1} lagi)` : ""}`
+            });
+        } else if (appState.notificationsReady) {
+            tambah({ kunci: "s-aman", bobot: 1, tingkat: "baik", teks: "Tidak ada indikator perhatian aktif untukmu." });
         }
     } else {
-        if (isGuruUser()) {
-            const peran = getPeranAktif();
-            const minggu = new Date(today + "T00:00:00Z").getUTCDay() === 0;
-            if (isWaliUser() && (peran === "wali" || peran === "semua")) {
-                if (typeof absensiLoadedTanggal !== "undefined" && absensiLoadedTanggal === today) {
-                    const siswaKelas = absensiSiswaTab("kelas");
-                    const belum = siswaKelas.filter(s => !absensiRec("kelas", s.id).status).length;
-                    if (belum > 0) daftar.push({ kunci: "g-presensi-kelas", pose: "presensi", view: "absensi", bobot: 4, teks: `Ada ${belum} siswa belum dipresensi.` });
-                    else if (siswaKelas.length) daftar.push({ kunci: "g-presensi-lengkap", pose: "ceria", bobot: 2, teks: "Presensi kelas hari ini sudah lengkap. Mantap!" });
-                } else if (!minggu) {
-                    daftar.push({ kunci: "g-presensi-ingat", pose: "presensi", view: "absensi", bobot: 1, teks: "Sudah presensi kelas hari ini?" });
+        const nama = u.role === "guru" ? getLabelSiswa().toLowerCase() : "siswa";
+        const peran = isGuruUser() ? getPeranAktif() : "semua";
+        const minggu = new Date(today + "T00:00:00Z").getUTCDay() === 0;
+
+        // Presensi: jumlah belum diisi, atau rekap bila sudah lengkap.
+        const presensi = (tab, kunci, kata) => {
+            const siswa = absensiSiswaTab(tab);
+            if (!siswa.length) return;
+            const rek = { belum: 0 }, alpa = [];
+            siswa.forEach(s => {
+                const st = absensiRec(tab, s.id).status;
+                if (!st) rek.belum++;
+                else {
+                    rek[st] = (rek[st] || 0) + 1;
+                    if (st === "A") alpa.push(ucapanNamaSingkat(s.nama));
                 }
+            });
+            if (rek.belum > 0) {
+                tambah({
+                    kunci: kunci + "-belum", view: "absensi", bobot: 5, tingkat: "sedang", angka: rek.belum,
+                    teks: `dari ${siswa.length} ${kata} belum dipresensi hari ini.`
+                });
+            } else {
+                const bagian = [`${rek.H || 0} hadir`];
+                if (rek.T) bagian.push(`${rek.T} terlambat`);
+                if (rek.S) bagian.push(`${rek.S} sakit`);
+                if (rek.I) bagian.push(`${rek.I} izin`);
+                if (rek.A) bagian.push(`${rek.A} alpa`);
+                let teks = `Presensi ${kata} lengkap: ${bagian.join(", ")}.`;
+                if (alpa.length) teks += ` Alpa: ${alpa.slice(0, 3).join(", ")}${alpa.length > 3 ? " dkk" : ""}.`;
+                tambah({ kunci: kunci + "-rekap", view: "absensi", bobot: rek.A ? 4 : 2, tingkat: rek.A ? "sedang" : "baik", teks });
             }
-            if (isMentorUser() && (peran === "mentor" || peran === "semua") &&
+        };
+        if (!minggu) {
+            const kelasBisa = isGuruUser() ? (isWaliUser() && (peran === "wali" || peran === "semua")) : true;
+            if (kelasBisa && typeof absensiLoadedTanggal !== "undefined" && absensiLoadedTanggal === today) {
+                presensi("kelas", "g-presensi-kelas", nama);
+            }
+            if (isGuruUser() && isMentorUser() && (peran === "mentor" || peran === "semua") &&
                 typeof absensiMentorLoadedTanggal !== "undefined" && absensiMentorLoadedTanggal === today) {
-                const siswaBinaan = absensiSiswaTab("binaan");
-                const belum = siswaBinaan.filter(s => !absensiRec("binaan", s.id).status).length;
-                if (belum > 0) daftar.push({ kunci: "g-presensi-binaan", pose: "presensi", view: "absensi", bobot: 4, teks: `Ada ${belum} anak binaan belum dipresensi.` });
+                presensi("binaan", "g-presensi-binaan", "anak binaan");
             }
         }
+
+        // Siswa bermasalah: kelompokkan catatan notifikasi per siswa, tingkat tertinggi dulu.
         if (appState.notificationsReady) {
-            const n = getAttentionStudentCount();
-            if (n > 0) {
-                const nama = u.role === "guru" ? getLabelSiswa().toLowerCase() : "siswa";
-                daftar.push({ kunci: "g-perhatian", pose: "notifikasi", view: "siswa", bobot: 3, teks: `Ada ${n} ${nama} yang perlu perhatian.` });
+            const perSiswa = new Map();
+            notifAktif.forEach(n => {
+                if (!n || !n.siswa) return;
+                const id = String(n.siswa.id);
+                const e = perSiswa.get(id) || { siswa: n.siswa, tingkat: 0, level: "rendah", item: [], utama: n };
+                e.item.push(n);
+                const t = UCAP_LEVEL[n.level] || 1;
+                if (t > e.tingkat) { e.tingkat = t; e.level = n.level; e.utama = n; }
+                perSiswa.set(id, e);
+            });
+            const urut = Array.from(perSiswa.values()).sort((a, b) =>
+                b.tingkat - a.tingkat || b.item.length - a.item.length || String(a.siswa.nama).localeCompare(String(b.siswa.nama)));
+            const kritis = urut.filter(e => e.level === "kritis");
+            if (kritis.length) {
+                tambah({
+                    kunci: "g-kritis", view: "siswa", bobot: 6, tingkat: "kritis", angka: kritis.length,
+                    teks: `${nama} berstatus kritis: ${kritis.slice(0, 3).map(e => ucapanNamaSingkat(e.siswa.nama)).join(", ")}${kritis.length > 3 ? " dkk" : ""}.`
+                });
+            }
+            urut.slice(0, 3).forEach(e => tambah({
+                kunci: "g-siswa-" + e.siswa.id, profil: String(e.siswa.id), bobot: e.tingkat === 3 ? 5 : e.tingkat === 2 ? 3 : 2, tingkat: e.level,
+                teks: `${ucapanNamaSingkat(e.siswa.nama)}: ${ucapanPotong(e.utama.title, 64)}${e.item.length > 1 ? ` (+${e.item.length - 1} catatan lain)` : ""}`
+            }));
+            if (urut.length) {
+                tambah({ kunci: "g-perhatian", view: "siswa", bobot: 3, tingkat: urut[0].level, angka: urut.length, teks: `${nama} perlu perhatian.` });
+            } else {
+                tambah({ kunci: "g-aman", bobot: 2, tingkat: "baik", teks: `Semua ${nama} dalam kondisi baik. Tidak ada yang perlu perhatian.` });
             }
         }
     }
 
-    if (typeof SPLASH_TIPS !== "undefined") {
-        SPLASH_TIPS.forEach((t, i) => daftar.push({ kunci: "tip-" + i, pose: "biasa", bobot: 0.5, teks: t }));
+    // Data belum termuat sama sekali: sapaan singkat sebagai pengisi sementara (bukan tips).
+    if (!daftar.length) {
+        const slot = jam < 4 ? "begadang" : jam < 11 ? "pagi" : jam < 15 ? "siang" : jam < 18 ? "sore" : "malam";
+        const sapa = { begadang: "Masih terjaga?", pagi: "Selamat pagi!", siang: "Selamat siang!", sore: "Selamat sore!", malam: "Selamat malam!" };
+        tambah({ kunci: "sapa", bobot: 1, teks: `${sapa[slot]} Memeriksa data terbaru...` });
     }
     return daftar;
 }
 
 function ucapanMaskotDashboard() {
     const u = appState.user;
-    if (!u || typeof maskotUcapPasang !== "function") return;
+    if (!u || typeof maskotUcapPutar !== "function") return;
     const kunci = String(u.id) + ":" + (isGuruUser() ? getPeranAktif() : "");
     if (!ucapanMaskotPerluBaru && kunci === ucapanMaskotKunci) return;
     ucapanMaskotPerluBaru = false;
@@ -110,12 +172,18 @@ function ucapanMaskotDashboard() {
     const pasang = () => {
         if (nomor !== ucapanMaskotNomor || !appState.user) return;
         const wadah = wadahUcapanMaskot();
-        if (wadah) maskotUcapPasang(wadah, kandidatUcapanMaskot(), 64);
+        if (!wadah) return;
+        if (ucapanMaskotCtl) ucapanMaskotCtl.berhenti();
+        ucapanMaskotCtl = maskotUcapPutar(wadah, kandidatUcapanMaskot, 64, 7000);
     };
     if (u.role === "siswa" && typeof muatMisiHariIni === "function") {
         // Tunggu data misi (maksimal 2,5 detik) agar ucapan sesuai kondisi hari ini.
         Promise.race([muatMisiHariIni(), new Promise(r => setTimeout(r, 2500))]).then(pasang, pasang);
     } else {
+        // Guru, admin, kepsek: muat presensi hari ini agar angka "belum dipresensi" nyata. Giliran berikutnya otomatis memakai data baru.
+        try {
+            if (typeof loadAbsensiData === "function" && absensiLoadedTanggal !== getDateWITA()) Promise.resolve(loadAbsensiData()).catch(() => { });
+        } catch (e) { /* abaikan */ }
         pasang();
     }
 }

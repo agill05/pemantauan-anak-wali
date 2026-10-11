@@ -391,3 +391,56 @@ body.dark .mk-ucap-tutup:hover{background:#334155;color:#e2e8f0}
 @media (prefers-reduced-motion: reduce){
   .mk-ucap-wrap{animation:none!important}
 }
+
+/* Pose guru: dasi berayun, tongkat penunjuk mengetuk, papan jalan bergoyang, tanda pengenal berkilau, centang tergambar */
+.mk-gur-tie{animation:mk-gur-tie 3.6s ease-in-out infinite;transform-origin:50% 0}
+@keyframes mk-gur-tie{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+.mk-gur-ptr{animation:mk-gur-tap 2.4s ease-in-out infinite;transform-origin:90% 100%}
+@keyframes mk-gur-tap{0%,55%,100%{transform:rotate(0)}15%{transform:rotate(-5deg)}25%{transform:rotate(1deg)}35%{transform:rotate(-4deg)}45%{transform:rotate(0)}}
+.mk-gur-arm-l{animation:mk-ars-hug 3.2s ease-in-out infinite;transform-origin:100% 100%}
+.mk-gur-arm-r{animation:mk-kar-arm 2.6s ease-in-out infinite;transform-origin:0% 0%}
+.mk-gur-clip{animation:mk-kar-sway 3.4s ease-in-out infinite;transform-origin:50% 100%}
+.mk-gur-badge{animation:mk-gur-kilau 4.5s ease-in-out infinite}
+@keyframes mk-gur-kilau{0%,70%,100%{filter:brightness(1)}80%{filter:brightness(1.3)}}
+.mk-gur-check{stroke-dasharray:22;stroke-dashoffset:22;animation:mk-pre-check 4s ease-in-out infinite both}
+
+/* Pose siswa: sayap melambai, tangan bergoyang, tas dan dasi bergerak halus */
+.mk-sis-arm{animation:mk-sis-wave 1.5s ease-in-out infinite;transform-origin:5% 95%}
+@keyframes mk-sis-wave{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(9deg)}}
+.mk-sis-hand{animation:mk-sis-hand .75s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-sis-hand{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.mk-sis-pack{animation:mk-sis-pack 3s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-sis-pack{0%,100%{transform:rotate(-.8deg)}50%{transform:rotate(.8deg)}}
+.mk-sis-tie{animation:mk-gur-tie 3.2s ease-in-out infinite;transform-origin:50% 0}
+.mk-sis-book{animation:mk-kar-sway 3.4s ease-in-out infinite;transform-origin:50% 100%}
+.mk-sis-arm-l{animation:mk-ars-hug 3s ease-in-out infinite;transform-origin:100% 0}
+
+/* Gelembung data: lencana angka dan warna menurut tingkat (kritis, sedang, rendah, baik) */
+.mk-ucap-angka{display:inline-flex;align-items:center;justify-content:center;min-width:1.5rem;height:1.5rem;padding:0 .4rem;margin-right:.45rem;border-radius:999px;background:#2563eb;color:#fff;font-size:.75rem;font-weight:800;line-height:1;vertical-align:middle}
+.mk-ucap[data-mk-ucap-profil],.mk-ucap[data-mk-ucap-notif]{cursor:pointer}
+.mk-ucap[data-mk-ucap-profil] .mk-ucap-teks::after,.mk-ucap[data-mk-ucap-notif] .mk-ucap-teks::after{content:" \203A";color:#2563eb;font-weight:800}
+.mk-ucap[data-mk-ucap-profil]:focus-visible,.mk-ucap[data-mk-ucap-notif]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.mk-ucap[data-tingkat="kritis"]{background:#fff1f2;border-color:#fecdd3;animation:mk-ucap-denyut 2.2s ease-in-out infinite}
+.mk-ucap[data-tingkat="kritis"]::before{border-left-color:#fecdd3;border-bottom-color:#fecdd3}
+.mk-ucap[data-tingkat="kritis"] .mk-ucap-angka{background:#e11d48}
+.mk-ucap[data-tingkat="sedang"]{background:#fffbeb;border-color:#fde68a}
+.mk-ucap[data-tingkat="sedang"]::before{border-left-color:#fde68a;border-bottom-color:#fde68a}
+.mk-ucap[data-tingkat="sedang"] .mk-ucap-angka{background:#d97706}
+.mk-ucap[data-tingkat="rendah"]{background:#eff6ff;border-color:#bfdbfe}
+.mk-ucap[data-tingkat="rendah"]::before{border-left-color:#bfdbfe;border-bottom-color:#bfdbfe}
+.mk-ucap[data-tingkat="baik"]{background:#f0fdf4;border-color:#bbf7d0}
+.mk-ucap[data-tingkat="baik"]::before{border-left-color:#bbf7d0;border-bottom-color:#bbf7d0}
+.mk-ucap[data-tingkat="baik"] .mk-ucap-angka{background:#16a34a}
+@keyframes mk-ucap-denyut{0%,100%{box-shadow:0 2px 8px rgba(225,29,72,.12)}50%{box-shadow:0 2px 14px rgba(225,29,72,.38)}}
+body.dark .mk-ucap-angka{color:#fff}
+body.dark .mk-ucap[data-tingkat="kritis"]{background:#3b1220;border-color:#9f1239}
+body.dark .mk-ucap[data-tingkat="kritis"]::before{border-left-color:#9f1239;border-bottom-color:#9f1239}
+body.dark .mk-ucap[data-tingkat="sedang"]{background:#3a2a0b;border-color:#92400e}
+body.dark .mk-ucap[data-tingkat="sedang"]::before{border-left-color:#92400e;border-bottom-color:#92400e}
+body.dark .mk-ucap[data-tingkat="rendah"]{background:#172554;border-color:#1e40af}
+body.dark .mk-ucap[data-tingkat="rendah"]::before{border-left-color:#1e40af;border-bottom-color:#1e40af}
+body.dark .mk-ucap[data-tingkat="baik"]{background:#052e16;border-color:#166534}
+body.dark .mk-ucap[data-tingkat="baik"]::before{border-left-color:#166534;border-bottom-color:#166534}
+@media (prefers-reduced-motion: reduce){
+  .mk-ucap[data-tingkat="kritis"]{animation:none!important}
+}
