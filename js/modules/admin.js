@@ -181,7 +181,7 @@ function renderAdminGuru() {
     const filtered = appState.guru.filter(g => safeStr(g.nama).toLowerCase().includes(query) || safeStr(g.username).toLowerCase().includes(query));
 
     if (filtered.length === 0) {
-        list.innerHTML = `<div class="empty-state"><i class="fas fa-chalkboard-teacher text-xl mb-1"></i><p class="text-xs">Belum ada Guru.</p></div>`;
+        list.innerHTML = maskotKosong("Belum ada Guru.", 96, "admin");
         return;
     }
 
@@ -234,7 +234,7 @@ function renderAdminSiswa() {
     const filtered = sortSiswa(rawFiltered);
 
     if (filtered.length === 0) {
-        list.innerHTML = `<div class="empty-state"><i class="fas fa-user-graduate text-xl mb-1"></i><p class="text-xs">Belum ada Siswa.</p></div>`;
+        list.innerHTML = maskotKosong("Belum ada Siswa.", 96, "admin");
         return;
     }
 
@@ -442,7 +442,7 @@ function renderAdminKelas() {
     if (!list) return;
 
     if (appState.kelas.length === 0) {
-        list.innerHTML = `<div class="empty-state"><i class="fas fa-door-open text-xl mb-1"></i><p class="text-xs">Belum ada Kelas.</p></div>`;
+        list.innerHTML = maskotKosong("Belum ada Kelas.", 96, "admin");
         return;
     }
 
@@ -835,7 +835,7 @@ function gambarAdminKebiasaan() {
                     <button type="button" onclick="openModalKebiasaan('${escapeHtml(k.id)}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100" aria-label="Ubah kebiasaan"><i class="fas fa-pen text-xs"></i></button>
                 </div>
             </div>`;
-    }).join("") || `<div class="empty-state"><p class="text-xs text-slate-500">Belum ada kebiasaan.</p></div>`;
+    }).join("") || maskotKosong("Belum ada kebiasaan.", 96, "admin");
 }
 
 async function kirimKonfigKebiasaan(items) {

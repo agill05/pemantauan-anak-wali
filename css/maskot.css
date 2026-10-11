@@ -221,6 +221,17 @@
 /* Latar gelap: halo tipis agar kontur cokelat tua tetap terbaca */
 html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 
+/* Pose admin: kunci inggris dan gir */
+.mk-adm-tail{animation:mk-keb-tail 2.6s ease-in-out infinite;transform-origin:0% 30%}
+.mk-adm-gear{animation:mk-adm-spin 9s linear infinite;transform-origin:50% 50%}
+.mk-adm-gear-s{animation:mk-adm-spin 5s linear infinite reverse;transform-origin:50% 50%}
+@keyframes mk-adm-spin{to{transform:rotate(360deg)}}
+.mk-adm-tool{animation:mk-adm-tool 2.4s ease-in-out infinite;transform-origin:20% 70%}
+@keyframes mk-adm-tool{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(3deg)}}
+.mk-adm-wing-r{animation:mk-keb-squeeze 2.4s ease-in-out infinite;transform-origin:50% 50%}
+.mk-adm-spark{animation:mk-adm-spark 1.6s ease-out infinite;transform-origin:50% 50%}
+@keyframes mk-adm-spark{0%{opacity:0;transform:scale(.5)}30%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
+
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}
 }
