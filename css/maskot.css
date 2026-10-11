@@ -69,6 +69,18 @@
 .mk-jur-arm-r{animation:mk-keb-pump 3s ease-in-out infinite;transform-origin:50% 50%}
 .mk-jur-fist{animation:mk-keb-squeeze 3s ease-in-out infinite;transform-origin:50% 50%}
 
+/* Pose presensi: papan centang + pensil */
+.mk-pre-write{animation:mk-pre-write 2.4s ease-in-out infinite}
+@keyframes mk-pre-write{0%,40%,100%{transform:translate(0,0)}10%{transform:translate(5px,3.5px)}20%{transform:translate(0,0)}30%{transform:translate(5px,3.5px)}}
+.mk-pre-wing{animation:mk-pre-wing 2.4s ease-in-out infinite;transform-origin:95% 15%}
+@keyframes mk-pre-wing{0%,100%{transform:rotate(0)}15%{transform:rotate(2deg)}35%{transform:rotate(2deg)}}
+.mk-pre-clip{animation:mk-pre-clip 3.4s ease-in-out infinite;transform-origin:50% 80%}
+@keyframes mk-pre-clip{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+.mk-pre-check{stroke-dasharray:22;stroke-dashoffset:22;animation:mk-pre-check 4s ease-in-out infinite both}
+@keyframes mk-pre-check{0%,15%{stroke-dashoffset:22}35%,80%{stroke-dashoffset:0}100%{stroke-dashoffset:22}}
+.mk-pre-arm-r{animation:mk-keb-pump 3.4s ease-in-out infinite;transform-origin:50% 50%}
+.mk-pre-fist{animation:mk-keb-squeeze 3.4s ease-in-out infinite;transform-origin:50% 50%}
+
 /* Empty state dengan maskot */
 .empty-state .mk{margin-bottom:.25rem}
 [data-maskot]>.mk{max-width:100%}

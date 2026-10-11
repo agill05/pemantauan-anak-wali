@@ -160,7 +160,7 @@ function renderAbsensiView() {
     const tabsHtml = renderAbsensiTabs(info);
 
     if (!info.kelas && !info.binaan) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-users-slash text-2xl mb-2"></i><p class="text-xs">Belum ada data siswa.</p></div>`;
+        container.innerHTML = maskotKosong("Belum ada data siswa.", 96, "presensi");
         return;
     }
 
@@ -291,7 +291,7 @@ function renderAbsensiView() {
             </div>` : ''}
             ${statsHtml}
             ${totalSiswa === 0 ? `
-                <div class="empty-state"><i class="fas fa-user-slash text-xl mb-1"></i><p class="text-xs">${kosongTeks}</p></div>
+                ${maskotKosong(kosongTeks, 96, 'presensi')}
             ` : `
                 <form onsubmit="saveBatchAbsensiForm(event)" class="space-y-2">
                     ${rowsHtml}
@@ -310,7 +310,7 @@ function renderAbsensiView() {
 async function tampilRekapAbsensiMentor() {
     const { list } = getAbsensiListAktif();
     if (list.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada anak binaan.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Data Kosong', 'Belum ada anak binaan.', 'presensi');
         return;
     }
     showLoading("Memuat rekap binaan...");
@@ -347,7 +347,7 @@ function absensiAdaKosong(selectElements) {
     if (kosong.length === 0) return false;
     kosong.forEach(sel => { sel.style.outline = '2px solid #fb7185'; });
     kosong[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    owlAlert('Presensi Belum Lengkap', `Masih ada ${kosong.length} siswa belum diisi. Lengkapi dulu, atau ketuk "Set Semua Hadir" lalu ubah yang tidak hadir.`, 'remind');
+    maskotAlert('Presensi Belum Lengkap', `Masih ada ${kosong.length} siswa belum diisi. Lengkapi dulu, atau ketuk "Set Semua Hadir" lalu ubah yang tidak hadir.`, 'presensi');
     return true;
 }
 
@@ -541,7 +541,7 @@ function cetakPDFAbsensi() {
     const { tab, filter, list } = getAbsensiListAktif();
     const isBinaan = tab === 'binaan';
     if (list.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: isBinaan ? 'Tidak ada anak binaan untuk dicetak.' : 'Tidak ada siswa pada kelas yang dipilih.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Data Kosong', isBinaan ? 'Tidak ada anak binaan untuk dicetak.' : 'Tidak ada siswa pada kelas yang dipilih.', 'presensi');
         return;
     }
 

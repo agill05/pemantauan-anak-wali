@@ -164,7 +164,7 @@ async function simpanJurnal() {
     const el = document.getElementById("jurnal-isi");
     const isi = el ? el.value.trim() : "";
     if (!isi) {
-        Swal.fire({ icon: "warning", title: "Jurnal Kosong", text: "Tuliskan refleksi harianmu terlebih dahulu.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Jurnal Kosong", "Tuliskan refleksi harianmu terlebih dahulu.", "presensi");
         return;
     }
     const today = getDateWITA();
@@ -402,7 +402,7 @@ async function simpanCatatanJurnal(idx, slot, hapus) {
     if (!j) return;
     const catatan = hapus ? "" : String((document.getElementById("cj-catatan") || {}).value || "").trim();
     if (!hapus && !catatan) {
-        Swal.fire({ icon: "warning", title: "Catatan Kosong", text: "Tulis catatan, atau pakai tombol Hapus untuk menghapus catatan lama.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Catatan Kosong", "Tulis catatan, atau pakai tombol Hapus untuk menghapus catatan lama.", "presensi");
         return;
     }
     const btn = document.getElementById("cj-simpan");

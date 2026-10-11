@@ -436,7 +436,7 @@ function kembaliKeHariIni(target) {
 function showDateLockedAlert(state) {
     if (!state || state.editable) return;
     if (typeof Swal !== "undefined") {
-        owlAlert(state.kind === "future" ? "Belum Waktunya" : "Data Terkunci", state.message, "remind");
+        maskotAlert(state.kind === "future" ? "Belum Waktunya" : "Data Terkunci", state.message, "presensi");
     }
 }
 

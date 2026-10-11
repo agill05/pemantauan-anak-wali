@@ -426,7 +426,7 @@ function cetakPDFAkademik() {
     const selectEl = document.getElementById("akademik-siswa-filter");
     const filterSiswaId = selectEl ? selectEl.value : "";
     if (!filterSiswaId || filterSiswaId === "ALL" || filterSiswaId === "") {
-        Swal.fire({ icon: 'warning', title: 'Pilih Siswa', text: 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Pilih Siswa', 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', 'presensi');
         return;
     }
 
@@ -436,7 +436,7 @@ function cetakPDFAkademik() {
     const filteredPrestasi = (appState.prestasi || []).filter(item => String(item.siswa_id) === String(filterSiswaId));
 
     if (filteredAkademik.length === 0 && filteredPrestasi.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada data nilai maupun prestasi untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Data Kosong', 'Belum ada data nilai maupun prestasi untuk siswa ini.', 'presensi');
         return;
     }
 
