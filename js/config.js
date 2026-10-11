@@ -1,8 +1,6 @@
-/* Panjang minimal kata sandi baru (ganti password, wajib ganti, password Kepala Sekolah). */
+const API_URL = "https://script.google.com/macros/s/AKfycbwdRvaCS15PCIp7NejWu8ELefR8Ao_-8-bVWPgINcjOL-feQYD9CjaFGLjsd_9eX1Al/exec";
+
 const PASSWORD_MIN_LENGTH = 8;
-
-const API_URL = "https://script.google.com/macros/s/AKfycbxFT5zSnxsYkP2vBLUwGNjRGjXiqcwOHtnlP0DpX4-OfbHtOIE9hIRH9s8noLsAsm16/exec";
-
 const CACHE_TTL = 5 * 60 * 1000;
 const NOTIF_POLL_MS = 3 * 60 * 1000;
 
