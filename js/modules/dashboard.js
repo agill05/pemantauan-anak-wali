@@ -712,7 +712,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
         <div class="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
             ${currentList.length === 0 ? `
                 <div class="empty-state">
-                    ${activeTab === 'active' ? maskot("ceria", 96) : '<i class="fas fa-inbox text-slate-300 text-3xl mb-2"></i>'}
+                    ${activeTab === 'active' ? maskot("ceria", 96) : maskot("notifikasi", 96)}
                     <p class="text-xs font-bold text-slate-700">
                         ${activeTab === 'active' ? 'Tidak Ada Notifikasi Baru' : 'Belum Ada Notifikasi Ditandai'}
                     </p>

@@ -255,12 +255,7 @@ async function requestNotificationPermission() {
         if (permission === "granted") {
             showToast("Notifikasi browser berhasil diaktifkan!");
         } else if (permission === "denied") {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Izin Ditolak',
-                text: 'Aktifkan izin notifikasi di pengaturan browser Anda untuk menerima peringatan langsung.',
-                confirmButtonColor: '#2563eb'
-            });
+            maskotAlert('Izin Ditolak', 'Aktifkan izin notifikasi di pengaturan browser Anda untuk menerima peringatan langsung.', 'notifikasi');
         }
     }
 }

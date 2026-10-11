@@ -294,6 +294,13 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-lap-arm-r{animation:mk-lap-tap 2.2s ease-in-out infinite;transform-origin:0% 0%}
 .mk-lap-arm-l{animation:mk-ars-hug 3.4s ease-in-out infinite;transform-origin:100% 50%}
 
+/* Pose notifikasi: lonceng emas berbunyi */
+.mk-not-bell{animation:mk-not-ring 1.2s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes mk-not-ring{0%,100%{transform:rotate(0)}15%{transform:rotate(-12deg)}35%{transform:rotate(10deg)}55%{transform:rotate(-6deg)}75%{transform:rotate(3deg)}}
+.mk-not-arm{animation:mk-not-shake 1.2s ease-in-out infinite;transform-origin:100% 100%}
+@keyframes mk-not-shake{0%,100%{transform:rotate(0)}15%{transform:rotate(-2deg)}35%{transform:rotate(2deg)}55%{transform:rotate(-1deg)}}
+.mk-not-arm-r{animation:mk-sem-pump 2.4s ease-in-out infinite;transform-origin:0% 100%}
+
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}
 }
