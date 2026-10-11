@@ -45,6 +45,30 @@
 .o-spark:nth-child(3){animation-delay:.3s}
 @keyframes o-spark{0%{opacity:0;transform:scale(.4)}25%{opacity:1;transform:scale(1.1)}55%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15) translateX(-4px)}}
 
+/* Versi juara (piala + medali) */
+.t-hop{transform-origin:210px 380px}
+.t-hop.go{animation:o-hop .6s cubic-bezier(.3,.7,.4,1)}
+.t-bob{animation:o-bob 3s ease-in-out infinite;transform-origin:210px 380px}
+.t-shadow{transform-origin:208px 386px}
+.t-head{animation:o-tilt 4.5s ease-in-out infinite;transform-origin:190px 215px}
+.t-tuft-l{animation:o-twitch 5s ease-in-out infinite;transform-origin:100px 80px}
+.t-tuft-r{animation:o-twitch 5s ease-in-out 1.3s infinite;transform-origin:240px 70px}
+.t-mouth{animation:o-chirp 2.4s ease-in-out infinite;transform-origin:198px 156px}
+.t-medal{animation:t-swing 3s ease-in-out infinite;transform-origin:196px 206px}
+@keyframes t-swing{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.t-arm-l{animation:t-pump 1.8s ease-in-out infinite;transform-origin:140px 290px}
+@keyframes t-pump{0%,100%{transform:rotate(-5deg)}45%{transform:rotate(4deg) translateY(-3px)}}
+.t-fist-l{animation:o-squeeze 1.8s ease-in-out infinite;transform-origin:88px 208px}
+.t-arm-r{animation:t-sway 2.2s ease-in-out infinite;transform-origin:280px 290px}
+@keyframes t-sway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}
+.t-trophy{animation:t-lift 2.2s ease-in-out infinite;transform-origin:320px 190px}
+@keyframes t-lift{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(5deg) translateY(-5px)}}
+.t-twinkle{animation:t-twinkle 2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes t-twinkle{0%,100%{transform:scale(.4) rotate(0);opacity:.35}50%{transform:scale(1.1) rotate(25deg);opacity:1}}
+
+/* Kartu Misi Hari Ini: maskot di sisi kanan */
+.sd-mission .owl{margin:0 0 0 auto}
+
 /* Empty state dengan maskot */
 .empty-state .owl{margin-bottom:.25rem}
 

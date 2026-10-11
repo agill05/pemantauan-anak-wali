@@ -153,7 +153,7 @@ function sdMisiCard(today) {
     const rows = tugas.map(t => `<button type="button" class="sd-task ${t.ok ? "done" : ""}" onclick="switchView('${t.view}')">
         <span><i class="fas ${t.ok ? "fa-circle-check" : "fa-circle"} mr-1.5"></i>${t.label}</span><small>${t.info}</small></button>`).join("");
     return sdCard("Misi Hari Ini", `<div class="sd-mission"><div class="sd-ring" style="--p:${pct}"><span>${pct}%</span></div>
-        <p class="sd-note" style="margin:0">${pct >= 100 ? "Hebat! Semua misi hari ini selesai." : "Yuk selesaikan misimu hari ini!"}</p></div>${rows}`);
+        <p class="sd-note" style="margin:0">${pct >= 100 ? "Hebat! Semua misi hari ini selesai." : "Yuk selesaikan misimu hari ini!"}</p>${pct >= 100 ? owlTrophy(72) : ""}</div>${rows}`);
 }
 
 function sdHitungStreak(today) {

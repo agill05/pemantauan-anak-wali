@@ -419,7 +419,7 @@ function simpanKebiasaanItem(siswaId, kebiasaanId, status, jam, detail) {
     const sudah = appState.kebiasaan.filter(k =>
         String(k.siswa_id) === String(siswaId) && String(k.tanggal) === String(tanggal) && k.status === "Sudah").length;
     if (status === "Sudah" && total > 0 && sudah >= total) {
-        showToast("🌟 Luar biasa! Semua kebiasaan hari ini tuntas!");
+        owlCelebrate("Luar biasa!", "Semua kebiasaan hari ini tuntas.", "kebiasaan:" + siswaId + ":" + tanggal);
     }
 
     antrekanKebiasaan(siswaId, tanggal, kebiasaanId, status, jam, detail);

@@ -257,7 +257,7 @@ function renderAkademikPrestasi() {
     groups = gsUrutkan(groups, fk ? fk.urut : 'terbaru', g => prsSkorTertinggi(g.records));
 
     if (groups.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-trophy text-2xl mb-2 text-amber-500"></i><p class="text-xs text-slate-500">Belum ada data catatan prestasi untuk siswa ini.</p></div>`;
+        container.innerHTML = owlEmptyTrophy("Belum ada data catatan prestasi untuk siswa ini.");
         prsRefreshDetail();
         return;
     }
@@ -396,7 +396,8 @@ async function savePrestasiForm(e, id) {
         saveAppStateToLocal();
         renderAkademikPrestasi();
         closeModal();
-        showToast("Catatan prestasi tersimpan!");
+        if (id) showToast("Catatan prestasi tersimpan!");
+        else owlCelebrate("Prestasi tercatat!", "Selamat! Terus semangat berprestasi.");
     } else {
         Swal.fire({
             icon: 'error',
