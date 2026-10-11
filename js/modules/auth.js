@@ -622,8 +622,6 @@ async function continueSessionSetup() {
             renderDashboard();
         }
 
-        if (appState.user.role === "siswa" && typeof muatMisiHariIni === "function") muatMisiHariIni();
-
         startRealtimeNotificationPolling();
         startDataPolling();
         checkStudentNotifications();
@@ -657,21 +655,23 @@ function startHeaderDateTimeClock() {
     headerClockInterval = setInterval(update, 30000);
 }
 
+let notifVisibilitasTerpasang = false;
+
 function startRealtimeNotificationPolling() {
     if (notificationPollingInterval) clearInterval(notificationPollingInterval);
 
-    notificationPollingInterval = setInterval(async () => {
+    notificationPollingInterval = setInterval(() => {
         if (!appState.token || !appState.user) return;
         if (document.hidden) return;
+        checkStudentNotifications({ umumkan: true });
+    }, NOTIF_POLL_MS);
 
-        const prevCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
-        await checkStudentNotifications();
-        const currentCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
-
-        if (currentCount > prevCount) {
-            showToast(`${currentCount - prevCount} catatan siswa baru ditemukan!`, "warning");
-        }
-    }, 60000);
+    if (!notifVisibilitasTerpasang) {
+        notifVisibilitasTerpasang = true;
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden && appState.token && appState.user) checkStudentNotifications({ umumkan: true });
+        });
+    }
 }
 
 function handleLogout(force = false) {

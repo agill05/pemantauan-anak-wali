@@ -1,7 +1,7 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzospvclr4wFS6_VDl4WRKgyM9iqGLLrT40GPvIhjkJ_wxYk-Nb0YVKrJLEFw_ll9s/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxFT5zSnxsYkP2vBLUwGNjRGjXiqcwOHtnlP0DpX4-OfbHtOIE9hIRH9s8noLsAsm16/exec";
 
 const CACHE_TTL = 5 * 60 * 1000;
-const SNOOZE_24H_MS = 24 * 60 * 60 * 1000;
+const NOTIF_POLL_MS = 3 * 60 * 1000;
 
 const KEAGAMAAN_KATEGORI = {
     surah: { label: "Surah", icon: "fa-quran", judul: "Hafalan Al-Qur'an", warna: "emerald" },
