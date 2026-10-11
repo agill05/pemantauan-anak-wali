@@ -273,6 +273,13 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 @keyframes mk-kar-key{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(6deg) translateY(-4px)}}
 .mk-kar-fist{animation:mk-sem-squeeze 2.4s ease-in-out infinite;transform-origin:50% 50%}
 
+/* Pose keagamaan: tangan berdoa + Al-Qur'an di rehal */
+.mk-kag-arm{animation:mk-kag-rise 3s ease-in-out infinite;transform-origin:100% 90%}
+@keyframes mk-kag-rise{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(3deg) translateY(-5px)}}
+.mk-kag-book{animation:mk-ars-box 3.4s ease-in-out infinite;transform-origin:50% 100%}
+.mk-kag-star{animation:mk-kag-glow 2.6s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-kag-glow{0%,100%{opacity:.6;transform:scale(.94)}50%{opacity:1;transform:scale(1.08) rotate(8deg)}}
+
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}
 }

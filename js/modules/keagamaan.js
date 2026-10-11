@@ -250,7 +250,7 @@ function renderKeagamaanView() {
     const isAdminOrGuru = isStafLihat();
 
     if (isAdminOrGuru && filterSiswaId === "") {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
+        container.innerHTML = maskotKosong("Silakan pilih siswa terlebih dahulu.", 96, "keagamaan");
         return;
     }
 
@@ -273,7 +273,7 @@ function renderKeagamaanView() {
     if (urut.length === 0) {
         const emptyLabel = kat === "iqro" ? "bacaan Iqro" : (kat === "doa" ? "hafalan doa" : (kat === "surah" ? "hafalan Al-Qur'an" : "capaian keagamaan"));
         const emptyIcon = KEAGAMAAN_KATEGORI[kat] ? KEAGAMAAN_KATEGORI[kat].icon : "fa-quran";
-        container.innerHTML = progressHeaderHtml + `<div class="empty-state"><i class="fas ${emptyIcon} text-2xl mb-2 text-emerald-500"></i><p class="text-xs text-slate-500">Belum ada catatan ${emptyLabel}.</p></div>`;
+        container.innerHTML = progressHeaderHtml + maskotKosong(`Belum ada catatan ${emptyLabel}.`, 96, "keagamaan");
         kagRefreshDetail();
         return;
     }
@@ -423,7 +423,7 @@ function openModalKeagamaan(id = null, preSiswaId = null, preKat = null) {
 
     const writable = getSiswaWritable('keagamaan');
     if (!id && writable.length === 0) {
-        Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Tidak ada siswa yang dapat Anda isi capaian keagamaannya.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Tidak Ada Siswa', 'Tidak ada siswa yang dapat Anda isi capaian keagamaannya.', 'keagamaan');
         return;
     }
 
@@ -547,7 +547,7 @@ function cetakPDFKeagamaan() {
     const selectEl = document.getElementById("karakter-siswa-filter");
     const filterSiswaId = selectEl ? selectEl.value : "";
     if (!filterSiswaId || filterSiswaId === "ALL" || filterSiswaId === "") {
-        Swal.fire({ icon: 'warning', title: 'Pilih Siswa', text: 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Pilih Siswa', 'Silakan pilih satu siswa terlebih dahulu sebelum mencetak.', 'keagamaan');
         return;
     }
 
@@ -556,7 +556,7 @@ function cetakPDFKeagamaan() {
     const filteredHafalan = (appState.keagamaan || []).filter(h => String(h.siswa_id) === String(filterSiswaId));
 
     if (filteredHafalan.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Belum ada catatan keagamaan untuk siswa ini.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Data Kosong', 'Belum ada catatan keagamaan untuk siswa ini.', 'keagamaan');
         return;
     }
 
