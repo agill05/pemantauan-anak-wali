@@ -311,7 +311,7 @@ async function tlSiapkan() {
     if (!tlData) return null;
     const rows = tlFiltered();
     if (rows.length === 0) {
-        Swal.fire({ icon: "warning", title: "Data Kosong", text: "Tidak ada data tata tertib untuk diekspor.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Data Kosong", "Tidak ada data tata tertib untuk diekspor.", "tatib");
         return null;
     }
     return { base: tlBase(), rows: rows };
@@ -406,7 +406,7 @@ async function tlSuratPanggilan(siswaId) {
     const siswa = (appState.siswa || []).find(s => String(s.id) === String(siswaId));
     if (!row || !siswa) return;
     if (row.tahap < 1) {
-        Swal.fire({ icon: "info", title: "Belum Ada Panggilan", text: "Poin siswa ini belum mencapai ambang Panggilan I.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Belum Ada Panggilan", "Poin siswa ini belum mencapai ambang Panggilan I.", "tatib");
         return;
     }
     const tert = (row.panggilan_tertunda || []);

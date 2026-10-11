@@ -81,6 +81,20 @@
 .mk-pre-arm-r{animation:mk-keb-pump 3.4s ease-in-out infinite;transform-origin:50% 50%}
 .mk-pre-fist{animation:mk-keb-squeeze 3.4s ease-in-out infinite;transform-origin:50% 50%}
 
+/* Pose tatib: buku tata tertib berlogo perisai + peluit + jari menunjuk */
+.mk-tat-book{animation:mk-tat-book 3.2s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-tat-book{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-3px)}}
+.mk-tat-hand-l{animation:mk-keb-pump 3.2s ease-in-out infinite;transform-origin:50% 50%}
+.mk-tat-shield{animation:mk-tat-shield 2.4s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-tat-shield{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.08);filter:brightness(1.15)}}
+.mk-tat-whistle{animation:mk-tat-swing 2.8s ease-in-out infinite;transform-origin:50% 0}
+@keyframes mk-tat-swing{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.mk-tat-point{animation:mk-tat-poke 1.8s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-tat-poke{0%,55%,100%{transform:translate(0,0) scale(1)}18%{transform:translate(3px,-5px) scale(1.07)}32%{transform:translate(0,0) scale(1)}}
+.mk-tat-finger{animation:mk-tat-wag 1.8s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-tat-wag{0%,60%,100%{transform:rotate(0)}15%{transform:rotate(-8deg)}30%{transform:rotate(6deg)}45%{transform:rotate(-4deg)}}
+.mk-tat-tail{animation:mk-keb-tail 2.6s ease-in-out infinite;transform-origin:0% 30%}
+
 /* Empty state dengan maskot */
 .empty-state .mk{margin-bottom:.25rem}
 [data-maskot]>.mk{max-width:100%}

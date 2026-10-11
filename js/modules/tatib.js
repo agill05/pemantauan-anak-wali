@@ -215,7 +215,7 @@ function renderTatibView() {
     groups = gsUrutkan(groups, fk ? fk.urut : "mendesak", g => Number(ttRekapSiswa(g.siswaId).total) || 0);
 
     if (groups.length === 0) {
-        container.innerHTML = owlEmpty("Belum ada catatan tata tertib.");
+        container.innerHTML = maskotKosong("Belum ada catatan tata tertib.", 96, "tatib");
         tatibRefreshDetail();
         return;
     }
@@ -405,13 +405,13 @@ async function openModalTatibPanggilan(siswaId, tahap = "", id = null) {
     const p = id ? (tatibPanggilan || []).find(x => String(x.id) === String(id)) : null;
     if (id && !p) return;
     if (!id && !tatibBisaCatatPanggilan(siswaId)) {
-        Swal.fire({ icon: "info", title: "Akses Ditolak", text: "Hanya wali kelas siswa atau admin yang dapat mencatat panggilan orang tua.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Akses Ditolak", "Hanya wali kelas siswa atau admin yang dapat mencatat panggilan orang tua.", "tatib");
         return;
     }
     const sudah = new Set(ttPanggilanSiswa(siswaId).map(x => String(x.tahap)));
     const bolehTahap = id ? [String(p.tahap)] : ["I", "II", "III"].filter(t => !sudah.has(t));
     if (!bolehTahap.length) {
-        Swal.fire({ icon: "info", title: "Sudah Lengkap", text: "Panggilan I, II, dan III sudah dicatat.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Sudah Lengkap", "Panggilan I, II, dan III sudah dicatat.", "tatib");
         return;
     }
     const pilih = bolehTahap.includes(String(tahap)) ? String(tahap) : (ttTertunda(siswaId).find(t => bolehTahap.includes(t)) || bolehTahap[0]);
@@ -535,7 +535,7 @@ async function openModalTatibInput(preSiswaId = null) {
     if (!box) return;
     const writable = sortSiswa(getSiswaWritable("tatib"));
     if (writable.length === 0) {
-        Swal.fire({ icon: "info", title: "Tidak Ada Siswa", text: "Tidak ada siswa yang dapat Anda beri catatan tata tertib.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Tidak Ada Siswa", "Tidak ada siswa yang dapat Anda beri catatan tata tertib.", "tatib");
         return;
     }
     const siap = await ttPastikanMaster();
@@ -544,7 +544,7 @@ async function openModalTatibInput(preSiswaId = null) {
         return;
     }
     if (tatibMaster.master.length === 0) {
-        Swal.fire({ icon: "info", title: "Daftar Kosong", text: "Daftar tata tertib belum diisi. Hubungi admin.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Daftar Kosong", "Daftar tata tertib belum diisi. Hubungi admin.", "tatib");
         return;
     }
 
@@ -648,7 +648,7 @@ function ttRenderSiswa() {
 }
 
 function ttPeringatanBatas() {
-    Swal.fire({ icon: "info", title: "Batas Tercapai", text: `Maksimal ${TT_MAKS_SISWA} siswa sekali simpan.`, confirmButtonColor: "#2563eb" });
+    maskotAlert("Batas Tercapai", `Maksimal ${TT_MAKS_SISWA} siswa sekali simpan.`, "tatib");
 }
 
 function ttToggleSiswa(id, aktif) {
@@ -825,7 +825,7 @@ function ttRenderPratinjau() {
 async function simpanTatibForm(e) {
     e.preventDefault();
     const m = ttMasterTerpilih();
-    const peringatan = (text) => Swal.fire({ icon: "warning", title: "Data Belum Lengkap", text, confirmButtonColor: "#2563eb" });
+    const peringatan = (text) => maskotAlert("Data Belum Lengkap", text, "tatib");
     if (ttForm.siswa.size === 0) return peringatan("Pilih minimal satu siswa.");
     if (!m) return peringatan("Pilih item pelanggaran atau penghargaan.");
     const skor = ttSkorSaatIni();
@@ -923,7 +923,7 @@ async function simpanTatibEdit(e, id) {
     const v = (el) => String((document.getElementById(el) || {}).value || "").trim();
     const skor = v("tt-e-skor");
     if (!/^\d+$/.test(skor)) {
-        Swal.fire({ icon: "warning", title: "Skor Tidak Valid", text: "Skor harus bilangan bulat.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Skor Tidak Valid", "Skor harus bilangan bulat.", "tatib");
         return;
     }
     const btn = document.getElementById("btn-save-tatib-edit");
@@ -1193,7 +1193,7 @@ function ttBacaRenderList() {
         return `${m.kategori}${m.no} ${m.nama} ${m.catatan_aturan || ""} ${syarat} ${ttNamaKategori(m.kategori)}`.toLowerCase().includes(kata);
     });
     if (items.length === 0) {
-        list.innerHTML = owlEmpty(kata ? "Tidak ada aturan yang cocok dengan pencarian." : "Belum ada aturan tata tertib.");
+        list.innerHTML = maskotKosong(kata ? "Tidak ada aturan yang cocok dengan pencarian." : "Belum ada aturan tata tertib.", 96, "tatib");
         return;
     }
     const kategoriUrut = Array.from(new Set(items.map(m => m.kategori)));
