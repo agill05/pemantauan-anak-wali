@@ -622,8 +622,6 @@ async function continueSessionSetup() {
             renderDashboard();
         }
 
-        if (appState.user.role === "siswa" && typeof muatMisiHariIni === "function") muatMisiHariIni();
-
         startRealtimeNotificationPolling();
         startDataPolling();
         checkStudentNotifications();
