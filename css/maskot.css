@@ -263,6 +263,16 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 @keyframes mk-sem-squeeze{0%,100%{transform:scale(1)}45%{transform:scale(1.1)}}
 .mk-sem-wing-r{animation:mk-ars-hug 3s ease-in-out infinite;transform-origin:50% 0}
 
+/* Pose kartu: kartu siswa + kunci emas */
+.mk-kar-card{animation:mk-kar-sway 3.2s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-kar-sway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg) translateY(-3px)}}
+.mk-kar-arm-l{animation:mk-ars-hug 3.2s ease-in-out infinite;transform-origin:100% 50%}
+.mk-kar-arm-r{animation:mk-kar-arm 2.4s ease-in-out infinite;transform-origin:0% 50%}
+@keyframes mk-kar-arm{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+.mk-kar-key{animation:mk-kar-key 2.4s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes mk-kar-key{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(6deg) translateY(-4px)}}
+.mk-kar-fist{animation:mk-sem-squeeze 2.4s ease-in-out infinite;transform-origin:50% 50%}
+
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}
 }

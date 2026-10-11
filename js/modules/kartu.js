@@ -12,12 +12,7 @@ function _kartuBolehAkses() {
     const role = String((appState.user && appState.user.role) || "").toLowerCase();
     if (role === "admin") return true;
     if (role === "guru" && isWaliUser()) return true;
-    Swal.fire({
-        icon: "info",
-        title: "Tidak Tersedia",
-        text: role === "guru" ? "Cetak kartu akun hanya untuk wali kelas." : "Fitur ini tidak tersedia untuk peran Anda.",
-        confirmButtonColor: "#2563eb"
-    });
+    maskotAlert("Tidak Tersedia", role === "guru" ? "Cetak kartu akun hanya untuk wali kelas." : "Fitur ini tidak tersedia untuk peran Anda.", "kartu");
     return false;
 }
 
@@ -130,7 +125,7 @@ function _kartuRenderDaftar() {
     if (!wadah) return;
     const tampil = _kartuDaftarTampil();
     if (tampil.length === 0) {
-        wadah.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Tidak ada siswa di kelas ini.</p>`;
+        wadah.innerHTML = maskotKosong("Tidak ada siswa di kelas ini.", 96, "kartu");
     } else {
         wadah.innerHTML = tampil.map(s => {
             const id = String(s.id);
@@ -202,7 +197,7 @@ async function kartuProses(mode) {
         const dapat = terpilih.filter(s => Object.prototype.hasOwnProperty.call(res.data.pakai_default, String(s.id)));
         if (dapat.length === 0) {
             hideLoading();
-            Swal.fire({ icon: "warning", title: "Tidak Ada Kartu", text: "Siswa terpilih tidak berada dalam akses Anda.", confirmButtonColor: "#2563eb" });
+            maskotAlert("Tidak Ada Kartu", "Siswa terpilih tidak berada dalam akses Anda.", "kartu");
             return;
         }
 
