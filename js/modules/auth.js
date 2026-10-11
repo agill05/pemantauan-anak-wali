@@ -490,9 +490,9 @@ function showForcePasswordChangeModal() {
                 </div>
             </div>
             <div>
-                <label for="force-pwd-new" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD BARU (MIN. 6 KARAKTER)</label>
+                <label for="force-pwd-new" class="block text-xs font-bold text-slate-500 mb-1">PASSWORD BARU (MIN. ${PASSWORD_MIN_LENGTH} KARAKTER)</label>
                 <div class="relative">
-                    <input type="password" id="force-pwd-new" minlength="6" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required>
+                    <input type="password" id="force-pwd-new" minlength="${PASSWORD_MIN_LENGTH}" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required>
                     <button type="button" onclick="togglePasswordVisibility('force-pwd-new', this)" class="pwd-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
                         <i class="fas fa-eye"></i>
                     </button>
@@ -509,6 +509,11 @@ async function submitForcePasswordChange(e) {
     e.preventDefault();
     const oldPassword = document.getElementById("force-pwd-old").value;
     const newPassword = document.getElementById("force-pwd-new").value;
+
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+        Swal.fire({ icon: 'warning', title: 'Password Terlalu Pendek', text: `Kata sandi baru minimal ${PASSWORD_MIN_LENGTH} karakter.`, confirmButtonColor: '#2563eb' });
+        return;
+    }
 
     const btn = document.getElementById("btn-force-pwd");
     const originalHtml = btn ? btn.innerHTML : "";
@@ -909,7 +914,7 @@ function openUserSettingsModal() {
                     </button>
                 </div>
                 <div class="relative">
-                    <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" aria-label="Kata sandi baru" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required minlength="6">
+                    <input type="password" id="m-pwd-new" placeholder="Kata sandi baru" aria-label="Kata sandi baru" class="w-full bg-white border p-2.5 pr-9 rounded-xl text-xs outline-none" required minlength="${PASSWORD_MIN_LENGTH}">
                     <button type="button" onclick="togglePasswordVisibility('m-pwd-new', this)" class="pwd-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Tampilkan kata sandi">
                         <i class="fas fa-eye"></i>
                     </button>
@@ -930,8 +935,8 @@ async function changePasswordForm(e) {
     const oldPassword = document.getElementById("m-pwd-old").value;
     const newPassword = document.getElementById("m-pwd-new").value;
 
-    if (newPassword.length < 6) {
-        Swal.fire({ icon: 'warning', title: 'Password Terlalu Pendek', text: 'Kata sandi baru minimal 6 karakter.', confirmButtonColor: '#2563eb' });
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+        Swal.fire({ icon: 'warning', title: 'Password Terlalu Pendek', text: `Kata sandi baru minimal ${PASSWORD_MIN_LENGTH} karakter.`, confirmButtonColor: '#2563eb' });
         return;
     }
 

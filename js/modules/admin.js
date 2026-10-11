@@ -144,6 +144,11 @@ async function saveSekolahForm(e) {
         return;
     }
 
+    if (password && password.length < PASSWORD_MIN_LENGTH) {
+        Swal.fire({ icon: "warning", title: "Password Terlalu Pendek", text: `Password Kepala Sekolah minimal ${PASSWORD_MIN_LENGTH} karakter.`, confirmButtonColor: "#2563eb" });
+        return;
+    }
+
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';

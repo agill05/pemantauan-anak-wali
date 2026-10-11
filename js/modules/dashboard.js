@@ -38,7 +38,8 @@ function kandidatUcapanMaskot() {
     const today = getDateWITA();
     const jam = typeof getJamWITA === "function" ? getJamWITA() : new Date().getHours();
     const isSiswa = u.role === "siswa";
-    const pose = isSiswa ? "siswa" : "guru";
+    const isAdmin = u.role === "admin";
+    const pose = isSiswa ? "siswa" : isAdmin ? "admin" : "guru";
     const tambah = (o) => daftar.push(Object.assign({ pose }, o));
     const notifAktif = appState.notificationsReady ? (appState.currentNotifications || []) : [];
 
@@ -73,6 +74,52 @@ function kandidatUcapanMaskot() {
             });
         } else if (appState.notificationsReady) {
             tambah({ kunci: "s-aman", bobot: 1, tingkat: "baik", teks: "Tidak ada indikator perhatian aktif untukmu." });
+        }
+    } else if (isAdmin) {
+        // Admin mengelola data, bukan mengisi presensi atau membina siswa. Ucapan hanya soal ringkasan dan kerapian data.
+        if (appState.notificationsReady) {
+            const perSiswa = new Map();
+            notifAktif.forEach(n => {
+                if (!n || !n.siswa) return;
+                const id = String(n.siswa.id);
+                const e = perSiswa.get(id) || { level: "rendah", tingkat: 0 };
+                const t = UCAP_LEVEL[n.level] || 1;
+                if (t > e.tingkat) { e.tingkat = t; e.level = n.level; }
+                perSiswa.set(id, e);
+            });
+            const semua = Array.from(perSiswa.values());
+            const kritis = semua.filter(e => e.level === "kritis").length;
+            if (kritis) {
+                tambah({ kunci: "a-kritis", view: "siswa", bobot: 5, tingkat: "kritis", angka: kritis, teks: "siswa berstatus kritis di seluruh sekolah." });
+            }
+            if (semua.length) {
+                tambah({ kunci: "a-perhatian", view: "siswa", bobot: 3, tingkat: semua.some(e => e.level === "kritis") ? "kritis" : "sedang", angka: semua.length, teks: "siswa perlu perhatian." });
+            } else {
+                tambah({ kunci: "a-aman", bobot: 1, tingkat: "baik", teks: "Tidak ada siswa yang perlu perhatian saat ini." });
+            }
+        }
+
+        // Kerapian data master: hanya dihitung bila daftar siswa dan kelas sudah termuat.
+        const siswaAll = appState.siswa || [];
+        const kelasAll = appState.kelas || [];
+        if (siswaAll.length) {
+            const tanpaKelas = siswaAll.filter(s => !String(s.kelas_id || "").trim()).length;
+            const tanpaMentor = siswaAll.filter(s => !String(s.mentor_id || "").trim()).length;
+            if (tanpaKelas) {
+                tambah({ kunci: "a-tanpa-kelas", view: "admin-manage", bobot: 4, tingkat: "sedang", angka: tanpaKelas, teks: "siswa belum punya kelas." });
+            }
+            if (tanpaMentor) {
+                tambah({ kunci: "a-tanpa-mentor", view: "admin-manage", bobot: 3, tingkat: "rendah", angka: tanpaMentor, teks: "siswa belum punya mentor." });
+            }
+        }
+        if (kelasAll.length) {
+            const tanpaWali = kelasAll.filter(k => !String(k.guru_id || "").trim()).length;
+            if (tanpaWali) {
+                tambah({ kunci: "a-tanpa-wali", view: "admin-manage", bobot: 4, tingkat: "sedang", angka: tanpaWali, teks: "kelas belum punya wali kelas." });
+            }
+        }
+        if (siswaAll.length && !daftar.some(d => d.kunci.indexOf("a-tanpa") === 0)) {
+            tambah({ kunci: "a-data-rapi", bobot: 1, tingkat: "baik", teks: `Data master rapi: ${siswaAll.length} siswa, ${kelasAll.length} kelas, ${(appState.guru || []).length} guru.` });
         }
     } else {
         const nama = u.role === "guru" ? getLabelSiswa().toLowerCase() : "siswa";
@@ -180,9 +227,10 @@ function ucapanMaskotDashboard() {
         // Tunggu data misi (maksimal 2,5 detik) agar ucapan sesuai kondisi hari ini.
         Promise.race([muatMisiHariIni(), new Promise(r => setTimeout(r, 2500))]).then(pasang, pasang);
     } else {
-        // Guru, admin, kepsek: muat presensi hari ini agar angka "belum dipresensi" nyata. Giliran berikutnya otomatis memakai data baru.
+        // Guru dan kepsek: muat presensi hari ini agar angka "belum dipresensi" nyata. Admin tidak memakai data presensi.
+        // Giliran berikutnya otomatis memakai data baru.
         try {
-            if (typeof loadAbsensiData === "function" && absensiLoadedTanggal !== getDateWITA()) Promise.resolve(loadAbsensiData()).catch(() => { });
+            if (u.role !== "admin" && typeof loadAbsensiData === "function" && absensiLoadedTanggal !== getDateWITA()) Promise.resolve(loadAbsensiData()).catch(() => { });
         } catch (e) { /* abaikan */ }
         pasang();
     }
