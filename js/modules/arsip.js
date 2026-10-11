@@ -107,7 +107,7 @@ function arsipSayaGambarDaftar() {
             : role === "guru"
                 ? "Belum ada arsip semester untuk siswa yang kamu dampingi."
                 : "Belum ada arsip semester.";
-        list.innerHTML = maskotKosong(teks, 96, "biasa");
+        list.innerHTML = maskotKosong(teks, 96, "arsip");
         return;
     }
     const penuh = arsipSayaRole() === "kepsek";

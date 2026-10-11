@@ -11,7 +11,8 @@
  *       tatib (buku tata tertib + peluit + jari menunjuk: aturan, pelanggaran, peringatan tata tertib),
  *       biasa (netral: loading, empty state umum), piala (prestasi, perayaan),
  *       admin (kunci inggris + gir: pengelolaan data, pengaturan, menu admin),
- *       pengingat (papan centang + jam: tenggat, jadwal), ceria (sayap terangkat: sambutan, kabar baik).
+ *       pengingat (papan centang + jam: tenggat, jadwal), ceria (sayap terangkat: sambutan, kabar baik),
+ *       arsip (kotak map warna-warni: arsip, berkas, riwayat).
  */
 function maskotAman(t) {
     if (typeof escapeHtml === "function") return escapeHtml(String(t == null ? "" : t));
@@ -118,8 +119,75 @@ function maskotAdmin(size) {
     return `<svg class="mk mk-adm" width="${s}" height="${s}" viewBox="0 0 400 400" aria-hidden="true" focusable="false"><ellipse class="mk-shadow" cx="208" cy="380" rx="100" ry="7" fill="#000" opacity=".12"/><g transform="translate(16 40)"><g class="mk-adm-sparks" fill="none" stroke="#F9B71A" stroke-width="6" stroke-linecap="round"><path class="mk-adm-spark" d="M344 58L342 78"/><path class="mk-adm-spark" style="animation-delay:.25s" d="M372 72L362 86"/><path class="mk-adm-spark" style="animation-delay:.5s" d="M384 104L368 108"/></g><g class="mk-adm-gear-s"><path d="M366.0 112.0L365.9 113.9L372.6 116.6L370.9 122.3L363.8 121.1L360.1 126.1L358.7 127.4L361.5 134.1L356.3 136.9L352.2 131.0L346.0 132.0L344.1 131.9L341.4 138.6L335.7 136.9L336.9 129.8L331.9 126.1L330.6 124.7L323.9 127.5L321.1 122.3L327.0 118.2L326.0 112.0L326.1 110.1L319.4 107.4L321.1 101.7L328.2 102.9L331.9 97.9L333.3 96.6L330.5 89.9L335.7 87.1L339.8 93.0L346.0 92.0L347.9 92.1L350.6 85.4L356.3 87.1L355.1 94.2L360.1 97.9L361.4 99.3L368.1 96.5L370.9 101.7L365.0 105.8Z" fill="#F9B71A" stroke="#3A1F14" stroke-width="3.5" stroke-linejoin="round"/><circle cx="346" cy="112" r="7" fill="#FDEBD3" stroke="#3A1F14" stroke-width="3"/></g></g><g class="mk-hop"><g class="mk-bob"><path class="mk-adm-tail" d="M262 304C284 304 304 312 316 326C312 338 298 340 288 334C280 338 268 334 262 326Z" fill="#8F4A24" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><g fill="#F9A91B" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"><path d="M148 334L162 346Q142 350 130 360Q122 368 134 371L164 371Q178 364 172 354L176 338Z"/><path d="M244 336L234 348Q254 350 264 358Q270 367 258 369L234 367Q224 360 230 351L230 340Z"/></g><ellipse cx="200" cy="270" rx="70" ry="60" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4"/><ellipse cx="190" cy="274" rx="48" ry="50" fill="#FDEBD3"/><g fill="none" stroke="#E2B98C" stroke-width="4" stroke-linecap="round"><path d="M160 262q9 11 18 0"/><path d="M196 264q9 11 18 0"/><path d="M174 294q9 11 18 0"/><path d="M204 296q9 11 18 0"/></g><g class="mk-head"><g transform="translate(-28 -41) scale(1.08)"><path class="mk-tuft-l" d="M120 110C118 92 124 74 140 60C158 72 176 82 196 92Z" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><path d="M196 94Q204 74 224 70Q240 72 246 82Q256 80 258 90Q232 92 224 100Z" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><path class="mk-tuft-r" d="M270 104L332 84Q338 100 330 112L342 126L312 142Z" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><ellipse cx="214" cy="160" rx="102" ry="80" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4"/><ellipse cx="160" cy="158" rx="52" ry="58" fill="#FDEBD3"/><ellipse cx="262" cy="172" rx="54" ry="58" fill="#FDEBD3"/><ellipse cx="212" cy="198" rx="76" ry="36" fill="#FDEBD3"/><ellipse cx="148" cy="200" rx="15" ry="10" fill="#F7C9A8" opacity=".85"/><ellipse cx="272" cy="218" rx="17" ry="10" fill="#F7C9A8" opacity=".85"/><g fill="#FFFBF2" stroke="#1B2A4A" stroke-width="7"><circle cx="166" cy="160" r="36"/><circle cx="258" cy="178" r="34"/></g><g stroke="#1B2A4A" stroke-width="7" fill="none" stroke-linecap="round"><path d="M201 160Q212 158 224 170"/><path d="M130 150L118 146"/><path d="M292 180L306 182"/></g><g class="mk-look"><g class="mk-iris"><circle cx="176" cy="164" r="21" fill="#5A2E1B"/><circle cx="177" cy="165" r="13" fill="#2B130B"/><circle cx="183" cy="154" r="5.5" fill="#fff"/><circle cx="171" cy="172" r="2.6" fill="#fff"/></g><g class="mk-iris"><circle cx="266" cy="184" r="19" fill="#5A2E1B"/><circle cx="267" cy="185" r="12.5" fill="#2B130B"/><circle cx="272" cy="175" r="5" fill="#fff"/><circle cx="262" cy="191" r="2.4" fill="#fff"/></g></g><path class="mk-brow" d="M166 118L194 133" stroke="#3A1F14" stroke-width="6" stroke-linecap="round" fill="none"/><path class="mk-brow" d="M238 150Q256 140 276 134" stroke="#3A1F14" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M188 178Q207 162 228 176Q226 206 208 216Q190 206 188 178Z" fill="#F9A91B" stroke="#3A1F14" stroke-width="3" stroke-linejoin="round"/><path class="mk-mouth" d="M195 189Q208 197 221 187Q220 207 208 210Q197 205 195 189Z" fill="#F5694A"/></g></g><g class="mk-bow" stroke="#0F1A33" stroke-width="3" stroke-linejoin="round" fill="#1F2E52"><path d="M184 212L158 196Q153 216 162 232Z"/><path d="M204 212L230 205Q234 224 222 234Z"/><rect x="182" y="203" width="26" height="20" rx="5"/></g><g class="mk-adm-gear"><path d="M340.0 302.0L339.9 305.8L353.4 310.8L350.9 321.8L336.5 320.4L330.5 331.4L328.1 334.4L336.1 346.4L327.6 353.8L316.8 344.2L305.5 349.6L301.8 350.6L301.2 365.0L290.0 366.0L286.9 351.9L274.5 349.6L271.0 348.3L262.0 359.6L252.4 353.8L258.1 340.5L249.5 331.4L247.5 328.3L233.5 332.1L229.1 321.8L241.6 314.4L240.0 302.0L240.1 298.2L226.6 293.2L229.1 282.2L243.5 283.6L249.5 272.6L251.9 269.6L243.9 257.6L252.4 250.2L263.2 259.8L274.5 254.4L278.2 253.4L278.8 239.0L290.0 238.0L293.1 252.1L305.5 254.4L309.0 255.7L318.0 244.4L327.6 250.2L321.9 263.5L330.5 272.6L332.5 275.7L346.5 271.9L350.9 282.2L338.4 289.6Z" fill="#7D90B6" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><circle cx="290" cy="302" r="34" fill="none" stroke="#5E7199" stroke-width="5"/><circle cx="290" cy="302" r="15" fill="#FDEBD3" stroke="#3A1F14" stroke-width="4"/><path d="M262 276Q270 266 282 262" fill="none" stroke="#A9B8D6" stroke-width="4" stroke-linecap="round"/></g><g class="mk-adm-tool"><g class="mk-adm-wrench"><g transform="translate(168 298) rotate(-15)"><path d="M-76 -10L8 -15Q20 -26 40 -28L64 -28Q78 -24 82 -12L82 -7L62 -7Q55 -7 55 0Q55 7 62 7L82 7L82 12Q78 24 64 28L40 28Q20 26 8 15L-76 10Q-90 0 -76 -10Z" fill="#7D90B6" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><circle cx="-72" cy="0" r="5.5" fill="#FDEBD3" stroke="#3A1F14" stroke-width="3"/><rect x="-14" y="-12" width="26" height="24" rx="4" fill="#5E7199" stroke="#3A1F14" stroke-width="3"/><path d="M-8 -5H6M-8 0H6M-8 5H6" stroke="#2A3A5C" stroke-width="2.5" stroke-linecap="round"/><path d="M-62 -4L0 -9" stroke="#A9B8D6" stroke-width="3.5" stroke-linecap="round" fill="none"/></g></g><g class="mk-adm-wing-l"><path d="M150 244C118 240 84 252 66 276C56 292 62 312 78 320C84 330 98 332 104 324C114 332 128 328 130 318C142 316 152 304 154 290Z" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><path d="M104 324C114 332 128 328 130 318C142 316 152 304 154 290L132 296C122 306 108 312 98 312Z" fill="#9A5128"/><g fill="none" stroke="#3A1F14" stroke-width="3" stroke-linecap="round"><path d="M84 296Q96 298 100 310"/><path d="M104 292Q116 296 118 308"/></g></g></g><g class="mk-adm-wing-r"><path d="M262 276C290 270 322 284 336 308C344 322 338 340 324 342C320 350 308 352 302 344C294 350 282 346 280 336C268 330 262 310 262 276Z" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><path d="M302 344C294 350 282 346 280 336C268 330 264 316 264 304L290 322C300 330 312 336 322 336Z" fill="#9A5128"/><g fill="none" stroke="#3A1F14" stroke-width="3" stroke-linecap="round"><path d="M312 306Q322 312 322 324"/><path d="M296 312Q306 318 306 330"/></g></g></g></g></svg>`;
 }
 
+/* Rangka bersama untuk pose set kedua: kaki, badan, kepala, kacamata, paruh, dasi kupu-kupu.
+ * belakang = bagian di belakang kepala; depan = lengan dan prop di depan badan.
+ * opsi.alis = "serius" (alis menukik), opsi.bintang = true (mata berbintang), opsi.mulut = "tutup". */
+function maskotRangka(kls, belakang, depan, opsi) {
+    var o = opsi || {}, s = o.ukuran || 120;
+    var alis = o.alis === "serius"
+        ? '<path class="mk-brow" d="M112 112 L156 130" stroke="#3A1F14" stroke-width="6" stroke-linecap="round" fill="none"/><path class="mk-brow" d="M288 112 L244 130" stroke="#3A1F14" stroke-width="6" stroke-linecap="round" fill="none"/>'
+        : '<path class="mk-brow" d="M120 118 Q138 106 158 114" stroke="#3A1F14" stroke-width="6" stroke-linecap="round" fill="none"/><path class="mk-brow" d="M242 114 Q262 106 280 118" stroke="#3A1F14" stroke-width="6" stroke-linecap="round" fill="none"/>';
+    var bintang = o.bintang
+        ? '<path class="mk-star" d="M146 166 L149 174 L157 176 L149 179 L146 187 L143 179 L135 176 L143 174Z" fill="#F9A91B"/><path class="mk-star" d="M254 166 L257 174 L265 176 L257 179 L254 187 L251 179 L243 176 L251 174Z" fill="#F9A91B"/>'
+        : '';
+    return `<svg class="mk mk-${kls}" width="${s}" height="${s}" viewBox="0 0 400 400" aria-hidden="true" focusable="false">` +
+        `<ellipse class="mk-shadow" cx="200" cy="389" rx="96" ry="7" fill="#000" opacity=".12"/>` +
+        `<g class="mk-hop"><g class="mk-bob">` +
+        `<g fill="#F9A91B" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"><path d="M148 350 h26 l4 18 q14 4 12 14 q-14 6 -26 0 q-14 6 -30 0 q-4 -10 10 -14 Z"/><path transform="translate(400 0) scale(-1 1)" d="M148 350 h26 l4 18 q14 4 12 14 q-14 6 -26 0 q-14 6 -30 0 q-4 -10 10 -14 Z"/></g>` +
+        `<ellipse cx="200" cy="296" rx="90" ry="76" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4"/>` +
+        `<ellipse cx="200" cy="308" rx="54" ry="58" fill="#FDEBD3"/>` +
+        `<g fill="none" stroke="#E2B98C" stroke-width="4" stroke-linecap="round"><path d="M168 286 q10 12 20 0"/><path d="M204 286 q10 12 20 0"/><path d="M186 316 q10 12 20 0"/><path d="M168 340 q10 12 20 0"/><path d="M204 340 q10 12 20 0"/></g>` +
+        (belakang || '') +
+        `<g class="mk-head">` +
+        `<path class="mk-tuft-l" d="M88 132 L78 56 Q82 44 94 50 L152 88 L172 102 Z" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>` +
+        `<path class="mk-tuft-r" d="M312 132 L322 56 Q318 44 306 50 L248 88 L228 102 Z" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>` +
+        `<path d="M168 88 Q178 52 204 54 Q226 56 232 72 Q248 72 250 84 Q226 90 218 100 Z" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>` +
+        `<ellipse cx="200" cy="168" rx="128" ry="98" fill="#BF6F3D" stroke="#3A1F14" stroke-width="4"/>` +
+        `<ellipse cx="146" cy="170" rx="62" ry="68" fill="#FDEBD3"/><ellipse cx="254" cy="170" rx="62" ry="68" fill="#FDEBD3"/><ellipse cx="200" cy="208" rx="88" ry="42" fill="#FDEBD3"/>` +
+        `<ellipse cx="108" cy="212" rx="15" ry="10" fill="#F7C9A8"/><ellipse cx="292" cy="212" rx="15" ry="10" fill="#F7C9A8"/>` +
+        `<g fill="#FFFBF2" stroke="#1B2A4A" stroke-width="6"><circle cx="146" cy="174" r="44"/><circle cx="254" cy="174" r="44"/></g>` +
+        `<path d="M190 172 Q200 166 210 172" stroke="#1B2A4A" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M102 166 L92 162 M298 166 L308 162" stroke="#1B2A4A" stroke-width="6" stroke-linecap="round"/>` +
+        `<g class="mk-look">` +
+        `<g class="mk-iris"><circle cx="148" cy="176" r="23" fill="#5A2E1B"/><circle cx="150" cy="178" r="15" fill="#2B130B"/><circle cx="158" cy="166" r="6" fill="#fff"/></g>` +
+        `<g class="mk-iris"><circle cx="256" cy="176" r="23" fill="#5A2E1B"/><circle cx="258" cy="178" r="15" fill="#2B130B"/><circle cx="266" cy="166" r="6" fill="#fff"/></g>` +
+        bintang + `</g>` +
+        alis +
+        `<path d="M184 192 Q200 178 216 192 Q214 216 200 224 Q186 216 184 192Z" fill="#F9A91B" stroke="#3A1F14" stroke-width="3" stroke-linejoin="round"/>` +
+        `<path class="mk-mouth" d="M191 200 Q200 210 209 200 Q207 216 200 218 Q193 214 191 200Z" fill="#F5694A"/>` +
+        `</g>` +
+        `<g class="mk-bow" stroke="#0F1A33" stroke-width="3" stroke-linejoin="round" fill="#1F2E52"><path d="M200 268 L158 248 Q150 270 160 288 Z"/><path d="M200 268 L242 248 Q250 270 240 288 Z"/><rect x="186" y="257" width="28" height="22" rx="6"/></g>` +
+        (depan || '') +
+        `</g></g></svg>`;
+}
+
+/* Bahan gambar pose set kedua */
+var MASKOT_SAYAP = "#BF6F3D", MASKOT_SAYAP_GELAP = "#9A5128", MASKOT_GARIS = "#3A1F14";
+function maskotPercik(rays) {
+    return '<g class="mk-sps" stroke="#F9A91B" stroke-width="8" stroke-linecap="round">' + rays.map(function (d) { return '<path class="mk-sp" d="' + d + '"/>'; }).join("") + '</g>';
+}
+function maskotMap(x, y, w, h, warna, label) {
+    return '<g class="mk-ars-f"><path d="M' + x + ' ' + (y + 6) + ' q0 -6 6 -6 h14 q4 0 6 4 l3 4 h' + (w - 29) + ' q6 0 6 6 v' + h + ' h-' + w + ' Z" fill="' + warna + '" stroke="#3A1F14" stroke-width="3" stroke-linejoin="round"/>' +
+        (label ? '<rect x="' + (x + 8) + '" y="' + (y + 12) + '" width="' + Math.round(w * 0.48) + '" height="6" rx="2" fill="#FDEBD3" opacity=".92"/>' : '') + '</g>';
+}
+
+/* Pose "arsip": membawa kotak penuh map warna-warni. Untuk arsip, berkas, riwayat, dan data tersimpan. */
+function maskotArsip(size) {
+    var isi = '<g class="mk-ars-isi">' + maskotMap(176, 266, 44, 50, "#D94B3F", true) + maskotMap(144, 262, 44, 54, "#FDB827", true) + maskotMap(112, 264, 44, 52, "#5AAE4F", true) + maskotMap(80, 268, 44, 48, "#2E86D6", true) + '</g>';
+    var kotak = '<g class="mk-ars-box"><path d="M26 296 L66 312 L96 296 Z" fill="#D8995A" stroke="#3A1F14" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M62 310 L242 316 L238 372 L66 366 Z" fill="#E3A86B" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>' +
+        '<path d="M64 312 L240 318 L240 328 L64 322 Z" fill="#B97D43" opacity=".55"/>' +
+        '<rect x="150" y="338" width="44" height="11" rx="5.5" fill="#8A5A2B" stroke="#3A1F14" stroke-width="2.5"/></g>';
+    var map = '<g class="mk-ars-map"><g transform="translate(-22 -14)"><g transform="rotate(-14 110 270)"><path d="M62 252 q0 -8 8 -8 h30 q5 0 8 5 l4 6 h56 q8 0 8 8 v50 h-114 Z" fill="#1F3A6B" stroke="#0F1A33" stroke-width="4" stroke-linejoin="round"/><rect x="76" y="258" width="38" height="11" rx="3" fill="#FDEBD3"/></g>' +
+        '<path d="M150 236 C122 240 100 250 92 264 C86 276 94 288 106 284 L138 270 C154 262 158 248 150 236Z" fill="' + MASKOT_SAYAP + '" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>' +
+        '<path d="M76 266 q-10 -16 4 -26 q14 -6 26 4 l6 16 q-6 14 -22 16 q-10 0 -14 -10Z" fill="' + MASKOT_SAYAP + '" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>' +
+        '<g fill="none" stroke="#3A1F14" stroke-width="3" stroke-linecap="round"><path d="M86 246 q8 4 8 14"/><path d="M96 244 q8 6 6 16"/></g></g></g>';
+    var kanan = '<g class="mk-ars-wing-r"><path d="M252 244 C284 252 298 286 284 324 C276 346 252 358 228 354 C216 344 224 332 238 328 C252 318 254 300 246 284 Z" fill="' + MASKOT_SAYAP + '" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/>' +
+        '<path d="M262 316 C256 334 242 346 228 354 C252 358 276 346 284 324 C276 324 268 322 262 316Z" fill="' + MASKOT_SAYAP_GELAP + '"/></g>';
+    return maskotRangka("ars", isi, kotak + map + kanan + maskotPercik(["M24 124 L48 138", "M34 98 L52 118", "M54 76 L64 104"]), { ukuran: size });
+}
+
 /* Daftar pose. Pose belum tersedia jatuh ke pose pertama (kebiasaan). */
-var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin };
+var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip };
 
 function maskot(pose, ukuran) {
     return (MASKOT_POSE[pose] || maskotKebiasaan)(ukuran);

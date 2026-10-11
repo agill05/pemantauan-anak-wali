@@ -232,6 +232,27 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-adm-spark{animation:mk-adm-spark 1.6s ease-out infinite;transform-origin:50% 50%}
 @keyframes mk-adm-spark{0%{opacity:0;transform:scale(.5)}30%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 
+/* Pose set kedua: rangka bersama (mk-sp percikan, mk-star bintang di mata) */
+.mk-sp{animation:mk-sp 1.8s ease-out infinite;transform-origin:50% 50%}
+.mk-sps>.mk-sp:nth-child(2){animation-delay:.18s}
+.mk-sps>.mk-sp:nth-child(3){animation-delay:.36s}
+@keyframes mk-sp{0%{opacity:0;transform:scale(.4)}25%{opacity:1;transform:scale(1.1)}60%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
+.mk-star{animation:mk-star 2s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-star{0%,100%{transform:scale(.7) rotate(0);opacity:.7}50%{transform:scale(1.2) rotate(18deg);opacity:1}}
+
+/* Pose arsip: kotak map warna-warni */
+.mk-ars-map{animation:mk-ars-lift 2.8s ease-in-out infinite;transform-origin:80% 100%}
+@keyframes mk-ars-lift{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(-3deg) translateY(-6px)}}
+.mk-ars-wing-r{animation:mk-ars-hug 3s ease-in-out infinite;transform-origin:50% 0}
+@keyframes mk-ars-hug{0%,100%{transform:rotate(0)}50%{transform:rotate(1.5deg) translateY(-2px)}}
+.mk-ars-box{animation:mk-ars-box 3s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-ars-box{0%,100%{transform:scale(1,1)}50%{transform:scale(1.01,.99)}}
+.mk-ars-f{animation:mk-ars-peek 2.4s ease-in-out infinite}
+.mk-ars-isi>.mk-ars-f:nth-child(2){animation-delay:.3s}
+.mk-ars-isi>.mk-ars-f:nth-child(3){animation-delay:.6s}
+.mk-ars-isi>.mk-ars-f:nth-child(4){animation-delay:.9s}
+@keyframes mk-ars-peek{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}
 }
