@@ -436,12 +436,7 @@ function kembaliKeHariIni(target) {
 function showDateLockedAlert(state) {
     if (!state || state.editable) return;
     if (typeof Swal !== "undefined") {
-        Swal.fire({
-            icon: state.kind === "future" ? "info" : "warning",
-            title: state.kind === "future" ? "Belum Waktunya" : "Data Terkunci",
-            text: state.message,
-            confirmButtonColor: "#2563eb"
-        });
+        owlAlert(state.kind === "future" ? "Belum Waktunya" : "Data Terkunci", state.message, "remind");
     }
 }
 

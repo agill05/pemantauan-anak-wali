@@ -347,12 +347,7 @@ function absensiAdaKosong(selectElements) {
     if (kosong.length === 0) return false;
     kosong.forEach(sel => { sel.style.outline = '2px solid #fb7185'; });
     kosong[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    Swal.fire({
-        icon: 'warning',
-        title: 'Presensi Belum Lengkap',
-        text: `Masih ada ${kosong.length} siswa belum diisi. Lengkapi dulu, atau ketuk "Set Semua Hadir" lalu ubah yang tidak hadir.`,
-        confirmButtonColor: '#2563eb'
-    });
+    owlAlert('Presensi Belum Lengkap', `Masih ada ${kosong.length} siswa belum diisi. Lengkapi dulu, atau ketuk "Set Semua Hadir" lalu ubah yang tidak hadir.`, 'remind');
     return true;
 }
 
