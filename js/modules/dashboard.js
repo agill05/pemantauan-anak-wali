@@ -23,6 +23,128 @@ function wadahUcapanMaskot() {
 let ucapanMaskotCtl = null;
 const UCAP_LEVEL = { kritis: 3, sedang: 2, rendah: 1 };
 
+// Data yang sudah dimuat dashboard dan dipakai ulang oleh gelembung maskot pimpinan (admin dan kepsek).
+// Tidak ada panggilan API tambahan: bila belum termuat, ucapan terkait tidak ditampilkan.
+let ucapanAgenda = null;
+let ucapanPerKelas = null;
+let ucapanTatib = null;
+
+function ucapanTatibRingkas(res) {
+    if (!res || res.status !== "success" || !Array.isArray(res.data)) return null;
+    let perlu = 0, batas = 0;
+    res.data.forEach(r => {
+        const tertunda = Array.isArray(r.panggilan_tertunda) ? r.panggilan_tertunda : [];
+        if (tertunda.length > 0) perlu++;
+        if (r.mencapai_batas) batas++;
+    });
+    return { perlu, batas };
+}
+
+// Ucapan untuk admin dan kepsek: tanpa presensi. Admin mendapat tambahan kerapian data master, kepsek ringkasan per kelas.
+function ucapanPimpinan(u, notifAktif, tambah) {
+    const isAdmin = u.role === "admin";
+    const semuaNotif = () => {
+        const perSiswa = new Map();
+        notifAktif.forEach(n => {
+            if (!n || !n.siswa) return;
+            const id = String(n.siswa.id);
+            const e = perSiswa.get(id) || { level: "rendah", tingkat: 0 };
+            const t = UCAP_LEVEL[n.level] || 1;
+            if (t > e.tingkat) { e.tingkat = t; e.level = n.level; }
+            perSiswa.set(id, e);
+        });
+        return Array.from(perSiswa.values());
+    };
+
+    if (appState.notificationsReady) {
+        const semua = semuaNotif();
+        const kritis = semua.filter(e => e.level === "kritis").length;
+        if (kritis) {
+            tambah({ kunci: "p-kritis", view: "siswa", bobot: 6, tingkat: "kritis", angka: kritis, teks: "siswa berstatus kritis di seluruh sekolah." });
+        }
+        if (semua.length) {
+            tambah({ kunci: "p-perhatian", view: "siswa", bobot: 3, tingkat: kritis ? "kritis" : "sedang", angka: semua.length, teks: "siswa perlu perhatian." });
+        } else {
+            tambah({ kunci: "p-aman", bobot: 1, tingkat: "baik", teks: "Tidak ada siswa yang perlu perhatian saat ini." });
+        }
+
+        // Rincian per kategori notifikasi: tiga kategori dengan catatan terbanyak.
+        const perKategori = new Map();
+        notifAktif.forEach(n => {
+            const kat = String((n && n.category) || "").trim();
+            if (!kat) return;
+            const e = perKategori.get(kat) || { jumlah: 0, tingkat: 0, level: "rendah" };
+            e.jumlah++;
+            const t = UCAP_LEVEL[n.level] || 1;
+            if (t > e.tingkat) { e.tingkat = t; e.level = n.level; }
+            perKategori.set(kat, e);
+        });
+        Array.from(perKategori.entries())
+            .sort((a, b) => b[1].tingkat - a[1].tingkat || b[1].jumlah - a[1].jumlah)
+            .slice(0, 3)
+            .forEach(([kat, e]) => tambah({
+                kunci: "p-kat-" + kat, notif: true, bobot: e.tingkat === 3 ? 4 : 2, tingkat: e.level,
+                angka: e.jumlah, teks: `catatan ${ucapanPotong(kat, 40)}.`
+            }));
+    }
+
+    // Tata tertib: panggilan orang tua yang belum ditangani dan siswa yang mencapai batas.
+    const tt = ucapanTatibRingkas(ucapanTatib);
+    if (tt) {
+        if (tt.batas) tambah({ kunci: "p-tatib-batas", view: "tatib", pose: "tatib", bobot: 5, tingkat: "kritis", angka: tt.batas, teks: "siswa mencapai batas tata tertib." });
+        if (tt.perlu) tambah({ kunci: "p-tatib-panggil", view: "tatib", pose: "tatib", bobot: 3, tingkat: "sedang", angka: tt.perlu, teks: "siswa menunggu panggilan orang tua (tata tertib)." });
+        if (!tt.batas && !tt.perlu) tambah({ kunci: "p-tatib-aman", pose: "tatib", bobot: 1, tingkat: "baik", teks: "Tidak ada panggilan orang tua yang tertunda." });
+    }
+
+    // Agenda pembinaan yang akan datang.
+    if (Array.isArray(ucapanAgenda) && ucapanAgenda.length) {
+        const ag = ucapanAgenda[0];
+        tambah({
+            kunci: "p-agenda", view: "pembinaan", pose: "pengingat", bobot: 3, tingkat: "rendah", angka: ucapanAgenda.length,
+            teks: `agenda pembinaan akan datang. Terdekat: ${ucapanNamaSingkat(ag.nama_siswa)}${ag.jadwal_pantau ? " (" + ucapanPotong(ag.jadwal_pantau, 24) + ")" : ""}.`
+        });
+    }
+
+    if (isAdmin) {
+        // Kerapian data master: hanya dihitung bila daftar siswa dan kelas sudah termuat.
+        const siswaAll = appState.siswa || [];
+        const kelasAll = appState.kelas || [];
+        let adaMasalah = false;
+        if (siswaAll.length) {
+            const tanpaKelas = siswaAll.filter(s => !String(s.kelas_id || "").trim()).length;
+            const tanpaMentor = siswaAll.filter(s => !String(s.mentor_id || "").trim()).length;
+            if (tanpaKelas) { adaMasalah = true; tambah({ kunci: "a-tanpa-kelas", view: "admin-manage", bobot: 4, tingkat: "sedang", angka: tanpaKelas, teks: "siswa belum punya kelas." }); }
+            if (tanpaMentor) { adaMasalah = true; tambah({ kunci: "a-tanpa-mentor", view: "admin-manage", bobot: 3, tingkat: "rendah", angka: tanpaMentor, teks: "siswa belum punya mentor." }); }
+        }
+        if (kelasAll.length) {
+            const tanpaWali = kelasAll.filter(k => !String(k.guru_id || "").trim()).length;
+            if (tanpaWali) { adaMasalah = true; tambah({ kunci: "a-tanpa-wali", view: "admin-manage", bobot: 4, tingkat: "sedang", angka: tanpaWali, teks: "kelas belum punya wali kelas." }); }
+        }
+        if (siswaAll.length && !adaMasalah) {
+            tambah({ kunci: "a-data-rapi", bobot: 1, tingkat: "baik", teks: `Data master rapi: ${siswaAll.length} siswa, ${kelasAll.length} kelas, ${(appState.guru || []).length} guru.` });
+        }
+    } else if (Array.isArray(ucapanPerKelas) && ucapanPerKelas.length) {
+        // Kepsek: kelas dengan siswa perlu perhatian terbanyak.
+        const urut = ucapanPerKelas.filter(k => Number(k.perlu_perhatian) > 0)
+            .sort((a, b) => Number(b.perlu_perhatian) - Number(a.perlu_perhatian));
+        if (urut.length) {
+            const k = urut[0];
+            tambah({
+                kunci: "k-kelas-teratas", pose: "laporan", bobot: 4, tingkat: "sedang", angka: k.perlu_perhatian,
+                teks: `siswa perlu perhatian di ${ucapanPotong(k.nama_kelas, 30)}, terbanyak di antara ${ucapanPerKelas.length} kelas.`
+            });
+        } else {
+            tambah({ kunci: "k-kelas-aman", pose: "laporan", bobot: 1, tingkat: "baik", teks: `Semua ${ucapanPerKelas.length} kelas tanpa siswa yang perlu perhatian.` });
+        }
+    }
+
+    // Hari besar: ucapan ringan berbobot rendah.
+    const hari = typeof maskotKonteks === "function" ? maskotKonteks().hari : "";
+    if (hari === "ramadan") tambah({ kunci: "h-ramadan", pose: "ceria", bobot: 1, tingkat: "baik", teks: "Selamat menjalankan ibadah Ramadan." });
+    else if (hari === "agustus") tambah({ kunci: "h-agustus", pose: "ceria", bobot: 1, tingkat: "baik", teks: "Dirgahayu Republik Indonesia!" });
+    else if (hari === "lulus") tambah({ kunci: "h-lulus", pose: "akademik", bobot: 1, tingkat: "baik", teks: "Musim kelulusan. Pastikan data kelas dan nilai akhir sudah rapi." });
+}
+
 function ucapanNamaSingkat(nama) {
     return String(nama || "").trim().split(/\s+/).slice(0, 2).join(" ") || "Siswa";
 }
@@ -39,6 +161,7 @@ function kandidatUcapanMaskot() {
     const jam = typeof getJamWITA === "function" ? getJamWITA() : new Date().getHours();
     const isSiswa = u.role === "siswa";
     const isAdmin = u.role === "admin";
+    const isPimpinan = isAdmin || u.role === "kepsek";
     const pose = isSiswa ? "siswa" : isAdmin ? "admin" : "guru";
     const tambah = (o) => daftar.push(Object.assign({ pose }, o));
     const notifAktif = appState.notificationsReady ? (appState.currentNotifications || []) : [];
@@ -75,52 +198,12 @@ function kandidatUcapanMaskot() {
         } else if (appState.notificationsReady) {
             tambah({ kunci: "s-aman", bobot: 1, tingkat: "baik", teks: "Tidak ada indikator perhatian aktif untukmu." });
         }
-    } else if (isAdmin) {
-        // Admin mengelola data, bukan mengisi presensi atau membina siswa. Ucapan hanya soal ringkasan dan kerapian data.
-        if (appState.notificationsReady) {
-            const perSiswa = new Map();
-            notifAktif.forEach(n => {
-                if (!n || !n.siswa) return;
-                const id = String(n.siswa.id);
-                const e = perSiswa.get(id) || { level: "rendah", tingkat: 0 };
-                const t = UCAP_LEVEL[n.level] || 1;
-                if (t > e.tingkat) { e.tingkat = t; e.level = n.level; }
-                perSiswa.set(id, e);
-            });
-            const semua = Array.from(perSiswa.values());
-            const kritis = semua.filter(e => e.level === "kritis").length;
-            if (kritis) {
-                tambah({ kunci: "a-kritis", view: "siswa", bobot: 5, tingkat: "kritis", angka: kritis, teks: "siswa berstatus kritis di seluruh sekolah." });
-            }
-            if (semua.length) {
-                tambah({ kunci: "a-perhatian", view: "siswa", bobot: 3, tingkat: semua.some(e => e.level === "kritis") ? "kritis" : "sedang", angka: semua.length, teks: "siswa perlu perhatian." });
-            } else {
-                tambah({ kunci: "a-aman", bobot: 1, tingkat: "baik", teks: "Tidak ada siswa yang perlu perhatian saat ini." });
-            }
-        }
-
-        // Kerapian data master: hanya dihitung bila daftar siswa dan kelas sudah termuat.
-        const siswaAll = appState.siswa || [];
-        const kelasAll = appState.kelas || [];
-        if (siswaAll.length) {
-            const tanpaKelas = siswaAll.filter(s => !String(s.kelas_id || "").trim()).length;
-            const tanpaMentor = siswaAll.filter(s => !String(s.mentor_id || "").trim()).length;
-            if (tanpaKelas) {
-                tambah({ kunci: "a-tanpa-kelas", view: "admin-manage", bobot: 4, tingkat: "sedang", angka: tanpaKelas, teks: "siswa belum punya kelas." });
-            }
-            if (tanpaMentor) {
-                tambah({ kunci: "a-tanpa-mentor", view: "admin-manage", bobot: 3, tingkat: "rendah", angka: tanpaMentor, teks: "siswa belum punya mentor." });
-            }
-        }
-        if (kelasAll.length) {
-            const tanpaWali = kelasAll.filter(k => !String(k.guru_id || "").trim()).length;
-            if (tanpaWali) {
-                tambah({ kunci: "a-tanpa-wali", view: "admin-manage", bobot: 4, tingkat: "sedang", angka: tanpaWali, teks: "kelas belum punya wali kelas." });
-            }
-        }
-        if (siswaAll.length && !daftar.some(d => d.kunci.indexOf("a-tanpa") === 0)) {
-            tambah({ kunci: "a-data-rapi", bobot: 1, tingkat: "baik", teks: `Data master rapi: ${siswaAll.length} siswa, ${kelasAll.length} kelas, ${(appState.guru || []).length} guru.` });
-        }
+    } else if (isPimpinan) {
+        ucapanPimpinan(u, notifAktif, tambah);
+        // Batasi enam ucapan berbobot terbesar supaya putaran balon tidak terlalu panjang.
+        const pilih = daftar.slice().sort((a, b) => (b.bobot || 1) - (a.bobot || 1)).slice(0, 6);
+        daftar.length = 0;
+        pilih.forEach(x => daftar.push(x));
     } else {
         const nama = u.role === "guru" ? getLabelSiswa().toLowerCase() : "siswa";
         const peran = isGuruUser() ? getPeranAktif() : "semua";
@@ -227,10 +310,10 @@ function ucapanMaskotDashboard() {
         // Tunggu data misi (maksimal 2,5 detik) agar ucapan sesuai kondisi hari ini.
         Promise.race([muatMisiHariIni(), new Promise(r => setTimeout(r, 2500))]).then(pasang, pasang);
     } else {
-        // Guru dan kepsek: muat presensi hari ini agar angka "belum dipresensi" nyata. Admin tidak memakai data presensi.
+        // Hanya guru yang memuat presensi hari ini agar angka "belum dipresensi" nyata. Admin dan kepsek tidak memakai data presensi.
         // Giliran berikutnya otomatis memakai data baru.
         try {
-            if (u.role !== "admin" && typeof loadAbsensiData === "function" && absensiLoadedTanggal !== getDateWITA()) Promise.resolve(loadAbsensiData()).catch(() => { });
+            if (u.role === "guru" && typeof loadAbsensiData === "function" && absensiLoadedTanggal !== getDateWITA()) Promise.resolve(loadAbsensiData()).catch(() => { });
         } catch (e) { /* abaikan */ }
         pasang();
     }
@@ -252,6 +335,9 @@ async function renderDashboard() {
         const totalSiswaCount = getSiswaPeran().length;
         const labelSiswa = role === 'admin' ? 'Siswa' : getLabelSiswa();
         const hadirHariIni = scopeBySiswaId(appState.absensi, a => a.siswa_id).filter(a => a.status === 'H').length;
+        // Kartu "Hadir Hari Ini" hanya untuk guru. Admin dan kepsek tidak mengurus presensi harian.
+        const tampilHadir = role === "guru";
+        statsContainer.className = tampilHadir ? "grid grid-cols-1 sm:grid-cols-3 gap-3" : "grid grid-cols-1 sm:grid-cols-2 gap-3";
         if (role === "admin" || role === "guru") {
             statsContainer.innerHTML = `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
@@ -263,6 +349,7 @@ async function renderDashboard() {
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
+                ${tampilHadir ? `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
                     <span class="w-11 h-11 shrink-0 rounded-xl bg-emerald-50 text-secondary flex items-center justify-center text-base"><i class="fas fa-calendar-check"></i></span>
                     <div class="min-w-0 flex-1">
@@ -272,6 +359,7 @@ async function renderDashboard() {
                     </div>
                     <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
                 </div>
+                ` : ""}
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
                     <span class="w-11 h-11 shrink-0 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-base"><i class="fas fa-triangle-exclamation"></i></span>
                     <div class="min-w-0 flex-1">
@@ -298,6 +386,8 @@ async function renderDashboard() {
     apiCall("getDashboardData", {}, false).then(res => {
         if (res && res.status === "success") {
             if (role !== "siswa") renderPrioritySection(res.data.priority_list);
+            ucapanAgenda = scopeBySiswaId(res.data.agenda_list, a => a.siswa_id) || [];
+            ucapanPerKelas = Array.isArray(res.data.per_kelas) ? res.data.per_kelas : null;
             renderAgendaSection(res.data.agenda_list);
             if (roleAsli === "kepsek") renderRingkasanKelas(res.data.per_kelas);
             checkStudentNotifications();
@@ -859,6 +949,7 @@ function terapkanNotifikasi(hasil, opsi) {
     if (statCount) statCount.innerText = getAttentionStudentCount();
 
     if (isSiswa) renderSiswaDashboardParts();
+    ucapanTatib = hasil.tatib || null;
     if (typeof tatibRenderStatusDashboard === 'function') tatibRenderStatusDashboard(hasil.tatib || null);
 
     if (!isSiswa && baru.length > 0) {
