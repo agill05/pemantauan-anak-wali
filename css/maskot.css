@@ -367,3 +367,27 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 @media (prefers-reduced-motion: reduce){
   .mk,.mk *{animation:none!important;transition:none!important}
 }
+
+/* Gelembung ucapan: maskot kecil + balon teks. Dipasang oleh maskotUcapPasang() di maskot.js. */
+.mk-ucap-host:empty{display:none}
+.mk-ucap-wrap{display:flex;align-items:center;gap:.5rem;animation:mk-ucap-masuk .45s cubic-bezier(.2,.9,.3,1.15) both}
+.mk-ucap-wrap.mk-ucap-keluar{animation:mk-ucap-keluar .2s ease-in forwards}
+@keyframes mk-ucap-masuk{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes mk-ucap-keluar{to{opacity:0;transform:scale(.96)}}
+.mk-ucap-mk{flex:none;line-height:0}
+.mk-ucap-mk .mk{margin:0}
+.mk-ucap{position:relative;flex:0 1 auto;min-width:0;max-width:24rem;background:#fff;border:1.5px solid #dbeafe;border-radius:1rem;padding:.55rem 1.75rem .55rem .85rem;font-size:.8125rem;line-height:1.35;font-weight:600;color:#1e293b;box-shadow:0 2px 8px rgba(30,64,175,.1)}
+.mk-ucap::before{content:"";position:absolute;left:-7px;top:50%;width:11px;height:11px;background:inherit;border-left:1.5px solid #dbeafe;border-bottom:1.5px solid #dbeafe;transform:translateY(-50%) rotate(45deg)}
+.mk-ucap[data-mk-ucap-buka]{cursor:pointer}
+.mk-ucap[data-mk-ucap-buka]:hover{background:#eff6ff}
+.mk-ucap[data-mk-ucap-buka]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.mk-ucap[data-mk-ucap-buka] .mk-ucap-teks::after{content:" \203A";color:#2563eb;font-weight:800}
+.mk-ucap-tutup{position:absolute;top:.25rem;right:.3rem;width:1.25rem;height:1.25rem;border:0;border-radius:50%;background:transparent;color:#94a3b8;font-size:1rem;line-height:1;cursor:pointer;padding:0}
+.mk-ucap-tutup:hover{background:#f1f5f9;color:#475569}
+body.dark .mk-ucap{background:#1e293b;border-color:#334155;color:#f1f5f9;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+body.dark .mk-ucap::before{border-left-color:#334155;border-bottom-color:#334155}
+body.dark .mk-ucap[data-mk-ucap-buka]:hover{background:#273449}
+body.dark .mk-ucap-tutup:hover{background:#334155;color:#e2e8f0}
+@media (prefers-reduced-motion: reduce){
+  .mk-ucap-wrap{animation:none!important}
+}

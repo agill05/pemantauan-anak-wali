@@ -1,3 +1,125 @@
+/* Gelembung ucapan maskot di dashboard. Satu balon tiap dashboard dibuka (bukaUcapanMaskot dipanggil switchView),
+ * render ulang karena polling tidak mengganti ucapan. Isi mengikuti peran dan kondisi data. */
+let ucapanMaskotPerluBaru = true;
+let ucapanMaskotKunci = "";
+let ucapanMaskotNomor = 0;
+
+function bukaUcapanMaskot() {
+    ucapanMaskotPerluBaru = true;
+}
+
+function wadahUcapanMaskot() {
+    let el = document.getElementById("dash-maskot-ucap");
+    if (el) return el;
+    const view = document.getElementById("view-dashboard");
+    if (!view) return null;
+    el = document.createElement("div");
+    el.id = "dash-maskot-ucap";
+    el.className = "mk-ucap-host";
+    view.insertBefore(el, view.firstChild);
+    return el;
+}
+
+function kandidatUcapanMaskot() {
+    const u = appState.user;
+    const daftar = [];
+    if (!u) return daftar;
+    const today = getDateWITA();
+    const jam = typeof getJamWITA === "function" ? getJamWITA() : new Date().getHours();
+
+    const slot = jam < 4 ? "begadang" : jam < 11 ? "pagi" : jam < 15 ? "siang" : jam < 18 ? "sore" : "malam";
+    const sapa = {
+        begadang: "Masih terjaga? Jangan lupa istirahat ya.",
+        pagi: "Selamat pagi! Semoga harimu menyenangkan.",
+        siang: "Selamat siang! Tetap semangat ya.",
+        sore: "Selamat sore! Sebentar lagi waktunya istirahat.",
+        malam: "Selamat malam! Jangan tidur terlalu larut ya."
+    };
+    daftar.push({ kunci: "sapa-" + slot, pose: "ceria", teks: sapa[slot], bobot: slot === "pagi" ? 3 : 1 });
+
+    if (u.role === "siswa") {
+        // Hanya bila data hari ini sudah termuat sesi ini, supaya tidak salah menyebut "belum".
+        if (misiTerakhirMuat > 0) {
+            const total = (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
+            const sudah = sdMine(appState.kebiasaan).filter(k => sdTgl(k) === today && k.status === "Sudah").length;
+            const jurnal = sdMine(appState.jurnal).some(j => sdTgl(j) === today);
+            const streak = sdHitungStreak(today);
+            if (sudah < total) {
+                daftar.push({
+                    kunci: "s-kebiasaan", pose: "kebiasaan", view: "kebiasaan", bobot: 3,
+                    teks: sudah === 0 ? "Sudah isi kebiasaan hari ini?" : `Kebiasaan hari ini baru ${sudah} dari ${total}. Yuk lanjut!`
+                });
+            }
+            if (!jurnal) {
+                daftar.push({ kunci: "s-jurnal", pose: "jurnal", view: "jurnal", bobot: jam >= 15 ? 3 : 1, teks: "Jurnal hari ini belum ditulis. Ceritakan harimu, yuk!" });
+            }
+            if (sudah >= total && jurnal) {
+                daftar.push({ kunci: "s-selesai", pose: "piala", bobot: 4, teks: "Semua misi hari ini selesai. Hebat sekali!" });
+            }
+            if (streak >= 2) {
+                daftar.push({
+                    kunci: "s-streak", pose: "semangat", bobot: 2,
+                    teks: streak >= 7 ? `${streak} hari berturut-turut. Konsisten banget!` : `Streak ${streak} hari. Jangan sampai putus ya!`
+                });
+            }
+        }
+    } else {
+        if (isGuruUser()) {
+            const peran = getPeranAktif();
+            const minggu = new Date(today + "T00:00:00Z").getUTCDay() === 0;
+            if (isWaliUser() && (peran === "wali" || peran === "semua")) {
+                if (typeof absensiLoadedTanggal !== "undefined" && absensiLoadedTanggal === today) {
+                    const siswaKelas = absensiSiswaTab("kelas");
+                    const belum = siswaKelas.filter(s => !absensiRec("kelas", s.id).status).length;
+                    if (belum > 0) daftar.push({ kunci: "g-presensi-kelas", pose: "presensi", view: "absensi", bobot: 4, teks: `Ada ${belum} siswa belum dipresensi.` });
+                    else if (siswaKelas.length) daftar.push({ kunci: "g-presensi-lengkap", pose: "ceria", bobot: 2, teks: "Presensi kelas hari ini sudah lengkap. Mantap!" });
+                } else if (!minggu) {
+                    daftar.push({ kunci: "g-presensi-ingat", pose: "presensi", view: "absensi", bobot: 1, teks: "Sudah presensi kelas hari ini?" });
+                }
+            }
+            if (isMentorUser() && (peran === "mentor" || peran === "semua") &&
+                typeof absensiMentorLoadedTanggal !== "undefined" && absensiMentorLoadedTanggal === today) {
+                const siswaBinaan = absensiSiswaTab("binaan");
+                const belum = siswaBinaan.filter(s => !absensiRec("binaan", s.id).status).length;
+                if (belum > 0) daftar.push({ kunci: "g-presensi-binaan", pose: "presensi", view: "absensi", bobot: 4, teks: `Ada ${belum} anak binaan belum dipresensi.` });
+            }
+        }
+        if (appState.notificationsReady) {
+            const n = getAttentionStudentCount();
+            if (n > 0) {
+                const nama = u.role === "guru" ? getLabelSiswa().toLowerCase() : "siswa";
+                daftar.push({ kunci: "g-perhatian", pose: "notifikasi", view: "siswa", bobot: 3, teks: `Ada ${n} ${nama} yang perlu perhatian.` });
+            }
+        }
+    }
+
+    if (typeof SPLASH_TIPS !== "undefined") {
+        SPLASH_TIPS.forEach((t, i) => daftar.push({ kunci: "tip-" + i, pose: "biasa", bobot: 0.5, teks: t }));
+    }
+    return daftar;
+}
+
+function ucapanMaskotDashboard() {
+    const u = appState.user;
+    if (!u || typeof maskotUcapPasang !== "function") return;
+    const kunci = String(u.id) + ":" + (isGuruUser() ? getPeranAktif() : "");
+    if (!ucapanMaskotPerluBaru && kunci === ucapanMaskotKunci) return;
+    ucapanMaskotPerluBaru = false;
+    ucapanMaskotKunci = kunci;
+    const nomor = ++ucapanMaskotNomor;
+    const pasang = () => {
+        if (nomor !== ucapanMaskotNomor || !appState.user) return;
+        const wadah = wadahUcapanMaskot();
+        if (wadah) maskotUcapPasang(wadah, kandidatUcapanMaskot(), 64);
+    };
+    if (u.role === "siswa" && typeof muatMisiHariIni === "function") {
+        // Tunggu data misi (maksimal 2,5 detik) agar ucapan sesuai kondisi hari ini.
+        Promise.race([muatMisiHariIni(), new Promise(r => setTimeout(r, 2500))]).then(pasang, pasang);
+    } else {
+        pasang();
+    }
+}
+
 async function renderDashboard() {
     if (!appState.user) return;
     const roleAsli = appState.user.role;
@@ -54,6 +176,8 @@ async function renderDashboard() {
         renderSiswaDashboardParts();
         if (typeof muatMisiHariIni === "function") muatMisiHariIni();
     }
+
+    ucapanMaskotDashboard();
 
     apiCall("getDashboardData", {}, false).then(res => {
         if (res && res.status === "success") {

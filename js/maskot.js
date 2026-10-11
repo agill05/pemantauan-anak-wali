@@ -3,6 +3,8 @@
  * maskotKosong(teks, ukuran, pose)          -> blok .empty-state berisi maskot + teks.
  * maskotRayakan(judul, teks, kunci, pose)   -> popup perayaan, menutup sendiri.
  * maskotAlert(judul, teks, pose)            -> dialog dengan maskot dan tombol OK.
+ * maskotUcapPasang(wadah, kandidat, ukuran) -> gelembung ucapan: maskot kecil + balon teks, satu ucapan acak berbobot dari kandidat.
+ * Aksesori otomatis (malam: mata mengantuk + topi tidur; Ramadan: peci; sekitar 17 Agustus: ikat kepala merah putih; kelulusan: toga), lihat maskotKonteks().
  * <span data-maskot="96" data-maskot-pose="kebiasaan"></span> -> otomatis diisi saat halaman dimuat.
  * Pose: kebiasaan (7 Kebiasaan Hebat: tangan terangkat, tujuh bintang),
  *       akademik (topi toga + sertifikat bintang: nilai, prestasi, capaian),
@@ -485,5 +487,277 @@ document.addEventListener("pointermove", maskotPantau, { passive: true });
 document.addEventListener("pointerdown", maskotPantau, { passive: true });
 maskotJadwalIseng();
 
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { mountMaskot(); });
-else mountMaskot();
+/* Gelembung ucapan: maskot kecil dengan balon teks di sampingnya.
+ * maskotUcapPasang(wadah, kandidat, ukuran) memilih satu ucapan secara acak berbobot (tidak sama dengan yang terakhir tampil)
+ * lalu menggambarnya di dalam wadah. kandidat = [{ kunci, teks, pose, view, bobot }].
+ * view (opsional): ketuk balon untuk membuka tampilan itu lewat switchView. Tombol x menutup balon.
+ * Pemanggil bertanggung jawab memasang paling banyak satu balon per layar. */
+var maskotUcapTerakhir = "";
+try { maskotUcapTerakhir = sessionStorage.getItem("mk_ucap_terakhir") || ""; } catch (e) { }
+
+function maskotUcapBobot(c) {
+    var b = Number(c.bobot);
+    return b > 0 ? b : 1;
+}
+
+function maskotUcapPilih(kandidat) {
+    var daftar = (kandidat || []).filter(function (c) { return c && c.teks; });
+    if (!daftar.length) return null;
+    var kolam = daftar.filter(function (c) { return c.kunci !== maskotUcapTerakhir; });
+    if (!kolam.length) kolam = daftar;
+    var total = kolam.reduce(function (a, c) { return a + maskotUcapBobot(c); }, 0);
+    var r = Math.random() * total, dipilih = kolam[kolam.length - 1];
+    for (var i = 0; i < kolam.length; i++) {
+        r -= maskotUcapBobot(kolam[i]);
+        if (r <= 0) { dipilih = kolam[i]; break; }
+    }
+    maskotUcapTerakhir = dipilih.kunci || "";
+    try { sessionStorage.setItem("mk_ucap_terakhir", maskotUcapTerakhir); } catch (e) { }
+    return dipilih;
+}
+
+function maskotUcapHtml(u, ukuran) {
+    var aksi = u.view ? ' data-mk-ucap-buka="' + maskotAman(u.view) + '" role="button" tabindex="0"' : "";
+    return '<div class="mk-ucap-wrap">' +
+        '<div class="mk-ucap-mk">' + maskot(u.pose || "ceria", ukuran || 64) + '</div>' +
+        '<div class="mk-ucap"' + aksi + '>' +
+        '<span class="mk-ucap-teks">' + maskotAman(u.teks) + '</span>' +
+        '<button type="button" class="mk-ucap-tutup" data-mk-ucap-tutup aria-label="Tutup gelembung">&times;</button>' +
+        '</div></div>';
+}
+
+function maskotUcapPasang(wadah, kandidat, ukuran) {
+    if (!wadah) return null;
+    var u = maskotUcapPilih(kandidat);
+    wadah.innerHTML = u ? maskotUcapHtml(u, ukuran) : "";
+    return u;
+}
+
+document.addEventListener("click", function (e) {
+    var tutup = e.target.closest && e.target.closest("[data-mk-ucap-tutup]");
+    if (tutup) {
+        var w = tutup.closest(".mk-ucap-wrap");
+        if (w) {
+            w.classList.add("mk-ucap-keluar");
+            setTimeout(function () { if (w.parentNode) w.parentNode.removeChild(w); }, 200);
+        }
+        e.stopPropagation();
+        return;
+    }
+    var buka = e.target.closest && e.target.closest("[data-mk-ucap-buka]");
+    if (buka && typeof switchView === "function") switchView(buka.getAttribute("data-mk-ucap-buka"));
+});
+document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var buka = e.target.closest && e.target.closest("[data-mk-ucap-buka]");
+    if (buka && e.target === buka && typeof switchView === "function") {
+        e.preventDefault();
+        switchView(buka.getAttribute("data-mk-ucap-buka"));
+    }
+});
+
+/* Penyesuaian waktu dan hari besar.
+ * Malam: mata setengah tertutup. Topi (satu saja, hari besar lebih diutamakan): topi tidur di malam hari,
+ * peci saat Ramadan, ikat kepala merah putih sekitar 17 Agustus, topi toga saat kelulusan.
+ * Pose "akademik" sudah bertopi toga, jadi tidak diberi topi lagi.
+ * Aksesori dipasang lewat DOM setelah SVG muncul sehingga semua pose ikut, tanpa mengubah fungsi pose.
+ * Uji cepat: tambahkan ?mk=malam,ramadan (atau agustus, lulus) pada alamat aplikasi. */
+var MASKOT_NGANTUK = { dari: 21, sampai: 4 };            /* jam WITA: 21.00 sampai 03.59 */
+var MASKOT_AGUSTUS = { bulan: 8, dari: 10, sampai: 20 };
+var MASKOT_KELULUSAN = { bulan: 6, dari: 1, sampai: 25 };
+var maskotKonteksCache = { menit: -1, nilai: null };
+
+function maskotWaktuWITA(tgl) {
+    var p = {};
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Makassar", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", hourCycle: "h23" })
+        .formatToParts(tgl || new Date()).forEach(function (x) { p[x.type] = parseInt(x.value, 10); });
+    return { jam: p.hour % 24, bulan: p.month, hari: p.day };
+}
+
+/* Ramadan = bulan ke-9 kalender Hijriah (Umm al-Qura). Bisa selisih satu hari dari penetapan resmi. */
+function maskotRamadan(tgl) {
+    try {
+        var m = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { timeZone: "Asia/Makassar", month: "numeric" })
+            .formatToParts(tgl || new Date()).filter(function (x) { return x.type === "month"; })[0];
+        return !!m && parseInt(m.value, 10) === 9;
+    } catch (e) { return false; }
+}
+
+function maskotHitungKonteks(tgl) {
+    var w = maskotWaktuWITA(tgl), k = { ngantuk: w.jam >= MASKOT_NGANTUK.dari || w.jam < MASKOT_NGANTUK.sampai, hari: "" };
+    if (maskotRamadan(tgl)) k.hari = "ramadan";
+    else if (w.bulan === MASKOT_AGUSTUS.bulan && w.hari >= MASKOT_AGUSTUS.dari && w.hari <= MASKOT_AGUSTUS.sampai) k.hari = "agustus";
+    else if (w.bulan === MASKOT_KELULUSAN.bulan && w.hari >= MASKOT_KELULUSAN.dari && w.hari <= MASKOT_KELULUSAN.sampai) k.hari = "lulus";
+    return k;
+}
+
+function maskotKonteks() {
+    var uji = "";
+    try { uji = new URLSearchParams(location.search).get("mk") || ""; } catch (e) { }
+    var menit = Math.floor(Date.now() / 60000);
+    if (!uji && maskotKonteksCache.menit === menit) return maskotKonteksCache.nilai;
+    var k = maskotHitungKonteks();
+    if (uji) {
+        var u = uji.toLowerCase().split(",");
+        if (u.indexOf("malam") >= 0) k.ngantuk = true;
+        ["ramadan", "agustus", "lulus"].forEach(function (h) { if (u.indexOf(h) >= 0) k.hari = h; });
+    }
+    maskotKonteksCache = { menit: menit, nilai: k };
+    return k;
+}
+
+/* Geometri bantu. g = elips kepala { cx, cy, rx, ry }; dx = -1..1 terhadap tengah, dy = pecahan ry dari puncak kepala. */
+function maskotAngka(n) { return (Math.round(n * 10) / 10).toString(); }
+function maskotTitikKurva(g, d0, d1, ofs, n) {
+    var pts = [];
+    for (var i = 0; i <= n; i++) {
+        var dx = d0 + (d1 - d0) * i / n;
+        pts.push([g.cx + dx * g.rx, g.cy - g.ry * Math.sqrt(Math.max(0, 1 - dx * dx)) + ofs * g.ry]);
+    }
+    return pts;
+}
+function maskotJalur(pts, awal) {
+    return pts.map(function (p, i) { return (i ? "L" : awal) + maskotAngka(p[0]) + " " + maskotAngka(p[1]); }).join("");
+}
+function maskotPita(g, d0, d1, a, b) {
+    return maskotJalur(maskotTitikKurva(g, d0, d1, a, 14), "M") + maskotJalur(maskotTitikKurva(g, d1, d0, b, 14), "L") + "Z";
+}
+
+var MASKOT_PETA_TOPI = {
+    /* Peci hitam dengan pita emas tipis di pangkal. */
+    ramadan: function (g) {
+        var X = function (dx) { return g.cx + dx * g.rx; }, T = g.cy - g.ry, Y = function (dy) { return T + dy * g.ry; };
+        var yPangkal = function (dx) { return g.cy - g.ry * Math.sqrt(1 - dx * dx) + 0.16 * g.ry; };
+        var yt = yPangkal(0.5), tengah = yPangkal(0);
+        var kendali = 2 * tengah - yt;
+        var badan = "M" + maskotAngka(X(-0.5)) + " " + maskotAngka(yt) +
+            "L" + maskotAngka(X(-0.42)) + " " + maskotAngka(Y(-0.42)) +
+            "Q" + maskotAngka(X(0)) + " " + maskotAngka(Y(-0.5)) + " " + maskotAngka(X(0.42)) + " " + maskotAngka(Y(-0.42)) +
+            "L" + maskotAngka(X(0.5)) + " " + maskotAngka(yt) +
+            "Q" + maskotAngka(X(0)) + " " + maskotAngka(kendali) + " " + maskotAngka(X(-0.5)) + " " + maskotAngka(yt) + "Z";
+        var emas = "M" + maskotAngka(X(-0.49)) + " " + maskotAngka(yt - 0.06 * g.ry) +
+            "Q" + maskotAngka(X(0)) + " " + maskotAngka(kendali - 0.06 * g.ry) + " " + maskotAngka(X(0.49)) + " " + maskotAngka(yt - 0.06 * g.ry);
+        var kilau = "M" + maskotAngka(X(-0.3)) + " " + maskotAngka(Y(-0.3)) + "Q" + maskotAngka(X(0)) + " " + maskotAngka(Y(-0.37)) + " " + maskotAngka(X(0.3)) + " " + maskotAngka(Y(-0.3));
+        return '<path d="' + badan + '" fill="#1A1A20" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>' +
+            '<path d="' + kilau + '" fill="none" stroke="#3F3F4C" stroke-width="3" stroke-linecap="round"/>' +
+            '<path d="' + emas + '" fill="none" stroke="#E2B13C" stroke-width="3" stroke-linecap="round"/>';
+    },
+    /* Ikat kepala merah putih dengan dua ujung kain di sisi kanan. */
+    agustus: function (g) {
+        var a = 0.1, m = 0.215, b = 0.33, k = g.rx / 100;
+        var tepi = maskotPita(g, -0.96, 0.96, a, b);
+        var ujung = maskotTitikKurva(g, 0.94, 0.94, 0.215, 1)[0];
+        var ekor = '<g transform="translate(' + maskotAngka(ujung[0]) + " " + maskotAngka(ujung[1]) + ") scale(" + maskotAngka(k) + ')">' +
+            '<path d="M-2 -5L20 6L13 26L-6 12Z" fill="#E4002B" stroke="#3A1F14" stroke-width="3" stroke-linejoin="round"/>' +
+            '<path d="M-2 2L18 18L9 36L-8 20Z" fill="#fff" stroke="#3A1F14" stroke-width="3" stroke-linejoin="round"/></g>';
+        return ekor +
+            '<path d="' + maskotPita(g, -0.96, 0.96, a, m) + '" fill="#E4002B"/>' +
+            '<path d="' + maskotPita(g, -0.96, 0.96, m, b) + '" fill="#fff"/>' +
+            '<path d="' + tepi + '" fill="none" stroke="#3A1F14" stroke-width="3.5" stroke-linejoin="round"/>';
+    },
+    /* Topi toga: bentuk sama dengan pose akademik, dipetakan ke elips kepala. */
+    lulus: function (g) {
+        var sx = g.rx / 102, sy = g.ry / 80, tx = g.cx - 214 * sx, ty = (g.cy - g.ry) - 80 * sy;
+        return '<g transform="translate(' + maskotAngka(tx) + " " + maskotAngka(ty) + ") scale(" + maskotAngka(sx) + " " + maskotAngka(sy) + ')">' +
+            '<path d="M158 54L251 33L337 84L244 103Z" fill="#1F2E52" stroke="#0F1A33" stroke-width="4" stroke-linejoin="round"/>' +
+            '<path d="M158 54L244 103L244 113L158 64Z" fill="#14213F" stroke="#0F1A33" stroke-width="3" stroke-linejoin="round"/>' +
+            '<path d="M244 103L337 84L337 94L244 113Z" fill="#0F1A33" stroke="#0F1A33" stroke-width="3" stroke-linejoin="round"/>' +
+            '<path d="M192 84C194 68 212 60 238 60C264 60 282 68 284 82L286 100C266 110 214 108 194 100Z" fill="#243B6B" stroke="#0F1A33" stroke-width="4" stroke-linejoin="round"/>' +
+            '<path d="M238 61Q290 62 318 90" fill="none" stroke="#F9A91B" stroke-width="3.5" stroke-linecap="round"/>' +
+            '<circle cx="238" cy="61" r="5" fill="#F9A91B" stroke="#3A1F14" stroke-width="2.5"/>' +
+            '<path d="M318 90L318 108" stroke="#F9A91B" stroke-width="3.5" stroke-linecap="round"/>' +
+            '<path d="M309 112L327 112L331 148L305 148Z" fill="#F9A91B" stroke="#3A1F14" stroke-width="3" stroke-linejoin="round"/>' +
+            '<circle cx="318" cy="110" r="7" fill="#F9A91B" stroke="#3A1F14" stroke-width="3"/></g>';
+    },
+    /* Topi tidur: kerucut biru melorot ke kanan, pinggiran putih, bola kapas di ujung. */
+    tidur: function (g) {
+        var X = function (dx) { return g.cx + dx * g.rx; }, T = g.cy - g.ry, Y = function (dy) { return T + dy * g.ry; };
+        var ya = function (dx) { return g.cy - g.ry * Math.sqrt(1 - dx * dx) - 0.02 * g.ry; };
+        var P = function (dx, dy) { return maskotAngka(X(dx)) + " " + maskotAngka(Y(dy)); };
+        var badan = "M" + maskotAngka(X(-0.8)) + " " + maskotAngka(ya(-0.8)) +
+            "C" + P(-0.84, -0.5) + " " + P(-0.4, -0.95) + " " + P(0.1, -0.88) +
+            "C" + P(0.55, -0.82) + " " + P(0.92, -0.55) + " " + P(1.05, 0.02) +
+            "C" + P(0.94, -0.12) + " " + P(0.88, -0.1) + " " + maskotAngka(X(0.8)) + " " + maskotAngka(ya(0.8)) + "Z";
+        var kapas = { x: X(1.05), y: Y(0.02), r: g.rx * 0.15 };
+        var bintang = function (cx, cy, r) {
+            var d = "";
+            for (var i = 0; i < 10; i++) {
+                var ang = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+                d += (i ? "L" : "M") + maskotAngka(cx + rr * Math.cos(ang)) + " " + maskotAngka(cy + rr * Math.sin(ang));
+            }
+            return '<path d="' + d + 'Z" fill="#FFD54F"/>';
+        };
+        return '<path d="' + badan + '" fill="#5B6EC7" stroke="#2A3470" stroke-width="3.5" stroke-linejoin="round"/>' +
+            bintang(X(-0.45), Y(-0.38), g.rx * 0.09) + bintang(X(0.15), Y(-0.6), g.rx * 0.07) + bintang(X(0.62), Y(-0.38), g.rx * 0.06) +
+            '<circle cx="' + maskotAngka(kapas.x) + '" cy="' + maskotAngka(kapas.y) + '" r="' + maskotAngka(kapas.r) + '" fill="#fff" stroke="#2A3470" stroke-width="3"/>' +
+            '<path d="' + maskotPita(g, -0.84, 0.84, -0.04, 0.2) + '" fill="#F7F8FF" stroke="#2A3470" stroke-width="3.5" stroke-linejoin="round"/>';
+    }
+};
+
+function maskotSvgNode(markup) {
+    var d = new DOMParser().parseFromString('<svg xmlns="http://www.w3.org/2000/svg">' + markup + '</svg>', "image/svg+xml");
+    return document.importNode(d.documentElement.firstChild, true);
+}
+
+/* Mata setengah tertutup: setengah cakram warna wajah di atas tiap mata, digambar tepat di bawah alis. */
+function maskotKelopak(induk, g) {
+    var mata = [];
+    var putih = Array.prototype.slice.call(induk.querySelectorAll('g[fill="#FFFBF2"] > circle'));
+    if (putih.length) {
+        var tebal = putih[0].parentNode.getAttribute("stroke-width") || "6";
+        putih.forEach(function (c) {
+            mata.push({ x: +c.getAttribute("cx"), y: +c.getAttribute("cy"), r: +c.getAttribute("r"), tebal: tebal, garis: "#1B2A4A" });
+        });
+    } else {
+        Array.prototype.forEach.call(induk.querySelectorAll(".mk-iris, .mk-o-iris"), function (gi) {
+            var c = gi.querySelector("circle");
+            if (c) mata.push({ x: +c.getAttribute("cx"), y: +c.getAttribute("cy"), r: +c.getAttribute("r") + 2, tebal: "4", garis: "#3A1F14" });
+        });
+    }
+    if (!mata.length) return;
+    var isi = mata.map(function (m) {
+        return '<path d="M' + maskotAngka(m.x - m.r) + " " + maskotAngka(m.y) + "A" + maskotAngka(m.r) + " " + maskotAngka(m.r) + " 0 0 1 " +
+            maskotAngka(m.x + m.r) + " " + maskotAngka(m.y) + 'Z" fill="#FDEBD3" stroke="' + m.garis + '" stroke-width="' + m.tebal + '" stroke-linejoin="round"/>';
+    }).join("");
+    var node = maskotSvgNode('<g class="mk-aks mk-aks-kelopak">' + isi + "</g>");
+    var pos = null;
+    Array.prototype.forEach.call(induk.children, function (el) {
+        if (!pos && el.classList && (el.classList.contains("mk-look") || el.classList.contains("mk-o-look"))) pos = el;
+    });
+    if (pos && pos.nextSibling) induk.insertBefore(node, pos.nextSibling);
+    else induk.appendChild(node);
+}
+
+function maskotAksesori(svg) {
+    if (svg.getAttribute("data-mk-aks")) return;
+    svg.setAttribute("data-mk-aks", "1");
+    var k = maskotKonteks();
+    if (!k.ngantuk && !k.hari) return;
+    var kepala = svg.querySelector(".mk-head, .mk-o-head, .mk-t-head, .mk-r-head, .mk-c-head");
+    if (!kepala) return;
+    var elips = Array.prototype.filter.call(kepala.querySelectorAll("ellipse"), function (e) { return +e.getAttribute("rx") >= 100; })[0];
+    if (!elips) return;
+    var induk = elips.parentNode;
+    var g = { cx: +elips.getAttribute("cx"), cy: +elips.getAttribute("cy"), rx: +elips.getAttribute("rx"), ry: +elips.getAttribute("ry") };
+    if (k.ngantuk) maskotKelopak(induk, g);
+    if (svg.classList.contains("mk-aka")) return;
+    var topi = k.hari || (k.ngantuk ? "tidur" : "");
+    if (topi && MASKOT_PETA_TOPI[topi]) induk.appendChild(maskotSvgNode('<g class="mk-aks mk-aks-' + topi + '">' + MASKOT_PETA_TOPI[topi](g) + "</g>"));
+}
+
+function maskotPindai(simpul) {
+    if (!simpul || simpul.nodeType !== 1) return;
+    if (simpul.matches && simpul.matches("svg.mk")) { maskotAksesori(simpul); return; }
+    if (simpul.querySelectorAll) Array.prototype.forEach.call(simpul.querySelectorAll("svg.mk:not([data-mk-aks])"), maskotAksesori);
+}
+
+function maskotPantauAksesori() {
+    maskotPindai(document.body);
+    if (typeof MutationObserver === "undefined") return;
+    new MutationObserver(function (daftar) {
+        daftar.forEach(function (rec) { Array.prototype.forEach.call(rec.addedNodes, maskotPindai); });
+    }).observe(document.body, { childList: true, subtree: true });
+}
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { mountMaskot(); maskotPantauAksesori(); });
+else { mountMaskot(); maskotPantauAksesori(); }

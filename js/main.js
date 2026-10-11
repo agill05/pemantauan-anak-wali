@@ -36,7 +36,10 @@ function switchView(viewId) {
     const sidebarBtn = document.querySelector(`.sidebar-nav-item[data-target="${viewId}"]`);
     if (sidebarBtn) sidebarBtn.classList.add("active", "bg-slate-100", "text-primary");
 
-    if (viewId === "dashboard") renderDashboard();
+    if (viewId === "dashboard") {
+        if (typeof bukaUcapanMaskot === "function") bukaUcapanMaskot();
+        renderDashboard();
+    }
     if (viewId === "absensi") loadAbsensiData();
     if (viewId === "kebiasaan") loadKebiasaanData();
     if (viewId === "jurnal") loadJurnalData();
