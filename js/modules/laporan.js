@@ -61,12 +61,7 @@ function renderLaporanRekapView() {
     const data = getFilteredLaporanData();
 
     if (data.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-filter text-2xl mb-2 text-purple-400"></i>
-                <p class="text-xs text-slate-500 font-medium">Tidak ada data rekapitulasi yang cocok dengan filter yang dipilih.</p>
-            </div>
-        `;
+        container.innerHTML = maskotKosong("Tidak ada data rekapitulasi yang cocok dengan filter yang dipilih.", 96, "laporan");
         return;
     }
 
@@ -153,7 +148,7 @@ function getLaporanRekapTitle() {
 function printLaporanRekap() {
     const data = getFilteredLaporanData();
     if (data.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk dicetak.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Data Kosong', 'Tidak ada data rekapitulasi untuk dicetak.', 'laporan');
         return;
     }
     printFeaturePDF(getLaporanRekapTitle(), buildLaporanRekapContent(data), { orientation: "landscape" });
@@ -162,7 +157,7 @@ function printLaporanRekap() {
 function exportLaporanPDF() {
     const data = getFilteredLaporanData();
     if (data.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data rekapitulasi untuk diekspor.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Data Kosong', 'Tidak ada data rekapitulasi untuk diekspor.', 'laporan');
         return;
     }
     exportFeaturePDF(
@@ -176,7 +171,7 @@ function exportLaporanPDF() {
 function exportRekapCSV() {
     const data = getFilteredLaporanData();
     if (data.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data laporan untuk diekspor.', confirmButtonColor: '#2563eb' });
+        maskotAlert('Data Kosong', 'Tidak ada data laporan untuk diekspor.', 'laporan');
         return;
     }
 
@@ -281,7 +276,7 @@ function ambilParamLaporanKebiasaan() {
 async function muatLaporanKebiasaan(opsi = {}) {
     const prm = ambilParamLaporanKebiasaan();
     if (prm.error) {
-        Swal.fire({ icon: "warning", title: "Periode Tidak Valid", text: prm.error, confirmButtonColor: "#2563eb" });
+        maskotAlert("Periode Tidak Valid", prm.error, "pengingat");
         return null;
     }
     const kunci = [prm.dari, prm.sampai, prm.kelas].join("|");
@@ -331,7 +326,7 @@ function renderLaporanKebiasaan() {
     const d = ambilDataLaporanKebiasaan();
     if (!d) return;
     if (d.siswa.length === 0) {
-        wadah.innerHTML = `<div class="empty-state"><i class="fas fa-filter text-2xl mb-2 text-purple-400"></i><p class="text-xs text-slate-500 font-medium">Tidak ada siswa pada cakupan dan periode ini.</p></div>`;
+        wadah.innerHTML = maskotKosong("Tidak ada siswa pada cakupan dan periode ini.", 96, "laporan");
         return;
     }
     const rata = Math.round(d.siswa.reduce((a, x) => a + x.capaian, 0) / d.siswa.length);
@@ -445,7 +440,7 @@ async function siapkanLaporanKebiasaan(jurnal) {
     if (!data) return null;
     const d = ambilDataLaporanKebiasaan();
     if (!d || d.siswa.length === 0) {
-        Swal.fire({ icon: "warning", title: "Data Kosong", text: "Tidak ada data untuk diekspor pada periode ini.", confirmButtonColor: "#2563eb" });
+        maskotAlert("Data Kosong", "Tidak ada data untuk diekspor pada periode ini.", "laporan");
         return null;
     }
     return d;

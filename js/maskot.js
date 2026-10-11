@@ -15,7 +15,8 @@
  *       arsip (kotak map warna-warni: arsip, berkas, riwayat),
  *       semangat (tangan terkepal terangkat: motivasi, ajakan mulai),
  *       kartu (kartu siswa + kunci emas: kartu akun, akses, kata sandi),
- *       keagamaan (tangan berdoa + Al-Qur'an di rehal: iqro, hafalan doa, capaian keagamaan).
+ *       keagamaan (tangan berdoa + Al-Qur'an di rehal: iqro, hafalan doa, capaian keagamaan),
+ *       laporan (papan grafik batang + tongkat penunjuk: laporan, rekap, statistik).
  */
 function maskotAman(t) {
     if (typeof escapeHtml === "function") return escapeHtml(String(t == null ? "" : t));
@@ -233,8 +234,23 @@ function maskotKeagamaan(size) {
     return maskotRangka("kag", "", kiri + kanan + rehal + buku, { ukuran: size });
 }
 
+/* Pose "laporan": papan grafik batang naik dan tongkat penunjuk. Untuk laporan, rekap, dan statistik. */
+function maskotLaporan(size) {
+    var bar = function (x, h, w) { return '<rect class="mk-lap-bar" x="' + x + '" y="' + (338 - h) + '" width="22" height="' + h + '" rx="2" fill="' + w + '"/>'; };
+    var papan = '<g class="mk-lap-board"><g transform="rotate(-2 96 305)"><rect x="18" y="226" width="158" height="134" rx="10" fill="#FDEBD3" stroke="#1B2A4A" stroke-width="5"/>' +
+        bar(38, 30, "#2E86D6") + bar(66, 52, "#5AAE4F") + bar(94, 74, "#FDB827") + bar(122, 96, "#F5821F") +
+        '<path d="M30 338 H156" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"/>' +
+        '<path class="mk-lap-trend" pathLength="1" d="M34 296 Q96 288 150 244 M150 244 L136 246 M150 244 L148 258" fill="none" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></g>';
+    var lenganKiri = '<g class="mk-lap-arm-l"><path d="M146 286 Q90 304 30 304" fill="none" stroke="#3A1F14" stroke-width="40" stroke-linecap="round"/><path d="M146 286 Q90 304 30 304" fill="none" stroke="' + MASKOT_SAYAP + '" stroke-width="32" stroke-linecap="round"/></g>';
+    var jari = '<g fill="' + MASKOT_SAYAP + '" stroke="#3A1F14" stroke-width="3.5" stroke-linejoin="round"><path d="M18 286 q-8 4 -6 14 q2 10 14 12 l4 -22 Z"/></g><g fill="none" stroke="#3A1F14" stroke-width="3" stroke-linecap="round"><path d="M16 292 q6 2 8 8"/></g>';
+    var tongkat = '<g class="mk-lap-pointer"><path d="M268 306 L172 244" stroke="#3A1F14" stroke-width="10" stroke-linecap="round"/><path d="M268 306 L172 244" stroke="#8A5226" stroke-width="5" stroke-linecap="round"/></g>';
+    var kanan = '<g class="mk-lap-arm-r"><path d="M254 272 Q282 296 270 312" fill="none" stroke="#3A1F14" stroke-width="40" stroke-linecap="round"/><path d="M254 272 Q282 296 270 312" fill="none" stroke="' + MASKOT_SAYAP + '" stroke-width="32" stroke-linecap="round"/>' +
+        '<g fill="none" stroke="#3A1F14" stroke-width="3" stroke-linecap="round"><path d="M262 316 q8 -2 14 4"/></g></g>';
+    return maskotRangka("lap", "", lenganKiri + papan + jari + tongkat + kanan, { ukuran: size });
+}
+
 /* Daftar pose. Pose belum tersedia jatuh ke pose pertama (kebiasaan). */
-var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat, kartu: maskotKartu, keagamaan: maskotKeagamaan };
+var MASKOT_POSE = { kebiasaan: maskotKebiasaan, akademik: maskotAkademik, jurnal: maskotJurnal, presensi: maskotPresensi, tatib: maskotTatib, biasa: maskotBiasa, piala: maskotPiala, pengingat: maskotPengingat, ceria: maskotCeria, admin: maskotAdmin, arsip: maskotArsip, semangat: maskotSemangat, kartu: maskotKartu, keagamaan: maskotKeagamaan, laporan: maskotLaporan };
 
 function maskot(pose, ukuran) {
     return (MASKOT_POSE[pose] || maskotKebiasaan)(ukuran);

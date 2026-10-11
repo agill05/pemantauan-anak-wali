@@ -280,6 +280,20 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-kag-star{animation:mk-kag-glow 2.6s ease-in-out infinite;transform-origin:50% 50%}
 @keyframes mk-kag-glow{0%,100%{opacity:.6;transform:scale(.94)}50%{opacity:1;transform:scale(1.08) rotate(8deg)}}
 
+/* Pose laporan: papan grafik + tongkat penunjuk */
+.mk-lap-board{animation:mk-kar-sway 3.4s ease-in-out infinite;transform-origin:50% 100%}
+.mk-lap-bar{animation:mk-lap-grow 3s ease-in-out infinite;transform-origin:50% 100%}
+.mk-lap-bar:nth-of-type(2){animation-delay:.15s}
+.mk-lap-bar:nth-of-type(3){animation-delay:.3s}
+.mk-lap-bar:nth-of-type(4){animation-delay:.45s}
+@keyframes mk-lap-grow{0%,100%{transform:scaleY(.82)}50%{transform:scaleY(1)}}
+.mk-lap-trend{stroke-dasharray:1;animation:mk-lap-draw 3.2s ease-in-out infinite}
+@keyframes mk-lap-draw{0%,10%{stroke-dashoffset:1}50%,90%{stroke-dashoffset:0}100%{stroke-dashoffset:1}}
+.mk-lap-pointer{animation:mk-lap-tap 2.2s ease-in-out infinite;transform-origin:100% 100%}
+@keyframes mk-lap-tap{0%,100%{transform:rotate(0)}40%{transform:rotate(-4deg)}55%{transform:rotate(1deg)}}
+.mk-lap-arm-r{animation:mk-lap-tap 2.2s ease-in-out infinite;transform-origin:0% 0%}
+.mk-lap-arm-l{animation:mk-ars-hug 3.4s ease-in-out infinite;transform-origin:100% 50%}
+
 @media (prefers-reduced-motion: reduce){
   .mk *{animation:none!important}
 }
