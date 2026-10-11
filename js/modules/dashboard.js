@@ -458,7 +458,34 @@ function renderAgendaSection(agendaList) {
     `).join("");
 }
 
+const NOTIF_CACHE_KEY = "notif_ditangani_cache";
 let pendingPembinaanNotif = null;
+
+async function fetchNotifDitangani() {
+    const res = await apiCall("getNotifDitangani", {}, false);
+    if (res && res.status === "success") {
+        appState.notifDitangani = res.data || [];
+        try { localStorage.setItem(NOTIF_CACHE_KEY, JSON.stringify(appState.notifDitangani)); } catch (e) { }
+    } else if (!appState.notifDitangani) {
+        try { appState.notifDitangani = JSON.parse(localStorage.getItem(NOTIF_CACHE_KEY) || "[]"); }
+        catch (e) { appState.notifDitangani = []; }
+    }
+}
+
+function getHandledRecord(notifId) {
+    const rec = (appState.notifDitangani || []).find(r => String(r.id) === String(notifId));
+    if (!rec) return null;
+    if (notifDitanganiPembinaanAktif(rec, notifId)) return rec;
+    if (Date.now() - Number(rec.ditangani_at) >= SNOOZE_24H_MS) return null;
+    return rec;
+}
+
+function notifDitanganiPembinaanAktif(rec, notifId) {
+    if (String(rec.sumber || '') !== 'pembinaan' || !rec.pembinaan_id) return false;
+    if (String(notifId).indexOf('_kebiasaan_') !== -1) return false;
+    const p = (appState.pembinaan || []).find(x => String(x.id) === String(rec.pembinaan_id));
+    return !!p && String(p.status).toLowerCase() !== 'selesai';
+}
 
 function saveNotifDitangani(n, extra = {}) {
     return apiCall("setNotifDitangani", {
@@ -496,7 +523,11 @@ async function dismissNotification(notifId) {
     openNotificationModal('active');
 
     if (res && res.status === "success") {
-        showToast("Dipindahkan ke 'Sudah Ditangani'. Muncul lagi setelah masa tunda berakhir, kecuali sudah ada catatan pembinaan yang berjalan.", "info");
+        const sNotif = (appState.siswa || []).find(x => String(x.id) === String(n.siswa.id));
+        const sebagaiMentor = isGuruUser() && getAccessTypeSiswa(sNotif) === 'mentor';
+        showToast(sebagaiMentor
+            ? "Ditandai oleh Mentor. Wali kelas tetap melihat notifikasi ini. Akan muncul kembali dalam 24 jam jika belum ada catatan pembinaan."
+            : "Dipindahkan ke 'Sudah Ditangani'. Jika belum ada catatan pembinaan, akan muncul kembali dalam 24 jam.", "info");
     } else {
         showToast(res?.message || "Gagal menandai notifikasi. Coba lagi.", "warning");
     }
@@ -540,8 +571,12 @@ function renderHandledInfo(n) {
     return `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100"><i class="fas fa-check text-[9px]"></i> ${via} oleh ${oleh} · ${formatTimeAgo(n.dismissedAt)}</span>`;
 }
 
-function canRestoreNotif() {
-    return !!(appState.user && (appState.user.role === 'admin' || appState.user.role === 'guru'));
+function canRestoreNotif(n) {
+    if (!appState.user) return false;
+    if (appState.user.role === 'admin') return true;
+    const s = (appState.siswa || []).find(x => String(x.id) === String(n.siswa.id));
+    if (getAccessTypeSiswa(s) !== 'mentor') return true;
+    return String((n.handledBy || {}).ditangani_oleh_role || '').toLowerCase() === 'mentor';
 }
 
 function renderHandledNote(n) {
@@ -550,49 +585,236 @@ function renderHandledNote(n) {
     return `<p class="text-[11px] text-slate-500 italic">Catatan: ${escapeHtml(catatan)}</p>`;
 }
 
-/* Notifikasi dihitung di server (Notifikasi.gs: getNotifikasi).
- * Browser hanya: minta hasil, saring sesuai peran aktif, lalu tampilkan. */
-let notifSigTerakhir = null;
-let notifHasilServer = null;
-let notifIdDikenal = null;
-let notifNomorMinta = 0;
-let notifNomorTerapan = 0;
-
-async function checkStudentNotifications(opsi = {}) {
-    if (!appState.user || appState.user.role === 'ortu') return;
-
-    const nomor = ++notifNomorMinta;
-    const res = await apiCall("getNotifikasi", { sig: notifSigTerakhir }, false, 1, true);
-    if (nomor < notifNomorTerapan) return;
-
-    if (res && res.status === "success") {
-        if (!res.tidak_berubah && res.data) {
-            notifHasilServer = res.data;
-            notifSigTerakhir = res.sig || null;
-        }
-    } else if (!notifHasilServer) {
-        notifHasilServer = { perlu_tindakan: [], ditangani: [], tatib: null };
+function notifBersihkanAwalan(teks, awalan) {
+    let hasil = String(teks || '').trim();
+    const kunci = awalan.toLowerCase();
+    while (hasil.toLowerCase().startsWith(kunci)) {
+        hasil = hasil.slice(awalan.length).replace(/^[\s:]+/, '');
     }
-    if (!notifHasilServer) return;
-
-    notifNomorTerapan = nomor;
-    terapkanNotifikasi(notifHasilServer, opsi);
+    return hasil.trim();
 }
 
-function terapkanNotifikasi(hasil, opsi) {
+function notifDaftarMapelDibawahKKTP(siswaId) {
+    const nama = (appState.akademik || [])
+        .filter(a => String(a.siswa_id) === String(siswaId) && Number(a.nilai_akhir) < Number(a.kktp))
+        .map(a => String(a.mapel || '').trim())
+        .filter(Boolean);
+    return Array.from(new Set(nama));
+}
+
+function notifTeksMapel(siswaId, jumlah) {
+    const daftar = notifDaftarMapelDibawahKKTP(siswaId);
+    if (daftar.length === 0) return '';
+    const tampil = daftar.slice(0, 5).join(', ') + (daftar.length > 5 ? ` dan ${daftar.length - 5} lainnya` : '');
+    return ` (${tampil})`;
+}
+
+async function checkStudentNotifications() {
+    if (!appState.user || appState.user.role === 'ortu') return;
+
     const isSiswa = appState.user.role === 'siswa';
+    const currentUserId = String(appState.user.id);
+
+    if (!appState.pembinaan || appState.pembinaan.length === 0) {
+        const resPbn = await apiCall("getPembinaan", {}, false);
+        if (resPbn && resPbn.data) appState.pembinaan = resPbn.data;
+    }
+
+    const [resRekap, resTatib] = await Promise.all([
+        apiCall("getLaporanRekap", {}, false),
+        fetchNotifDitangani(),
+        isSiswa ? null : apiCall("getRekapTatib", {}, false, 1, true)
+    ]).then(r => [r[0], r[2]]);
+    const rekapData = resRekap?.data || [];
+
+    let activeList = [];
+    let handledList = [];
+    const todayStr = getDateWITA();
+
     const peranIds = isGuruUser() ? new Set(getSiswaPeran().map(s => String(s.id))) : null;
-    const dalamPeran = n => !peranIds || peranIds.has(String(n.siswa.id));
 
-    const activeList = (hasil.perlu_tindakan || []).filter(dalamPeran);
-    const handledList = (hasil.ditangani || []).filter(dalamPeran);
+    const processNotifItem = (item) => {
+        if (isSiswa && String(item.siswa.id) !== currentUserId) {
+            return;
+        }
+        if (peranIds && !peranIds.has(String(item.siswa.id))) {
+            return;
+        }
 
-    const idSekarang = new Set((hasil.perlu_tindakan || []).map(n => String(n.id)));
-    const baru = (opsi && opsi.umumkan && notifIdDikenal)
-        ? activeList.filter(n => !notifIdDikenal.has(String(n.id)))
-        : [];
-    notifIdDikenal = idSekarang;
+        const rec = getHandledRecord(item.id);
+        if (rec) {
+            handledList.push({ ...item, dismissedAt: Number(rec.ditangani_at), handledBy: rec });
+        } else {
+            activeList.push(item);
+        }
+    };
 
+    const filteredRekap = isSiswa
+        ? rekapData.filter(item => String(item.id) === currentUserId)
+        : rekapData;
+
+    filteredRekap.forEach(item => {
+        const sId = String(item.id);
+
+        if (item.presensi.alpa >= 3) {
+            processNotifItem({
+                id: `${sId}_alpa_kritis`,
+                siswa: { id: item.id, nama: item.nama },
+                level: 'kritis',
+                category: 'Kedisiplinan',
+                title: 'Akumulasi Alpa Tinggi',
+                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki akumulasi Alpa sebanyak ${item.presensi.alpa} kali (Batas maksimal 3).`,
+                defaultPembinaan: `Tindak lanjut presensi: Akumulasi Alpa mencapai ${item.presensi.alpa} hari.`
+            });
+        } else if (item.presensi.alpa >= 1 && item.presensi.alpa < 3) {
+            processNotifItem({
+                id: `${sId}_alpa_sedang`,
+                siswa: { id: item.id, nama: item.nama },
+                level: 'sedang',
+                category: 'Kedisiplinan',
+                title: 'Perhatian Absensi',
+                desc: `${isSiswa ? 'Kamu' : item.nama} tercatat Alpa ${item.presensi.alpa} kali. Perlu pengawasan awal.`,
+                defaultPembinaan: `Pemantauan presensi awal: Catatan Alpa ${item.presensi.alpa} hari.`
+            });
+        }
+
+        if (item.dibawah_kktp >= 2) {
+            processNotifItem({
+                id: `${sId}_akademik_kritis`,
+                siswa: { id: item.id, nama: item.nama },
+                level: 'kritis',
+                category: 'Akademik',
+                title: 'Nilai di Bawah KKTP',
+                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki ${item.dibawah_kktp} mata pelajaran di bawah standar KKTP.`,
+                defaultPembinaan: `Bimbingan belajar khusus: ${item.dibawah_kktp} mata pelajaran belum tuntas KKTP${notifTeksMapel(item.id, item.dibawah_kktp)}.`
+            });
+        } else if (item.dibawah_kktp === 1) {
+            processNotifItem({
+                id: `${sId}_akademik_sedang`,
+                siswa: { id: item.id, nama: item.nama },
+                level: 'sedang',
+                category: 'Akademik',
+                title: 'Peringatan KKTP',
+                desc: `${isSiswa ? 'Kamu' : item.nama} memiliki 1 mata pelajaran yang belum memenuhi KKTP.`,
+                defaultPembinaan: `Bimbingan akademik untuk 1 mapel yang belum tuntas KKTP${notifTeksMapel(item.id, 1)}.`
+            });
+        }
+    });
+
+    if (appState.kebiasaan && appState.kebiasaan.length > 0) {
+        const targetSiswa = isSiswa
+            ? appState.siswa.filter(s => String(s.id) === currentUserId)
+            : appState.siswa;
+
+        targetSiswa.forEach(s => {
+            const sId = String(s.id);
+            const k2Rec = appState.kebiasaan.find(k => String(k.siswa_id) === sId && String(k.kebiasaan_id) === 'K2' && k.tanggal === todayStr);
+            if (k2Rec && k2Rec.status === 'Belum') {
+                processNotifItem({
+                    id: `${sId}_kebiasaan_k2`,
+                    siswa: { id: s.id, nama: s.nama },
+                    level: 'rendah',
+                    category: 'Kebiasaan',
+                    title: 'Belum Beribadah/Shalat',
+                    desc: `${isSiswa ? 'Kamu' : s.nama} tercatat belum melaksanakan ibadah pada pantauan hari ini.`,
+                    defaultPembinaan: `Pembinaan karakter: pembiasaan ibadah harian, tercatat belum beribadah pada ${formatTanggalLabel(todayStr)}.`
+                });
+            }
+        });
+    }
+
+    if (appState.keagamaan && appState.keagamaan.length > 0) {
+        const targetHafalan = isSiswa
+            ? appState.keagamaan.filter(h => String(h.siswa_id) === currentUserId)
+            : appState.keagamaan;
+
+        targetHafalan.forEach(h => {
+            if (h.status === 'Mengulang') {
+                const s = appState.siswa.find(x => String(x.id) === String(h.siswa_id)) || (isSiswa ? appState.user : null);
+                if (s) {
+                    processNotifItem({
+                        id: `hfl_${h.id}_mengulang`,
+                        siswa: { id: s.id, nama: s.nama },
+                        level: 'sedang',
+                        category: 'Keagamaan',
+                        title: ({ surah: 'Hafalan Perlu Perbaikan', iqro: 'Bacaan Iqro Perlu Perbaikan', doa: 'Hafalan Doa Perlu Perbaikan' })[getKategoriHafalan(h)],
+                        desc: `${formatCapaianKeagamaan(h)} untuk ${isSiswa ? 'kamu' : s.nama} perlu diulang kembali (${h.catatan || 'Perhatikan kelancaran'}).`,
+                        defaultPembinaan: `Bimbingan ${KEAGAMAAN_KATEGORI[getKategoriHafalan(h)].judul}: ${formatCapaianKeagamaan(h)}`
+                    });
+                }
+            }
+        });
+    }
+
+    if (appState.pembinaan && appState.pembinaan.length > 0) {
+        const targetPembinaan = isSiswa
+            ? appState.pembinaan.filter(p => String(p.siswa_id) === currentUserId)
+            : appState.pembinaan;
+
+        targetPembinaan.forEach(p => {
+            const s = appState.siswa.find(x => String(x.id) === String(p.siswa_id)) || (isSiswa ? appState.user : null);
+            if (s && String(p.status).toLowerCase() !== 'selesai') {
+                const stLower = String(p.status).toLowerCase();
+                let lvl = 'sedang';
+                if (stLower === 'perlu tindak lanjut') lvl = 'kritis';
+
+                processNotifItem({
+                    id: `pbn_${p.id}_aktif`,
+                    siswa: { id: s.id, nama: s.nama },
+                    level: lvl,
+                    category: 'Pembinaan',
+                    title: `Catatan Pembinaan (${p.status})`,
+                    desc: `Kasus "${p.permasalahan}" ${isSiswa ? 'kamu' : 'untuk ' + s.nama} masih dalam status ${p.status}.`,
+                    defaultPembinaan: `Tindak lanjut pembinaan: ${notifBersihkanAwalan(p.permasalahan, 'Tindak lanjut pembinaan')}`,
+                    pbnJenis: p.jenis
+                });
+            }
+        });
+    }
+
+    if (resTatib && resTatib.status === 'success' && Array.isArray(resTatib.data)) {
+        const ROMAWI = ['', 'I', 'II', 'III'];
+        const kf = resTatib.konfig || {};
+        resTatib.data.forEach(r => {
+            const tahap = Number(r.tahap) || 0;
+            if (tahap < 1 && !r.mencapai_batas) return;
+            const s = (appState.siswa || []).find(x => String(x.id) === String(r.siswa_id));
+            if (!s) return;
+            const sId = String(r.siswa_id);
+            const total = Number(r.total) || 0;
+            const tertunda = Array.isArray(r.panggilan_tertunda) ? r.panggilan_tertunda : [];
+            const dasar = { siswa: { id: s.id, nama: s.nama }, category: 'Tata Tertib' };
+
+            if (r.mencapai_batas) {
+                processNotifItem(Object.assign({}, dasar, {
+                    id: `${sId}_tatib_batas`,
+                    level: 'kritis',
+                    title: 'Poin Tata Tertib Mencapai Batas',
+                    desc: `${s.nama} mencapai ${total} poin pelanggaran (batas ${kf.batas_keluar || 50}). Perlu keputusan pimpinan sekolah.`,
+                    defaultPembinaan: `Pembinaan tata tertib: akumulasi ${total} poin pelanggaran (mencapai batas).`,
+                    tatibTahap: tertunda[0] || ''
+                }));
+                return;
+            }
+            if (!tertunda.includes(ROMAWI[tahap])) return;
+            processNotifItem(Object.assign({}, dasar, {
+                id: `${sId}_tatib_p${tahap}`,
+                level: tahap === 1 ? 'sedang' : 'kritis',
+                title: `Poin Tata Tertib: Panggilan Orang Tua ${ROMAWI[tahap]}`,
+                desc: `${s.nama} mencapai ${total} poin pelanggaran (ambang ${kf['panggilan_' + tahap] || '-'}). Panggilan orang tua ${ROMAWI[tahap]} belum dicatat.`,
+                defaultPembinaan: `Pembinaan tata tertib: akumulasi ${total} poin pelanggaran (Panggilan Orang Tua ${ROMAWI[tahap]}).`,
+                tatibTahap: ROMAWI[tahap]
+            }));
+        });
+    }
+
+    if (typeof tatibRenderStatusDashboard === 'function') tatibRenderStatusDashboard(resTatib);
+
+    const levelOrder = { 'kritis': 3, 'sedang': 2, 'rendah': 1 };
+    activeList.sort((a, b) => levelOrder[b.level] - levelOrder[a.level]);
+    handledList.sort((a, b) => b.dismissedAt - a.dismissedAt);
+
+    const prevCount = appState.currentNotifications ? appState.currentNotifications.length : 0;
     appState.currentNotifications = activeList;
     appState.handledNotifications = handledList;
 
@@ -607,21 +829,22 @@ function terapkanNotifikasi(hasil, opsi) {
     }
 
     updateSidebarBadge();
+
     appState.notificationsReady = true;
 
     const statCount = document.getElementById("dash-stat-perhatian-count");
-    if (statCount) statCount.innerText = getAttentionStudentCount();
+    if (statCount) {
+        statCount.innerText = getAttentionStudentCount();
+    }
 
     if (isSiswa) renderSiswaDashboardParts();
-    if (typeof tatibRenderStatusDashboard === 'function') tatibRenderStatusDashboard(hasil.tatib || null);
 
-    if (!isSiswa && baru.length > 0) {
-        showToast(`${baru.length} catatan siswa baru ditemukan!`, "warning");
-        const kritisBaru = baru.filter(n => n.level === 'kritis').length;
-        if (kritisBaru > 0) {
+    if (!isSiswa && activeList.length > prevCount) {
+        const kritisCount = activeList.filter(n => n.level === 'kritis').length;
+        if (kritisCount > 0) {
             sendWebPushNotification(
                 "⚠️ Perhatian Khusus Siswa",
-                `Terdapat ${kritisBaru} catatan siswa baru dengan tingkat keparahan KRITIS membutuhkan tindakan segera.`
+                `Terdapat ${kritisCount} catatan siswa dengan tingkat keparahan KRITIS membutuhkan tindakan segera.`
             );
         }
     }
@@ -728,7 +951,7 @@ function openNotificationModal(activeTab = 'active', selectedKelasId = '') {
 
                         ${isCanManageNotif ? (
             activeTab === 'active' ? `
-                                <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (disembunyikan sementara)" aria-label="Tandai sudah ditangani" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
+                                <button onclick="dismissNotification('${n.id}')" title="Tandai Sudah Ditangani (Snooze 24 Jam)" aria-label="Tandai sudah ditangani" class="text-slate-400 hover:text-emerald-600 p-1 shrink-0">
                                     <i class="fas fa-check-circle text-lg"></i>
                                 </button>
                             ` : (canRestoreNotif(n) ? `
