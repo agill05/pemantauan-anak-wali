@@ -41,6 +41,21 @@
 .mk-keb-glint{animation:mk-keb-glint 2s ease-in-out infinite;transform-origin:50% 50%}
 @keyframes mk-keb-glint{0%,100%{transform:scale(.6);opacity:.6}50%{transform:scale(1.15);opacity:1}}
 
+/* Pose akademik: topi toga + sertifikat */
+.mk-aka-tail{animation:mk-keb-tail 2.6s ease-in-out infinite;transform-origin:0% 30%}
+.mk-aka-cap{animation:mk-aka-cap 3s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-aka-cap{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-2px)}}
+.mk-aka-tassel{animation:mk-aka-tassel 2.4s ease-in-out infinite;transform-origin:50% 0}
+@keyframes mk-aka-tassel{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(9deg)}}
+.mk-aka-arm-l{}
+.mk-aka-cert{animation:mk-aka-cert 2.6s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes mk-aka-cert{0%,100%{transform:rotate(-2deg) translateY(0)}50%{transform:rotate(3deg) translateY(-5px)}}
+.mk-aka-fist-l{animation:mk-keb-squeeze 2.6s ease-in-out infinite;transform-origin:50% 50%}
+.mk-aka-star{animation:mk-aka-star 1.8s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mk-aka-star{0%,100%{transform:scale(.88) rotate(0)}50%{transform:scale(1.18) rotate(12deg)}}
+.mk-aka-arm-r{animation:mk-keb-pump 2.4s ease-in-out infinite;transform-origin:30% 10%}
+.mk-aka-fist{animation:mk-keb-squeeze 2.4s ease-in-out infinite;transform-origin:50% 50%}
+
 /* Empty state dengan maskot */
 .empty-state .mk{margin-bottom:.25rem}
 [data-maskot]>.mk{max-width:100%}

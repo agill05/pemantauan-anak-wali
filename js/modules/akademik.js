@@ -71,7 +71,7 @@ function renderAkademikNilai() {
     const isAdminOrGuru = isStafLihat();
 
     if (isAdminOrGuru && filterSiswaId === "") {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-indigo-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
+        container.innerHTML = maskotKosong("Silakan pilih siswa terlebih dahulu.", 96, "akademik");
         return;
     }
 
@@ -82,7 +82,7 @@ function renderAkademikNilai() {
     const bannerBaca = renderReadOnlyBanner('akademik', 'nilai mapel');
 
     if (filteredAkademik.length === 0) {
-        container.innerHTML = bannerBaca + `<div class="empty-state"><i class="fas fa-graduation-cap text-2xl mb-2 text-indigo-500"></i><p class="text-xs text-slate-500">Belum ada data nilai mata pelajaran untuk siswa ini.</p></div>`;
+        container.innerHTML = bannerBaca + maskotKosong("Belum ada data nilai mata pelajaran untuk siswa ini.", 96, "akademik");
         return;
     }
 
@@ -239,7 +239,7 @@ function renderAkademikPrestasi() {
     const isAdminOrGuru = isStafLihat();
 
     if (isAdminOrGuru && filterSiswaId === "") {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-hand-pointer text-2xl mb-2 text-amber-500"></i><p class="text-xs text-slate-500">Silakan pilih siswa terlebih dahulu.</p></div>`;
+        container.innerHTML = maskotKosong("Silakan pilih siswa terlebih dahulu.", 96, "akademik");
         return;
     }
 
@@ -397,7 +397,7 @@ async function savePrestasiForm(e, id) {
         renderAkademikPrestasi();
         closeModal();
         if (id) showToast("Catatan prestasi tersimpan!");
-        else owlCelebrate("Prestasi tercatat!", "Selamat! Terus semangat berprestasi.");
+        else maskotRayakan("Prestasi tercatat!", "Selamat! Terus semangat berprestasi.", null, "akademik");
     } else {
         Swal.fire({
             icon: 'error',
