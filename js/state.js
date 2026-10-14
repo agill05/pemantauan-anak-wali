@@ -177,7 +177,7 @@ const PERAN_STORAGE_PREFIX = "peran_aktif_";
 
 const WRITE_KATEGORI_CLIENT = {
     wali: new Set(["siswa", "ambil_siswa", "absensi", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan", "tatib"]),
-    mentor: new Set(["ambil_siswa", "absensi_mentor", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan", "tatib"]),
+    mentor: new Set(["ambil_siswa", "absensi_mentor", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan", "tatib"]),
     self: new Set(["kebiasaan", "jurnal"])
 };
 
@@ -389,6 +389,7 @@ function canEditRecord(rec, kategori) {
     if (!isGuruUser()) return true;
     const s = _resolveSiswaRef(rec.siswa_id);
     if (getEffectiveAccessType(s) !== "mentor") return true;
+    if (kategori === "akademik") return true;
     const owner = String(rec.dibuat_oleh_id || "").trim();
     return owner !== "" && owner === String(appState.user.id).trim();
 }
