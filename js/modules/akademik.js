@@ -111,7 +111,8 @@ function renderAkademikNilai() {
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.mapel)}</h4>
                     ${renderInfoRows([
                         {label:"Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + (luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'),html:true},
-                        {label:"KKTP",value:item.kktp}
+                        {label:"KKTP",value:item.kktp},
+                        {label:"Diinput oleh",value:item.dibuat_oleh_nama ? 'Guru: ' + escapeHtml(item.dibuat_oleh_nama) : '',html:true}
                     ])}
                 </div>
                 <div class="flex items-center gap-3">
@@ -261,6 +262,7 @@ async function saveAkademikForm(e, id) {
         const idx = appState.akademik.findIndex(x => String(x.id) === String(newId));
         const base = idx !== -1 ? appState.akademik[idx] : buildAuditLocal(payload.siswa_id);
         const saved = { ...base, ...payload, id: newId };
+        if (!saved.dibuat_oleh_nama) saved.dibuat_oleh_nama = String((appState.user && (appState.user.nama || appState.user.username)) || "");
         if (idx !== -1) appState.akademik[idx] = saved;
         else appState.akademik.push(saved);
 
@@ -273,6 +275,154 @@ async function saveAkademikForm(e, id) {
             icon: 'error',
             title: 'Gagal Menyimpan',
             text: res?.message || 'Terjadi kesalahan saat menyimpan nilai mapel.',
+            confirmButtonColor: '#2563eb'
+        });
+    }
+}
+
+// ===== Input nilai massal =====
+let _akdBulkSiswa = [];
+
+async function openModalAkademikBulk() {
+    const box = document.getElementById("modal-content-box");
+    if (!box) return;
+    box.dataset.gs = "";
+
+    const semua = await ambilSiswaSemuaAkademik();
+    if (!semua || semua.length === 0) {
+        showToast("Gagal memuat daftar siswa. Coba lagi.", "warning");
+        return;
+    }
+    _akdBulkSiswa = semua;
+
+    const daftarKelas = [...new Set(semua.map(s => String(s.nama_kelas || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base", numeric: true }));
+    const kelasOpts = `<option value="" selected disabled>Pilih kelas</option>` +
+        daftarKelas.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("");
+    const mapelOpts = `<option value="" selected disabled>Pilih mata pelajaran</option>` +
+        DAFTAR_MAPEL.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
+
+    box.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-slate-800">Input Nilai Massal</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="saveAkademikBulk(event)" class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label for="m-akdb-kelas" class="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
+                    <select id="m-akdb-kelas" onchange="renderAkdBulkList()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${kelasOpts}</select>
+                </div>
+                <div>
+                    <label for="m-akdb-kktp" class="block text-xs font-bold text-slate-500 mb-1">KKTP</label>
+                    <input type="number" id="m-akdb-kktp" min="0" max="100" step="0.01" inputmode="decimal" value="75" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                </div>
+            </div>
+            <div>
+                <label for="m-akdb-mapel" class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
+                <select id="m-akdb-mapel" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${mapelOpts}</select>
+            </div>
+            <div class="flex justify-between items-center px-1">
+                <span class="text-xs font-bold text-slate-500 uppercase">Nilai Akhir Siswa</span>
+                <span id="akdb-counter" class="text-xs font-bold text-slate-400">0 terisi</span>
+            </div>
+            <div id="akdb-list" class="space-y-1.5 max-h-[45vh] overflow-y-auto pr-1">
+                <p class="text-xs text-slate-400 text-center py-6">Pilih kelas dulu.</p>
+            </div>
+            <p class="text-[11px] text-slate-400">Kosongkan nilai siswa yang tidak ingin diisi. Nilai mapel yang sudah ada dilewati.</p>
+            <button type="submit" class="w-full bg-primary text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Semua Nilai</button>
+        </form>
+    `;
+    document.getElementById("modal-container")?.classList.remove("hidden");
+}
+
+function renderAkdBulkList() {
+    const kelas = (document.getElementById("m-akdb-kelas") || {}).value || "";
+    const list = document.getElementById("akdb-list");
+    if (!list) return;
+    const siswa = _akdBulkSiswa
+        .filter(s => String(s.nama_kelas || "").trim() === kelas)
+        .sort((a, b) => String(a.nama || "").localeCompare(String(b.nama || ""), "id", { sensitivity: "base", numeric: true }));
+    if (siswa.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Tidak ada siswa di kelas ini.</p>`;
+        updateAkdBulkCounter();
+        return;
+    }
+    list.innerHTML = siswa.map((s, i) => `
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-2.5 py-1.5">
+            <span class="text-xs text-slate-400 w-5 text-right shrink-0">${i + 1}</span>
+            <span class="flex-1 min-w-0 text-xs font-semibold text-slate-700 truncate">${escapeHtml(s.nama)}</span>
+            <input type="number" data-akdb-siswa="${escapeHtml(s.id)}" min="0" max="100" step="0.01" inputmode="decimal"
+                oninput="updateAkdBulkCounter()" onkeydown="akdBulkEnter(event)" placeholder="-"
+                aria-label="Nilai ${escapeHtml(s.nama)}"
+                class="w-20 bg-white border p-1.5 rounded-lg text-xs text-center outline-none">
+        </div>`).join("");
+    updateAkdBulkCounter();
+}
+
+// Enter pindah ke siswa berikutnya, bukan kirim form.
+function akdBulkEnter(e) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const inputs = [...document.querySelectorAll("#akdb-list input[data-akdb-siswa]")];
+    const next = inputs[inputs.indexOf(e.target) + 1];
+    if (next) next.focus();
+}
+
+function updateAkdBulkCounter() {
+    const inputs = [...document.querySelectorAll("#akdb-list input[data-akdb-siswa]")];
+    const terisi = inputs.filter(i => i.value.trim() !== "").length;
+    const el = document.getElementById("akdb-counter");
+    if (el) el.textContent = `${terisi} terisi dari ${inputs.length}`;
+}
+
+async function saveAkademikBulk(e) {
+    e.preventDefault();
+    const mapel = (document.getElementById("m-akdb-mapel").value || "").trim();
+    const kktp = Number(document.getElementById("m-akdb-kktp").value);
+    if (!mapel) { showToast("Pilih mata pelajaran.", "warning"); return; }
+    if (!(kktp >= 0 && kktp <= 100)) { showToast("KKTP harus 0 sampai 100.", "warning"); return; }
+
+    const items = [];
+    let salah = null;
+    document.querySelectorAll("#akdb-list input[data-akdb-siswa]").forEach(inp => {
+        const v = inp.value.trim();
+        if (v === "") return;
+        const n = Number(v);
+        if (!(n >= 0 && n <= 100)) { inp.classList.add("border-rose-400"); salah = salah || inp; return; }
+        inp.classList.remove("border-rose-400");
+        items.push({ siswa_id: inp.dataset.akdbSiswa, nilai_akhir: n });
+    });
+    if (salah) { showToast("Nilai harus 0 sampai 100.", "warning"); salah.focus(); return; }
+    if (items.length === 0) { showToast("Belum ada nilai yang diisi.", "warning"); return; }
+
+    showLoading(`Menyimpan ${items.length} nilai...`);
+    const res = await apiCall("saveAkademikBulk", { mapel, kktp, items }, false);
+    hideLoading();
+
+    if (res && res.status === "success") {
+        const segar = await apiCall("getAkademik", { siswa_id: null }, false);
+        if (segar && segar.data) { appState.akademik = segar.data; lastFetchTimes.akademik = Date.now(); saveAppStateToLocal(); }
+        renderAkademikNilai();
+        closeModal();
+        const lewat = Array.isArray(res.dilewati) ? res.dilewati : [];
+        if (lewat.length === 0) {
+            showToast(`${res.tersimpan} nilai ${mapel} tersimpan!`);
+        } else {
+            const nama = id => { const s = _akdBulkSiswa.find(x => String(x.id) === String(id)); return s ? s.nama : id; };
+            Swal.fire({
+                icon: 'info',
+                title: `${res.tersimpan} nilai tersimpan`,
+                html: `<div class="text-xs text-left">${lewat.length} dilewati:<ul class="list-disc pl-5 mt-1">` +
+                    lewat.map(d => `<li>${escapeHtml(nama(d.siswa_id))}: ${escapeHtml(d.alasan)}</li>`).join("") + `</ul></div>`,
+                confirmButtonColor: '#2563eb'
+            });
+        }
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Menyimpan',
+            text: res?.message || 'Terjadi kesalahan saat menyimpan nilai massal.',
             confirmButtonColor: '#2563eb'
         });
     }
@@ -512,9 +662,10 @@ function cetakPDFAkademik() {
                 <td style="padding: 6px 6px; text-align: center;">${escapeHtml(String(item.kktp))}</td>
                 <td style="padding: 6px 6px; text-align: center; font-weight: bold;">${escapeHtml(String(item.nilai_akhir))}</td>
                 <td style="padding: 6px 6px; text-align: center; font-weight: bold; color: ${isBelowKKTP ? '#dc2626' : '#16a34a'};">${statusText}</td>
+                <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.dibuat_oleh_nama || '-')}</td>
             </tr>
         `;
-    }).join('') : `<tr><td colspan="5" style="padding: 10px; text-align: center; color: #64748b;">Belum ada data nilai mapel.</td></tr>`;
+    }).join('') : `<tr><td colspan="6" style="padding: 10px; text-align: center; color: #64748b;">Belum ada data nilai mapel.</td></tr>`;
 
     const prestasiRowsHtml = filteredPrestasi.length > 0 ? filteredPrestasi.map((item, idx) => `
         <tr>
@@ -537,6 +688,7 @@ function cetakPDFAkademik() {
                     <th style="padding: 8px 6px; width: 60px;">KKTP</th>
                     <th style="padding: 8px 6px; width: 70px;">Nilai Akhir</th>
                     <th style="padding: 8px 6px; width: 90px;">Evaluasi</th>
+                    <th style="padding: 8px 6px; width: 110px;">Diinput Oleh</th>
                 </tr>
             </thead>
             <tbody>${nilaiRowsHtml}</tbody>
