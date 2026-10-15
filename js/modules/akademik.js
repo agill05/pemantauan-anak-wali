@@ -120,12 +120,36 @@ function renderAkademikNilai() {
 
 const DAFTAR_MAPEL = ["Agama", "PKn", "Bahasa Indonesia", "Bahasa Inggris", "Matematika", "IPA", "IPS", "PJOK", "Informatika", "Prakarya"];
 
-function openModalAkademik(id = null) {
+let _siswaSemuaAkd = null;
+
+// Guru mapel boleh isi nilai siswa mana pun, jadi daftar diambil dari server (semua siswa).
+async function ambilSiswaSemuaAkademik() {
+    if (_siswaSemuaAkd && Date.now() - _siswaSemuaAkd.t < 5 * 60 * 1000) return _siswaSemuaAkd.data;
+    showLoading("Memuat daftar siswa...");
+    const res = await apiCall("getSiswaAkademik", {}, false);
+    hideLoading();
+    if (res && res.status === "success" && Array.isArray(res.data)) {
+        _siswaSemuaAkd = { t: Date.now(), data: res.data };
+        return res.data;
+    }
+    return null;
+}
+
+async function openModalAkademik(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
     box.dataset.gs = "";
 
-    const writable = getSiswaWritable('akademik');
+    let writable;
+    if (!id && isGuruUser()) {
+        writable = await ambilSiswaSemuaAkademik();
+        if (!writable) {
+            showToast("Gagal memuat daftar siswa. Coba lagi.", "warning");
+            return;
+        }
+    } else {
+        writable = getSiswaWritable('akademik');
+    }
     if (!id && writable.length === 0) {
         Swal.fire({ icon: 'info', title: 'Tidak Ada Siswa', text: 'Tidak ada siswa yang dapat Anda isi nilainya.', confirmButtonColor: '#2563eb' });
         return;
@@ -142,7 +166,15 @@ function openModalAkademik(id = null) {
     const daftar = rec
         ? (appState.siswa || []).filter(s => String(s.id) === String(rec.siswa_id))
         : writable;
-    const siswaOpts = sortSiswa(daftar).map(s => `<option value="${escapeHtml(s.id)}" ${String(preSiswaId) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
+    const urut = (!rec && isGuruUser())
+        ? [...daftar].sort((a, b) =>
+            String(a.nama_kelas || "").localeCompare(String(b.nama_kelas || ""), "id", { sensitivity: "base", numeric: true }) ||
+            String(a.nama || "").localeCompare(String(b.nama || ""), "id", { sensitivity: "base", numeric: true }))
+        : sortSiswa(daftar);
+    const siswaOpts = urut.map(s => {
+        const label = (!rec && isGuruUser() && s.nama_kelas) ? `${s.nama} (${s.nama_kelas})` : s.nama;
+        return `<option value="${escapeHtml(s.id)}" ${String(preSiswaId) === String(s.id) ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+    }).join("");
 
     const mapelSaatIni = String(rec?.mapel || "").trim();
     const mapelList = DAFTAR_MAPEL.slice();
@@ -203,6 +235,12 @@ async function saveAkademikForm(e, id) {
 
     if (res && res.status === "success") {
         const newId = res.id || id || ("AKD-" + Date.now());
+        const diLuarPeran = !id && isGuruUser() && !(appState.siswa || []).some(s => String(s.id) === String(payload.siswa_id));
+        if (diLuarPeran) {
+            closeModal();
+            showToast("Nilai mapel tersimpan! (siswa di luar wali/binaan Anda)");
+            return;
+        }
         if (!Array.isArray(appState.akademik)) appState.akademik = [];
         const idx = appState.akademik.findIndex(x => String(x.id) === String(newId));
         const base = idx !== -1 ? appState.akademik[idx] : buildAuditLocal(payload.siswa_id);
