@@ -118,6 +118,8 @@ function renderAkademikNilai() {
     }).join("");
 }
 
+const DAFTAR_MAPEL = ["Agama", "PKn", "Bahasa Indonesia", "Bahasa Inggris", "Matematika", "IPA", "IPS", "PJOK", "Informatika", "Prakarya"];
+
 function openModalAkademik(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
@@ -142,6 +144,12 @@ function openModalAkademik(id = null) {
         : writable;
     const siswaOpts = sortSiswa(daftar).map(s => `<option value="${escapeHtml(s.id)}" ${String(preSiswaId) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.nama)}</option>`).join("");
 
+    const mapelSaatIni = String(rec?.mapel || "").trim();
+    const mapelList = DAFTAR_MAPEL.slice();
+    if (mapelSaatIni && !mapelList.includes(mapelSaatIni)) mapelList.push(mapelSaatIni); // data lama tetap terbaca
+    const mapelOpts = `<option value="" ${mapelSaatIni ? '' : 'selected'} disabled>Pilih mata pelajaran</option>` +
+        mapelList.map(m => `<option value="${escapeHtml(m)}" ${m === mapelSaatIni ? 'selected' : ''}>${escapeHtml(m)}</option>`).join("");
+
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-bold text-slate-800">${rec ? 'Edit Nilai Mapel' : 'Tambah Nilai Mapel'}</h3>
@@ -154,7 +162,7 @@ function openModalAkademik(id = null) {
             </div>
             <div>
                 <label for="m-akd-mapel" class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
-                <input type="text" id="m-akd-mapel" value="${escapeHtml(rec?.mapel || '')}" placeholder="Contoh: Matematika" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                <select id="m-akd-mapel" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${mapelOpts}</select>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
