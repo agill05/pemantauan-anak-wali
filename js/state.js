@@ -385,11 +385,16 @@ function canWrite(kategori, siswaRef) {
 function canEditRecord(rec, kategori) {
     if (!rec || !appState.user) return false;
     if (appState.user.role === "admin") return true;
+    if (kategori === "akademik") {
+        // Nilai mapel: hanya guru pengisi (dan admin) yang boleh ubah/hapus.
+        if (!isGuruUser()) return false;
+        const pemilik = String(rec.dibuat_oleh_id || "").trim();
+        return pemilik !== "" && pemilik === String(appState.user.id).trim();
+    }
     if (!canWrite(kategori, rec.siswa_id)) return false;
     if (!isGuruUser()) return true;
     const s = _resolveSiswaRef(rec.siswa_id);
     if (getEffectiveAccessType(s) !== "mentor") return true;
-    if (kategori === "akademik") return true;
     const owner = String(rec.dibuat_oleh_id || "").trim();
     return owner !== "" && owner === String(appState.user.id).trim();
 }

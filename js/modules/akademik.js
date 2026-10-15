@@ -75,7 +75,14 @@ function renderAkademikNilai() {
         return;
     }
 
-    const baseAkademik = scopeBySiswaId(appState.akademik, item => item.siswa_id);
+    const dalamPeran = scopeBySiswaId(appState.akademik, item => item.siswa_id);
+    // Nilai yang diisi guru sendiri untuk siswa di luar wali/binaan tetap tampil agar bisa diubah/dihapus.
+    const idSaya = String((appState.user && appState.user.id) || "").trim();
+    const idDalam = new Set(dalamPeran.map(item => String(item.id)));
+    const milikSaya = isGuruUser()
+        ? (appState.akademik || []).filter(item => !idDalam.has(String(item.id)) && String(item.dibuat_oleh_id || "").trim() === idSaya)
+        : [];
+    const baseAkademik = dalamPeran.concat(milikSaya);
     const filteredAkademik = (filterSiswaId && filterSiswaId !== "ALL")
         ? baseAkademik.filter(item => String(item.siswa_id) === String(filterSiswaId))
         : baseAkademik;
@@ -88,7 +95,11 @@ function renderAkademikNilai() {
 
     const idsBisaHapusAkd = filteredAkademik.filter(item => canEditRecord(item, 'akademik')).map(item => String(item.id));
     container.innerHTML = bannerBaca + bulkToolbar("akademik", idsBisaHapusAkd) + filteredAkademik.map(item => {
-        const s = appState.siswa.find(x => String(x.id) === String(item.siswa_id)) || appState.user;
+        const sDalam = appState.siswa.find(x => String(x.id) === String(item.siswa_id));
+        const luarPeran = !sDalam && !!item.siswa_nama;
+        const s = sDalam || (luarPeran
+            ? { nama: item.siswa_nama + (item.nama_kelas ? " (" + item.nama_kelas + ")" : "") }
+            : appState.user);
         const isBelowKKTP = Number(item.nilai_akhir) < Number(item.kktp);
         const badgeColor = isBelowKKTP ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200';
         const bisaUbah = canEditRecord(item, 'akademik');
@@ -99,7 +110,7 @@ function renderAkademikNilai() {
                 <div class="flex-1 min-w-0">
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.mapel)}</h4>
                     ${renderInfoRows([
-                        {label:"Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + ' <span class="ml-1">' + renderPeranChip(s) + '</span>',html:true},
+                        {label:"Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + (luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'),html:true},
                         {label:"KKTP",value:item.kktp}
                     ])}
                 </div>
@@ -171,7 +182,9 @@ async function openModalAkademik(id = null) {
             String(a.nama_kelas || "").localeCompare(String(b.nama_kelas || ""), "id", { sensitivity: "base", numeric: true }) ||
             String(a.nama || "").localeCompare(String(b.nama || ""), "id", { sensitivity: "base", numeric: true }))
         : sortSiswa(daftar);
-    const siswaOpts = urut.map(s => {
+    const siswaOpts = (rec && urut.length === 0)
+        ? `<option value="${escapeHtml(rec.siswa_id)}" selected>${escapeHtml((rec.siswa_nama || rec.siswa_id) + (rec.nama_kelas ? " (" + rec.nama_kelas + ")" : ""))}</option>`
+        : urut.map(s => {
         const label = (!rec && isGuruUser() && s.nama_kelas) ? `${s.nama} (${s.nama_kelas})` : s.nama;
         return `<option value="${escapeHtml(s.id)}" ${String(preSiswaId) === String(s.id) ? 'selected' : ''}>${escapeHtml(label)}</option>`;
     }).join("");
@@ -237,8 +250,11 @@ async function saveAkademikForm(e, id) {
         const newId = res.id || id || ("AKD-" + Date.now());
         const diLuarPeran = !id && isGuruUser() && !(appState.siswa || []).some(s => String(s.id) === String(payload.siswa_id));
         if (diLuarPeran) {
+            const segar = await apiCall("getAkademik", { siswa_id: null }, false);
+            if (segar && segar.data) { appState.akademik = segar.data; saveAppStateToLocal(); }
+            renderAkademikNilai();
             closeModal();
-            showToast("Nilai mapel tersimpan! (siswa di luar wali/binaan Anda)");
+            showToast("Nilai mapel tersimpan! Lihat lewat pilihan Semua. (siswa di luar wali/binaan Anda)");
             return;
         }
         if (!Array.isArray(appState.akademik)) appState.akademik = [];
