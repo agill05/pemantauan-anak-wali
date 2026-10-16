@@ -105,7 +105,8 @@ function renderAkademikNilai() {
         const bisaUbah = canEditRecord(item, 'akademik');
 
         return `
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+            <div class="flex items-center justify-between">
                 ${bisaUbah ? bulkCheckbox("akademik", item.id) : ""}
                 <div class="flex-1 min-w-0">
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.mapel)}</h4>
@@ -117,8 +118,7 @@ function renderAkademikNilai() {
                         {label:"STS",value:akdAngka(item.sts) !== null ? akdFmt(item.sts) : ""},
                         {label:"ASAS",value:akdAngka(item.asas) !== null ? akdFmt(item.asas) : ""},
                         {label:"Nilai Akhir",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.nilai_akhir)) + '</b>',html:true},
-                        {label:"KKTP",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.kktp)) + '</b>',html:true},
-                        {label:"Diinput oleh",value:item.dibuat_oleh_nama ? 'Guru: ' + escapeHtml(item.dibuat_oleh_nama) : '',html:true}
+                        {label:"KKTP",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.kktp)) + '</b>',html:true}
                     ])}
                 </div>
                 <div class="flex items-center gap-3">
@@ -132,6 +132,12 @@ function renderAkademikNilai() {
                     </div>` : ''}
                 </div>
             </div>
+            ${item.dibuat_oleh_nama ? `
+            <div class="akd-diinput-footer mt-2 pt-2 border-t border-slate-100 text-[11px] leading-snug">
+                <span class="text-slate-400 font-semibold">Diinput oleh :</span>
+                <span class="font-bold text-slate-700">Guru: ${escapeHtml(item.dibuat_oleh_nama)}</span>
+            </div>` : ''}
+        </div>
         `;
     }).join("");
 }
