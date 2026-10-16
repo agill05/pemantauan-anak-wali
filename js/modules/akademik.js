@@ -354,6 +354,69 @@ async function ambilSiswaSemuaAkademik() {
     return null;
 }
 
+// ===== Lanjut nilai: pilih siswa + mapel yang sudah punya baris di semester ini =====
+let _akdPenuhT = 0;
+
+// Data nilai di memori bisa sebagian (filter siswa). Muat semua sekali per menit supaya baris yang ada ketemu.
+async function akdPastikanDataPenuh() {
+    if (Date.now() - _akdPenuhT < 60000) return;
+    const segar = await apiCall("getAkademik", { siswa_id: null }, false);
+    if (segar && segar.data) {
+        appState.akademik = segar.data;
+        lastFetchTimes.akademik = Date.now();
+        saveAppStateToLocal();
+        _akdPenuhT = Date.now();
+    }
+}
+
+function akdCariBarisAda(siswaId, mapel, smt) {
+    const kunci = String(mapel || "").trim().toLowerCase();
+    return (appState.akademik || []).find(r => String(r.siswa_id) === String(siswaId)
+        && String(r.mapel || "").trim().toLowerCase() === kunci
+        && (r.semester ? r.semester === smt : true)) || null;
+}
+
+async function akdCekLanjut() {
+    const form = document.getElementById("akd-form");
+    const wrap = document.getElementById("akd-komponen-wrap");
+    const info = document.getElementById("akd-lanjut-info");
+    if (!form || !wrap || !info) return;
+    const siswaId = (document.getElementById("m-akd-siswa") || {}).value || "";
+    const mapel = ((document.getElementById("m-akd-mapel") || {}).value || "").trim();
+    if (!siswaId || !mapel) return;
+    const semEl = document.getElementById("m-akd-semester");
+    const smt = isAdminUser() && semEl ? semEl.value : akdSemesterDefault();
+
+    let ada = akdCariBarisAda(siswaId, mapel, smt);
+    if (!ada) {
+        await akdPastikanDataPenuh();
+        // Pilihan bisa berubah selama menunggu. Batalkan jika sudah beda.
+        if ((document.getElementById("m-akd-siswa") || {}).value !== siswaId
+            || ((document.getElementById("m-akd-mapel") || {}).value || "").trim() !== mapel) return;
+        ada = akdCariBarisAda(siswaId, mapel, smt);
+    }
+
+    const sebelumnya = form.dataset.lanjutId || "";
+    if (ada && canEditRecord(ada, 'akademik')) {
+        form.dataset.lanjutId = String(ada.id);
+        wrap.innerHTML = akdFormKomponenHtml(ada);
+        const hitung = j => akdDaftar(ada, j).filter(v => v !== null).length;
+        info.className = "rounded-xl border px-3 py-2 text-xs bg-sky-50 border-sky-200 text-sky-700";
+        info.innerHTML = `Nilai ${escapeHtml(mapel)} siswa ini sudah ada. Dilanjutkan dari <b>Tugas ${hitung("tugas") + 1}</b> dan <b>UH ${hitung("uh") + 1}</b>.`;
+    } else {
+        form.dataset.lanjutId = "";
+        if (sebelumnya) wrap.innerHTML = akdFormKomponenHtml(null);
+        if (ada) {
+            info.className = "rounded-xl border px-3 py-2 text-xs bg-amber-50 border-amber-200 text-amber-700";
+            info.innerHTML = "Nilai mapel ini untuk siswa tersebut diisi guru lain. Hanya guru pengisinya atau admin yang dapat menambah.";
+        } else {
+            info.className = "hidden";
+            info.innerHTML = "";
+        }
+    }
+    akdUpdatePreview();
+}
+
 async function openModalAkademik(id = null) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
@@ -408,16 +471,17 @@ async function openModalAkademik(id = null) {
             <h3 class="text-sm font-bold text-slate-800">${rec ? 'Edit Nilai Mapel' : 'Tambah Nilai Mapel'}</h3>
             <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup jendela dialog"><i class="fas fa-times"></i></button>
         </div>
-        <form onsubmit="saveAkademikForm(event, '${id ? escapeHtml(id) : ''}')" class="space-y-3">
+        <form id="akd-form" onsubmit="saveAkademikForm(event, '${id ? escapeHtml(id) : ''}')" class="space-y-3">
             <div>
                 <label for="m-akd-siswa" class="block text-xs font-bold text-slate-500 mb-1">SISWA</label>
-                <select id="m-akd-siswa" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" ${rec ? 'disabled' : ''} required>${siswaOpts}</select>
+                <select id="m-akd-siswa" ${rec ? '' : 'onchange="akdCekLanjut()"'} class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" ${rec ? 'disabled' : ''} required>${siswaOpts}</select>
             </div>
             <div>
                 <label for="m-akd-mapel" class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
-                <select id="m-akd-mapel" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${mapelOpts}</select>
+                <select id="m-akd-mapel" ${rec ? '' : 'onchange="akdCekLanjut()"'} class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${mapelOpts}</select>
             </div>
-            ${akdFormKomponenHtml(rec)}
+            <div id="akd-lanjut-info" class="hidden"></div>
+            <div id="akd-komponen-wrap" class="space-y-3">${akdFormKomponenHtml(rec)}</div>
         </form>
     `;
     document.getElementById("modal-container")?.classList.remove("hidden");
@@ -426,6 +490,8 @@ async function openModalAkademik(id = null) {
 
 async function saveAkademikForm(e, id) {
     e.preventDefault();
+    // Mode lanjut: siswa + mapel + semester sudah punya baris, simpan sebagai ubah (bukan tambah).
+    id = id || ((document.getElementById("akd-form") || {}).dataset || {}).lanjutId || "";
     const kktp = Number(document.getElementById("m-akd-kktp").value);
     if (!(kktp >= 0 && kktp <= 100)) {
         showToast("KKTP harus 0 sampai 100.", "warning");
