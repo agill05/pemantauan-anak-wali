@@ -118,7 +118,7 @@ function renderAkademikNilai() {
                         {label:"ASAS",value:akdAngka(item.asas) !== null ? akdFmt(item.asas) : ""},
                         {label:"Nilai Akhir",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.nilai_akhir)) + '</b>',html:true},
                         {label:"KKTP",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.kktp)) + '</b>',html:true},
-                        {label:"Diinput oleh",value:item.dibuat_oleh_nama ? 'Guru: ' + escapeHtml(item.dibuat_oleh_nama) : '',html:true}
+                        {label:"Diinput oleh",value:item.dibuat_oleh_nama ? 'Guru: ' + '<b class="text-slate-900">' + escapeHtml(item.dibuat_oleh_nama) + '</b>' : '',html:true}
                     ])}
                 </div>
                 <div class="flex items-center gap-3">
