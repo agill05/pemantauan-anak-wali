@@ -142,9 +142,7 @@ function renderAkademikNilai() {
     }).join("");
 }
 
-// ===== Komponen nilai mapel (Tugas, UH, STS, ASAS -> Nilai Rapor) =====
-// Tugas dan UH jumlahnya bebas (maks AKD_MAKS_DAFTAR). Samakan dengan MAKS_DAFTAR_NILAI / BOBOT_NILAI di Kode.gs.
-const AKD_MAKS_DAFTAR = 25; // maks tugas dan maks UH per siswa per semester
+const AKD_MAKS_DAFTAR = 25;
 const AKD_SEMESTER = ["Ganjil", "Genap"];
 const AKD_BOBOT = { tugas: 20, uh: 30, sts: 20, asas: 30 };
 
