@@ -116,6 +116,7 @@ function renderAkademikNilai() {
                         {label:"UH",value:akdDaftarNilai(item, "uh") ? akdDaftarNilai(item, "uh") + " (rata " + akdFmt(item.rata_uh) + ")" : ""},
                         {label:"STS",value:akdAngka(item.sts) !== null ? akdFmt(item.sts) : ""},
                         {label:"ASAS",value:akdAngka(item.asas) !== null ? akdFmt(item.asas) : ""},
+                        {label:"Nilai Akhir",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.nilai_akhir)) + '</b>',html:true},
                         {label:"KKTP",value:item.kktp},
                         {label:"Diinput oleh",value:item.dibuat_oleh_nama ? 'Guru: ' + escapeHtml(item.dibuat_oleh_nama) : '',html:true}
                     ])}
