@@ -135,7 +135,7 @@ function renderAkademikNilai() {
             ${item.dibuat_oleh_nama ? `
             <div class="akd-diinput-footer mt-2 pt-2 border-t border-slate-100 text-[11px] leading-snug">
                 <span class="text-slate-400 font-semibold">Diinput oleh :</span>
-                <span class="font-bold text-slate-700">Guru: ${escapeHtml(item.dibuat_oleh_nama)}</span>
+                <span class="font-bold text-slate-700"> ${escapeHtml(item.dibuat_oleh_nama)}</span>
             </div>` : ''}
         </div>
         `;
