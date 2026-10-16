@@ -641,7 +641,7 @@ function renderSiswaHome() {
     const bulan = today.slice(0, 7);
     const absBulan = sdMine(appState.absensi).filter(a => sdTgl(a).startsWith(bulan));
     const hafalan = sdMine(appState.keagamaan).filter(h => h.nama_surat);
-    const nilai = sdMine(appState.akademik).filter(n => n.mapel);
+    const nilai = akdFilterSemester(sdMine(appState.akademik).filter(n => n.mapel));
     const prestasi = sdMine(appState.prestasi);
     el.innerHTML = [
         sdSapaanCard(u),

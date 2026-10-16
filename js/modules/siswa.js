@@ -56,7 +56,8 @@ async function openProfilSiswa(siswaTarget) {
     if (!detailData) return;
 
     appState.activeSiswaDetail = detailData;
-    const { siswa, absensi, kebiasaan, hafalan, akademik, prestasi, pembinaan } = detailData;
+    const { siswa, absensi, kebiasaan, hafalan, akademik: akademikSemua, prestasi, pembinaan } = detailData;
+    const akademik = akdFilterSemester(akademikSemua);
     const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(siswa.kelas_id)) : null;
 
     const container = document.getElementById("profil-siswa-details");
@@ -251,7 +252,8 @@ function renderRadarChartSiswa(detailData) {
         window.activeRadarChartInstance.destroy();
     }
 
-    const { absensi = [], kebiasaan = [], hafalan = [], akademik = [], pembinaan = [] } = detailData;
+    const { absensi = [], kebiasaan = [], hafalan = [], akademik: akademikSemua = [], pembinaan = [] } = detailData;
+    const akademik = akdFilterSemester(akademikSemua);
 
     const totalAbsen = absensi.length || 1;
     const skorHadir = Math.round((absensi.filter(a => a.status === 'H').length / totalAbsen) * 100);
@@ -292,7 +294,8 @@ function renderRadarChartSiswa(detailData) {
 
 async function printProfilSiswa() {
     if (!appState.activeSiswaDetail) return;
-    const { siswa, absensi, akademik, hafalan, prestasi = [], pembinaan = [] } = appState.activeSiswaDetail;
+    const { siswa, absensi, akademik: akademikSemua = [], hafalan, prestasi = [], pembinaan = [] } = appState.activeSiswaDetail;
+    const akademik = akdFilterSemester(akademikSemua);
 
     let kj = null;
     const sampaiKj = getDateWITA();
@@ -357,7 +360,7 @@ async function printProfilSiswa() {
             `<tr>${c(hitung("H") + " hari")}${c(hitung("S") + " hari")}${c(hitung("I") + " hari")}${c(hitung("A") + " hari")}</tr>`
         ], "")}
 
-        <h4>2. Hasil Belajar Akademik</h4>
+        <h4>2. Hasil Belajar Akademik (Semester ${akdSemesterDefault()})</h4>
         ${tabel([{ t: "Mata Pelajaran" }, { t: "Nilai Akhir", w: 90 }, { t: "KKTP", w: 70 }, { t: "Keterangan", w: 130 }],
             akademik.map(a => `<tr>${l(a.mapel)}${c(a.nilai_akhir)}${c(a.kktp)}${c(Number(a.nilai_akhir) >= Number(a.kktp) ? "Tuntas" : "Perlu Bimbingan")}</tr>`),
             "Belum ada data nilai")}
