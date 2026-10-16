@@ -279,6 +279,7 @@ function akdHapusKotak(jenis) {
 
 function akdFormKomponenHtml(rec) {
     const semPilih = rec && rec.semester ? rec.semester : akdSemesterDefault();
+    const kunciSemester = !isAdminUser(); // admin boleh memilih (koreksi). Guru dikunci sesuai kalender.
     const semOpts = AKD_SEMESTER.map(s => `<option value="${s}" ${s === semPilih ? 'selected' : ''}>${s}</option>`).join("");
 
     // Awal: satu kotak. Rekaman lama: nilai yang ada + satu kotak kosong berikutnya (mulai Tugas 2, 3, dst).
@@ -316,7 +317,8 @@ function akdFormKomponenHtml(rec) {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label for="m-akd-semester" class="block text-xs font-bold text-slate-500 mb-1">SEMESTER</label>
-                    <select id="m-akd-semester" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${semOpts}</select>
+                    <select id="m-akd-semester" ${kunciSemester ? 'disabled' : ''} class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${kunciSemester ? 'opacity-70' : ''}" required>${semOpts}</select>
+                    ${kunciSemester ? '<p class="text-[11px] text-slate-400 mt-1"><i class="fas fa-lock mr-1"></i>Dikunci sesuai kalender semester.</p>' : ''}
                 </div>
                 <div>
                     <label for="m-akd-kktp" class="block text-xs font-bold text-slate-500 mb-1">KKTP</label>
@@ -489,7 +491,7 @@ async function saveAkademikForm(e, id) {
         if (!Array.isArray(appState.akademik)) appState.akademik = [];
         const idx = appState.akademik.findIndex(x => String(x.id) === String(newId));
         const base = idx !== -1 ? appState.akademik[idx] : buildAuditLocal(payload.siswa_id);
-        const saved = { ...base, ...payload, id: newId };
+        const saved = { ...base, ...payload, id: newId, semester: res.semester || payload.semester };
         if (!saved.dibuat_oleh_nama) saved.dibuat_oleh_nama = String((appState.user && (appState.user.nama || appState.user.username)) || "");
         if (idx !== -1) appState.akademik[idx] = saved;
         else appState.akademik.push(saved);
@@ -553,7 +555,8 @@ async function openModalAkademikBulk() {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label for="m-akdb-semester" class="block text-xs font-bold text-slate-500 mb-1">SEMESTER</label>
-                    <select id="m-akdb-semester" onchange="akdBulkGanti()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${AKD_SEMESTER.map(s => `<option value="${s}" ${s === akdSemesterDefault() ? 'selected' : ''}>${s}</option>`).join("")}</select>
+                    <select id="m-akdb-semester" onchange="akdBulkGanti()" ${isAdminUser() ? '' : 'disabled'} class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isAdminUser() ? '' : 'opacity-70'}" required>${AKD_SEMESTER.map(s => `<option value="${s}" ${s === akdSemesterDefault() ? 'selected' : ''}>${s}</option>`).join("")}</select>
+                    ${isAdminUser() ? '' : '<p class="text-[11px] text-slate-400 mt-1"><i class="fas fa-lock mr-1"></i>Dikunci sesuai kalender.</p>'}
                 </div>
                 <div>
                     <label for="m-akdb-komponen" class="block text-xs font-bold text-slate-500 mb-1">JENIS NILAI</label>
