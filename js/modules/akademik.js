@@ -112,8 +112,8 @@ function renderAkademikNilai() {
                     ${renderInfoRows([
                         {label:"Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + (luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'),html:true},
                         {label:"Semester",value:item.semester || "-"},
-                        {label:"Tugas",value:akdDaftarNilai(item, "tugas", AKD_MAKS_TUGAS) ? akdDaftarNilai(item, "tugas", AKD_MAKS_TUGAS) + " (rata " + akdFmt(item.rata_tugas) + ")" : ""},
-                        {label:"UH",value:akdDaftarNilai(item, "uh", AKD_MAKS_UH) ? akdDaftarNilai(item, "uh", AKD_MAKS_UH) + " (rata " + akdFmt(item.rata_uh) + ")" : ""},
+                        {label:"Tugas",value:akdDaftarNilai(item, "tugas") ? akdDaftarNilai(item, "tugas") + " (rata " + akdFmt(item.rata_tugas) + ")" : ""},
+                        {label:"UH",value:akdDaftarNilai(item, "uh") ? akdDaftarNilai(item, "uh") + " (rata " + akdFmt(item.rata_uh) + ")" : ""},
                         {label:"STS",value:akdAngka(item.sts) !== null ? akdFmt(item.sts) : ""},
                         {label:"ASAS",value:akdAngka(item.asas) !== null ? akdFmt(item.asas) : ""},
                         {label:"KKTP",value:item.kktp},
@@ -136,25 +136,18 @@ function renderAkademikNilai() {
 }
 
 // ===== Komponen nilai mapel (Tugas, UH, STS, ASAS -> Nilai Rapor) =====
-// Samakan dengan MAKS_TUGAS / MAKS_UH / BOBOT_NILAI di Kode.gs.
-const AKD_MAKS_TUGAS = 5;
-const AKD_MAKS_UH = 5;
+// Tugas dan UH jumlahnya bebas (maks AKD_MAKS_DAFTAR). Samakan dengan MAKS_DAFTAR_NILAI / BOBOT_NILAI di Kode.gs.
+const AKD_MAKS_DAFTAR = 25; // maks tugas dan maks UH per siswa per semester
 const AKD_SEMESTER = ["Ganjil", "Genap"];
 const AKD_BOBOT = { tugas: 20, uh: 30, sts: 20, asas: 30 };
 
-function akdDaftarKomponen() {
-    const k = [];
-    for (let i = 1; i <= AKD_MAKS_TUGAS; i++) k.push("tugas_" + i);
-    for (let i = 1; i <= AKD_MAKS_UH; i++) k.push("uh_" + i);
-    k.push("sts", "asas");
-    return k;
-}
 
-function akdLabelKomponen(k) {
+function akdLabelKomponen(k, n) {
     if (k === "sts") return "STS";
     if (k === "asas") return "ASAS";
-    const m = /^(tugas|uh)_(\d+)$/.exec(k);
-    return m ? (m[1] === "uh" ? "UH " : "Tugas ") + m[2] : k;
+    if (k === "tugas") return "Tugas" + (n ? " " + n : "");
+    if (k === "uh") return "UH" + (n ? " " + n : "");
+    return k;
 }
 
 function akdAngka(v) {
@@ -168,12 +161,25 @@ function akdFmt(v) {
     return n === null ? "-" : String(Math.round(n * 100) / 100).replace(".", ",");
 }
 
+// Daftar tugas/UH dari rekaman: JSON array di kolom "tugas"/"uh". Cadangan: kolom lama tugas_1..5 / uh_1..5.
+// null = belum diisi.
+function akdDaftar(item, prefix) {
+    let arr = [];
+    const m = item ? item[prefix] : "";
+    if (Array.isArray(m)) arr = m;
+    else if (m !== "" && m !== null && m !== undefined) {
+        try { const j = JSON.parse(String(m)); if (Array.isArray(j)) arr = j; } catch (e) { arr = []; }
+    } else if (item) {
+        for (let i = 1; i <= 5; i++) arr.push(item[prefix + "_" + i]);
+    }
+    return arr.map(v => akdAngka(v));
+}
+
+// komp: { tugas: [..], uh: [..], sts, asas }. Nilai kosong atau null tidak dihitung.
 function akdHitungRapor(komp) {
-    const tugas = [], uh = [];
-    for (let i = 1; i <= AKD_MAKS_TUGAS; i++) { const n = akdAngka(komp["tugas_" + i]); if (n !== null) tugas.push(n); }
-    for (let i = 1; i <= AKD_MAKS_UH; i++) { const n = akdAngka(komp["uh_" + i]); if (n !== null) uh.push(n); }
+    const ada = l => (l || []).map(akdAngka).filter(n => n !== null);
     const rata = l => l.length ? Math.round(l.reduce((a, b) => a + b, 0) / l.length * 100) / 100 : null;
-    const rt = rata(tugas), ru = rata(uh), sts = akdAngka(komp.sts), asas = akdAngka(komp.asas);
+    const rt = rata(ada(komp.tugas)), ru = rata(ada(komp.uh)), sts = akdAngka(komp.sts), asas = akdAngka(komp.asas);
     let total = 0, bobot = 0;
     [[rt, AKD_BOBOT.tugas], [ru, AKD_BOBOT.uh], [sts, AKD_BOBOT.sts], [asas, AKD_BOBOT.asas]].forEach(p => {
         if (p[0] !== null) { total += p[0] * p[1]; bobot += p[1]; }
@@ -216,17 +222,22 @@ function akdFilterSemesterHtml() {
     </div>`;
 }
 
-function akdDaftarNilai(item, prefix, maks) {
-    const out = [];
-    for (let i = 1; i <= maks; i++) { const v = akdAngka(item[prefix + "_" + i]); if (v !== null) out.push(akdFmt(v)); }
-    return out.join(", ");
+function akdDaftarNilai(item, prefix) {
+    return akdDaftar(item, prefix).filter(v => v !== null).map(akdFmt).join(", ");
+}
+
+// Kumpulkan nilai dari form: { tugas: [..], uh: [..], sts, asas }. Urutan = urutan kotak.
+function akdBacaForm() {
+    const komp = { tugas: [], uh: [], sts: "", asas: "" };
+    document.querySelectorAll("[data-akd-list]").forEach(i => komp[i.dataset.akdList].push(i.value.trim()));
+    document.querySelectorAll("[data-akd-kom]").forEach(i => { komp[i.dataset.akdKom] = i.value.trim(); });
+    return komp;
 }
 
 function akdUpdatePreview() {
     const el = document.getElementById("akd-preview");
     if (!el) return;
-    const komp = {};
-    document.querySelectorAll("[data-akd-kom]").forEach(i => { komp[i.dataset.akdKom] = i.value; });
+    const komp = akdBacaForm();
     const h = akdHitungRapor(komp);
     const manualEl = document.getElementById("m-akd-nilai");
     const kktp = akdAngka((document.getElementById("m-akd-kktp") || {}).value);
@@ -239,19 +250,62 @@ function akdUpdatePreview() {
         : `<b>Nilai Rapor: ${akdFmt(nilai)}</b> ${bawah ? "(di bawah KKTP)" : "(tuntas)"}<br><span class="opacity-80">Rata Tugas ${akdFmt(h.rata_tugas)} &bull; Rata UH ${akdFmt(h.rata_uh)} &bull; STS ${akdFmt(komp.sts)} &bull; ASAS ${akdFmt(komp.asas)}</span>`;
 }
 
+function akdKotakDaftarHtml(jenis, idx, nilai) {
+    return `<div data-akd-kotak="${jenis}">
+        <label class="block text-[10px] font-bold text-slate-500 mb-1">${akdLabelKomponen(jenis, idx + 1).toUpperCase()}</label>
+        <input type="number" data-akd-list="${jenis}" min="0" max="100" step="0.01" inputmode="decimal" oninput="akdUpdatePreview()" value="${nilai === null || nilai === undefined ? '' : escapeHtml(String(nilai))}" aria-label="${akdLabelKomponen(jenis, idx + 1)}" class="w-full bg-slate-50 border p-2 rounded-xl text-xs text-center outline-none">
+    </div>`;
+}
+
+function akdTambahKotak(jenis) {
+    const wadah = document.getElementById("akd-wadah-" + jenis);
+    if (!wadah) return;
+    const n = wadah.querySelectorAll("[data-akd-list]").length;
+    if (n >= AKD_MAKS_DAFTAR) { showToast("Maksimal " + AKD_MAKS_DAFTAR + " " + akdLabelKomponen(jenis) + ".", "warning"); return; }
+    wadah.insertAdjacentHTML("beforeend", akdKotakDaftarHtml(jenis, n, null));
+    const kotak = wadah.querySelectorAll("[data-akd-list]");
+    kotak[kotak.length - 1].focus();
+    akdUpdatePreview();
+}
+
+function akdHapusKotak(jenis) {
+    const wadah = document.getElementById("akd-wadah-" + jenis);
+    if (!wadah) return;
+    const kotak = wadah.querySelectorAll("[data-akd-kotak]");
+    if (kotak.length <= 1) { showToast("Minimal satu kotak " + akdLabelKomponen(jenis) + ".", "warning"); return; }
+    kotak[kotak.length - 1].remove();
+    akdUpdatePreview();
+}
+
 function akdFormKomponenHtml(rec) {
     const semPilih = rec && rec.semester ? rec.semester : akdSemesterDefault();
     const semOpts = AKD_SEMESTER.map(s => `<option value="${s}" ${s === semPilih ? 'selected' : ''}>${s}</option>`).join("");
-    const nilaiRec = k => (rec && akdAngka(rec[k]) !== null) ? escapeHtml(rec[k]) : "";
-    const kotak = k => `
+
+    // Awal: satu kotak. Rekaman lama: nilai yang ada + satu kotak kosong berikutnya (mulai Tugas 2, 3, dst).
+    const daftarKotak = jenis => {
+        let nilai = rec ? akdDaftar(rec, jenis) : [];
+        while (nilai.length && nilai[nilai.length - 1] === null) nilai.pop();
+        if (nilai.length < AKD_MAKS_DAFTAR) nilai.push(null);
+        return nilai.map((v, i) => akdKotakDaftarHtml(jenis, i, v)).join("");
+    };
+    const blokDaftar = (jenis, judul, bobot) => `
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs font-bold text-slate-500">${judul} <span class="font-normal text-slate-400">(bobot ${bobot}%)</span></p>
+                    <div class="flex gap-1">
+                        <button type="button" onclick="akdTambahKotak('${jenis}')" class="px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold">+ ${akdLabelKomponen(jenis)}</button>
+                        <button type="button" onclick="akdHapusKotak('${jenis}')" class="px-2 py-1 bg-rose-50 text-rose-600 rounded-lg text-[11px] font-bold" aria-label="Hapus kotak terakhir ${akdLabelKomponen(jenis)}"><i class="fas fa-minus"></i></button>
+                    </div>
+                </div>
+                <div id="akd-wadah-${jenis}" class="grid grid-cols-4 gap-1.5">${daftarKotak(jenis)}</div>
+            </div>`;
+    const kotakTunggal = k => `
         <div>
             <label for="m-akd-${k}" class="block text-[10px] font-bold text-slate-500 mb-1">${akdLabelKomponen(k).toUpperCase()}</label>
-            <input type="number" id="m-akd-${k}" data-akd-kom="${k}" min="0" max="100" step="0.01" inputmode="decimal" oninput="akdUpdatePreview()" value="${nilaiRec(k)}" class="w-full bg-slate-50 border p-2 rounded-xl text-xs text-center outline-none">
+            <input type="number" id="m-akd-${k}" data-akd-kom="${k}" min="0" max="100" step="0.01" inputmode="decimal" oninput="akdUpdatePreview()" value="${rec && akdAngka(rec[k]) !== null ? escapeHtml(rec[k]) : ''}" class="w-full bg-slate-50 border p-2 rounded-xl text-xs text-center outline-none">
         </div>`;
-    const tugas = [], uh = [];
-    for (let i = 1; i <= AKD_MAKS_TUGAS; i++) tugas.push(kotak("tugas_" + i));
-    for (let i = 1; i <= AKD_MAKS_UH; i++) uh.push(kotak("uh_" + i));
-    const legacy = !!rec && !akdDaftarKomponen().some(k => akdAngka(rec[k]) !== null);
+    const legacy = !!rec && !akdDaftar(rec, "tugas").some(v => v !== null) && !akdDaftar(rec, "uh").some(v => v !== null)
+        && akdAngka(rec.sts) === null && akdAngka(rec.asas) === null;
     const manual = legacy ? `
         <div>
             <label for="m-akd-nilai" class="block text-xs font-bold text-slate-500 mb-1">NILAI AKHIR (DATA LAMA)</label>
@@ -270,18 +324,13 @@ function akdFormKomponenHtml(rec) {
                 </div>
             </div>
             ${manual}
-            <div>
-                <p class="text-xs font-bold text-slate-500 mb-1">NILAI TUGAS <span class="font-normal text-slate-400">(maks ${AKD_MAKS_TUGAS}, bobot ${AKD_BOBOT.tugas}%)</span></p>
-                <div class="grid grid-cols-5 gap-1.5">${tugas.join("")}</div>
-            </div>
-            <div>
-                <p class="text-xs font-bold text-slate-500 mb-1">ULANGAN HARIAN <span class="font-normal text-slate-400">(maks ${AKD_MAKS_UH}, bobot ${AKD_BOBOT.uh}%)</span></p>
-                <div class="grid grid-cols-5 gap-1.5">${uh.join("")}</div>
-            </div>
+            ${blokDaftar("tugas", "NILAI TUGAS", AKD_BOBOT.tugas)}
+            ${blokDaftar("uh", "ULANGAN HARIAN", AKD_BOBOT.uh)}
             <div>
                 <p class="text-xs font-bold text-slate-500 mb-1">ASESMEN SUMATIF <span class="font-normal text-slate-400">(STS ${AKD_BOBOT.sts}%, ASAS ${AKD_BOBOT.asas}%)</span></p>
-                <div class="grid grid-cols-2 gap-2">${kotak("sts")}${kotak("asas")}</div>
+                <div class="grid grid-cols-2 gap-2">${kotakTunggal("sts")}${kotakTunggal("asas")}</div>
             </div>
+            <p class="text-[11px] text-slate-400">Kotak kosong tidak dihitung. Isi 0 jika siswa tidak mengumpulkan. Maks ${AKD_MAKS_DAFTAR} tugas dan ${AKD_MAKS_DAFTAR} UH.</p>
             <div id="akd-preview" class="rounded-xl border px-3 py-2 text-xs bg-slate-50 border-slate-200 text-slate-500"></div>
             <button type="submit" class="w-full bg-primary text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Nilai</button>`;
 }
@@ -383,19 +432,23 @@ async function saveAkademikForm(e, id) {
     const semester = document.getElementById("m-akd-semester").value;
     if (!semester) { showToast("Pilih semester.", "warning"); return; }
 
-    const komp = {};
+    // Validasi tiap kotak. Kotak kosong = null (tidak dihitung).
     let salah = null;
-    document.querySelectorAll("[data-akd-kom]").forEach(inp => {
-        const v = inp.value.trim();
+    const cek = inp => {
         inp.classList.remove("border-rose-400");
-        if (v === "") { komp[inp.dataset.akdKom] = ""; return; }
+        const v = inp.value.trim();
+        if (v === "") return null;
         const n = Number(v);
-        if (!(n >= 0 && n <= 100)) { inp.classList.add("border-rose-400"); salah = salah || inp; return; }
-        komp[inp.dataset.akdKom] = n;
-    });
+        if (!(n >= 0 && n <= 100)) { inp.classList.add("border-rose-400"); salah = salah || inp; return null; }
+        return n;
+    };
+    const komp = { tugas: [], uh: [], sts: "", asas: "" };
+    document.querySelectorAll("[data-akd-list]").forEach(inp => komp[inp.dataset.akdList].push(cek(inp)));
+    document.querySelectorAll("[data-akd-kom]").forEach(inp => { const n = cek(inp); komp[inp.dataset.akdKom] = n === null ? "" : n; });
     if (salah) { showToast("Semua nilai harus 0 sampai 100.", "warning"); salah.focus(); return; }
+    ["tugas", "uh"].forEach(j => { while (komp[j].length && komp[j][komp[j].length - 1] === null) komp[j].pop(); });
 
-    const adaKomponen = Object.values(komp).some(v => v !== "");
+    const adaKomponen = komp.tugas.some(v => v !== null) || komp.uh.some(v => v !== null) || komp.sts !== "" || komp.asas !== "";
     const manualEl = document.getElementById("m-akd-nilai");
     const manual = manualEl ? manualEl.value.trim() : "";
     if (!adaKomponen && manual === "") { showToast("Isi minimal satu nilai.", "warning"); return; }
@@ -409,7 +462,10 @@ async function saveAkademikForm(e, id) {
         mapel: document.getElementById("m-akd-mapel").value.trim(),
         semester: semester,
         kktp: kktp,
-        ...komp,
+        tugas: komp.tugas,
+        uh: komp.uh,
+        sts: komp.sts,
+        asas: komp.asas,
         rata_tugas: h.rata_tugas === null ? "" : h.rata_tugas,
         rata_uh: h.rata_uh === null ? "" : h.rata_uh,
         nilai_akhir: adaKomponen ? h.nilai_akhir : Number(manual)
@@ -492,17 +548,24 @@ async function openModalAkademikBulk() {
             </div>
             <div>
                 <label for="m-akdb-mapel" class="block text-xs font-bold text-slate-500 mb-1">MATA PELAJARAN</label>
-                <select id="m-akdb-mapel" onchange="renderAkdBulkList()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${mapelOpts}</select>
+                <select id="m-akdb-mapel" onchange="akdBulkGanti()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${mapelOpts}</select>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label for="m-akdb-semester" class="block text-xs font-bold text-slate-500 mb-1">SEMESTER</label>
-                    <select id="m-akdb-semester" onchange="renderAkdBulkList()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${AKD_SEMESTER.map(s => `<option value="${s}" ${s === akdSemesterDefault() ? 'selected' : ''}>${s}</option>`).join("")}</select>
+                    <select id="m-akdb-semester" onchange="akdBulkGanti()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${AKD_SEMESTER.map(s => `<option value="${s}" ${s === akdSemesterDefault() ? 'selected' : ''}>${s}</option>`).join("")}</select>
                 </div>
                 <div>
                     <label for="m-akdb-komponen" class="block text-xs font-bold text-slate-500 mb-1">JENIS NILAI</label>
-                    <select id="m-akdb-komponen" onchange="renderAkdBulkList()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>${akdDaftarKomponen().map(k => `<option value="${k}">${akdLabelKomponen(k)}</option>`).join("")}</select>
+                    <select id="m-akdb-komponen" onchange="akdBulkGanti()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                        <option value="tugas">Tugas</option><option value="uh">Ulangan Harian</option><option value="sts">STS</option><option value="asas">ASAS</option>
+                    </select>
                 </div>
+            </div>
+            <div id="akdb-nomor-wrap">
+                <label for="m-akdb-nomor" class="block text-xs font-bold text-slate-500 mb-1">NOMOR</label>
+                <select id="m-akdb-nomor" onchange="renderAkdBulkList()" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none"></select>
+                <p class="text-[11px] text-slate-400 mt-1">Satu nomor = satu penugasan untuk seluruh kelas. Pilih nomor "baru" untuk tugas berikutnya.</p>
             </div>
             <div class="flex justify-between items-center px-1">
                 <span class="text-xs font-bold text-slate-500 uppercase">Nilai Siswa</span>
@@ -511,11 +574,42 @@ async function openModalAkademikBulk() {
             <div id="akdb-list" class="space-y-1.5 max-h-[45vh] overflow-y-auto pr-1">
                 <p class="text-xs text-slate-400 text-center py-6">Pilih kelas dulu.</p>
             </div>
-            <p class="text-[11px] text-slate-400">Kosongkan nilai siswa yang tidak ingin diisi. Nilai pada jenis yang sama akan ditimpa. Nilai rapor dihitung ulang otomatis.</p>
+            <p class="text-[11px] text-slate-400">Kosongkan nilai siswa yang tidak ingin diisi. Nilai pada nomor yang sama akan ditimpa. Kosong = tidak dihitung, isi 0 jika tidak mengumpulkan. Nilai rapor dihitung ulang otomatis.</p>
             <button type="submit" class="w-full bg-primary text-white font-bold py-2.5 rounded-xl text-xs mt-2">Simpan Semua Nilai</button>
         </form>
     `;
     document.getElementById("modal-container")?.classList.remove("hidden");
+    akdBulkRefreshNomor();
+}
+
+// Isi pilihan nomor sesuai jenis. Opsi terakhir = nomor baru (jumlah tertinggi yang ada + 1).
+function akdBulkRefreshNomor() {
+    const jenis = (document.getElementById("m-akdb-komponen") || {}).value || "tugas";
+    const wrap = document.getElementById("akdb-nomor-wrap");
+    const sel = document.getElementById("m-akdb-nomor");
+    if (!wrap || !sel) return;
+    const berdaftar = jenis === "tugas" || jenis === "uh";
+    wrap.classList.toggle("hidden", !berdaftar);
+    if (!berdaftar) return;
+    const mapel = ((document.getElementById("m-akdb-mapel") || {}).value || "").trim().toLowerCase();
+    const smt = (document.getElementById("m-akdb-semester") || {}).value || "";
+    let maks = 0;
+    (appState.akademik || []).forEach(r => {
+        if (String(r.mapel || "").trim().toLowerCase() !== mapel || String(r.semester || "") !== smt) return;
+        const d = akdDaftar(r, jenis);
+        maks = Math.max(maks, d.length);
+    });
+    const dipilih = Number(sel.value) || 0;
+    const jumlah = Math.min(maks + 1, AKD_MAKS_DAFTAR);
+    let html = "";
+    for (let i = 1; i <= jumlah; i++) html += `<option value="${i}">${akdLabelKomponen(jenis, i)}${i === maks + 1 ? " (baru)" : ""}</option>`;
+    sel.innerHTML = html;
+    sel.value = String(dipilih >= 1 && dipilih <= jumlah ? dipilih : jumlah);
+}
+
+function akdBulkGanti() {
+    akdBulkRefreshNomor();
+    renderAkdBulkList();
 }
 
 function renderAkdBulkList() {
@@ -533,11 +627,14 @@ function renderAkdBulkList() {
     const mapelPilih = ((document.getElementById("m-akdb-mapel") || {}).value || "").trim().toLowerCase();
     const smtPilih = (document.getElementById("m-akdb-semester") || {}).value || "";
     const kompPilih = (document.getElementById("m-akdb-komponen") || {}).value || "";
+    const nomorPilih = Number((document.getElementById("m-akdb-nomor") || {}).value || 0);
     const nilaiAda = id => {
         if (!mapelPilih) return "";
         const r = (appState.akademik || []).find(x => String(x.siswa_id) === String(id)
             && String(x.mapel || "").trim().toLowerCase() === mapelPilih && String(x.semester || "") === smtPilih);
-        return r && akdAngka(r[kompPilih]) !== null ? r[kompPilih] : "";
+        if (!r) return "";
+        const v = (kompPilih === "tugas" || kompPilih === "uh") ? akdDaftar(r, kompPilih)[nomorPilih - 1] : akdAngka(r[kompPilih]);
+        return v === null || v === undefined ? "" : v;
     };
     list.innerHTML = siswa.map((s, i) => `
         <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-2.5 py-1.5">
@@ -572,9 +669,11 @@ async function saveAkademikBulk(e) {
     const mapel = (document.getElementById("m-akdb-mapel").value || "").trim();
     const semester = document.getElementById("m-akdb-semester").value;
     const komponen = document.getElementById("m-akdb-komponen").value;
+    const nomor = Number((document.getElementById("m-akdb-nomor") || {}).value || 0);
     const kktp = Number(document.getElementById("m-akdb-kktp").value);
     if (!mapel) { showToast("Pilih mata pelajaran.", "warning"); return; }
     if (!semester || !komponen) { showToast("Pilih semester dan jenis nilai.", "warning"); return; }
+    if ((komponen === "tugas" || komponen === "uh") && !(nomor >= 1 && nomor <= AKD_MAKS_DAFTAR)) { showToast("Pilih nomor " + akdLabelKomponen(komponen) + ".", "warning"); return; }
     if (!(kktp >= 0 && kktp <= 100)) { showToast("KKTP harus 0 sampai 100.", "warning"); return; }
 
     const items = [];
@@ -591,7 +690,7 @@ async function saveAkademikBulk(e) {
     if (items.length === 0) { showToast("Belum ada nilai yang diisi.", "warning"); return; }
 
     showLoading(`Menyimpan ${items.length} nilai...`);
-    const res = await apiCall("saveAkademikBulk", { mapel, semester, komponen, kktp, items }, false);
+    const res = await apiCall("saveAkademikBulk", { mapel, semester, komponen, nomor, kktp, items }, false);
     hideLoading();
 
     if (res && res.status === "success") {
@@ -601,7 +700,7 @@ async function saveAkademikBulk(e) {
         closeModal();
         const lewat = Array.isArray(res.dilewati) ? res.dilewati : [];
         if (lewat.length === 0) {
-            showToast(`${res.tersimpan} nilai ${akdLabelKomponen(komponen)} ${mapel} tersimpan!`);
+            showToast(`${res.tersimpan} nilai ${akdLabelKomponen(komponen, nomor)} ${mapel} tersimpan!`);
         } else {
             const nama = id => { const s = _akdBulkSiswa.find(x => String(x.id) === String(id)); return s ? s.nama : id; };
             Swal.fire({
