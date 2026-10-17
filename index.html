@@ -84,10 +84,13 @@
                 const isMagic = urlParams.has('magic_token');
                 if (session || isMagic) {
                     document.documentElement.classList.add("has-session");
-                    const theme = localStorage.getItem("app_theme") || "light";
-                    if (theme === "dark") {
-                        document.documentElement.classList.add("dark");
-                    }
+                }
+                const pref = localStorage.getItem("app_theme");
+                const dark = pref === "dark" || (pref !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                if (dark) {
+                    document.documentElement.classList.add("dark");
+                    const meta = document.querySelector('meta[name="theme-color"]');
+                    if (meta) meta.setAttribute("content", "#0f172a");
                 }
             } catch(e){}
         })();
@@ -107,6 +110,10 @@
             <img class="lg-bg" src="assets/img/background-sekolah.jpg" alt="" fetchpriority="high" decoding="async"
                 onerror="this.style.display='none'">
             <div class="lg-shade"></div>
+            <button type="button" id="btn-theme-login" class="lg-theme" onclick="toggleDarkMode()"
+                title="Ganti mode tampilan" aria-label="Ganti mode tampilan">
+                <i class="fas fa-moon" aria-hidden="true"></i>
+            </button>
 
             <section class="lg-intro">
                 <img class="lg-logo" src="assets/img/logo-sekolah-login.png" alt="Logo SMP Negeri 1 Talaga Jaya" width="128"
@@ -227,6 +234,11 @@
                     <i class="fas fa-bell text-lg"></i>
                     <span id="notif-badge"
                         class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
+                </button>
+                <button id="btn-theme-header" type="button"
+                    class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="toggleDarkMode()"
+                    title="Ganti mode tampilan" aria-label="Ganti mode tampilan">
+                    <i class="fas fa-moon text-lg" aria-hidden="true"></i>
                 </button>
                 <button id="btn-settings-header" data-role-visible="admin,guru,siswa,kepsek"
                     class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()"

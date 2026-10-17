@@ -251,27 +251,93 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-function initTheme() {
-    const savedTheme = localStorage.getItem("app_theme") || "light";
-    applyTheme(savedTheme);
+/* ===== Tema: terang / gelap / ikuti sistem (PATCH 2) ===== */
+const THEME_KEY = "app_theme";
+const THEME_COLOR_LIGHT = "#ffffff";
+const THEME_COLOR_DARK = "#0f172a";
+let themeMediaBound = false;
+
+function getThemePref() {
+    try {
+        const v = localStorage.getItem(THEME_KEY);
+        return v === "light" || v === "dark" ? v : "system";
+    } catch (e) {
+        return "system";
+    }
+}
+
+function resolveTheme(pref) {
+    if (pref === "system") {
+        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    return pref === "dark" ? "dark" : "light";
+}
+
+function themeOptionButton(value, icon, label) {
+    const aktif = getThemePref() === value;
+    const cls = aktif ? "bg-blue-600 text-white shadow-sm" : "text-slate-600";
+    return `<button type="button" data-theme-opt="${value}" onclick="setThemePref('${value}')" aria-pressed="${aktif}" class="${cls} flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition"><i class="fas ${icon}" aria-hidden="true"></i><span>${label}</span></button>`;
+}
+
+function syncThemeUI(pref, resolved) {
+    const dark = resolved === "dark";
+    const label = dark ? "Ganti ke mode terang" : "Ganti ke mode gelap";
+    ["btn-theme-header", "btn-theme-login"].forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.setAttribute("aria-label", label);
+        btn.setAttribute("title", label);
+        const icon = btn.querySelector("i");
+        if (icon) {
+            icon.classList.remove("fa-moon", "fa-sun");
+            icon.classList.add(dark ? "fa-sun" : "fa-moon");
+        }
+    });
+    document.querySelectorAll("[data-theme-opt]").forEach(btn => {
+        const aktif = btn.getAttribute("data-theme-opt") === pref;
+        btn.setAttribute("aria-pressed", String(aktif));
+        btn.classList.toggle("bg-blue-600", aktif);
+        btn.classList.toggle("text-white", aktif);
+        btn.classList.toggle("shadow-sm", aktif);
+        btn.classList.toggle("text-slate-600", !aktif);
+    });
+}
+
+function applyTheme(pref) {
+    pref = pref || getThemePref();
+    const resolved = resolveTheme(pref);
+    const dark = resolved === "dark";
+    document.documentElement.classList.toggle("dark", dark);
+    if (document.body) document.body.classList.toggle("dark", dark);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", dark ? THEME_COLOR_DARK : THEME_COLOR_LIGHT);
+    syncThemeUI(pref, resolved);
+}
+
+function setThemePref(pref) {
+    try {
+        if (pref === "light" || pref === "dark") localStorage.setItem(THEME_KEY, pref);
+        else localStorage.removeItem(THEME_KEY);
+    } catch (e) { }
+    applyTheme(pref === "light" || pref === "dark" ? pref : "system");
 }
 
 function toggleDarkMode() {
-    const isDark = document.body.classList.contains("dark");
-    const nextTheme = isDark ? "light" : "dark";
-    applyTheme(nextTheme);
-    localStorage.setItem("app_theme", nextTheme);
+    setThemePref(document.body.classList.contains("dark") ? "light" : "dark");
 }
 
-function applyTheme(theme) {
-    if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-        document.body.classList.add("dark");
-    } else {
-        document.documentElement.classList.remove("dark");
-        document.body.classList.remove("dark");
+function initTheme() {
+    applyTheme();
+    if (!themeMediaBound && window.matchMedia) {
+        themeMediaBound = true;
+        const mq = window.matchMedia("(prefers-color-scheme: dark)");
+        const onChange = () => { if (getThemePref() === "system") applyTheme(); };
+        if (mq.addEventListener) mq.addEventListener("change", onChange);
+        else if (mq.addListener) mq.addListener(onChange);
     }
 }
+
+try { initTheme(); } catch (e) { }
 
 let pollBerjalan = false;
 let pollVisibilitasTerpasang = false;

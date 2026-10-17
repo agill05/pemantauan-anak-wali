@@ -888,20 +888,21 @@ function openUserSettingsModal() {
                 </button>
             </div>
 
-            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100 gap-2 w-full">
+            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2.5 w-full">
                 <div class="flex items-center gap-2.5 min-w-0">
                     <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0">
-                        <i class="fas fa-moon"></i>
+                        <i class="fas fa-circle-half-stroke" aria-hidden="true"></i>
                     </span>
                     <div class="min-w-0">
                         <h4 class="font-bold text-xs text-slate-800">Mode Tampilan</h4>
-                        <p class="text-[11px] text-slate-400 truncate">Pilih tema Gelap / Terang</p>
+                        <p class="text-[11px] text-slate-400 truncate">Terang, Gelap, atau ikuti pengaturan perangkat</p>
                     </div>
                 </div>
-                <button onclick="toggleDarkMode(); openUserSettingsModal();" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-sm transition flex items-center gap-1.5 shrink-0">
-                    <i class="fas ${document.body.classList.contains('dark') ? 'fa-sun text-amber-500' : 'fa-moon text-slate-600'}"></i>
-                    <span>${document.body.classList.contains('dark') ? 'Terang' : 'Gelap'}</span>
-                </button>
+                <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl" role="group" aria-label="Pilih mode tampilan">
+                    ${themeOptionButton('light', 'fa-sun', 'Terang')}
+                    ${themeOptionButton('dark', 'fa-moon', 'Gelap')}
+                    ${themeOptionButton('system', 'fa-mobile-screen', 'Sistem')}
+                </div>
             </div>
 
             ${user.role !== 'ortu' ? `
