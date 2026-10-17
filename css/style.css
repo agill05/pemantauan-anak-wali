@@ -4163,3 +4163,50 @@ body.dark .lg-notice {
 body.dark .lg-hint {
     color: #fbbf24;
 }
+
+/* ==========================================================
+   PATCH 3 - Dashboard siswa, quick tile, info, tabel popup
+   ========================================================== */
+body.dark {
+    --surface-2: #0f172a;
+}
+
+body.dark .sd-card { background: #1e293b; border-color: #334155; box-shadow: none; }
+body.dark .sd-title { color: #94a3b8; }
+body.dark .sd-ring { background: conic-gradient(#10b981 calc(var(--p) * 1%), #334155 0); }
+body.dark .sd-ring span { background: #1e293b; color: #6ee7b7; }
+body.dark .sd-task { background: #0f172a; color: #cbd5e1; }
+body.dark .sd-task.done { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+body.dark .sd-task small { color: #94a3b8; }
+body.dark .sd-task.done small { color: #34d399; }
+body.dark .sd-badge { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+body.dark .sd-badge.off { background: #0f172a; color: #64748b; }
+body.dark .sd-bar { background: #334155; }
+body.dark .sd-stat > div { background: #0f172a; color: #94a3b8; }
+body.dark .sd-stat b { color: #f1f5f9; }
+body.dark .sd-note { color: #cbd5e1; }
+body.dark .sd-trend > div { background: #1e40af; }
+body.dark .sd-trend > div.now { background: #60a5fa; }
+body.dark .sd-trend-lbl { color: #94a3b8; }
+body.dark .sd-link { color: #93c5fd; }
+body.dark .sd-tl { border-left-color: #334155; }
+body.dark .sd-tl > div { color: #cbd5e1; }
+body.dark .sd-tl small { color: #94a3b8; }
+
+body.dark .info-label,
+body.dark .info-sep { color: #94a3b8; }
+body.dark .info-value { color: #e2e8f0; }
+body.dark .sd-greet .info-label,
+body.dark .sd-greet .info-sep { color: rgba(255, 255, 255, 0.7); }
+body.dark .sd-greet .info-value { color: #ffffff; }
+
+body.dark .quick-tile-blue { background: rgba(37, 99, 235, 0.16); }
+body.dark .quick-tile-amber { background: rgba(217, 119, 6, 0.16); }
+body.dark .quick-tile-emerald { background: rgba(5, 150, 105, 0.16); }
+body.dark .quick-tile-purple { background: rgba(124, 58, 237, 0.18); }
+body.dark .quick-tile-label { color: #e2e8f0; }
+body.dark .quick-tile-chevron { color: #64748b; }
+
+/* tabel di dalam popup (rekap presensi dll.) */
+body.dark .swal2-popup table td,
+body.dark .swal2-popup table th { border-color: #475569 !important; }

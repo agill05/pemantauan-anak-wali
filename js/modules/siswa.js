@@ -251,6 +251,10 @@ function renderRadarChartSiswa(detailData) {
     if (window.activeRadarChartInstance) {
         window.activeRadarChartInstance.destroy();
     }
+    window.activeRadarDetailData = detailData;
+    const gelap = document.body.classList.contains('dark');
+    const warnaTeks = gelap ? '#cbd5e1' : '#475569';
+    const warnaGaris = gelap ? 'rgba(148, 163, 184, 0.28)' : 'rgba(100, 116, 139, 0.22)';
 
     const { absensi = [], kebiasaan = [], hafalan = [], akademik: akademikSemua = [], pembinaan = [] } = detailData;
     const akademik = akdFilterSemester(akademikSemua);
@@ -273,7 +277,7 @@ function renderRadarChartSiswa(detailData) {
                 backgroundColor: 'rgba(37, 99, 235, 0.2)',
                 borderColor: '#2563eb',
                 pointBackgroundColor: '#2563eb',
-                pointBorderColor: '#fff',
+                pointBorderColor: gelap ? '#1e293b' : '#fff',
                 pointHoverBackgroundColor: '#fff',
                 pointHoverBorderColor: '#2563eb'
             }]
@@ -281,9 +285,15 @@ function renderRadarChartSiswa(detailData) {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            plugins: {
+                legend: { labels: { color: warnaTeks } }
+            },
             scales: {
                 r: {
-                    angleLines: { display: true },
+                    angleLines: { display: true, color: warnaGaris },
+                    grid: { color: warnaGaris },
+                    pointLabels: { color: warnaTeks },
+                    ticks: { color: warnaTeks, backdropColor: 'transparent' },
                     suggestedMin: 0,
                     suggestedMax: 100
                 }
@@ -291,6 +301,12 @@ function renderRadarChartSiswa(detailData) {
         }
     });
 }
+
+window.addEventListener('themechange', () => {
+    if (window.activeRadarChartInstance && window.activeRadarDetailData && document.getElementById('radarChartSiswa')) {
+        renderRadarChartSiswa(window.activeRadarDetailData);
+    }
+});
 
 async function printProfilSiswa() {
     if (!appState.activeSiswaDetail) return;

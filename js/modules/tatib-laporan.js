@@ -451,7 +451,7 @@ async function tlSuratPanggilan(siswaId) {
     const opsiTahap = [1, 2, 3].filter(n => n <= row.tahap)
         .map(n => `<option value="${n}" ${n === awal ? "selected" : ""}>Panggilan ${TL_ROMAWI[n]}</option>`).join("");
     const gaya = `style="width:100%;margin:4px 0 10px;font-size:14px"`;
-    const lbl = `style="display:block;font-size:12px;font-weight:700;color:#64748b"`;
+    const lbl = `style="display:block;font-size:12px;font-weight:700;color:var(--text-soft,#64748b)"`;
 
     const baca = () => {
         const v = id => String((document.getElementById(id) || {}).value || "").trim();

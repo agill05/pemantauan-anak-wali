@@ -312,6 +312,9 @@ function applyTheme(pref) {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", dark ? THEME_COLOR_DARK : THEME_COLOR_LIGHT);
     syncThemeUI(pref, resolved);
+    try {
+        window.dispatchEvent(new CustomEvent("themechange", { detail: { dark: dark } }));
+    } catch (e) { }
 }
 
 function setThemePref(pref) {
