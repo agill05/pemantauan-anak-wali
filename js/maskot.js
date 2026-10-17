@@ -24,7 +24,9 @@
  *       profil (kaca pembesar + kartu profil siswa: pencarian siswa, siswa tidak ditemukan, melihat profil),
  *       guru (jas, dasi, tanda pengenal GURU, tongkat penunjuk, papan jalan: gelembung data guru/admin/kepsek),
  *       siswa (seragam, tas punggung, sayap melambai, buku: gelembung data siswa).
- * maskotUcapPutar(wadah, ambil, ukuran, jeda) -> gelembung data berputar: tiap giliran memanggil ambil() (data terbaru), urut bobot terbesar dulu.
+ * maskotUcapPutar(wadah, ambil, ukuran, jeda, opsi) -> gelembung data berputar: tiap giliran memanggil ambil() (data terbaru), urut bobot terbesar dulu.
+ *       opsi.lewatiJalan = true bila maskotJalanMasuk() baru selesai: balon pertama dipasang di samping maskot yang sama.
+ * maskotJalanMasuk(wadah, pose, ukuran)     -> maskot berjalan dari kanan ke kiri di dalam wadah, tanpa balon. Promise: true bila berjalan, false bila dilewati (reduced motion).
  */
 function maskotAman(t) {
     if (typeof escapeHtml === "function") return escapeHtml(String(t == null ? "" : t));
@@ -535,7 +537,7 @@ function maskotTerlihat() {
     return Array.prototype.filter.call(document.querySelectorAll("svg.mk"), function (svg) {
         var b = svg.getBoundingClientRect();
         return b.width >= 40 && b.height >= 40 && b.bottom > 0 && b.top < vh &&
-            !svg.classList.contains("mk-track") && !/(^|\s)mk-(rx|id)-/.test(svg.getAttribute("class") || "");
+            !svg.classList.contains("mk-track") && !svg.classList.contains("mk-jalan-aktif") && !/(^|\s)mk-(rx|id)-/.test(svg.getAttribute("class") || "");
     });
 }
 function maskotJadwalIseng() {
@@ -559,7 +561,7 @@ function maskotArahMata() {
     Array.prototype.forEach.call(document.querySelectorAll("svg.mk"), function (svg) {
         var b = svg.getBoundingClientRect();
         if (b.width < 40 || b.bottom < 0 || b.top > vh) return;
-        if (/(^|\s)mk-(rx|id)-/.test(svg.getAttribute("class") || "")) return;
+        if (svg.classList.contains("mk-jalan-aktif") || /(^|\s)mk-(rx|id)-/.test(svg.getAttribute("class") || "")) return;
         var look = svg.querySelector(".mk-look, .mk-o-look");
         if (!look) return;
         var dx = maskotLacak.x - (b.left + b.width / 2), dy = maskotLacak.y - (b.top + b.height * 0.42);
@@ -615,7 +617,7 @@ function maskotUcapPilih(kandidat) {
     return dipilih;
 }
 
-function maskotUcapHtml(u, ukuran) {
+function maskotUcapBalon(u, muncul) {
     /* Aksi ketuk (pilih satu): view = buka tampilan, profil = buka profil siswa (id), notif = buka daftar notifikasi. */
     var aksi = "";
     if (u.view) aksi = ' data-mk-ucap-buka="' + maskotAman(u.view) + '"';
@@ -625,12 +627,63 @@ function maskotUcapHtml(u, ukuran) {
     /* tingkat (kritis, sedang, rendah, baik) mewarnai balon; angka tampil sebagai lencana di depan teks. */
     var tingkat = /^(kritis|sedang|rendah|baik)$/.test(u.tingkat || "") ? ' data-tingkat="' + u.tingkat + '"' : "";
     var angka = (u.angka !== undefined && u.angka !== null && u.angka !== "") ? '<span class="mk-ucap-angka">' + maskotAman(u.angka) + '</span>' : "";
-    return '<div class="mk-ucap-wrap">' +
-        '<div class="mk-ucap-mk">' + maskot(u.pose || "ceria", ukuran || 64) + '</div>' +
-        '<div class="mk-ucap"' + tingkat + aksi + '>' +
+    return '<div class="mk-ucap' + (muncul ? ' mk-ucap-muncul' : '') + '"' + tingkat + aksi + '>' +
         angka + '<span class="mk-ucap-teks">' + maskotAman(u.teks) + '</span>' +
         '<button type="button" class="mk-ucap-tutup" data-mk-ucap-tutup aria-label="Tutup gelembung">&times;</button>' +
-        '</div></div>';
+        '</div>';
+}
+
+function maskotUcapHtml(u, ukuran) {
+    var pose = u.pose || "ceria";
+    return '<div class="mk-ucap-wrap">' +
+        '<div class="mk-ucap-mk" data-pose="' + maskotAman(pose) + '">' + maskot(pose, ukuran || 64) + '</div>' +
+        maskotUcapBalon(u, false) +
+        '</div>';
+}
+
+/* Isi wadah dengan satu ucapan. Bila maskot di wadah berpose sama, hanya balon yang diganti (maskot tidak digambar ulang). */
+function maskotUcapIsi(wadah, u, ukuran) {
+    var pose = u.pose || "ceria";
+    var wrap = wadah.querySelector(".mk-ucap-wrap");
+    var mk = wrap && wrap.querySelector(".mk-ucap-mk");
+    if (wrap && mk && mk.getAttribute("data-pose") === pose && !wrap.classList.contains("mk-ucap-keluar")) {
+        var tmp = document.createElement("div");
+        tmp.innerHTML = maskotUcapBalon(u, true);
+        var baru = tmp.firstChild, lama = wrap.querySelector(".mk-ucap");
+        if (lama) wrap.replaceChild(baru, lama); else wrap.appendChild(baru);
+        return;
+    }
+    wadah.innerHTML = maskotUcapHtml(u, ukuran);
+}
+
+/* Maskot berjalan masuk dari tepi kanan wadah ke posisi kiri, tanpa balon. Resolve true setelah berhenti dan jeda singkat. */
+var MASKOT_JALAN = { kecepatan: 190, minMs: 1400, maksMs: 3200, jarakMaks: 640, jedaMs: 300 };
+function maskotJalanMasuk(wadah, pose, ukuran) {
+    return new Promise(function (resolve) {
+        if (!wadah) { resolve(false); return; }
+        if (maskotGerakDiam()) { wadah.innerHTML = ""; resolve(false); return; }
+        var s = ukuran || 64;
+        wadah.innerHTML = '<div class="mk-ucap-wrap mk-jalan"><div class="mk-ucap-mk" data-pose="' + maskotAman(pose) + '">' + maskot(pose, s) + '</div></div>';
+        var mk = wadah.querySelector(".mk-ucap-mk"), svg = mk.querySelector("svg.mk");
+        var jarak = Math.min(wadah.clientWidth || 320, MASKOT_JALAN.jarakMaks);
+        var dur = Math.max(MASKOT_JALAN.minMs, Math.min(MASKOT_JALAN.maksMs, jarak / MASKOT_JALAN.kecepatan * 1000));
+        mk.style.setProperty("--mk-dari", jarak + "px");
+        mk.style.setProperty("--mk-dur", Math.round(dur) + "ms");
+        if (svg) svg.classList.add("mk-jalan-aktif");
+        var selesaiSudah = false, timer = 0;
+        function selesai() {
+            if (selesaiSudah) return;
+            selesaiSudah = true;
+            clearTimeout(timer);
+            mk.removeEventListener("animationend", saatAnimasi);
+            if (svg) svg.classList.remove("mk-jalan-aktif");
+            setTimeout(function () { resolve(true); }, MASKOT_JALAN.jedaMs);
+        }
+        function saatAnimasi(e) { if (e.target === mk) selesai(); }
+        mk.addEventListener("animationend", saatAnimasi);
+        /* Cadangan: animationend tidak terpicu di tab latar atau elemen tersembunyi. */
+        timer = setTimeout(selesai, dur + 400);
+    });
 }
 
 function maskotUcapPasang(wadah, kandidat, ukuran) {
@@ -643,8 +696,9 @@ function maskotUcapPasang(wadah, kandidat, ukuran) {
 /* Gelembung data berputar. ambil = fungsi yang mengembalikan kandidat terbaru (dipanggil tiap giliran, jadi angka selalu segar)
  * atau larik kandidat. Urutan: bobot terbesar dulu, lalu bergantian tiap jeda ms. Berhenti sendiri bila balon ditutup pengguna
  * atau wadah hilang dari halaman. Mengembalikan { berhenti(), segarkan() }. */
-function maskotUcapPutar(wadah, ambil, ukuran, jeda) {
+function maskotUcapPutar(wadah, ambil, ukuran, jeda, opsi) {
     if (!wadah) return null;
+    opsi = opsi || {};
     var ctl = { mati: false }, timer = 0, kunciKini = "", teksKini = "", pernah = false, jedaMs = jeda || 7000;
     function daftar() {
         var d = [];
@@ -669,7 +723,12 @@ function maskotUcapPutar(wadah, ambil, ukuran, jeda) {
                     if (pilih.teks !== teksKini && wadah.querySelector(".mk-ucap-wrap")) { /* teks berubah: gambar ulang */ } else pilih = null;
                 }
                 if (pilih) {
-                    wadah.innerHTML = maskotUcapHtml(pilih, ukuran);
+                    if (!pernah && opsi.lewatiJalan) {
+                        /* Balon pertama memakai pose maskot yang baru berjalan masuk, supaya tidak berganti rupa. */
+                        var mkJalan = wadah.querySelector(".mk-ucap-mk[data-pose]");
+                        if (mkJalan) pilih = Object.assign({}, pilih, { pose: mkJalan.getAttribute("data-pose") });
+                    }
+                    maskotUcapIsi(wadah, pilih, ukuran);
                     pernah = true; kunciKini = pilih.kunci || ""; teksKini = pilih.teks;
                     var svg = wadah.querySelector("svg.mk");
                     if (svg && !maskotGerakDiam()) {

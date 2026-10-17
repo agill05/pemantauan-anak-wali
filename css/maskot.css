@@ -444,3 +444,22 @@ body.dark .mk-ucap[data-tingkat="baik"]::before{border-left-color:#166534;border
 @media (prefers-reduced-motion: reduce){
   .mk-ucap[data-tingkat="kritis"]{animation:none!important}
 }
+
+/* Maskot berjalan masuk dari kanan ke kiri sebelum balon ucapan muncul (maskotJalanMasuk di maskot.js). */
+.mk-ucap-host{overflow-x:clip}
+@supports not (overflow-x:clip){.mk-ucap-host{overflow:hidden}}
+.mk-ucap-wrap.mk-jalan:not(.mk-ucap-keluar){animation:none}
+.mk-jalan .mk-ucap-mk{animation:mk-jalan-masuk var(--mk-dur,2s) cubic-bezier(.35,.55,.4,1) both}
+@keyframes mk-jalan-masuk{0%{opacity:0;transform:translateX(var(--mk-dari,320px))}12%{opacity:1}100%{opacity:1;transform:translateX(0)}}
+svg.mk.mk-jalan-aktif{pointer-events:none}
+.mk.mk-jalan-aktif .mk-bob,.mk.mk-jalan-aktif .mk-o-bob{animation:mk-langkah .36s ease-in-out infinite}
+@keyframes mk-langkah{0%,100%{transform:translateY(0) rotate(-5deg) scale(1.02,.97)}50%{transform:translateY(-9px) rotate(-1deg) scale(.98,1.03)}}
+.mk.mk-jalan-aktif .mk-look,.mk.mk-jalan-aktif .mk-o-look{animation:none;transform:translate(-5px,-1px)}
+
+/* Balon muncul di samping maskot yang sudah berhenti, tumbuh dari sisi ekor (kiri). */
+.mk-ucap.mk-ucap-muncul{transform-origin:left center;animation:mk-ucap-balon .35s cubic-bezier(.2,.9,.3,1.15) both}
+.mk-ucap.mk-ucap-muncul[data-tingkat="kritis"]{animation:mk-ucap-balon .35s cubic-bezier(.2,.9,.3,1.15) both,mk-ucap-denyut 2.2s ease-in-out .35s infinite}
+@keyframes mk-ucap-balon{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  .mk-ucap.mk-ucap-muncul,.mk-jalan .mk-ucap-mk{animation:none!important}
+}
