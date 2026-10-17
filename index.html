@@ -766,13 +766,26 @@
                         class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i
                             class="fas fa-plus mr-1"></i> Siswa</button>
                 </div>
-                <select id="filter-admin-siswa-status" onchange="renderAdminSiswa()" aria-label="Filter status kelas dan mentor"
-                    class="w-full min-w-0 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
-                    <option value="">Semua siswa</option>
-                    <option value="tanpa-kelas">Tanpa kelas</option>
-                    <option value="tanpa-mentor">Tanpa mentor</option>
-                    <option value="tanpa-keduanya">Tanpa kelas &amp; mentor</option>
-                </select>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="filter-admin-siswa-status" onchange="renderAdminSiswa()" aria-label="Filter status kelas dan mentor"
+                        class="w-full min-w-0 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                        <option value="">Semua siswa</option>
+                        <option value="tanpa-kelas">Tanpa kelas</option>
+                        <option value="tanpa-mentor">Tanpa mentor</option>
+                        <option value="tanpa-keduanya">Tanpa kelas &amp; mentor</option>
+                    </select>
+                    <select id="filter-admin-siswa-kelas" onchange="renderAdminSiswa()" aria-label="Filter kelas"
+                        class="w-full min-w-0 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                        <option value="">Semua kelas</option>
+                    </select>
+                    <select id="filter-admin-siswa-urut" onchange="renderAdminSiswa()" aria-label="Urutkan siswa"
+                        class="col-span-2 w-full min-w-0 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                        <option value="nama-asc">Urutkan: Nama A&ndash;Z</option>
+                        <option value="nama-desc">Urutkan: Nama Z&ndash;A</option>
+                        <option value="kelas">Urutkan: Kelas (lalu nama)</option>
+                    </select>
+                </div>
+                <p id="admin-siswa-hitung" class="text-xs text-slate-400" aria-live="polite"></p>
                 <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
                     <button onclick="downloadTemplateSiswaCSV()"
                         class="whitespace-nowrap bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i

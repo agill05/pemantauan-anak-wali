@@ -238,6 +238,33 @@ function adminSiswaCocokStatus(s, status) {
     return true;
 }
 
+function adminSiswaIsiOpsiKelas() {
+    const sel = document.getElementById("filter-admin-siswa-kelas");
+    if (!sel) return;
+    const daftar = (appState.kelas || []).slice().sort((a, b) => bandingkanKelas(a.nama_kelas, b.nama_kelas));
+    const kunci = daftar.map(k => String(k.id) + "|" + k.nama_kelas).join(";");
+    if (sel.dataset.kunci === kunci) return;
+    const lama = sel.value;
+    sel.innerHTML = `<option value="">Semua kelas</option>` +
+        daftar.map(k => `<option value="${escapeHtml(k.id)}">Kelas ${escapeHtml(k.nama_kelas)}</option>`).join("");
+    sel.dataset.kunci = kunci;
+    sel.value = daftar.some(k => String(k.id) === lama) ? lama : "";
+}
+
+function adminSiswaNamaKelasUrut(s) {
+    const kid = String(s.kelas_id || "").trim();
+    const k = kid ? (appState.kelas || []).find(x => String(x.id) === kid) : null;
+    return k ? k.nama_kelas : "";
+}
+
+function adminSiswaUrutkan(list, mode) {
+    const cmpNama = (a, b) => String(a.nama || "").localeCompare(String(b.nama || ""), "id", { sensitivity: "base", numeric: true });
+    const arr = list.slice();
+    if (mode === "nama-desc") return arr.sort((a, b) => cmpNama(b, a));
+    if (mode === "kelas") return arr.sort((a, b) => bandingkanKelas(adminSiswaNamaKelasUrut(a), adminSiswaNamaKelasUrut(b)) || cmpNama(a, b));
+    return arr.sort(cmpNama);
+}
+
 function getNamaKelasSiswa(siswa) {
     const kid = String(siswa.kelas_id || "").trim();
     if (!kid) return "Belum ada";
@@ -259,15 +286,22 @@ function renderAdminSiswa() {
     if (!list) return;
 
     const query = (document.getElementById("search-admin-siswa-input")?.value || "").toLowerCase();
+    adminSiswaIsiOpsiKelas();
     const status = document.getElementById("filter-admin-siswa-status")?.value || "";
+    const kelasFilter = document.getElementById("filter-admin-siswa-kelas")?.value || "";
+    const urut = document.getElementById("filter-admin-siswa-urut")?.value || "nama-asc";
     const rawFiltered = appState.siswa.filter(s =>
         (safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query)) &&
-        adminSiswaCocokStatus(s, status)
+        adminSiswaCocokStatus(s, status) &&
+        (!kelasFilter || String(s.kelas_id || "").trim() === kelasFilter)
     );
-    const filtered = sortSiswa(rawFiltered);
+    const filtered = adminSiswaUrutkan(rawFiltered, urut);
+
+    const hitung = document.getElementById("admin-siswa-hitung");
+    if (hitung) hitung.textContent = `Menampilkan ${filtered.length} dari ${appState.siswa.length} siswa`;
 
     if (filtered.length === 0) {
-        list.innerHTML = maskotKosong(status ? "Tidak ada siswa untuk filter ini." : "Belum ada Siswa.", 96, "admin");
+        list.innerHTML = maskotKosong((status || kelasFilter || query) ? "Tidak ada siswa untuk filter ini." : "Belum ada Siswa.", 96, "admin");
         return;
     }
 
