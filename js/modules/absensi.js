@@ -552,7 +552,7 @@ function cetakPDFAbsensi() {
     const showMentor = isBinaan && admin;
 
     const urut = [...list];
-    if (showKelas) urut.sort((a, b) => absensiNamaKelas(a.kelas_id).localeCompare(absensiNamaKelas(b.kelas_id), "id", { numeric: true }));
+    if (showKelas) urut.sort((a, b) => bandingkanKelas(absensiNamaKelas(a.kelas_id), absensiNamaKelas(b.kelas_id)));
 
     let namaGrup;
     if (isBinaan) namaGrup = admin ? (filter ? absensiNamaMentor(filter) : "Semua Mentor") : (appState.user.nama || "Mentor");

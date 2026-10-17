@@ -455,7 +455,7 @@ async function openModalAkademik(id = null) {
         : writable;
     const urut = (!rec && isGuruUser())
         ? [...daftar].sort((a, b) =>
-            String(a.nama_kelas || "").localeCompare(String(b.nama_kelas || ""), "id", { sensitivity: "base", numeric: true }) ||
+            bandingkanKelas(a.nama_kelas, b.nama_kelas) ||
             String(a.nama || "").localeCompare(String(b.nama || ""), "id", { sensitivity: "base", numeric: true }))
         : sortSiswa(daftar);
     const siswaOpts = (rec && urut.length === 0)
@@ -597,7 +597,7 @@ async function openModalAkademikBulk() {
     _akdBulkSiswa = semua;
 
     const daftarKelas = [...new Set(semua.map(s => String(s.nama_kelas || "").trim()).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base", numeric: true }));
+        .sort(bandingkanKelas);
     const kelasOpts = `<option value="" selected disabled>Pilih kelas</option>` +
         daftarKelas.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("");
     const mapelOpts = `<option value="" selected disabled>Pilih mata pelajaran</option>` +

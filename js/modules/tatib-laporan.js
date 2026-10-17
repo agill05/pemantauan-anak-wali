@@ -204,6 +204,11 @@ function tlFiltered() {
     });
 }
 
+function tlLabelKelas(id) {
+    const n = tlNamaKelas(id);
+    return n === "-" ? "Tanpa kelas" : "Kelas " + n;
+}
+
 function tlLabelStatus(r) {
     return r.mencapai_batas ? "Batas tercapai" : (TT_TAHAP_LABEL[r.tahap] || TT_TAHAP_LABEL[0]);
 }
@@ -219,7 +224,7 @@ function tlRingkasKelas(base) {
         else o["t" + r.tahap]++;
         if ((r.panggilan_tertunda || []).length) o.tertunda++;
     });
-    return Array.from(peta.values()).sort((a, b) => tlNamaKelas(a.kelas_id).localeCompare(tlNamaKelas(b.kelas_id), "id", { numeric: true }));
+    return Array.from(peta.values()).sort((a, b) => bandingkanKelas(tlNamaKelas(a.kelas_id), tlNamaKelas(b.kelas_id)));
 }
 
 function tlTabelKelasHtml(daftar) {
@@ -228,7 +233,7 @@ function tlTabelKelasHtml(daftar) {
     const baris = daftar.map((o, i) => `
         <tr>
             <td class="tt-no">${i + 1}</td>
-            <th scope="row" class="tt-nama">Kelas ${escapeHtml(tlNamaKelas(o.kelas_id))}</th>
+            <th scope="row" class="tt-nama">${escapeHtml(tlLabelKelas(o.kelas_id))}</th>
             <td class="tt-tengah font-bold">${o.siswa}</td>
             ${sel(o.t0, "text-emerald-700")}${sel(o.t1, "text-amber-700 font-bold")}${sel(o.t2, "text-orange-700 font-bold")}${sel(o.t3, "text-rose-700 font-bold")}${sel(o.batas, "text-rose-800 font-extrabold")}${sel(o.tertunda, "text-violet-700 font-bold")}
         </tr>`).join("");
@@ -266,7 +271,7 @@ function renderLaporanTatib() {
         ringkas.innerHTML = ringkasKelas.length === 0 ? "" : `<div class="tt-kartu-wrap space-y-2">` + ringkasKelas.map(o => `
             <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="flex items-center justify-between gap-2 mb-1.5">
-                    <p class="text-xs font-bold text-slate-800">Kelas ${escapeHtml(tlNamaKelas(o.kelas_id))}</p>
+                    <p class="text-xs font-bold text-slate-800">${escapeHtml(tlLabelKelas(o.kelas_id))}</p>
                     <span class="text-[11px] text-slate-400">${o.siswa} siswa${o.tertunda ? ` \u2022 ${o.tertunda} panggilan belum dicatat` : ""}</span>
                 </div>
                 <div class="flex flex-wrap gap-1">

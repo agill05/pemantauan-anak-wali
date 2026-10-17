@@ -3880,3 +3880,11 @@ body.dark .tt-tabel tfoot td {
     background: #0f172a;
     border-top-color: #334155;
 }
+
+.tt-tabel tfoot .tt-nama {
+    background: #f8fafc;
+}
+
+body.dark .tt-tabel tfoot .tt-nama {
+    background: #0f172a;
+}

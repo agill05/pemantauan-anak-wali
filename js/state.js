@@ -473,3 +473,32 @@ function getSiswaWritable(kategori) {
     const list = isGuruUser() ? getSiswaPeran() : (appState.siswa || []);
     return list.filter(s => canWrite(kategori, s));
 }
+
+function kelasAngkaRomawi(teks) {
+    const nilai = { i: 1, v: 5, x: 10, l: 50, c: 100 };
+    let total = 0;
+    const huruf = String(teks).toLowerCase().split("");
+    for (let i = 0; i < huruf.length; i++) {
+        const sekarang = nilai[huruf[i]];
+        const berikut = nilai[huruf[i + 1]] || 0;
+        total += sekarang < berikut ? -sekarang : sekarang;
+    }
+    return total;
+}
+
+function kelasKunciUrut(nama) {
+    const m = String(nama || "").trim().match(/^(?:kelas\s+)?(?:([ivxlc]+)(?![a-z0-9])|(\d+))\s*[.\-\s]*(.*)$/i);
+    if (!m) return null;
+    return { tingkat: m[1] ? kelasAngkaRomawi(m[1]) : Number(m[2]), sisa: m[3] || "" };
+}
+
+// Urut nama kelas menurut tingkat (VII, VIII, IX; juga 7, 8, 9), baru rombel (1, 2, A, B).
+// Nama yang tidak dikenali (kosong, "-") diletakkan paling akhir.
+function bandingkanKelas(a, b) {
+    const ka = kelasKunciUrut(a);
+    const kb = kelasKunciUrut(b);
+    if (!ka && !kb) return String(a || "").localeCompare(String(b || ""), "id", { sensitivity: "base", numeric: true });
+    if (!ka) return 1;
+    if (!kb) return -1;
+    return ka.tingkat - kb.tingkat || ka.sisa.localeCompare(kb.sisa, "id", { sensitivity: "base", numeric: true });
+}
