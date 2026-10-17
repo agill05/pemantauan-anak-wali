@@ -231,38 +231,37 @@ function siswaTanpaMentor(s) {
     return !mid || !(appState.guru || []).some(g => String(g.id) === mid);
 }
 
+function adminSiswaIsiOpsiStatus() {
+    const sel = document.getElementById("filter-admin-siswa-status");
+    if (!sel) return;
+    let kelas = 0, mentor = 0, keduanya = 0;
+    (appState.siswa || []).forEach(s => {
+        const k = siswaTanpaKelas(s), m = siswaTanpaMentor(s);
+        if (k) kelas++;
+        if (m) mentor++;
+        if (k && m) keduanya++;
+    });
+    const kunci = kelas + "|" + mentor + "|" + keduanya;
+    if (sel.dataset.kunci !== kunci) {
+        const lama = sel.value;
+        const opsi = [["", "Semua siswa"]];
+        if (kelas) opsi.push(["tanpa-kelas", `Tanpa kelas (${kelas})`]);
+        if (mentor) opsi.push(["tanpa-mentor", `Tanpa mentor (${mentor})`]);
+        if (keduanya) opsi.push(["tanpa-keduanya", `Tanpa kelas & mentor (${keduanya})`]);
+        sel.innerHTML = opsi.map(o => `<option value="${o[0]}">${escapeHtml(o[1])}</option>`).join("");
+        sel.value = opsi.some(o => o[0] === lama) ? lama : "";
+        sel.dataset.kunci = kunci;
+    }
+    const ada = kelas > 0 || mentor > 0;
+    sel.classList.toggle("hidden", !ada);
+    if (!ada) sel.value = "";
+}
+
 function adminSiswaCocokStatus(s, status) {
     if (status === "tanpa-kelas") return siswaTanpaKelas(s);
     if (status === "tanpa-mentor") return siswaTanpaMentor(s);
     if (status === "tanpa-keduanya") return siswaTanpaKelas(s) && siswaTanpaMentor(s);
     return true;
-}
-
-function adminSiswaIsiOpsiKelas() {
-    const sel = document.getElementById("filter-admin-siswa-kelas");
-    if (!sel) return;
-    const daftar = (appState.kelas || []).slice().sort((a, b) => bandingkanKelas(a.nama_kelas, b.nama_kelas));
-    const kunci = daftar.map(k => String(k.id) + "|" + k.nama_kelas).join(";");
-    if (sel.dataset.kunci === kunci) return;
-    const lama = sel.value;
-    sel.innerHTML = `<option value="">Semua kelas</option>` +
-        daftar.map(k => `<option value="${escapeHtml(k.id)}">Kelas ${escapeHtml(k.nama_kelas)}</option>`).join("");
-    sel.dataset.kunci = kunci;
-    sel.value = daftar.some(k => String(k.id) === lama) ? lama : "";
-}
-
-function adminSiswaNamaKelasUrut(s) {
-    const kid = String(s.kelas_id || "").trim();
-    const k = kid ? (appState.kelas || []).find(x => String(x.id) === kid) : null;
-    return k ? k.nama_kelas : "";
-}
-
-function adminSiswaUrutkan(list, mode) {
-    const cmpNama = (a, b) => String(a.nama || "").localeCompare(String(b.nama || ""), "id", { sensitivity: "base", numeric: true });
-    const arr = list.slice();
-    if (mode === "nama-desc") return arr.sort((a, b) => cmpNama(b, a));
-    if (mode === "kelas") return arr.sort((a, b) => bandingkanKelas(adminSiswaNamaKelasUrut(a), adminSiswaNamaKelasUrut(b)) || cmpNama(a, b));
-    return arr.sort(cmpNama);
 }
 
 function getNamaKelasSiswa(siswa) {
@@ -286,22 +285,16 @@ function renderAdminSiswa() {
     if (!list) return;
 
     const query = (document.getElementById("search-admin-siswa-input")?.value || "").toLowerCase();
-    adminSiswaIsiOpsiKelas();
+    adminSiswaIsiOpsiStatus();
     const status = document.getElementById("filter-admin-siswa-status")?.value || "";
-    const kelasFilter = document.getElementById("filter-admin-siswa-kelas")?.value || "";
-    const urut = document.getElementById("filter-admin-siswa-urut")?.value || "nama-asc";
     const rawFiltered = appState.siswa.filter(s =>
         (safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query)) &&
-        adminSiswaCocokStatus(s, status) &&
-        (!kelasFilter || String(s.kelas_id || "").trim() === kelasFilter)
+        adminSiswaCocokStatus(s, status)
     );
-    const filtered = adminSiswaUrutkan(rawFiltered, urut);
-
-    const hitung = document.getElementById("admin-siswa-hitung");
-    if (hitung) hitung.textContent = `Menampilkan ${filtered.length} dari ${appState.siswa.length} siswa`;
+    const filtered = sortSiswa(rawFiltered);
 
     if (filtered.length === 0) {
-        list.innerHTML = maskotKosong((status || kelasFilter || query) ? "Tidak ada siswa untuk filter ini." : "Belum ada Siswa.", 96, "admin");
+        list.innerHTML = maskotKosong(status ? "Tidak ada siswa untuk filter ini." : "Belum ada Siswa.", 96, "admin");
         return;
     }
 
