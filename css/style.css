@@ -3890,3 +3890,172 @@ body.dark .tt-tabel tfoot td {
 body.dark .tt-tabel tfoot .tt-nama {
     background: #0f172a;
 }
+
+/* ==========================================================
+   PATCH 1 - Perbaikan kontras mode gelap
+   1) Variabel teks/garis ikut gelap
+   2) Latar pastel (bg-*-50/100/200) jadi translusen gelap
+   3) Teks warna pekat (600-900) jadi terang
+   4) Hover/border/divide
+   5) Popup SweetAlert2
+   ========================================================== */
+body.dark {
+    --text: #f1f5f9;
+    --text-muted: #cbd5e1;
+    --text-soft: #94a3b8;
+    --line: #334155;
+    --primary-light: rgba(37, 99, 235, 0.18);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+/* amber */
+body.dark .bg-amber-50{background-color:rgba(245,158,11,.14)!important}
+body.dark .bg-amber-100{background-color:rgba(245,158,11,.22)!important}
+body.dark .bg-amber-200{background-color:rgba(245,158,11,.30)!important}
+body.dark .border-amber-100,body.dark .border-amber-200,body.dark .border-amber-300{border-color:rgba(245,158,11,.38)!important}
+body.dark .text-amber-500{color:#fbbf24!important}
+body.dark .text-amber-600,body.dark .text-amber-700,body.dark .text-amber-800,body.dark .text-amber-900{color:#fcd34d!important}
+body.dark .hover\:bg-amber-50:hover{background-color:rgba(245,158,11,.14)!important}
+body.dark .hover\:bg-amber-100:hover{background-color:rgba(245,158,11,.26)!important}
+body.dark .hover\:text-amber-600:hover{color:#fcd34d!important}
+/* blue */
+body.dark .bg-blue-50{background-color:rgba(59,130,246,.14)!important}
+body.dark .bg-blue-100{background-color:rgba(59,130,246,.22)!important}
+body.dark .bg-blue-200{background-color:rgba(59,130,246,.30)!important}
+body.dark .border-blue-100,body.dark .border-blue-200,body.dark .border-blue-300{border-color:rgba(59,130,246,.38)!important}
+body.dark .text-blue-500{color:#60a5fa!important}
+body.dark .text-blue-600,body.dark .text-blue-700,body.dark .text-blue-800,body.dark .text-blue-900{color:#93c5fd!important}
+body.dark .hover\:bg-blue-50:hover{background-color:rgba(59,130,246,.14)!important}
+body.dark .hover\:bg-blue-100:hover{background-color:rgba(59,130,246,.26)!important}
+body.dark .hover\:text-blue-600:hover{color:#93c5fd!important}
+/* emerald */
+body.dark .bg-emerald-50{background-color:rgba(16,185,129,.14)!important}
+body.dark .bg-emerald-100{background-color:rgba(16,185,129,.22)!important}
+body.dark .bg-emerald-200{background-color:rgba(16,185,129,.30)!important}
+body.dark .border-emerald-100,body.dark .border-emerald-200,body.dark .border-emerald-300{border-color:rgba(16,185,129,.38)!important}
+body.dark .text-emerald-500{color:#34d399!important}
+body.dark .text-emerald-600,body.dark .text-emerald-700,body.dark .text-emerald-800,body.dark .text-emerald-900{color:#6ee7b7!important}
+body.dark .hover\:bg-emerald-50:hover{background-color:rgba(16,185,129,.14)!important}
+body.dark .hover\:bg-emerald-100:hover{background-color:rgba(16,185,129,.26)!important}
+body.dark .hover\:text-emerald-600:hover{color:#6ee7b7!important}
+/* indigo */
+body.dark .bg-indigo-50{background-color:rgba(99,102,241,.14)!important}
+body.dark .bg-indigo-100{background-color:rgba(99,102,241,.22)!important}
+body.dark .bg-indigo-200{background-color:rgba(99,102,241,.30)!important}
+body.dark .border-indigo-100,body.dark .border-indigo-200,body.dark .border-indigo-300{border-color:rgba(99,102,241,.38)!important}
+body.dark .text-indigo-500{color:#818cf8!important}
+body.dark .text-indigo-600,body.dark .text-indigo-700,body.dark .text-indigo-800,body.dark .text-indigo-900{color:#a5b4fc!important}
+body.dark .hover\:bg-indigo-50:hover{background-color:rgba(99,102,241,.14)!important}
+body.dark .hover\:bg-indigo-100:hover{background-color:rgba(99,102,241,.26)!important}
+body.dark .hover\:text-indigo-600:hover{color:#a5b4fc!important}
+/* orange */
+body.dark .bg-orange-50{background-color:rgba(249,115,22,.14)!important}
+body.dark .bg-orange-100{background-color:rgba(249,115,22,.22)!important}
+body.dark .bg-orange-200{background-color:rgba(249,115,22,.30)!important}
+body.dark .border-orange-100,body.dark .border-orange-200,body.dark .border-orange-300{border-color:rgba(249,115,22,.38)!important}
+body.dark .text-orange-500{color:#fb923c!important}
+body.dark .text-orange-600,body.dark .text-orange-700,body.dark .text-orange-800,body.dark .text-orange-900{color:#fdba74!important}
+body.dark .hover\:bg-orange-50:hover{background-color:rgba(249,115,22,.14)!important}
+body.dark .hover\:bg-orange-100:hover{background-color:rgba(249,115,22,.26)!important}
+body.dark .hover\:text-orange-600:hover{color:#fdba74!important}
+/* pink */
+body.dark .bg-pink-50{background-color:rgba(236,72,153,.14)!important}
+body.dark .bg-pink-100{background-color:rgba(236,72,153,.22)!important}
+body.dark .bg-pink-200{background-color:rgba(236,72,153,.30)!important}
+body.dark .border-pink-100,body.dark .border-pink-200,body.dark .border-pink-300{border-color:rgba(236,72,153,.38)!important}
+body.dark .text-pink-500{color:#f472b6!important}
+body.dark .text-pink-600,body.dark .text-pink-700,body.dark .text-pink-800,body.dark .text-pink-900{color:#f9a8d4!important}
+body.dark .hover\:bg-pink-50:hover{background-color:rgba(236,72,153,.14)!important}
+body.dark .hover\:bg-pink-100:hover{background-color:rgba(236,72,153,.26)!important}
+body.dark .hover\:text-pink-600:hover{color:#f9a8d4!important}
+/* purple */
+body.dark .bg-purple-50{background-color:rgba(168,85,247,.14)!important}
+body.dark .bg-purple-100{background-color:rgba(168,85,247,.22)!important}
+body.dark .bg-purple-200{background-color:rgba(168,85,247,.30)!important}
+body.dark .border-purple-100,body.dark .border-purple-200,body.dark .border-purple-300{border-color:rgba(168,85,247,.38)!important}
+body.dark .text-purple-500{color:#c084fc!important}
+body.dark .text-purple-600,body.dark .text-purple-700,body.dark .text-purple-800,body.dark .text-purple-900{color:#d8b4fe!important}
+body.dark .hover\:bg-purple-50:hover{background-color:rgba(168,85,247,.14)!important}
+body.dark .hover\:bg-purple-100:hover{background-color:rgba(168,85,247,.26)!important}
+body.dark .hover\:text-purple-600:hover{color:#d8b4fe!important}
+/* rose */
+body.dark .bg-rose-50{background-color:rgba(244,63,94,.14)!important}
+body.dark .bg-rose-100{background-color:rgba(244,63,94,.22)!important}
+body.dark .bg-rose-200{background-color:rgba(244,63,94,.30)!important}
+body.dark .border-rose-100,body.dark .border-rose-200,body.dark .border-rose-300{border-color:rgba(244,63,94,.38)!important}
+body.dark .text-rose-500{color:#fb7185!important}
+body.dark .text-rose-600,body.dark .text-rose-700,body.dark .text-rose-800,body.dark .text-rose-900{color:#fda4af!important}
+body.dark .hover\:bg-rose-50:hover{background-color:rgba(244,63,94,.14)!important}
+body.dark .hover\:bg-rose-100:hover{background-color:rgba(244,63,94,.26)!important}
+body.dark .hover\:text-rose-600:hover{color:#fda4af!important}
+/* sky */
+body.dark .bg-sky-50{background-color:rgba(14,165,233,.14)!important}
+body.dark .bg-sky-100{background-color:rgba(14,165,233,.22)!important}
+body.dark .bg-sky-200{background-color:rgba(14,165,233,.30)!important}
+body.dark .border-sky-100,body.dark .border-sky-200,body.dark .border-sky-300{border-color:rgba(14,165,233,.38)!important}
+body.dark .text-sky-500{color:#38bdf8!important}
+body.dark .text-sky-600,body.dark .text-sky-700,body.dark .text-sky-800,body.dark .text-sky-900{color:#7dd3fc!important}
+body.dark .hover\:bg-sky-50:hover{background-color:rgba(14,165,233,.14)!important}
+body.dark .hover\:bg-sky-100:hover{background-color:rgba(14,165,233,.26)!important}
+body.dark .hover\:text-sky-600:hover{color:#7dd3fc!important}
+/* teal */
+body.dark .bg-teal-50{background-color:rgba(20,184,166,.14)!important}
+body.dark .bg-teal-100{background-color:rgba(20,184,166,.22)!important}
+body.dark .bg-teal-200{background-color:rgba(20,184,166,.30)!important}
+body.dark .border-teal-100,body.dark .border-teal-200,body.dark .border-teal-300{border-color:rgba(20,184,166,.38)!important}
+body.dark .text-teal-500{color:#2dd4bf!important}
+body.dark .text-teal-600,body.dark .text-teal-700,body.dark .text-teal-800,body.dark .text-teal-900{color:#5eead4!important}
+body.dark .hover\:bg-teal-50:hover{background-color:rgba(20,184,166,.14)!important}
+body.dark .hover\:bg-teal-100:hover{background-color:rgba(20,184,166,.26)!important}
+body.dark .hover\:text-teal-600:hover{color:#5eead4!important}
+/* violet */
+body.dark .bg-violet-50{background-color:rgba(139,92,246,.14)!important}
+body.dark .bg-violet-100{background-color:rgba(139,92,246,.22)!important}
+body.dark .bg-violet-200{background-color:rgba(139,92,246,.30)!important}
+body.dark .border-violet-100,body.dark .border-violet-200,body.dark .border-violet-300{border-color:rgba(139,92,246,.38)!important}
+body.dark .text-violet-500{color:#a78bfa!important}
+body.dark .text-violet-600,body.dark .text-violet-700,body.dark .text-violet-800,body.dark .text-violet-900{color:#c4b5fd!important}
+body.dark .hover\:bg-violet-50:hover{background-color:rgba(139,92,246,.14)!important}
+body.dark .hover\:bg-violet-100:hover{background-color:rgba(139,92,246,.26)!important}
+body.dark .hover\:text-violet-600:hover{color:#c4b5fd!important}
+/* slate */
+body.dark .text-slate-900:not(.bg-amber-400){color:#f8fafc!important}
+body.dark .bg-slate-200{background-color:#334155!important}
+body.dark .border-slate-300{border-color:#475569!important}
+body.dark .divide-slate-100>:not([hidden])~:not([hidden]),
+body.dark .divide-slate-50>:not([hidden])~:not([hidden]){border-color:#334155!important}
+body.dark .hover\:bg-slate-50:hover,
+body.dark .hover\:bg-slate-100:hover{background-color:#334155!important}
+body.dark .hover\:bg-slate-200:hover{background-color:#475569!important}
+body.dark .hover\:text-slate-600:hover,
+body.dark .hover\:text-slate-700:hover{color:#e2e8f0!important}
+body.dark .hover\:bg-emerald-50\/50:hover{background-color:rgba(16,185,129,.1)!important}
+/* chip emerald/amber solid: tetap terbaca */
+body.dark .bg-emerald-200.text-emerald-800{color:#a7f3d0!important}
+body.dark .bg-amber-400.text-slate-900{color:#0f172a!important}
+
+/* tautan dan tombol ringan */
+body.dark .dash-section-link{color:#93c5fd;background:var(--primary-light)}
+body.dark .dash-section-link:hover{background:rgba(37,99,235,.3)}
+body.dark .empty-state{background:#1e293b;color:#94a3b8}
+body.dark .skeleton{background:linear-gradient(90deg,#1e293b 25%,#334155 37%,#1e293b 63%);background-size:400% 100%}
+
+/* SweetAlert2 */
+body.dark .swal2-popup{background:#1e293b!important;color:#f1f5f9!important;border:1px solid #334155}
+body.dark .swal2-title{color:#f8fafc!important}
+body.dark .swal2-html-container,
+body.dark .swal2-content{color:#cbd5e1!important}
+body.dark .swal2-footer{border-top-color:#334155!important;color:#94a3b8!important}
+body.dark .swal2-validation-message{background:#0f172a!important;color:#fda4af!important}
+body.dark .swal2-input,
+body.dark .swal2-textarea,
+body.dark .swal2-select{background:#0f172a!important;color:#f8fafc!important;border-color:#334155!important}
+body.dark .swal2-checkbox,
+body.dark .swal2-radio,
+body.dark .swal2-label{color:#e2e8f0!important}
+body.dark .swal2-timer-progress-bar{background:rgba(255,255,255,.35)}
+body.dark .swal2-close{color:#94a3b8!important}
+body.dark .swal2-close:hover{color:#f8fafc!important;background:#334155!important}
+body.dark .swal2-icon.swal2-success [class^=swal2-success-circular-line],
+body.dark .swal2-icon.swal2-success .swal2-success-fix{background:#1e293b!important}
+body.dark .swal2-icon.swal2-success .swal2-success-ring{border-color:rgba(16,185,129,.3)!important}
+body.dark .swal2-popup .swal2-styled.swal2-cancel{background:#475569!important;color:#f8fafc!important}
