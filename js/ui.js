@@ -227,6 +227,8 @@ function closeModal() {
     if (modal.dataset.forceLock === "true") return;
     if (typeof bulkResetModal === "function") bulkResetModal();
     modal.classList.add("hidden");
+    const box = document.getElementById("modal-content-box");
+    if (box) box.dataset.gs = "";
 }
 
 function toggleSidebar(forceOpen) {

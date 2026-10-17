@@ -197,6 +197,99 @@ function ttRingkasStatistik() {
         kotak(st.mencapai_batas, "Batas", "text-rose-700");
 }
 
+let ttSortKol = "";
+let ttSortArah = "desc";
+
+function ttModeTabel() {
+    const u = appState.user;
+    return !!u && ["admin", "guru", "kepsek"].includes(u.role);
+}
+
+function ttNilaiUrut(g, kol) {
+    const r = ttRekapSiswa(g.siswaId);
+    switch (kol) {
+        case "nama": return gsNamaSiswa(g).toLowerCase();
+        case "kelas": return gsNamaKelas(g.siswa).toLowerCase();
+        case "pelanggaran": return Number(r.pelanggaran) || 0;
+        case "penghargaan": return Number(r.penghargaan) || 0;
+        case "total": return Number(r.total) || 0;
+        case "tahap": return r.mencapai_batas ? 4 : (Number(r.tahap) || 0);
+        case "catatan": return g.records.length;
+        case "terakhir": return g.terakhir || 0;
+    }
+    return 0;
+}
+
+function ttUrutkanGrupTabel(groups) {
+    if (!ttSortKol) return groups;
+    const arah = ttSortArah === "asc" ? 1 : -1;
+    return groups.slice().sort((a, b) => {
+        const x = ttNilaiUrut(a, ttSortKol), y = ttNilaiUrut(b, ttSortKol);
+        if (typeof x === "string") return arah * x.localeCompare(y, "id") || (b.terakhir || 0) - (a.terakhir || 0);
+        return arah * (x - y) || (b.terakhir || 0) - (a.terakhir || 0);
+    });
+}
+
+function ttUrutTabel(kol) {
+    if (ttSortKol === kol) ttSortArah = ttSortArah === "desc" ? "asc" : "desc";
+    else { ttSortKol = kol; ttSortArah = (kol === "nama" || kol === "kelas") ? "asc" : "desc"; }
+    renderTatibView();
+}
+
+function ttTh(kol, label, kelas) {
+    const aktif = ttSortKol === kol;
+    const ikon = aktif ? (ttSortArah === "asc" ? "fa-sort-up" : "fa-sort-down") : "fa-sort";
+    const aria = aktif ? (ttSortArah === "asc" ? "ascending" : "descending") : "none";
+    return `<th scope="col" aria-sort="${aria}" class="${kelas || ""}"><button type="button" class="tt-sort" onclick="ttUrutTabel('${kol}')">${label} <i class="fas ${ikon}"></i></button></th>`;
+}
+
+function ttTabelRekapHtml(groups) {
+    const k = ttKonfig();
+    const baris = groups.map((g, i) => {
+        const r = ttRekapSiswa(g.siswaId);
+        const label = r.mencapai_batas ? "Batas tercapai" : (TT_TAHAP_LABEL[r.tahap] || TT_TAHAP_LABEL[0]);
+        const badge = r.mencapai_batas ? TT_TAHAP_BADGE[3] : (TT_TAHAP_BADGE[r.tahap] || TT_TAHAP_BADGE[0]);
+        const tertunda = Array.isArray(r.panggilan_tertunda) && r.panggilan_tertunda.length > 0;
+        const terakhir = g.records[0] ? g.records[0].tanggal : "";
+        const sid = escapeHtml(g.siswaId);
+        return `
+            <tr class="tt-baris" onclick="openDetailTatib('${sid}')">
+                <td class="tt-no">${i + 1}</td>
+                <th scope="row" class="tt-nama">${escapeHtml(gsNamaSiswa(g))}</th>
+                <td>${escapeHtml(gsNamaKelas(g.siswa) || "-")}</td>
+                <td class="tt-angka">${Number(r.pelanggaran) || 0}</td>
+                <td class="tt-angka">${Number(r.penghargaan) || 0}</td>
+                <td class="tt-poin"><span class="font-bold">${Number(r.total) || 0}</span> <span class="text-slate-400">/ ${k.batas_keluar}</span>${ttBarProgres(r)}</td>
+                <td>
+                    <span class="inline-block font-bold px-2 py-0.5 rounded-md border text-[11px] ${badge}">${escapeHtml(label)}</span>
+                    ${tertunda ? `<span class="inline-block font-bold px-2 py-0.5 rounded-md border text-[11px] bg-violet-50 text-violet-700 border-violet-200 mt-1" title="Panggilan orang tua belum dicatat">Panggilan belum dicatat</span>` : ""}
+                </td>
+                <td class="tt-angka">${g.records.length}</td>
+                <td class="tt-tgl">${escapeHtml(terakhir || "-")}</td>
+                <td class="tt-aksi"><button type="button" onclick="event.stopPropagation(); openDetailTatib('${sid}')" class="text-xs font-bold text-blue-600">Detail <i class="fas fa-chevron-right text-[9px]"></i></button></td>
+            </tr>`;
+    }).join("");
+    return `
+        <div class="tt-tabel-wrap">
+            <table class="tt-tabel">
+                <caption class="sr-only">Rekap tata tertib per siswa</caption>
+                <thead><tr>
+                    <th scope="col" class="tt-no">No</th>
+                    ${ttTh("nama", "Nama", "tt-nama")}
+                    ${ttTh("kelas", "Kelas")}
+                    ${ttTh("pelanggaran", "Pelanggaran", "tt-angka")}
+                    ${ttTh("penghargaan", "Penghargaan", "tt-angka")}
+                    ${ttTh("total", "Poin")}
+                    ${ttTh("tahap", "Status")}
+                    ${ttTh("catatan", "Catatan", "tt-angka")}
+                    ${ttTh("terakhir", "Update")}
+                    <th scope="col" class="tt-aksi"><span class="sr-only">Aksi</span></th>
+                </tr></thead>
+                <tbody>${baris}</tbody>
+            </table>
+        </div>`;
+}
+
 function renderTatibView() {
     const container = document.getElementById("tatib-list-container");
     if (!container) return;
@@ -220,7 +313,12 @@ function renderTatibView() {
         return;
     }
 
-    container.innerHTML = groups.map(g => gsRenderCard(g, ttRingkasanHtml(g.siswaId), "openDetailTatib")).join("");
+    const kartu = groups.map(g => gsRenderCard(g, ttRingkasanHtml(g.siswaId), "openDetailTatib")).join("");
+    if (ttModeTabel()) {
+        container.innerHTML = `<div class="tt-kartu-wrap space-y-3">${kartu}</div>` + ttTabelRekapHtml(ttUrutkanGrupTabel(groups));
+    } else {
+        container.innerHTML = kartu;
+    }
     tatibRefreshDetail();
 }
 
@@ -361,6 +459,49 @@ function openDetailTatib(siswaId, pertahankan = false) {
             return gsRenderBarisCatatan(rec, "tatib", isi, "openModalTatibEdit", "hapusTatib");
         }).join("");
 
+    const riwayatTabel = () => {
+        const bisaAksi = rec => !isKepsekUser() && canEditRecord(rec, "tatib");
+        const adaCb = tampil.some(rec => bisaAksi(rec) && bulkCheckbox("tatib", rec.id));
+        const adaAksi = tampil.some(bisaAksi);
+        const baris = tampil.map(rec => {
+            const penghargaan = String(rec.jenis) === "penghargaan";
+            const warna = TT_KAT_WARNA[rec.kategori] || "text-slate-600 bg-slate-100";
+            const pengali = Number(rec.pengali) || 1;
+            const ubah = bisaAksi(rec);
+            const cb = ubah ? bulkCheckbox("tatib", rec.id) : "";
+            return `
+            <tr>
+                ${adaCb ? `<td class="tt-cb">${cb}</td>` : ""}
+                <td class="tt-tgl">${escapeHtml(gsFormatTanggal(rec))}</td>
+                <td><span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${warna}">${escapeHtml(rec.master_id || "")}</span></td>
+                <td>${escapeHtml(ttNamaKategori(rec.kategori))}</td>
+                <td class="tt-butir">${escapeHtml(rec.nama)}${pengali > 1 ? `<span class="block text-[11px] font-bold text-amber-700">Berulang: ${Number(rec.skor_dasar) || 0} \\u00d7 ${pengali}</span>` : ""}</td>
+                <td class="tt-angka font-extrabold ${penghargaan ? "text-emerald-600" : "text-rose-600"}">${penghargaan ? "\\u2212" : "+"}${Number(rec.skor_akhir) || 0}</td>
+                <td class="tt-ket">${escapeHtml(rec.keterangan || "-")}</td>
+                <td>${renderPenulisBadge(rec)}</td>
+                ${adaAksi ? `<td class="tt-aksi">${ubah ? `
+                    <button type="button" onclick="openModalTatibEdit('${escapeHtml(rec.id)}')" class="text-xs font-bold text-blue-600 mr-2" aria-label="Edit catatan"><i class="fas fa-edit"></i></button>
+                    <button type="button" onclick="hapusTatib('${escapeHtml(rec.id)}')" class="text-xs font-bold text-rose-600" aria-label="Hapus catatan"><i class="fas fa-trash"></i></button>` : ""}</td>` : ""}
+            </tr>`;
+        }).join("");
+        return `
+        <div class="tt-tabel-wrap">
+            <table class="tt-tabel tt-tabel-riwayat">
+                <caption class="sr-only">Riwayat catatan tata tertib</caption>
+                <thead><tr>
+                    ${adaCb ? `<th scope="col" class="tt-cb"><span class="sr-only">Pilih</span></th>` : ""}
+                    <th scope="col">Tanggal</th><th scope="col">Kode</th><th scope="col">Kategori</th><th scope="col">Butir</th>
+                    <th scope="col" class="tt-angka">Skor</th><th scope="col">Keterangan</th><th scope="col">Dicatat oleh</th>
+                    ${adaAksi ? `<th scope="col" class="tt-aksi"><span class="sr-only">Aksi</span></th>` : ""}
+                </tr></thead>
+                <tbody>${baris}</tbody>
+            </table>
+        </div>`;
+    };
+    const riwayatHtml = (tampil.length === 0 || !ttModeTabel())
+        ? riwayat
+        : `<div class="tt-kartu-wrap space-y-2">${riwayat}</div>${riwayatTabel()}`;
+
     const body = `
         <div class="space-y-3">
             <div>
@@ -373,7 +514,7 @@ function openDetailTatib(siswaId, pertahankan = false) {
                 <div class="flex gap-1.5 overflow-x-auto pb-1">
                     ${chip("semua", "Semua")}${Object.keys(TT_KAT_LABEL_BAWAAN).map(k => chip(k, k)).join("")}
                 </div>
-                ${riwayat}
+                ${riwayatHtml}
             </div>
         </div>`;
 

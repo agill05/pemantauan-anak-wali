@@ -3707,3 +3707,157 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
     }
 }
+
+/* Tata tertib: tabel rekap & riwayat (layar >= 768px). Di bawah itu tetap kartu. */
+.tt-tabel-wrap {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .tt-kartu-wrap {
+        display: none;
+    }
+
+    .tt-tabel-wrap {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        background: var(--surface, #fff);
+        border: 1px solid var(--border-subtle, #e2e8f0);
+        border-radius: 1rem;
+    }
+
+    #modal-content-box[data-gs="tatib"] {
+        max-width: 64rem;
+    }
+}
+
+.tt-tabel {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.75rem;
+    text-align: left;
+}
+
+.tt-tabel th,
+.tt-tabel td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+    vertical-align: middle;
+}
+
+.tt-tabel thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.tt-tabel tbody tr:last-child th,
+.tt-tabel tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.tt-tabel .tt-no {
+    width: 2.5rem;
+    color: #94a3b8;
+}
+
+.tt-tabel .tt-nama {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 10rem;
+    background: var(--surface, #fff);
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.tt-tabel thead .tt-nama {
+    z-index: 3;
+    background: #f1f5f9;
+}
+
+.tt-tabel .tt-angka {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.tt-tabel .tt-poin {
+    min-width: 7rem;
+}
+
+.tt-tabel .tt-tgl {
+    white-space: nowrap;
+}
+
+.tt-tabel .tt-aksi {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.tt-tabel .tt-butir {
+    min-width: 10rem;
+    font-weight: 600;
+}
+
+.tt-tabel .tt-ket {
+    min-width: 10rem;
+    color: #64748b;
+}
+
+.tt-baris {
+    cursor: pointer;
+}
+
+.tt-baris:hover th,
+.tt-baris:hover td {
+    background: #f8fafc;
+}
+
+.tt-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+.tt-sort i {
+    font-size: 0.65rem;
+    opacity: 0.6;
+}
+
+body.dark .tt-tabel-wrap {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark .tt-tabel th,
+body.dark .tt-tabel td {
+    border-bottom-color: #334155;
+}
+
+body.dark .tt-tabel thead th,
+body.dark .tt-tabel thead .tt-nama {
+    background: #0f172a;
+    color: #cbd5e1;
+}
+
+body.dark .tt-tabel .tt-nama {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+
+body.dark .tt-baris:hover th,
+body.dark .tt-baris:hover td {
+    background: #273449;
+}
