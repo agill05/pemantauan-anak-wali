@@ -3861,3 +3861,22 @@ body.dark .tt-baris:hover th,
 body.dark .tt-baris:hover td {
     background: #273449;
 }
+
+.tt-tabel .tt-tengah {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.tt-tabel tfoot th,
+.tt-tabel tfoot td {
+    background: #f8fafc;
+    font-weight: 800;
+    border-top: 2px solid var(--border-subtle, #e2e8f0);
+    border-bottom: 0;
+}
+
+body.dark .tt-tabel tfoot th,
+body.dark .tt-tabel tfoot td {
+    background: #0f172a;
+    border-top-color: #334155;
+}

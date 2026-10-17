@@ -1137,7 +1137,7 @@ function gambarTatibList() {
     });
     const bolehGeser = adminTatibFilter !== "semua" && !cari;
 
-    list.innerHTML = tampil.map((m, i) => {
+    const kartuTatib = tampil.map((m, i) => {
         const on = m.aktif !== false;
         const skor = m.skor_min === m.skor_max ? `${m.skor_min} poin` : `${m.skor_min}\u2013${m.skor_max} poin`;
         const syarat = m.syarat ? ` \u2022 ${escapeHtml(TATIB_SYARAT_LABEL[m.syarat] || m.syarat)}` : "";
@@ -1157,7 +1157,52 @@ function gambarTatibList() {
                     <button type="button" onclick="openModalTatib('${idq}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100" aria-label="Ubah item tata tertib"><i class="fas fa-pen text-xs"></i></button>
                 </div>
             </div>`;
-    }).join("") || `<div class="empty-state"><p class="text-xs text-slate-500">${adminTatib.master.length === 0 ? "Belum ada item. Jalankan setupTatib() di editor Apps Script." : "Tidak ada item yang cocok."}</p></div>`;
+    }).join("");
+
+    if (tampil.length === 0) {
+        list.innerHTML = `<div class="empty-state"><p class="text-xs text-slate-500">${adminTatib.master.length === 0 ? "Belum ada item. Jalankan setupTatib() di editor Apps Script." : "Tidak ada item yang cocok."}</p></div>`;
+        return;
+    }
+    list.innerHTML = `<div class="tt-kartu-wrap space-y-2">${kartuTatib}</div>` + tabelTatibMaster(tampil, bolehGeser);
+}
+
+function tabelTatibMaster(tampil, bolehGeser) {
+    const baris = tampil.map((m, i) => {
+        const on = m.aktif !== false;
+        const skor = m.skor_min === m.skor_max ? `${m.skor_min}` : `${m.skor_min}\u2013${m.skor_max}`;
+        const warna = TATIB_WARNA_KAT[m.kategori] || "text-slate-600 bg-slate-100";
+        const idq = escapeHtml(m.id);
+        const geser = bolehGeser ? `
+            <td class="tt-aksi">
+                <button type="button" onclick="geserTatib('${idq}', -1)" ${i === 0 ? "disabled" : ""} class="w-7 h-7 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 disabled:opacity-30" aria-label="Naikkan urutan"><i class="fas fa-arrow-up text-xs"></i></button>
+                <button type="button" onclick="geserTatib('${idq}', 1)" ${i === tampil.length - 1 ? "disabled" : ""} class="w-7 h-7 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 disabled:opacity-30" aria-label="Turunkan urutan"><i class="fas fa-arrow-down text-xs"></i></button>
+            </td>` : "";
+        return `
+            <tr class="${on ? "" : "opacity-60"}">
+                <td><span class="text-[11px] font-extrabold px-1.5 py-0.5 rounded ${warna}">${idq}</span></td>
+                <td>${escapeHtml(adminTatib.kategori[m.kategori] || m.kategori)}</td>
+                <td class="tt-butir">${escapeHtml(m.nama)}</td>
+                <td class="tt-tengah">${skor}</td>
+                <td>${escapeHtml(m.penanggung_jawab || "-")}</td>
+                <td>${m.syarat ? escapeHtml(TATIB_SYARAT_LABEL[m.syarat] || m.syarat) : "-"}</td>
+                <td><span class="inline-block font-bold px-2 py-0.5 rounded-md border text-[11px] ${on ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}">${on ? "Aktif" : "Nonaktif"}</span></td>
+                ${geser}
+                <td class="tt-aksi"><button type="button" onclick="openModalTatib('${idq}')" class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100" aria-label="Ubah item tata tertib"><i class="fas fa-pen text-xs"></i></button></td>
+            </tr>`;
+    }).join("");
+    return `
+        <div class="tt-tabel-wrap">
+            <table class="tt-tabel">
+                <caption class="sr-only">Master butir tata tertib</caption>
+                <thead><tr>
+                    <th scope="col">Kode</th><th scope="col">Kategori</th><th scope="col">Butir</th>
+                    <th scope="col" class="tt-tengah">Poin</th><th scope="col">Penanggung jawab</th><th scope="col">Syarat</th><th scope="col">Status</th>
+                    ${bolehGeser ? `<th scope="col" class="tt-aksi">Urutan</th>` : ""}
+                    <th scope="col" class="tt-aksi"><span class="sr-only">Aksi</span></th>
+                </tr></thead>
+                <tbody>${baris}</tbody>
+            </table>
+        </div>`;
 }
 
 function setTatibFilter(kode) {

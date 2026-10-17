@@ -222,6 +222,37 @@ function tlRingkasKelas(base) {
     return Array.from(peta.values()).sort((a, b) => tlNamaKelas(a.kelas_id).localeCompare(tlNamaKelas(b.kelas_id), "id", { numeric: true }));
 }
 
+function tlTabelKelasHtml(daftar) {
+    if (!daftar || daftar.length === 0) return "";
+    const sel = (n, cls) => `<td class="tt-tengah ${Number(n) > 0 ? cls : "text-slate-300"}">${Number(n) || 0}</td>`;
+    const baris = daftar.map((o, i) => `
+        <tr>
+            <td class="tt-no">${i + 1}</td>
+            <th scope="row" class="tt-nama">Kelas ${escapeHtml(tlNamaKelas(o.kelas_id))}</th>
+            <td class="tt-tengah font-bold">${o.siswa}</td>
+            ${sel(o.t0, "text-emerald-700")}${sel(o.t1, "text-amber-700 font-bold")}${sel(o.t2, "text-orange-700 font-bold")}${sel(o.t3, "text-rose-700 font-bold")}${sel(o.batas, "text-rose-800 font-extrabold")}${sel(o.tertunda, "text-violet-700 font-bold")}
+        </tr>`).join("");
+    const jml = k => daftar.reduce((a, o) => a + (Number(o[k]) || 0), 0);
+    const total = daftar.length > 1 ? `
+        <tfoot><tr>
+            <td></td><th scope="row" class="tt-nama">Total</th>
+            <td class="tt-tengah">${jml("siswa")}</td><td class="tt-tengah">${jml("t0")}</td><td class="tt-tengah">${jml("t1")}</td>
+            <td class="tt-tengah">${jml("t2")}</td><td class="tt-tengah">${jml("t3")}</td><td class="tt-tengah">${jml("batas")}</td><td class="tt-tengah">${jml("tertunda")}</td>
+        </tr></tfoot>` : "";
+    return `
+        <div class="tt-tabel-wrap">
+            <table class="tt-tabel">
+                <caption class="sr-only">Ringkasan tata tertib per kelas</caption>
+                <thead><tr>
+                    <th scope="col" class="tt-no">No</th><th scope="col" class="tt-nama">Kelas</th><th scope="col" class="tt-tengah">Siswa</th>
+                    <th scope="col" class="tt-tengah">Aman</th><th scope="col" class="tt-tengah">P I</th><th scope="col" class="tt-tengah">P II</th>
+                    <th scope="col" class="tt-tengah">P III</th><th scope="col" class="tt-tengah">Batas</th><th scope="col" class="tt-tengah">Belum dicatat</th>
+                </tr></thead>
+                <tbody>${baris}</tbody>${total}
+            </table>
+        </div>`;
+}
+
 function renderLaporanTatib() {
     const wadah = document.getElementById("lt-container");
     const ringkas = document.getElementById("lt-ringkas");
@@ -231,7 +262,8 @@ function renderLaporanTatib() {
 
     if (ringkas) {
         const chip = (n, t, cls) => `<span class="px-1.5 py-0.5 rounded border text-[11px] font-bold ${cls}">${t} ${n}</span>`;
-        ringkas.innerHTML = tlRingkasKelas(base).map(o => `
+        const ringkasKelas = tlRingkasKelas(base);
+        ringkas.innerHTML = ringkasKelas.length === 0 ? "" : `<div class="tt-kartu-wrap space-y-2">` + ringkasKelas.map(o => `
             <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="flex items-center justify-between gap-2 mb-1.5">
                     <p class="text-xs font-bold text-slate-800">Kelas ${escapeHtml(tlNamaKelas(o.kelas_id))}</p>
@@ -240,7 +272,7 @@ function renderLaporanTatib() {
                 <div class="flex flex-wrap gap-1">
                     ${chip(o.t0, "Aman", TT_TAHAP_BADGE[0])}${chip(o.t1, "P I", TT_TAHAP_BADGE[1])}${chip(o.t2, "P II", TT_TAHAP_BADGE[2])}${chip(o.t3, "P III", TT_TAHAP_BADGE[3])}${chip(o.batas, "Batas", "bg-rose-100 text-rose-800 border-rose-300")}
                 </div>
-            </div>`).join("");
+            </div>`).join("") + `</div>` + tlTabelKelasHtml(ringkasKelas);
     }
 
     if (rows.length === 0) {
