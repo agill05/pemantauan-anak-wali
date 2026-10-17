@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v147";
+const CACHE_NAME = "anak-wali-pwa-v148";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -32,6 +32,7 @@ const ASSETS_TO_CACHE = [
     "./js/modules/arsip.js",
     "./js/modules/magiclink.js",
     "./js/main.js",
+    "./js/a11y-nav.js",
     "./assets/img/logo-sekolah.png",
     "./assets/img/logo-sekolah-login.png",
     "./assets/img/logo-tutwuri.png",
