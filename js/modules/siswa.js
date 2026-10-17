@@ -550,6 +550,48 @@ function sendCustomWhatsApp(phone, encodedMessage) {
     window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
 }
 
+function siswaNamaKelasUrut(s) {
+    const kid = String(s.kelas_id || "").trim();
+    const k = kid ? (appState.kelas || []).find(x => String(x.id) === kid) : null;
+    return k ? k.nama_kelas : "";
+}
+
+function siswaIsiOpsiKelas(daftar) {
+    const sel = document.getElementById("filter-siswa-kelas");
+    const urut = document.getElementById("urut-siswa");
+    if (!sel) return;
+    const ada = new Map();
+    let tanpa = false;
+    daftar.forEach(s => {
+        const kid = String(s.kelas_id || "").trim();
+        const k = kid ? (appState.kelas || []).find(x => String(x.id) === kid) : null;
+        if (k) ada.set(String(k.id), k.nama_kelas);
+        else tanpa = true;
+    });
+    const kelas = Array.from(ada, ([id, nama]) => ({ id, nama })).sort((a, b) => bandingkanKelas(a.nama, b.nama));
+    const kunci = kelas.map(k => k.id + "|" + k.nama).join(";") + (tanpa ? ";tanpa" : "");
+    if (sel.dataset.kunci !== kunci) {
+        const lama = sel.value;
+        sel.innerHTML = `<option value="">Semua kelas</option>` +
+            kelas.map(k => `<option value="${escapeHtml(k.id)}">Kelas ${escapeHtml(k.nama)}</option>`).join("") +
+            (tanpa ? `<option value="__TANPA__">Tanpa kelas</option>` : "");
+        sel.dataset.kunci = kunci;
+        sel.value = (lama === "__TANPA__" && tanpa) || kelas.some(k => k.id === lama) ? lama : "";
+    }
+    const perlu = kelas.length + (tanpa ? 1 : 0) > 1;
+    sel.classList.toggle("hidden", !perlu);
+    if (!perlu) sel.value = "";
+    if (urut) urut.classList.toggle("col-span-2", !perlu);
+}
+
+function siswaUrutkan(list, mode) {
+    const cmpNama = (a, b) => String(a.nama || "").localeCompare(String(b.nama || ""), "id", { sensitivity: "base", numeric: true });
+    const arr = list.slice();
+    if (mode === "nama-desc") return arr.sort((a, b) => cmpNama(b, a));
+    if (mode === "kelas") return arr.sort((a, b) => bandingkanKelas(siswaNamaKelasUrut(a), siswaNamaKelasUrut(b)) || cmpNama(a, b));
+    return arr.sort(cmpNama);
+}
+
 function renderSiswaView() {
     const container = document.getElementById("siswa-card-container");
     if (!container) return;
@@ -566,8 +608,17 @@ function renderSiswaView() {
     const searchInput = document.getElementById("search-siswa-input");
     const query = (searchInput ? searchInput.value : "").toLowerCase();
 
-    const rawFiltered = scopeSiswaForUser(appState.siswa).filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
-    const filtered = sortSiswa(rawFiltered);
+    const scoped = scopeSiswaForUser(appState.siswa);
+    siswaIsiOpsiKelas(scoped);
+    const kelasFilter = document.getElementById("filter-siswa-kelas")?.value || "";
+    const mode = document.getElementById("urut-siswa")?.value || "nama-asc";
+    const rawFiltered = scoped.filter(s =>
+        (safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query)) &&
+        (!kelasFilter || (kelasFilter === "__TANPA__" ? !siswaNamaKelasUrut(s) : String(s.kelas_id || "").trim() === kelasFilter))
+    );
+    const filtered = siswaUrutkan(rawFiltered, mode);
+    const hitung = document.getElementById("siswa-hitung");
+    if (hitung) hitung.textContent = `Menampilkan ${filtered.length} dari ${scoped.length} siswa`;
 
     if (filtered.length === 0) {
         container.innerHTML = maskotKosong("Siswa tidak ditemukan.", 96, "profil");
