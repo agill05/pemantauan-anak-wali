@@ -657,7 +657,7 @@ function maskotUcapIsi(wadah, u, ukuran) {
 }
 
 /* Maskot berjalan masuk dari tepi kanan wadah ke posisi kiri, tanpa balon. Resolve true setelah berhenti dan jeda singkat. */
-var MASKOT_JALAN = { kecepatan: 190, minMs: 1400, maksMs: 3200, jarakMaks: 640, jedaMs: 300 };
+var MASKOT_JALAN = { kecepatan: 280, minMs: 1400, maksMs: 4200, jedaMs: 300 };
 function maskotJalanMasuk(wadah, pose, ukuran) {
     return new Promise(function (resolve) {
         if (!wadah) { resolve(false); return; }
@@ -665,7 +665,14 @@ function maskotJalanMasuk(wadah, pose, ukuran) {
         var s = ukuran || 64;
         wadah.innerHTML = '<div class="mk-ucap-wrap mk-jalan"><div class="mk-ucap-mk" data-pose="' + maskotAman(pose) + '">' + maskot(pose, s) + '</div></div>';
         var mk = wadah.querySelector(".mk-ucap-mk"), svg = mk.querySelector("svg.mk");
-        var jarak = Math.min(wadah.clientWidth || 320, MASKOT_JALAN.jarakMaks);
+        /* Mulai tepat di luar tepi kanan layar: kiri maskot berada di lebar layar. Diukur dari wadah, karena maskot sendiri sudah tergeser animasi. */
+        var lebarLayar = document.documentElement.clientWidth || window.innerWidth || 360;
+        var jarak = Math.max(160, Math.ceil(lebarLayar - wadah.getBoundingClientRect().left));
+        /* Selama berjalan, potong luapan horizontal di wadah dan semua induknya agar halaman tidak punya scroll samping. */
+        var potong = [], nilaiPotong = (window.CSS && CSS.supports && CSS.supports("overflow-x", "clip")) ? "clip" : "hidden";
+        for (var el = wadah; el && el.nodeType === 1; el = el.parentElement) {
+            if (getComputedStyle(el).overflowX === "visible") { potong.push([el, el.style.overflowX]); el.style.overflowX = nilaiPotong; }
+        }
         var dur = Math.max(MASKOT_JALAN.minMs, Math.min(MASKOT_JALAN.maksMs, jarak / MASKOT_JALAN.kecepatan * 1000));
         mk.style.setProperty("--mk-dari", jarak + "px");
         mk.style.setProperty("--mk-dur", Math.round(dur) + "ms");
@@ -676,6 +683,7 @@ function maskotJalanMasuk(wadah, pose, ukuran) {
             selesaiSudah = true;
             clearTimeout(timer);
             mk.removeEventListener("animationend", saatAnimasi);
+            potong.forEach(function (p) { p[0].style.overflowX = p[1]; });
             if (svg) svg.classList.remove("mk-jalan-aktif");
             setTimeout(function () { resolve(true); }, MASKOT_JALAN.jedaMs);
         }
