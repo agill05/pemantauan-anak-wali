@@ -153,11 +153,6 @@ function ucapanPotong(teks, maks) {
     return t.length > maks ? t.slice(0, maks - 1).trim() + "…" : t;
 }
 
-// Pose maskot mengikuti peran yang login: siswa, admin, atau guru (kepsek memakai pose guru).
-function poseUcapanMaskot(u) {
-    return u.role === "siswa" ? "siswa" : u.role === "admin" ? "admin" : "guru";
-}
-
 function kandidatUcapanMaskot() {
     const u = appState.user;
     const daftar = [];
@@ -167,7 +162,7 @@ function kandidatUcapanMaskot() {
     const isSiswa = u.role === "siswa";
     const isAdmin = u.role === "admin";
     const isPimpinan = isAdmin || u.role === "kepsek";
-    const pose = poseUcapanMaskot(u);
+    const pose = isSiswa ? "siswa" : isAdmin ? "admin" : "guru";
     const tambah = (o) => daftar.push(Object.assign({ pose }, o));
     const notifAktif = appState.notificationsReady ? (appState.currentNotifications || []) : [];
 
@@ -304,31 +299,24 @@ function ucapanMaskotDashboard() {
     ucapanMaskotPerluBaru = false;
     ucapanMaskotKunci = kunci;
     const nomor = ++ucapanMaskotNomor;
-    if (ucapanMaskotCtl) { ucapanMaskotCtl.berhenti(); ucapanMaskotCtl = null; }
-    const pasang = (dijalan) => {
+    const pasang = () => {
         if (nomor !== ucapanMaskotNomor || !appState.user) return;
         const wadah = wadahUcapanMaskot();
         if (!wadah) return;
         if (ucapanMaskotCtl) ucapanMaskotCtl.berhenti();
-        ucapanMaskotCtl = maskotUcapPutar(wadah, kandidatUcapanMaskot, 64, 7000, { lewatiJalan: !!dijalan });
+        ucapanMaskotCtl = maskotUcapPutar(wadah, kandidatUcapanMaskot, 64, 7000);
     };
-    // Maskot berjalan dari kanan ke kiri lebih dulu, bersamaan dengan pemuatan data. Balon baru muncul setelah keduanya selesai.
-    const wadahJalan = wadahUcapanMaskot();
-    const jalan = (wadahJalan && typeof maskotJalanMasuk === "function")
-        ? maskotJalanMasuk(wadahJalan, poseUcapanMaskot(u), 64).catch(() => false)
-        : Promise.resolve(false);
-    let data = Promise.resolve();
     if (u.role === "siswa" && typeof muatMisiHariIni === "function") {
         // Tunggu data misi (maksimal 2,5 detik) agar ucapan sesuai kondisi hari ini.
-        data = Promise.race([Promise.resolve().then(() => muatMisiHariIni()), new Promise(r => setTimeout(r, 2500))]).catch(() => { });
+        Promise.race([muatMisiHariIni(), new Promise(r => setTimeout(r, 2500))]).then(pasang, pasang);
     } else {
         // Hanya guru yang memuat presensi hari ini agar angka "belum dipresensi" nyata. Admin dan kepsek tidak memakai data presensi.
         // Giliran berikutnya otomatis memakai data baru.
         try {
             if (u.role === "guru" && typeof loadAbsensiData === "function" && absensiLoadedTanggal !== getDateWITA()) Promise.resolve(loadAbsensiData()).catch(() => { });
         } catch (e) { /* abaikan */ }
+        pasang();
     }
-    Promise.all([jalan, data]).then(hasil => pasang(hasil[0]), () => pasang(false));
 }
 
 async function renderDashboard() {
