@@ -762,6 +762,13 @@
                     <input type="text" id="search-admin-siswa-input" oninput="renderAdminSiswa()"
                         placeholder="Cari siswa..."
                         class="flex-1 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                    <select id="filter-admin-siswa-status" onchange="renderAdminSiswa()" aria-label="Filter status kelas dan mentor"
+                        class="bg-surface border border-slate-200 rounded-xl px-2 py-2 text-xs outline-none">
+                        <option value="">Semua</option>
+                        <option value="tanpa-kelas">Tanpa kelas</option>
+                        <option value="tanpa-mentor">Tanpa mentor</option>
+                        <option value="tanpa-keduanya">Tanpa kelas &amp; mentor</option>
+                    </select>
                     <button onclick="openModalSiswa()"
                         class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i
                             class="fas fa-plus mr-1"></i> Siswa</button>

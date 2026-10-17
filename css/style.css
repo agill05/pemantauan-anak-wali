@@ -2941,7 +2941,9 @@ body.dark #arsip-lihat-tabel thead th {
 }
 
 #m-mentor-search,
-#m-mentor-kelas {
+#m-mentor-kelas,
+#m-mentor-status,
+#filter-admin-siswa-status {
     min-height: 2.75rem;
     padding-left: 0.875rem;
     padding-right: 0.875rem;

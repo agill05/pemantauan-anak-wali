@@ -221,6 +221,30 @@ function getNamaMentorSiswa(siswa) {
     return g ? g.nama : "(guru tidak ditemukan)";
 }
 
+function siswaTanpaKelas(s) {
+    const kid = String(s.kelas_id || "").trim();
+    return !kid || !(appState.kelas || []).some(k => String(k.id) === kid);
+}
+
+function siswaTanpaMentor(s) {
+    const mid = String(s.mentor_id || "").trim();
+    return !mid || !(appState.guru || []).some(g => String(g.id) === mid);
+}
+
+function adminSiswaCocokStatus(s, status) {
+    if (status === "tanpa-kelas") return siswaTanpaKelas(s);
+    if (status === "tanpa-mentor") return siswaTanpaMentor(s);
+    if (status === "tanpa-keduanya") return siswaTanpaKelas(s) && siswaTanpaMentor(s);
+    return true;
+}
+
+function getNamaKelasSiswa(siswa) {
+    const kid = String(siswa.kelas_id || "").trim();
+    if (!kid) return "Belum ada";
+    const k = (appState.kelas || []).find(x => String(x.id) === kid);
+    return k ? k.nama_kelas : "(kelas tidak ditemukan)";
+}
+
 function renderPeranBadgesGuru(g) {
     const kls = getKelasWaliGuru(g.id);
     const n = getBinaanCount(g.id);
@@ -235,11 +259,15 @@ function renderAdminSiswa() {
     if (!list) return;
 
     const query = (document.getElementById("search-admin-siswa-input")?.value || "").toLowerCase();
-    const rawFiltered = appState.siswa.filter(s => safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query));
+    const status = document.getElementById("filter-admin-siswa-status")?.value || "";
+    const rawFiltered = appState.siswa.filter(s =>
+        (safeStr(s.nama).toLowerCase().includes(query) || safeStr(s.nisn).toLowerCase().includes(query)) &&
+        adminSiswaCocokStatus(s, status)
+    );
     const filtered = sortSiswa(rawFiltered);
 
     if (filtered.length === 0) {
-        list.innerHTML = maskotKosong("Belum ada Siswa.", 96, "admin");
+        list.innerHTML = maskotKosong(status ? "Tidak ada siswa untuk filter ini." : "Belum ada Siswa.", 96, "admin");
         return;
     }
 
@@ -249,7 +277,7 @@ function renderAdminSiswa() {
             <div class="adm-main flex-1 min-w-0">
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)}</h4>
                 <p class="adm-sub text-xs text-slate-400">Username: ${escapeHtml(s.username)} | NISN: ${escapeHtml(s.nisn || '-')}</p>
-                <p class="adm-chips text-xs text-slate-400">Mentor: ${escapeHtml(getNamaMentorSiswa(s))}</p>
+                <p class="adm-chips text-xs text-slate-400">Kelas: ${escapeHtml(getNamaKelasSiswa(s))} | Mentor: ${escapeHtml(getNamaMentorSiswa(s))}</p>
             </div>
             <div class="adm-act flex gap-1">
                 <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data siswa"><i class="fas fa-edit"></i></button>
@@ -315,7 +343,15 @@ function openModalMentor(guruId) {
             <input type="text" id="m-mentor-search" oninput="renderMentorSiswaList()" placeholder="Cari siswa..." class="bg-slate-50 border p-2 rounded-xl text-xs outline-none">
             <select id="m-mentor-kelas" onchange="renderMentorSiswaList()" class="bg-slate-50 border p-2 rounded-xl text-xs outline-none">
                 <option value="">Semua Kelas</option>
+                <option value="__TANPA_KELAS__">Tanpa kelas</option>
                 ${kelasOpts}
+            </select>
+        </div>
+        <div class="mb-2">
+            <select id="m-mentor-status" onchange="renderMentorSiswaList()" aria-label="Filter status mentor" class="w-full bg-slate-50 border p-2 rounded-xl text-xs outline-none">
+                <option value="">Semua status mentor</option>
+                <option value="tanpa-mentor">Belum punya mentor</option>
+                <option value="punya-mentor">Sudah punya mentor</option>
             </select>
         </div>
         <div class="flex items-center justify-between mb-2 text-xs">
@@ -335,8 +371,10 @@ function openModalMentor(guruId) {
 function _mentorSiswaTampil() {
     const q = (document.getElementById("m-mentor-search")?.value || "").toLowerCase();
     const kid = document.getElementById("m-mentor-kelas")?.value || "";
+    const stm = document.getElementById("m-mentor-status")?.value || "";
     const hasil = (appState.siswa || []).filter(s =>
-        (!kid || String(s.kelas_id) === String(kid)) &&
+        (!kid || (kid === "__TANPA_KELAS__" ? siswaTanpaKelas(s) : String(s.kelas_id) === String(kid))) &&
+        (!stm || (stm === "tanpa-mentor" ? siswaTanpaMentor(s) : !siswaTanpaMentor(s))) &&
         (!q || safeStr(s.nama).toLowerCase().includes(q) || safeStr(s.nisn).toLowerCase().includes(q))
     );
     return sortSiswa(hasil);
