@@ -178,6 +178,29 @@ async function saveSekolahForm(e) {
     }
 }
 
+function admTabelHtml(caption, kolCek, kolom, baris) {
+    return `
+        <div class="tt-tabel-wrap tt-tinggi">
+            <table class="tt-tabel">
+                <caption class="sr-only">${caption}</caption>
+                <thead><tr>
+                    ${kolCek ? '<th scope="col" class="tt-cek"><span class="sr-only">Pilih</span></th>' : ""}
+                    <th scope="col" class="tt-no">No</th>
+                    ${kolom.map(k => `<th scope="col" class="${k[1] || ""}">${k[0]}</th>`).join("")}
+                </tr></thead>
+                <tbody>${baris}</tbody>
+            </table>
+        </div>`;
+}
+
+function admTombolEdit(fnEdit, fnHapus, id, labelEdit, labelHapus) {
+    const sid = escapeHtml(id);
+    return `<span class="tt-aksi-grup">
+        <button onclick="${fnEdit}('${sid}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="${labelEdit}"><i class="fas fa-edit"></i></button>
+        <button onclick="${fnHapus}('${sid}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="${labelHapus}"><i class="fas fa-trash"></i></button>
+    </span>`;
+}
+
 function renderAdminGuru() {
     const list = document.getElementById("admin-guru-list");
     if (!list) return;
@@ -190,7 +213,8 @@ function renderAdminGuru() {
         return;
     }
 
-    list.innerHTML = bulkToolbar("guru", filtered.map(g => String(g.id))) + filtered.map(g => `
+    const kolCek = bulkAktif("guru");
+    const kartuHtml = filtered.map(g => `
         <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
             ${bulkCheckbox("guru", g.id)}
             <div class="adm-main flex-1 min-w-0">
@@ -204,6 +228,19 @@ function renderAdminGuru() {
             </div>
         </div>
     `).join("");
+    const barisHtml = filtered.map((g, i) => `
+        <tr>
+            ${kolCek ? `<td class="tt-cek">${bulkCheckbox("guru", g.id)}</td>` : ""}
+            <td class="tt-no">${i + 1}</td>
+            <th scope="row" class="tt-nama">${escapeHtml(g.nama)}</th>
+            <td>${escapeHtml(g.username || "-")}</td>
+            <td class="tt-tgl">${escapeHtml(g.nip || "-")}</td>
+            <td>${renderPeranBadgesGuru(g) || '<span class="text-slate-300">-</span>'}</td>
+            <td class="tt-aksi">${admTombolEdit("openModalGuru", "deleteGuru", g.id, "Edit data guru", "Hapus data guru")}</td>
+        </tr>`).join("");
+    list.innerHTML = bulkToolbar("guru", filtered.map(g => String(g.id)))
+        + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
+        + admTabelHtml("Daftar guru", kolCek, [["Nama", "tt-nama"], ["Username"], ["NIP"], ["Peran"], ['<span class="sr-only">Aksi</span>', "tt-aksi"]], barisHtml);
 }
 
 function getBinaanCount(guruId) {
@@ -298,7 +335,8 @@ function renderAdminSiswa() {
         return;
     }
 
-    list.innerHTML = bulkToolbar("siswa", filtered.map(s => String(s.id))) + filtered.map(s => `
+    const kolCek = bulkAktif("siswa");
+    const kartuHtml = filtered.map(s => `
         <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
             ${bulkCheckbox("siswa", s.id)}
             <div class="adm-main flex-1 min-w-0">
@@ -312,6 +350,21 @@ function renderAdminSiswa() {
             </div>
         </div>
     `).join("");
+    const sel = (teks, kosong) => kosong ? `<span class="text-amber-600 font-semibold">${escapeHtml(teks)}</span>` : escapeHtml(teks);
+    const barisHtml = filtered.map((s, i) => `
+        <tr>
+            ${kolCek ? `<td class="tt-cek">${bulkCheckbox("siswa", s.id)}</td>` : ""}
+            <td class="tt-no">${i + 1}</td>
+            <th scope="row" class="tt-nama">${escapeHtml(s.nama)}</th>
+            <td>${escapeHtml(s.username || "-")}</td>
+            <td class="tt-tgl">${escapeHtml(s.nisn || "-")}</td>
+            <td>${sel(getNamaKelasSiswa(s), siswaTanpaKelas(s))}</td>
+            <td>${sel(getNamaMentorSiswa(s), siswaTanpaMentor(s))}</td>
+            <td class="tt-aksi">${admTombolEdit("openModalSiswa", "deleteSiswa", s.id, "Edit data siswa", "Hapus data siswa")}</td>
+        </tr>`).join("");
+    list.innerHTML = bulkToolbar("siswa", filtered.map(s => String(s.id)))
+        + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
+        + admTabelHtml("Daftar siswa", kolCek, [["Nama", "tt-nama"], ["Username"], ["NISN"], ["Kelas"], ["Mentor"], ['<span class="sr-only">Aksi</span>', "tt-aksi"]], barisHtml);
 }
 
 function renderAdminMentor() {
@@ -330,7 +383,7 @@ function renderAdminMentor() {
         return;
     }
 
-    list.innerHTML = filtered.map(g => {
+    const kartuHtml = filtered.map(g => {
         const n = getBinaanCount(g.id);
         return `
         <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
@@ -344,6 +397,16 @@ function renderAdminMentor() {
             </button>
         </div>`;
     }).join("");
+    const barisHtml = filtered.map((g, i) => `
+        <tr>
+            <td class="tt-no">${i + 1}</td>
+            <th scope="row" class="tt-nama">${escapeHtml(g.nama)}</th>
+            <td>${renderPeranBadgesGuru(g) || '<span class="text-slate-300">-</span>'}</td>
+            <td class="tt-angka">${getBinaanCount(g.id)}</td>
+            <td class="tt-aksi"><button onclick="openModalMentor('${escapeHtml(g.id)}')" class="px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg text-xs font-bold" aria-label="Atur anak binaan guru"><i class="fas fa-user-tag mr-1"></i> Atur</button></td>
+        </tr>`).join("");
+    list.innerHTML = `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
+        + admTabelHtml("Daftar mentor", false, [["Guru", "tt-nama"], ["Peran"], ['Anak Binaan', "tt-angka"], ['<span class="sr-only">Aksi</span>', "tt-aksi"]], barisHtml);
 }
 
 let _mentorModal = null;
@@ -517,7 +580,8 @@ function renderAdminKelas() {
     }
 
     const bulkBarKelas = bulkToolbar("kelas", appState.kelas.map(k => String(k.id)));
-    list.innerHTML = bulkBarKelas + appState.kelas.map(k => {
+    const kolCek = bulkAktif("kelas");
+    const kartuHtml = appState.kelas.map(k => {
         const wali = appState.guru.find(g => String(g.id) === String(k.guru_id));
         return `
             <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
@@ -533,6 +597,23 @@ function renderAdminKelas() {
             </div>
         `;
     }).join("");
+    const jumlahPerKelas = {};
+    (appState.siswa || []).forEach(x => { const kid = String(x.kelas_id || "").trim(); if (kid) jumlahPerKelas[kid] = (jumlahPerKelas[kid] || 0) + 1; });
+    const barisHtml = appState.kelas.map((k, i) => {
+        const wali = appState.guru.find(g => String(g.id) === String(k.guru_id));
+        return `
+        <tr>
+            ${kolCek ? `<td class="tt-cek">${bulkCheckbox("kelas", k.id)}</td>` : ""}
+            <td class="tt-no">${i + 1}</td>
+            <th scope="row" class="tt-nama">Kelas ${escapeHtml(k.nama_kelas)}</th>
+            <td>${wali ? escapeHtml(wali.nama) : '<span class="text-amber-600 font-semibold">Belum ditentukan</span>'}</td>
+            <td class="tt-angka">${jumlahPerKelas[String(k.id)] || 0}</td>
+            <td class="tt-aksi">${admTombolEdit("openModalKelas", "deleteKelas", k.id, "Edit data kelas", "Hapus data kelas")}</td>
+        </tr>`;
+    }).join("");
+    list.innerHTML = bulkBarKelas
+        + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
+        + admTabelHtml("Daftar kelas", kolCek, [["Kelas", "tt-nama"], ["Wali Kelas"], ["Siswa", "tt-angka"], ['<span class="sr-only">Aksi</span>', "tt-aksi"]], barisHtml);
 }
 
 function openModalGuru(id = null) {
