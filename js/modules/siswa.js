@@ -700,7 +700,7 @@ function renderSiswaView() {
                 <td class="tt-tgl">${escapeHtml(s.nisn || "-")}</td>
                 <td>${escapeHtml(kls ? kls.nama_kelas : "-")}</td>
                 ${kolPeran ? `<td>${renderPeranChip(s) || '<span class="text-slate-300">-</span>'}</td>` : ""}
-                ${tampilMentor ? `<td>${escapeHtml(namaMentor(s))}</td>` : ""}
+                ${tampilMentor ? `<td class="tt-kiri">${escapeHtml(namaMentor(s))}</td>` : ""}
                 <td class="tt-aksi"><span class="tt-aksi-grup">${aksiHtml(s, bisaUbahSiswa, "p-2")}</span></td>
             </tr>`).join("");
 
