@@ -674,17 +674,19 @@ function renderSiswaView() {
             <i class="fas fa-trash"></i>
         </button>` : ''}`;
 
+    // Kartu HP: identitas di baris atas (lebar penuh), tombol aksi di baris bawah.
+    // Sebelumnya 5 tombol berdampingan dengan teks sehingga NISN dan kelas terhimpit dan pecah per huruf.
     const kartuHtml = data.map(({ s, kls, bisaUbah: bisaUbahSiswa }) => `
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-3">
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="flex items-center gap-3 min-w-0">
                     ${bisaUbahSiswa && isAdminUser() ? bulkCheckbox("siswa", s.id) : ""}
-                    <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" alt="" class="w-10 h-10 rounded-full object-cover border border-slate-200">
-                    <div>
-                        <h4 class="font-bold text-xs text-slate-800">${escapeHtml(s.nama)} <span class="ml-1">${renderPeranChip(s)}</span></h4>
+                    <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" alt="" class="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-xs text-slate-800 break-words">${escapeHtml(s.nama)} <span class="ml-1">${renderPeranChip(s)}</span></h4>
                         ${renderInfoRows([{label:"NISN",value:s.nisn || "-"},{label:"Kelas",value:kls ? kls.nama_kelas : "-"}])}
                     </div>
                 </div>
-                <div class="flex items-center gap-1.5">${aksiHtml(s, bisaUbahSiswa, "touch-btn")}</div>
+                <div class="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">${aksiHtml(s, bisaUbahSiswa, "touch-btn flex-1")}</div>
             </div>`).join("");
 
     const barisHtml = data.map(({ s, kls, bisaUbah: bisaUbahSiswa }, i) => `
