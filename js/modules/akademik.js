@@ -395,7 +395,7 @@ function akdTabelLeger(list, kolCek) {
                         <tr>
                             ${kolCek ? '<th scope="col" rowspan="2" class="tt-cek"><span class="sr-only">Pilih</span></th>' : ""}
                             ${th2("No", "tt-no")}
-                            ${th2(modeSiswa ? "Mapel" : "Siswa", "tt-nama")}
+                            ${th2(modeSiswa ? "Mapel" : "Nama Siswa", "tt-nama")}
                             <th scope="colgroup" colspan="${nT}" class="akd-band">Tugas</th>
                             ${th2("Rata-Rata Tugas", "akd-rata")}
                             <th scope="colgroup" colspan="${nU}" class="akd-band">UH</th>
