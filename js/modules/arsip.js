@@ -254,7 +254,7 @@ async function arsipSayaMuatHalaman() {
         el.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Tidak ada baris yang cocok.</div>`;
     } else {
         el.innerHTML = `
-            <table class="w-full text-xs text-left">
+            <table class="w-full text-xs tabel-garis">
                 <thead class="bg-slate-50 text-slate-500">
                     <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap">${escapeHtml(arsipLabelKolom(c))}</th>`).join("")}</tr>
                 </thead>
@@ -421,7 +421,7 @@ function arsipSayaHtmlLaporanTabel(rows) {
         return `<td class="px-2 py-1.5 align-top whitespace-nowrap ${merah ? "text-rose-600 font-bold" : "text-slate-700"}">${teks}</td>`;
     };
     return `
-        <table class="w-full text-xs text-left">
+        <table class="w-full text-xs tabel-garis">
             <thead class="bg-slate-50 text-slate-500">
                 <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap">${escapeHtml(label[c])}</th>`).join("")}</tr>
             </thead>
@@ -487,9 +487,7 @@ function arsipSayaHtmlLaporanPdf(rows) {
     const isi = rows.map((x, i) => {
         const sel = ARSIP_LAPORAN_PDF_KOLOM.map(k => {
             const teks = escapeHtml(String(x[k[0]] === null || x[k[0]] === undefined ? "" : x[k[0]]));
-            return k[0] === "nama_siswa" || k[0] === "kelas"
-                ? `<td>${teks}</td>`
-                : `<td style="text-align:center;">${teks}</td>`;
+            return `<td style="text-align:center;">${teks}</td>`;
         }).join("");
         return `<tr><td style="text-align:center;">${i + 1}</td>${sel}</tr>`;
     }).join("");

@@ -1088,7 +1088,7 @@ function cetakPDFAkademik() {
         return `
             <tr>
                 ${td(idx + 1)}
-                <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.mapel)}</td>
+                <td style="padding: 6px 8px; text-align: center; font-weight: bold;">${escapeHtml(item.mapel)}</td>
                 ${td(item.semester || '-')}
                 ${td(akdFmt(item.rata_tugas))}
                 ${td(akdFmt(item.rata_uh))}
@@ -1105,7 +1105,7 @@ function cetakPDFAkademik() {
         <tr>
             <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
             <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tanggal)}</td>
-            <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.nama_prestasi)}</td>
+            <td style="padding: 6px 8px; text-align: center; font-weight: bold;">${escapeHtml(item.nama_prestasi)}</td>
             <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tingkat)}</td>
         </tr>
     `).join('') : `<tr><td colspan="4" style="padding: 10px; text-align: center; color: #64748b;">Belum ada catatan prestasi.</td></tr>`;

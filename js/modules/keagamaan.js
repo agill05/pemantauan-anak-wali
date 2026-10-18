@@ -572,7 +572,7 @@ function cetakPDFKeagamaan() {
             <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
             <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tanggal)}</td>
             <td style="padding: 6px 6px; text-align: center;">${KEAGAMAAN_KATEGORI[getKategoriHafalan(item)].label}</td>
-            <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(formatCapaianKeagamaan(item))}</td>
+            <td style="padding: 6px 8px; text-align: center; font-weight: bold;">${escapeHtml(formatCapaianKeagamaan(item))}</td>
             <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.status)}</td>
             <td style="padding: 6px 8px; text-align: left;">${item.catatan ? escapeHtml(item.catatan) : '-'}</td>
         </tr>

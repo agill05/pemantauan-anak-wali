@@ -328,9 +328,9 @@ function tlHtmlRekap(base, rows) {
         { label: "Ambang", value: `Panggilan I ${tlData.konfig.panggilan_1}, II ${tlData.konfig.panggilan_2}, III ${tlData.konfig.panggilan_3}, batas ${tlData.konfig.batas_keluar} poin` }
     ]);
     const c = v => `<td style="text-align: center;">${v}</td>`;
-    const ringkasan = tlRingkasKelas(base).map((o, i) => `<tr>${c(i + 1)}<td style="text-align: left; font-weight: bold;">${t(tlNamaKelas(o.kelas_id))}</td>${c(o.siswa)}${c(o.t0)}${c(o.t1)}${c(o.t2)}${c(o.t3)}${c(o.batas)}${c(o.tertunda)}</tr>`).join("");
+    const ringkasan = tlRingkasKelas(base).map((o, i) => `<tr>${c(i + 1)}<td style="text-align: center; font-weight: bold;">${t(tlNamaKelas(o.kelas_id))}</td>${c(o.siswa)}${c(o.t0)}${c(o.t1)}${c(o.t2)}${c(o.t3)}${c(o.batas)}${c(o.tertunda)}</tr>`).join("");
     const th = (v, w) => `<th${w ? ` style="width: ${w}px;"` : ""}>${v}</th>`;
-    const detail = rows.map((r, i) => `<tr>${c(i + 1)}<td style="text-align: left; font-weight: bold;">${t(tlNamaSiswa(r.siswa_id))}</td>${c(t(tlNamaKelas(r.kelas_id)))}${c(r.pelanggaran)}${c(r.penghargaan)}<td style="text-align: center; font-weight: bold;">${r.total}</td>${adaTa ? c(r.periode ? r.periode.total : "-") : ""}${c(t(tlLabelStatus(r)))}${c(t((r.panggilan_tercatat || []).join(", ") || "-"))}</tr>`).join("");
+    const detail = rows.map((r, i) => `<tr>${c(i + 1)}<td style="text-align: center; font-weight: bold;">${t(tlNamaSiswa(r.siswa_id))}</td>${c(t(tlNamaKelas(r.kelas_id)))}${c(r.pelanggaran)}${c(r.penghargaan)}<td style="text-align: center; font-weight: bold;">${r.total}</td>${adaTa ? c(r.periode ? r.periode.total : "-") : ""}${c(t(tlLabelStatus(r)))}${c(t((r.panggilan_tercatat || []).join(", ") || "-"))}</tr>`).join("");
     return `
         ${info}
         <h4>A. Ringkasan per Kelas</h4>
@@ -403,7 +403,7 @@ function tlHtmlSurat(o) {
     const total = ringkasan ? ringkasan.total : row.total;
     const pel = catatan.filter(c => String(c.jenis) !== "penghargaan").sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)));
     const c = v => `<td style="text-align: center;">${v}</td>`;
-    const baris = pel.map((x, i) => `<tr>${c(i + 1)}${c(e(tanggalPendek(x.tanggal)))}<td style="text-align: left;">${t(x.nama)}${Number(x.pengali) > 1 ? ` (x${Number(x.pengali)})` : ""}</td>${c(Number(x.skor_akhir) || 0)}</tr>`).join("");
+    const baris = pel.map((x, i) => `<tr>${c(i + 1)}${c(e(tanggalPendek(x.tanggal)))}<td style="text-align: center;">${t(x.nama)}${Number(x.pengali) > 1 ? ` (x${Number(x.pengali)})` : ""}</td>${c(Number(x.skor_akhir) || 0)}</tr>`).join("");
     const tahap3 = form.tahap === 3
         ? ` Panggilan ini merupakan panggilan terakhir sebelum akumulasi mencapai batas ${konfig.batas_keluar} poin.` : "";
     const hariTgl = [tlHari(form.tanggal), formatTanggalLabel(form.tanggal)].filter(Boolean).join(", ");

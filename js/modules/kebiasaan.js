@@ -743,7 +743,7 @@ function cetakPDFKebiasaan() {
         return `
             <tr>
                 <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
-                <td style="padding: 6px 8px; text-align: left;">${escapeHtml(k.nama)}</td>
+                <td style="padding: 6px 8px; text-align: center;">${escapeHtml(k.nama)}</td>
                 <td style="padding: 6px 6px; text-align: center; font-weight: bold;">${sudah ? "Sudah" : "Belum"}</td>
                 <td style="padding: 6px 6px; text-align: center;">${sudah && rec.jam ? escapeHtml(rec.jam) : "-"}</td>
                 <td style="padding: 6px 8px; text-align: left;">${sudah && rec.detail ? escapeHtml(rec.detail) : "-"}</td>

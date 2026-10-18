@@ -4296,12 +4296,74 @@ body.dark .swal2-popup table th { border-color: #475569 !important; }
     white-space: normal;
 }
 
-/* Header tabel rata tengah (hanya header; isi sel tidak berubah).
-   Selector dibuat lebih spesifik dari .tt-aksi / .tt-angka supaya header kolom tersebut ikut tengah. */
+/* ==========================================================
+   Tabel: semua header dan isi sel rata tengah, ada garis pemisah antar kolom.
+   Pengecualian: kolom teks panjang (.tt-ket, .tt-butir) tetap rata kiri
+   supaya paragraf tetap enak dibaca. Header tetap di tengah.
+   ========================================================== */
+.tt-tabel,
+.tabel-garis {
+    text-align: center;
+}
+
+.tt-tabel th,
+.tt-tabel td,
+.tt-tabel thead th,
+.tt-tabel .tt-nama,
+.tt-tabel .tt-no,
+.tt-tabel .tt-angka,
+.tt-tabel .tt-aksi,
+.tt-tabel .tt-tengah,
+.tt-tabel .tt-tgl,
+.tabel-garis th,
+.tabel-garis td {
+    text-align: center;
+}
+
+.tt-tabel td.tt-ket,
+.tt-tabel td.tt-butir {
+    text-align: left;
+}
+
+/* Garis pemisah per kolom */
+.tt-tabel th,
+.tt-tabel td,
+.tabel-garis th,
+.tabel-garis td {
+    border-right: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.tt-tabel th:last-child,
+.tt-tabel td:last-child,
+.tabel-garis th:last-child,
+.tabel-garis td:last-child {
+    border-right: 0;
+}
+
+body.dark .tt-tabel th,
+body.dark .tt-tabel td,
+body.dark .tabel-garis th,
+body.dark .tabel-garis td {
+    border-right-color: #334155;
+}
+
+/* Tabel arsip (kelas utilitas Tailwind): tambah garis bawah header dan tengahkan isi */
+.tabel-garis th,
+.tabel-garis td {
+    vertical-align: middle;
+}
+
+.tabel-garis thead th {
+    border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+body.dark .tabel-garis thead th {
+    border-bottom-color: #334155;
+}
+
+/* Fallback header tabel lain */
 thead th,
 table th[scope="col"],
-.tt-tabel thead th,
-.tt-tabel thead th[class],
 #arsip-lihat-tabel thead th,
 #printable-area thead th {
     text-align: center;

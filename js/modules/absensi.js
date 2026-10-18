@@ -641,7 +641,7 @@ function cetakPDFAbsensi() {
         if (st === 'H') countH++; else if (st === 'S') countS++; else if (st === 'I') countI++; else if (st === 'T') countT++; else if (st === 'A') countA++; else countB++;
         return `<tr>
             ${td(idx + 1)}
-            <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(s.nama)}</td>
+            <td style="padding: 6px 8px; text-align: center; font-weight: bold;">${escapeHtml(s.nama)}</td>
             ${showKelas ? td(escapeHtml(absensiNamaKelas(s.kelas_id))) : ''}
             ${showMentor ? td(escapeHtml(absensiNamaMentor(s.mentor_id))) : ''}
             ${td(escapeHtml(ABSENSI_LABEL[st] || st))}

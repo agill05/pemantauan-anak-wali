@@ -107,7 +107,7 @@ function buildLaporanRekapContent(data) {
             <tr>
                 <td style="text-align: center;">${index + 1}</td>
                 <td style="text-align: center;">${escapeHtml(item.nisn || '-')}</td>
-                <td style="text-align: left; font-weight: bold;">${escapeHtml(item.nama)}</td>
+                <td style="text-align: center; font-weight: bold;">${escapeHtml(item.nama)}</td>
                 <td style="text-align: center;">${kls ? escapeHtml(kls.nama_kelas) : '-'}</td>
                 <td style="text-align: center; color: #16a34a; font-weight: bold;">${item.presensi.hadir}</td>
                 <td style="text-align: center;">${item.presensi.sakit}</td>
@@ -382,7 +382,7 @@ function buildLaporanKebiasaanContent(d, denganJurnal) {
         <tr>
             <td style="text-align: center;">${i + 1}</td>
             <td style="text-align: center;">${t(x.nisn || "-")}</td>
-            <td style="text-align: left; font-weight: bold;">${t(x.nama)}</td>
+            <td style="text-align: center; font-weight: bold;">${t(x.nama)}</td>
             <td style="text-align: center;">${t(namaKelasLaporan(x.kelas_id))}</td>
             ${d.konfig.map(k => `<td style="text-align: center;">${x.per_kebiasaan[k.id] || 0}</td>`).join("")}
             <td style="text-align: center; font-weight: bold;">${x.total_sudah}</td>
@@ -410,7 +410,7 @@ function buildLaporanKebiasaanContent(d, denganJurnal) {
         const barisJ = d.jurnal.map(j => `
             <tr>
                 <td style="text-align: center;">${e(tanggalPendek(j.tanggal))}</td>
-                <td style="text-align: left;">${t((idKe.get(String(j.siswa_id)) || {}).nama || j.nama || "")}</td>
+                <td style="text-align: center;">${t((idKe.get(String(j.siswa_id)) || {}).nama || j.nama || "")}</td>
                 <td style="text-align: center;">${t(j.mood)}</td>
                 <td style="text-align: left;">${t(j.isi)}</td>
                 <td style="text-align: left;">${ctt(j.catatan_wali, j.wali_nama)}</td>

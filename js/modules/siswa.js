@@ -333,7 +333,7 @@ async function printProfilSiswa() {
                 : rows.join("")}</tbody>
         </table>`;
     const c = v => `<td style="text-align: center;">${e(v)}</td>`;
-    const l = v => `<td style="text-align: left;">${e(v)}</td>`;
+    const lp = v => `<td style="text-align: left;">${e(v)}</td>`;
 
     const biodata = [
         ["Nama Siswa", siswa.nama],
@@ -358,7 +358,7 @@ async function printProfilSiswa() {
         bagianKebiasaan = `
         <h4>6. Rekap 7 Kebiasaan Hebat (${kj.periode.hari} Hari Terakhir)</h4>
         ${tabel([{ t: "Kebiasaan" }, { t: "Hari Sudah", w: 90 }, { t: "Persentase", w: 90 }],
-            kj.konfig.map(k => { const n = rk.per_kebiasaan[k.id] || 0; return `<tr>${lb(k.nama)}${c(n + " hari")}${c(pct(n) + "%")}</tr>`; }),
+            kj.konfig.map(k => { const n = rk.per_kebiasaan[k.id] || 0; return `<tr>${cb(k.nama)}${c(n + " hari")}${c(pct(n) + "%")}</tr>`; }),
             "Belum ada data kebiasaan")}
         <p>Total poin: <b>${rk.poin}</b>. Hari dengan semua kebiasaan terpenuhi: <b>${rk.hari_penuh}</b> dari ${kj.periode.hari} hari. Capaian keseluruhan: <b>${rk.capaian}%</b>.</p>
 
@@ -378,22 +378,22 @@ async function printProfilSiswa() {
 
         <h4>2. Hasil Belajar Akademik (Semester ${akdSemesterDefault()})</h4>
         ${tabel([{ t: "Mata Pelajaran" }, { t: "Nilai Akhir", w: 90 }, { t: "KKTP", w: 70 }, { t: "Keterangan", w: 130 }],
-            akademik.map(a => `<tr>${l(a.mapel)}${c(a.nilai_akhir)}${c(a.kktp)}${c(Number(a.nilai_akhir) >= Number(a.kktp) ? "Tuntas" : "Perlu Bimbingan")}</tr>`),
+            akademik.map(a => `<tr>${c(a.mapel)}${c(a.nilai_akhir)}${c(a.kktp)}${c(Number(a.nilai_akhir) >= Number(a.kktp) ? "Tuntas" : "Perlu Bimbingan")}</tr>`),
             "Belum ada data nilai")}
 
         <h4>3. Capaian Keagamaan (Surah, Iqro & Doa)</h4>
         ${tabel([{ t: "Kategori", w: 70 }, { t: "Capaian" }, { t: "Status", w: 100 }, { t: "Catatan Guru" }],
-            hafalan.map(h => `<tr>${c(KEAGAMAAN_KATEGORI[getKategoriHafalan(h)].label)}${l(formatCapaianKeagamaan(h))}${c(h.status)}${l(h.catatan || "-")}</tr>`),
+            hafalan.map(h => `<tr>${c(KEAGAMAAN_KATEGORI[getKategoriHafalan(h)].label)}${c(formatCapaianKeagamaan(h))}${c(h.status)}${lp(h.catatan || "-")}</tr>`),
             "Belum ada data keagamaan")}
 
         <h4>4. Catatan Prestasi</h4>
         ${tabel([{ t: "Nama Prestasi / Juara" }, { t: "Tingkat", w: 100 }, { t: "Tanggal", w: 100 }],
-            prestasi.map(p => `<tr>${l(p.nama_prestasi)}${c(p.tingkat)}${c(p.tanggal)}</tr>`),
+            prestasi.map(p => `<tr>${c(p.nama_prestasi)}${c(p.tingkat)}${c(p.tanggal)}</tr>`),
             "Belum ada catatan prestasi")}
 
         <h4>5. Catatan Pembinaan</h4>
         ${tabel([{ t: "Permasalahan" }, { t: "Status", w: 100 }, { t: "Tanggal", w: 100 }],
-            pembinaan.map(p => `<tr>${l(p.permasalahan)}${c(p.status)}${c(p.tanggal)}</tr>`),
+            pembinaan.map(p => `<tr>${lp(p.permasalahan)}${c(p.status)}${c(p.tanggal)}</tr>`),
             "Tidak ada catatan pembinaan")}
         ${bagianKebiasaan}
     `;

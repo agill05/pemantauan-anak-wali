@@ -2095,7 +2095,7 @@ async function arsipMuatHalaman() {
         el.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Tidak ada baris yang cocok.</div>`;
     } else {
         el.innerHTML = `
-            <table class="w-full text-xs text-left">
+            <table class="w-full text-xs tabel-garis">
                 <thead class="bg-slate-50 text-slate-500">
                     <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap">${escapeHtml(arsipLabelKolom(c))}</th>`).join("")}</tr>
                 </thead>
