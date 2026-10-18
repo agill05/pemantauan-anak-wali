@@ -112,7 +112,7 @@ function renderAkademikNilai() {
                 <div class="flex-1 min-w-0">
                     <h4 class="font-bold text-xs text-slate-800">${escapeHtml(item.mapel)}</h4>
                     ${renderInfoRows([
-                        {label:"Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + (luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'),html:true},
+                        {label:"Nama Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + (luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'),html:true},
                         {label:"Semester",value:item.semester || "-"},
                         {label:"Tugas",value:akdChipDaftar(item, "tugas"),html:true},
                         {label:"Rata-Rata Tugas",value:akdChipDaftar(item, "tugas") ? '<b class="text-slate-900">' + escapeHtml(akdFmt(akdRataItem(item, "tugas"))) + '</b>' : "",html:true},
