@@ -4295,3 +4295,14 @@ body.dark .swal2-popup table th { border-color: #475569 !important; }
 .tt-tabel td.tt-ket {
     white-space: normal;
 }
+
+/* Header tabel rata tengah (hanya header; isi sel tidak berubah).
+   Selector dibuat lebih spesifik dari .tt-aksi / .tt-angka supaya header kolom tersebut ikut tengah. */
+thead th,
+table th[scope="col"],
+.tt-tabel thead th,
+.tt-tabel thead th[class],
+#arsip-lihat-tabel thead th,
+#printable-area thead th {
+    text-align: center;
+}

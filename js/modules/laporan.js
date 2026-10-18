@@ -125,7 +125,7 @@ function buildLaporanRekapContent(data) {
                 <tr>
                     <th style="width: 30px;">No</th>
                     <th style="width: 90px;">NISN</th>
-                    <th style="text-align: left;">Nama Siswa</th>
+                    <th style="text-align: center;">Nama Siswa</th>
                     <th style="width: 55px;">Kelas</th>
                     <th style="width: 45px;">Hadir</th>
                     <th style="width: 45px;">Sakit</th>
@@ -396,7 +396,7 @@ function buildLaporanKebiasaanContent(d, denganJurnal) {
         <p><b>Periode:</b> ${e(tanggalPendek(d.periode.dari))} s.d. ${e(tanggalPendek(d.periode.sampai))} (${d.periode.hari} hari)</p>
         <table>
             <thead><tr>
-                <th style="width: 30px;">No</th><th style="width: 90px;">NISN</th><th style="text-align: left;">Nama Siswa</th><th style="width: 55px;">Kelas</th>
+                <th style="width: 30px;">No</th><th style="width: 90px;">NISN</th><th style="text-align: center;">Nama Siswa</th><th style="width: 55px;">Kelas</th>
                 ${hKonfig}
                 <th style="width: 45px;">Total</th><th style="width: 60px;">Capaian</th><th style="width: 45px;">Poin</th><th style="width: 45px;">Jurnal</th>
             </tr></thead>
@@ -420,8 +420,8 @@ function buildLaporanKebiasaanContent(d, denganJurnal) {
             <h4>Jurnal Harian dan Catatan Guru</h4>
             <table>
                 <thead><tr>
-                    <th style="width: 62px;">Tanggal</th><th style="width: 110px; text-align: left;">Siswa</th><th style="width: 60px;">Mood</th>
-                    <th style="text-align: left;">Isi Jurnal</th><th style="width: 140px; text-align: left;">Catatan Wali</th><th style="width: 140px; text-align: left;">Catatan Mentor</th>
+                    <th style="width: 62px;">Tanggal</th><th style="width: 110px; text-align: center;">Siswa</th><th style="width: 60px;">Mood</th>
+                    <th style="text-align: center;">Isi Jurnal</th><th style="width: 140px; text-align: center;">Catatan Wali</th><th style="width: 140px; text-align: center;">Catatan Mentor</th>
                 </tr></thead>
                 <tbody>${barisJ || `<tr><td colspan="6" style="text-align: center;">Tidak ada jurnal pada periode ini</td></tr>`}</tbody>
             </table>

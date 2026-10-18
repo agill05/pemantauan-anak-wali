@@ -419,7 +419,7 @@ function cetakPDFPembinaan() {
                     <th style="padding: 8px 4px; width: 30px;">No</th>
                     <th style="padding: 8px 6px; width: 90px;">Tanggal</th>
                     <th style="padding: 8px 6px; width: 90px;">Jenis</th>
-                    <th style="padding: 8px 6px; text-align: left;">Permasalahan</th>
+                    <th style="padding: 8px 6px; text-align: center;">Permasalahan</th>
                     <th style="padding: 8px 6px; width: 100px;">Status</th>
                     <th style="padding: 8px 6px; width: 90px;">Jadwal Pantau</th>
                 </tr>

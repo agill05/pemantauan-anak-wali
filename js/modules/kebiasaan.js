@@ -765,10 +765,10 @@ function cetakPDFKebiasaan() {
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
                     <th style="padding: 8px 4px; width: 30px;">No</th>
-                    <th style="padding: 8px 6px; text-align: left;">Kebiasaan</th>
+                    <th style="padding: 8px 6px; text-align: center;">Kebiasaan</th>
                     <th style="padding: 8px 6px; width: 60px;">Status</th>
                     <th style="padding: 8px 6px; width: 50px;">Jam</th>
-                    <th style="padding: 8px 6px; text-align: left;">Keterangan</th>
+                    <th style="padding: 8px 6px; text-align: center;">Keterangan</th>
                 </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>

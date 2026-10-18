@@ -337,7 +337,7 @@ function tlHtmlRekap(base, rows) {
         <table><thead><tr>${th("No", 30)}${th("Kelas")}${th("Siswa", 50)}${th("Aman", 50)}${th("P I", 45)}${th("P II", 45)}${th("P III", 45)}${th("Batas", 50)}${th("Belum Dicatat", 85)}</tr></thead>
         <tbody>${ringkasan || `<tr><td colspan="9" style="text-align: center;">Tidak ada data</td></tr>`}</tbody></table>
         <h4>B. Daftar Siswa</h4>
-        <table><thead><tr>${th("No", 30)}<th style="text-align: left;">Nama Siswa</th>${th("Kelas", 55)}${th("Pelanggaran", 75)}${th("Penghargaan", 80)}${th("Total", 45)}${adaTa ? th(e(tlData.kolom), 75) : ""}${th("Status", 95)}${th("Panggilan Dicatat", 100)}</tr></thead>
+        <table><thead><tr>${th("No", 30)}<th style="text-align: center;">Nama Siswa</th>${th("Kelas", 55)}${th("Pelanggaran", 75)}${th("Penghargaan", 80)}${th("Total", 45)}${adaTa ? th(e(tlData.kolom), 75) : ""}${th("Status", 95)}${th("Panggilan Dicatat", 100)}</tr></thead>
         <tbody>${detail || `<tr><td colspan="${adaTa ? 9 : 8}" style="text-align: center;">Tidak ada data</td></tr>`}</tbody></table>
         <p><b>Keterangan:</b> Total = poin pelanggaran dikurangi penghargaan (minimal 0). P I/II/III = tahap Panggilan Orang Tua.</p>`;
 }
@@ -429,7 +429,7 @@ function tlHtmlSurat(o) {
             { label: "Acara", value: "Pembinaan dan pembahasan perkembangan ananda" }
         ])}
         <p>Rincian poin pelanggaran ananda:</p>
-        <table><thead><tr><th style="width: 30px;">No</th><th style="width: 80px;">Tanggal</th><th style="text-align: left;">Pelanggaran</th><th style="width: 55px;">Poin</th></tr></thead>
+        <table><thead><tr><th style="width: 30px;">No</th><th style="width: 80px;">Tanggal</th><th style="text-align: center;">Pelanggaran</th><th style="width: 55px;">Poin</th></tr></thead>
         <tbody>${baris || `<tr><td colspan="4" style="text-align: center;">Tidak ada rincian</td></tr>`}</tbody></table>
         <p>Total poin pelanggaran: <b>${ringkasan ? ringkasan.pelanggaran : row.pelanggaran}</b>. Penghargaan: <b>${ringkasan ? ringkasan.penghargaan : row.penghargaan}</b>. Akumulasi (pelanggaran dikurangi penghargaan): <b>${total} poin</b>.</p>
         <p>Demikian surat ini kami sampaikan. Atas kehadiran dan kerja sama Bapak/Ibu, kami ucapkan terima kasih. Wassalamu'alaikum Warahmatullahi Wabarakatuh.</p>`;

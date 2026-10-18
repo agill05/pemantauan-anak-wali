@@ -604,9 +604,9 @@ function cetakPDFKeagamaan() {
                     <th style="padding: 8px 4px; width: 30px;">No</th>
                     <th style="padding: 8px 6px; width: 80px;">Tanggal</th>
                     <th style="padding: 8px 6px; width: 60px;">Kategori</th>
-                    <th style="padding: 8px 6px; text-align: left;">Capaian</th>
+                    <th style="padding: 8px 6px; text-align: center;">Capaian</th>
                     <th style="padding: 8px 6px; width: 80px;">Status</th>
-                    <th style="padding: 8px 6px; text-align: left;">Catatan</th>
+                    <th style="padding: 8px 6px; text-align: center;">Catatan</th>
                 </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>

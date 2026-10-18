@@ -409,7 +409,7 @@ async function tampilRekapAbsensiMentor() {
         width: 640,
         confirmButtonColor: '#2563eb',
         html: `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center;" border="1" bordercolor="#cbd5e1">
-            <thead><tr style="background:var(--surface-2,#f1f5f9);"><th style="padding:6px;text-align:left;">Nama</th><th>H</th><th>S</th><th>I</th><th>T</th><th>A</th><th>% Hadir</th></tr></thead>
+            <thead><tr style="background:var(--surface-2,#f1f5f9);"><th style="padding:6px;text-align:center;">Nama</th><th>H</th><th>S</th><th>I</th><th>T</th><th>A</th><th>% Hadir</th></tr></thead>
             <tbody>${baris}</tbody></table></div>
             <p style="font-size:11px;color:var(--text-soft,#64748b);margin-top:8px;">Seluruh tanggal. % Hadir = (Hadir + Terlambat) / total pertemuan tercatat.</p>`
     });
@@ -658,7 +658,7 @@ function cetakPDFAbsensi() {
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
                     ${th('No', '30px')}
-                    <th style="padding: 8px 6px; text-align: left;">Nama Siswa</th>
+                    <th style="padding: 8px 6px; text-align: center;">Nama Siswa</th>
                     ${showKelas ? th('Kelas', '60px') : ''}
                     ${showMentor ? th('Mentor', '110px') : ''}
                     ${th('Status', '90px')}

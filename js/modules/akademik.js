@@ -1118,7 +1118,7 @@ function cetakPDFAkademik() {
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
                     <th style="padding: 8px 3px; width: 24px;">No</th>
-                    <th style="padding: 8px 5px; text-align: left;">Mata Pelajaran</th>
+                    <th style="padding: 8px 5px; text-align: center;">Mata Pelajaran</th>
                     <th style="padding: 8px 3px; width: 46px;">Smt</th>
                     <th style="padding: 8px 3px; width: 44px;">Rata Tugas</th>
                     <th style="padding: 8px 3px; width: 44px;">Rata UH</th>
@@ -1138,7 +1138,7 @@ function cetakPDFAkademik() {
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
                     <th style="padding: 8px 4px; width: 30px;">No</th>
                     <th style="padding: 8px 6px; width: 90px;">Tanggal</th>
-                    <th style="padding: 8px 6px; text-align: left;">Nama Prestasi</th>
+                    <th style="padding: 8px 6px; text-align: center;">Nama Prestasi</th>
                     <th style="padding: 8px 6px; width: 90px;">Tingkat</th>
                 </tr>
             </thead>

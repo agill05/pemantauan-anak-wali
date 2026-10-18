@@ -240,7 +240,7 @@ function renderAdminGuru() {
         </tr>`).join("");
     list.innerHTML = bulkToolbar("guru", filtered.map(g => String(g.id)))
         + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
-        + admTabelHtml("Daftar guru", kolCek, [["Nama", "tt-nama"], ["Username"], ["NIP"], ["Peran"], ['<span class="sr-only">Aksi</span>', "tt-aksi"]], barisHtml);
+        + admTabelHtml("Daftar guru", kolCek, [["Nama", "tt-nama"], ["Username"], ["NIP"], ["Peran"], ['Aksi', "tt-aksi"]], barisHtml);
 }
 
 function getBinaanCount(guruId) {
@@ -364,7 +364,7 @@ function renderAdminSiswa() {
         </tr>`).join("");
     list.innerHTML = bulkToolbar("siswa", filtered.map(s => String(s.id)))
         + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
-        + admTabelHtml("Daftar siswa", kolCek, [["Nama", "tt-nama"], ["Username"], ["NISN"], ["Kelas"], ["Mentor"], ['<span class="sr-only">Aksi</span>', "tt-aksi"]], barisHtml);
+        + admTabelHtml("Daftar siswa", kolCek, [["Nama", "tt-nama"], ["Username"], ["NISN"], ["Kelas"], ["Mentor"], ['Aksi', "tt-aksi"]], barisHtml);
 }
 
 function renderAdminMentor() {
@@ -406,7 +406,7 @@ function renderAdminMentor() {
             <td class="tt-aksi"><button onclick="openModalMentor('${escapeHtml(g.id)}')" class="px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg text-xs font-bold" aria-label="Atur anak binaan guru"><i class="fas fa-user-tag mr-1"></i> Atur</button></td>
         </tr>`).join("");
     list.innerHTML = `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
-        + admTabelHtml("Daftar mentor", false, [["Guru", "tt-nama"], ["Peran"], ['Anak Binaan', "tt-angka"], ['<span class="sr-only">Aksi</span>', "tt-aksi"]], barisHtml);
+        + admTabelHtml("Daftar mentor", false, [["Guru", "tt-nama"], ["Peran"], ['Anak Binaan', "tt-angka"], ['Aksi', "tt-aksi"]], barisHtml);
 }
 
 let _mentorModal = null;
@@ -613,7 +613,7 @@ function renderAdminKelas() {
     }).join("");
     list.innerHTML = bulkBarKelas
         + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
-        + admTabelHtml("Daftar kelas", kolCek, [["Kelas", "tt-nama"], ["Wali Kelas"], ["Siswa", "tt-angka"], ['<span class="sr-only">Aksi</span>', "tt-aksi"]], barisHtml);
+        + admTabelHtml("Daftar kelas", kolCek, [["Kelas", "tt-nama"], ["Wali Kelas"], ["Siswa", "tt-angka"], ['Aksi', "tt-aksi"]], barisHtml);
 }
 
 function openModalGuru(id = null) {
