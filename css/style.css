@@ -4233,7 +4233,6 @@ body.dark .swal2-popup table th { border-color: #475569 !important; }
         right: 0;
         z-index: 1;
         background: var(--surface, #fff);
-        box-shadow: -6px 0 6px -6px rgba(15, 23, 42, 0.18);
     }
 
     .tt-tabel-wrap.tt-tinggi .tt-tabel thead .tt-aksi {
