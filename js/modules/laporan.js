@@ -107,7 +107,7 @@ function buildLaporanRekapContent(data) {
             <tr>
                 <td style="text-align: center;">${index + 1}</td>
                 <td style="text-align: center;">${escapeHtml(item.nisn || '-')}</td>
-                <td style="text-align: center; font-weight: bold;">${escapeHtml(item.nama)}</td>
+                <td style="text-align: left; font-weight: bold;">${escapeHtml(item.nama)}</td>
                 <td style="text-align: center;">${kls ? escapeHtml(kls.nama_kelas) : '-'}</td>
                 <td style="text-align: center; color: #16a34a; font-weight: bold;">${item.presensi.hadir}</td>
                 <td style="text-align: center;">${item.presensi.sakit}</td>
@@ -125,7 +125,7 @@ function buildLaporanRekapContent(data) {
                 <tr>
                     <th style="width: 30px;">No</th>
                     <th style="width: 90px;">NISN</th>
-                    <th style="text-align: center;">Nama Siswa</th>
+                    <th style="text-align: left;">Nama Siswa</th>
                     <th style="width: 55px;">Kelas</th>
                     <th style="width: 45px;">Hadir</th>
                     <th style="width: 45px;">Sakit</th>
@@ -382,7 +382,7 @@ function buildLaporanKebiasaanContent(d, denganJurnal) {
         <tr>
             <td style="text-align: center;">${i + 1}</td>
             <td style="text-align: center;">${t(x.nisn || "-")}</td>
-            <td style="text-align: center; font-weight: bold;">${t(x.nama)}</td>
+            <td style="text-align: left; font-weight: bold;">${t(x.nama)}</td>
             <td style="text-align: center;">${t(namaKelasLaporan(x.kelas_id))}</td>
             ${d.konfig.map(k => `<td style="text-align: center;">${x.per_kebiasaan[k.id] || 0}</td>`).join("")}
             <td style="text-align: center; font-weight: bold;">${x.total_sudah}</td>
@@ -396,7 +396,7 @@ function buildLaporanKebiasaanContent(d, denganJurnal) {
         <p><b>Periode:</b> ${e(tanggalPendek(d.periode.dari))} s.d. ${e(tanggalPendek(d.periode.sampai))} (${d.periode.hari} hari)</p>
         <table>
             <thead><tr>
-                <th style="width: 30px;">No</th><th style="width: 90px;">NISN</th><th style="text-align: center;">Nama Siswa</th><th style="width: 55px;">Kelas</th>
+                <th style="width: 30px;">No</th><th style="width: 90px;">NISN</th><th style="text-align: left;">Nama Siswa</th><th style="width: 55px;">Kelas</th>
                 ${hKonfig}
                 <th style="width: 45px;">Total</th><th style="width: 60px;">Capaian</th><th style="width: 45px;">Poin</th><th style="width: 45px;">Jurnal</th>
             </tr></thead>
@@ -410,7 +410,7 @@ function buildLaporanKebiasaanContent(d, denganJurnal) {
         const barisJ = d.jurnal.map(j => `
             <tr>
                 <td style="text-align: center;">${e(tanggalPendek(j.tanggal))}</td>
-                <td style="text-align: center;">${t((idKe.get(String(j.siswa_id)) || {}).nama || j.nama || "")}</td>
+                <td style="text-align: left;">${t((idKe.get(String(j.siswa_id)) || {}).nama || j.nama || "")}</td>
                 <td style="text-align: center;">${t(j.mood)}</td>
                 <td style="text-align: left;">${t(j.isi)}</td>
                 <td style="text-align: left;">${ctt(j.catatan_wali, j.wali_nama)}</td>
@@ -420,7 +420,7 @@ function buildLaporanKebiasaanContent(d, denganJurnal) {
             <h4>Jurnal Harian dan Catatan Guru</h4>
             <table>
                 <thead><tr>
-                    <th style="width: 62px;">Tanggal</th><th style="width: 110px; text-align: center;">Siswa</th><th style="width: 60px;">Mood</th>
+                    <th style="width: 62px;">Tanggal</th><th style="width: 110px; text-align: left;">Siswa</th><th style="width: 60px;">Mood</th>
                     <th style="text-align: center;">Isi Jurnal</th><th style="width: 140px; text-align: center;">Catatan Wali</th><th style="width: 140px; text-align: center;">Catatan Mentor</th>
                 </tr></thead>
                 <tbody>${barisJ || `<tr><td colspan="6" style="text-align: center;">Tidak ada jurnal pada periode ini</td></tr>`}</tbody>

@@ -330,14 +330,14 @@ function tlHtmlRekap(base, rows) {
     const c = v => `<td style="text-align: center;">${v}</td>`;
     const ringkasan = tlRingkasKelas(base).map((o, i) => `<tr>${c(i + 1)}<td style="text-align: center; font-weight: bold;">${t(tlNamaKelas(o.kelas_id))}</td>${c(o.siswa)}${c(o.t0)}${c(o.t1)}${c(o.t2)}${c(o.t3)}${c(o.batas)}${c(o.tertunda)}</tr>`).join("");
     const th = (v, w) => `<th${w ? ` style="width: ${w}px;"` : ""}>${v}</th>`;
-    const detail = rows.map((r, i) => `<tr>${c(i + 1)}<td style="text-align: center; font-weight: bold;">${t(tlNamaSiswa(r.siswa_id))}</td>${c(t(tlNamaKelas(r.kelas_id)))}${c(r.pelanggaran)}${c(r.penghargaan)}<td style="text-align: center; font-weight: bold;">${r.total}</td>${adaTa ? c(r.periode ? r.periode.total : "-") : ""}${c(t(tlLabelStatus(r)))}${c(t((r.panggilan_tercatat || []).join(", ") || "-"))}</tr>`).join("");
+    const detail = rows.map((r, i) => `<tr>${c(i + 1)}<td style="text-align: left; font-weight: bold;">${t(tlNamaSiswa(r.siswa_id))}</td>${c(t(tlNamaKelas(r.kelas_id)))}${c(r.pelanggaran)}${c(r.penghargaan)}<td style="text-align: center; font-weight: bold;">${r.total}</td>${adaTa ? c(r.periode ? r.periode.total : "-") : ""}${c(t(tlLabelStatus(r)))}${c(t((r.panggilan_tercatat || []).join(", ") || "-"))}</tr>`).join("");
     return `
         ${info}
         <h4>A. Ringkasan per Kelas</h4>
         <table><thead><tr>${th("No", 30)}${th("Kelas")}${th("Siswa", 50)}${th("Aman", 50)}${th("P I", 45)}${th("P II", 45)}${th("P III", 45)}${th("Batas", 50)}${th("Belum Dicatat", 85)}</tr></thead>
         <tbody>${ringkasan || `<tr><td colspan="9" style="text-align: center;">Tidak ada data</td></tr>`}</tbody></table>
         <h4>B. Daftar Siswa</h4>
-        <table><thead><tr>${th("No", 30)}<th style="text-align: center;">Nama Siswa</th>${th("Kelas", 55)}${th("Pelanggaran", 75)}${th("Penghargaan", 80)}${th("Total", 45)}${adaTa ? th(e(tlData.kolom), 75) : ""}${th("Status", 95)}${th("Panggilan Dicatat", 100)}</tr></thead>
+        <table><thead><tr>${th("No", 30)}<th style="text-align: left;">Nama Siswa</th>${th("Kelas", 55)}${th("Pelanggaran", 75)}${th("Penghargaan", 80)}${th("Total", 45)}${adaTa ? th(e(tlData.kolom), 75) : ""}${th("Status", 95)}${th("Panggilan Dicatat", 100)}</tr></thead>
         <tbody>${detail || `<tr><td colspan="${adaTa ? 9 : 8}" style="text-align: center;">Tidak ada data</td></tr>`}</tbody></table>
         <p><b>Keterangan:</b> Total = poin pelanggaran dikurangi penghargaan (minimal 0). P I/II/III = tahap Panggilan Orang Tua.</p>`;
 }

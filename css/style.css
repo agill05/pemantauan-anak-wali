@@ -4368,3 +4368,24 @@ table th[scope="col"],
 #printable-area thead th {
     text-align: center;
 }
+
+/* Kolom Nama / identitas: header dan isi rata kiri (menimpa rata tengah di atas) */
+.tt-tabel th.tt-nama,
+.tt-tabel td.tt-nama,
+.tt-tabel thead th.tt-nama,
+.tt-tabel tfoot th.tt-nama,
+.tt-tabel tfoot td.tt-nama {
+    text-align: left;
+}
+
+/* Isi sel rata kiri, header kolom tetap tengah */
+.tt-tabel td.tt-kiri {
+    text-align: left;
+}
+
+/* Tabel arsip: kolom nama (header dan isi) rata kiri */
+.tabel-garis th.tt-kiri,
+.tabel-garis td.tt-kiri,
+#arsip-lihat-tabel thead th.tt-kiri {
+    text-align: left;
+}

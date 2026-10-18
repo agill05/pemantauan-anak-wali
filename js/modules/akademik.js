@@ -1105,7 +1105,7 @@ function cetakPDFAkademik() {
         <tr>
             <td style="padding: 6px 4px; text-align: center;">${idx + 1}</td>
             <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tanggal)}</td>
-            <td style="padding: 6px 8px; text-align: center; font-weight: bold;">${escapeHtml(item.nama_prestasi)}</td>
+            <td style="padding: 6px 8px; text-align: left; font-weight: bold;">${escapeHtml(item.nama_prestasi)}</td>
             <td style="padding: 6px 6px; text-align: center;">${escapeHtml(item.tingkat)}</td>
         </tr>
     `).join('') : `<tr><td colspan="4" style="padding: 10px; text-align: center; color: #64748b;">Belum ada catatan prestasi.</td></tr>`;
@@ -1138,7 +1138,7 @@ function cetakPDFAkademik() {
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
                     <th style="padding: 8px 4px; width: 30px;">No</th>
                     <th style="padding: 8px 6px; width: 90px;">Tanggal</th>
-                    <th style="padding: 8px 6px; text-align: center;">Nama Prestasi</th>
+                    <th style="padding: 8px 6px; text-align: left;">Nama Prestasi</th>
                     <th style="padding: 8px 6px; width: 90px;">Tingkat</th>
                 </tr>
             </thead>

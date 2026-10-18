@@ -327,7 +327,7 @@ async function printProfilSiswa() {
 
     const tabel = (heads, rows, emptyText) => `
         <table>
-            <thead><tr>${heads.map(h => `<th${h.w ? ` style="width: ${h.w}px;"` : ""}>${e(h.t)}</th>`).join("")}</tr></thead>
+            <thead><tr>${heads.map(h => `<th${h.w || h.l ? ` style="${h.w ? `width: ${h.w}px;` : ""}${h.l ? " text-align: left;" : ""}"` : ""}>${e(h.t)}</th>`).join("")}</tr></thead>
             <tbody>${rows.length === 0
                 ? `<tr><td colspan="${heads.length}" style="text-align: center;">${e(emptyText)}</td></tr>`
                 : rows.join("")}</tbody>
@@ -387,8 +387,8 @@ async function printProfilSiswa() {
             "Belum ada data keagamaan")}
 
         <h4>4. Catatan Prestasi</h4>
-        ${tabel([{ t: "Nama Prestasi / Juara" }, { t: "Tingkat", w: 100 }, { t: "Tanggal", w: 100 }],
-            prestasi.map(p => `<tr>${c(p.nama_prestasi)}${c(p.tingkat)}${c(p.tanggal)}</tr>`),
+        ${tabel([{ t: "Nama Prestasi / Juara", l: 1 }, { t: "Tingkat", w: 100 }, { t: "Tanggal", w: 100 }],
+            prestasi.map(p => `<tr>${lp(p.nama_prestasi)}${c(p.tingkat)}${c(p.tanggal)}</tr>`),
             "Belum ada catatan prestasi")}
 
         <h4>5. Catatan Pembinaan</h4>

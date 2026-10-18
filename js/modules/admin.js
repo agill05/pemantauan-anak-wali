@@ -359,7 +359,7 @@ function renderAdminSiswa() {
             <td>${escapeHtml(s.username || "-")}</td>
             <td class="tt-tgl">${escapeHtml(s.nisn || "-")}</td>
             <td>${sel(getNamaKelasSiswa(s), siswaTanpaKelas(s))}</td>
-            <td>${sel(getNamaMentorSiswa(s), siswaTanpaMentor(s))}</td>
+            <td class="tt-kiri">${sel(getNamaMentorSiswa(s), siswaTanpaMentor(s))}</td>
             <td class="tt-aksi">${admTombolEdit("openModalSiswa", "deleteSiswa", s.id, "Edit data siswa", "Hapus data siswa")}</td>
         </tr>`).join("");
     list.innerHTML = bulkToolbar("siswa", filtered.map(s => String(s.id)))
@@ -606,7 +606,7 @@ function renderAdminKelas() {
             ${kolCek ? `<td class="tt-cek">${bulkCheckbox("kelas", k.id)}</td>` : ""}
             <td class="tt-no">${i + 1}</td>
             <th scope="row" class="tt-nama">Kelas ${escapeHtml(k.nama_kelas)}</th>
-            <td>${wali ? escapeHtml(wali.nama) : '<span class="text-amber-600 font-semibold">Belum ditentukan</span>'}</td>
+            <td class="tt-kiri">${wali ? escapeHtml(wali.nama) : '<span class="text-amber-600 font-semibold">Belum ditentukan</span>'}</td>
             <td class="tt-angka">${jumlahPerKelas[String(k.id)] || 0}</td>
             <td class="tt-aksi">${admTombolEdit("openModalKelas", "deleteKelas", k.id, "Edit data kelas", "Hapus data kelas")}</td>
         </tr>`;
@@ -2097,12 +2097,12 @@ async function arsipMuatHalaman() {
         el.innerHTML = `
             <table class="w-full text-xs tabel-garis">
                 <thead class="bg-slate-50 text-slate-500">
-                    <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap">${escapeHtml(arsipLabelKolom(c))}</th>`).join("")}</tr>
+                    <tr>${kolom.map(c => `<th class="px-2 py-2 font-bold whitespace-nowrap ${/^nama/.test(String(c)) ? "tt-kiri" : ""}">${escapeHtml(arsipLabelKolom(c))}</th>`).join("")}</tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     ${res.data.map(row => `<tr>${kolom.map(c => {
                         const teks = String(row[c] === null || row[c] === undefined ? "" : row[c]);
-                        return `<td class="px-2 py-1.5 align-top text-slate-700 ${arsipKolomPanjang(c) ? "min-w-[14rem]" : "whitespace-nowrap"}">${escapeHtml(teks)}</td>`;
+                        return `<td class="px-2 py-1.5 align-top text-slate-700 ${/^nama/.test(String(c)) ? "tt-kiri " : ""}${arsipKolomPanjang(c) ? "min-w-[14rem]" : "whitespace-nowrap"}">${escapeHtml(teks)}</td>`;
                     }).join("")}</tr>`).join("")}
                 </tbody>
             </table>`;
