@@ -160,15 +160,15 @@ function renderAkademikNilai() {
                 ${kolCek ? `<td class="tt-cek">${bisaUbah ? bulkCheckbox("akademik", item.id) : ""}</td>` : ""}
                 <td class="tt-no">${i + 1}</td>
                 <th scope="row" class="tt-nama">${escapeHtml(s ? s.nama : 'Siswa')}${luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'}</th>
-                <td class="tt-butir">${escapeHtml(item.mapel)}</td>
+                <td class="tt-padat">${escapeHtml(item.mapel)}</td>
                 <td>${escapeHtml(item.semester || "-")}</td>
-                <td class="tt-ket">${sel(item, "tugas", item.rata_tugas)}</td>
-                <td class="tt-ket">${sel(item, "uh", item.rata_uh)}</td>
+                <td class="tt-padat">${sel(item, "tugas", item.rata_tugas)}</td>
+                <td class="tt-padat">${sel(item, "uh", item.rata_uh)}</td>
                 <td class="tt-tengah">${akdAngka(item.sts) !== null ? escapeHtml(akdFmt(item.sts)) : "-"}</td>
                 <td class="tt-tengah">${akdAngka(item.asas) !== null ? escapeHtml(akdFmt(item.asas)) : "-"}</td>
                 <td class="tt-tengah"><span class="inline-block text-xs font-black px-2 py-0.5 rounded-lg border ${badgeColor}">${escapeHtml(akdFmt(item.nilai_akhir))} ${dibawah ? '⚠️' : '✅'}</span></td>
                 <td class="tt-tengah">${escapeHtml(akdFmt(item.kktp))}</td>
-                <td class="tt-ket">${escapeHtml(item.dibuat_oleh_nama || "-")}</td>
+                <td class="tt-padat">${escapeHtml(item.dibuat_oleh_nama || "-")}</td>
                 <td class="tt-aksi">${bisaUbah ? `
                     <span class="tt-aksi-grup">
                         <button onclick="openModalAkademik('${escapeHtml(item.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit nilai"><i class="fas fa-edit"></i></button>

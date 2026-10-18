@@ -4212,23 +4212,56 @@ body.dark .swal2-popup table td,
 body.dark .swal2-popup table th { border-color: #475569 !important; }
 
 /* Tabel data layar laptop (Siswa, Presensi, Akademik). Memakai dasar .tt-tabel di atas. */
-/* Tabel panjang ikut scroll halaman (tanpa kotak scroll sendiri), supaya tidak ada scroll bersarang.
-   Layar lebar: header tabel menempel di bawah header aplikasi. Layar sedang: tetap bisa geser mendatar. */
+/* Tabel panjang ikut scroll halaman (tanpa kotak scroll vertikal sendiri). Lebar berlebih digeser mendatar,
+   tidak dipotong. Kolom Aksi menempel di kanan supaya selalu terlihat. */
 @media (min-width: 768px) {
     .tt-tabel-wrap.tt-tinggi {
         max-height: none;
-    }
-}
-
-@media (min-width: 1200px) {
-    .tt-tabel-wrap.tt-tinggi {
-        overflow-x: clip;
-        overflow-y: visible;
+        overflow-x: auto;
     }
 
     .tt-tabel-wrap.tt-tinggi .tt-tabel thead th {
-        top: var(--tt-sticky-top, var(--header-h, 4rem));
+        position: static;
     }
+
+    .tt-tabel-wrap.tt-tinggi .tt-tabel thead .tt-nama {
+        position: sticky;
+    }
+
+    .tt-tabel-wrap.tt-tinggi .tt-tabel .tt-aksi {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+        background: var(--surface, #fff);
+        box-shadow: -6px 0 6px -6px rgba(15, 23, 42, 0.18);
+    }
+
+    .tt-tabel-wrap.tt-tinggi .tt-tabel thead .tt-aksi {
+        background: #f1f5f9;
+        z-index: 3;
+    }
+
+    body.dark .tt-tabel-wrap.tt-tinggi .tt-tabel .tt-aksi {
+        background: #1e293b;
+    }
+
+    body.dark .tt-tabel-wrap.tt-tinggi .tt-tabel thead .tt-aksi {
+        background: #0f172a;
+    }
+
+    .tt-tabel-wrap.tt-tinggi .tt-baris:hover .tt-aksi {
+        background: #f8fafc;
+    }
+
+    body.dark .tt-tabel-wrap.tt-tinggi .tt-baris:hover .tt-aksi {
+        background: #273449;
+    }
+}
+
+/* Kolom teks padat: boleh turun baris, tanpa lebar minimum. */
+.tt-tabel .tt-padat {
+    min-width: 0;
+    white-space: normal;
 }
 
 .tt-tabel .tt-cek {
