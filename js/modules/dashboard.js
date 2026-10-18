@@ -1113,7 +1113,7 @@ function renderRingkasanKelas(list) {
         box.innerHTML = `<p class="text-xs text-slate-400">Belum ada data kelas.</p>`;
         return;
     }
-    box.innerHTML = list.map(k => {
+    const kartuHtml = list.map(k => {
         const pct = k.total > 0 ? Math.round((k.hadir / k.total) * 100) : 0;
         const warna = (k.belum_diisi >= k.total) ? ["text-slate-500", "bg-slate-200"]
             : (pct >= 75 ? ["text-emerald-700", "bg-emerald-500"]
@@ -1133,4 +1133,62 @@ function renderRingkasanKelas(list) {
             <div class="sd-stat" style="flex-wrap:wrap"><div><b>${k.hadir}</b>Hadir</div><div><b>${k.sakit}</b>Sakit</div><div><b>${k.izin}</b>Izin</div><div><b>${k.alpa}</b>Alpa</div><div><b>${k.belum_diisi}</b>Belum diisi</div>${k.perlu_perhatian ? `<div style="background:#fff1f2;color:#e11d48"><b style="color:#e11d48">${k.perlu_perhatian}</b>Perlu perhatian</div>` : ""}</div>
         </div>`;
     }).join("");
+    const jml = { total: 0, hadir: 0, sakit: 0, izin: 0, alpa: 0, belum: 0, perhatian: 0 };
+    const barisHtml = list.map((k, i) => {
+        const pct = k.total > 0 ? Math.round((k.hadir / k.total) * 100) : 0;
+        const warna = (k.belum_diisi >= k.total) ? ["text-slate-500", "bg-slate-200"]
+            : (pct >= 75 ? ["text-emerald-700", "bg-emerald-500"]
+                : (pct >= 40 ? ["text-amber-700", "bg-amber-500"] : ["text-rose-600", "bg-rose-500"]));
+        jml.total += k.total || 0; jml.hadir += k.hadir || 0; jml.sakit += k.sakit || 0;
+        jml.izin += k.izin || 0; jml.alpa += k.alpa || 0; jml.belum += k.belum_diisi || 0; jml.perhatian += k.perlu_perhatian || 0;
+        return `
+            <tr>
+                <td class="tt-no">${i + 1}</td>
+                <th scope="row" class="tt-nama">${escapeHtml(k.nama_kelas)}</th>
+                <td>${escapeHtml(k.wali || "-")}</td>
+                <td class="tt-tengah">${k.total}</td>
+                <td class="tt-tengah">${k.hadir}</td>
+                <td class="tt-tengah">${k.sakit}</td>
+                <td class="tt-tengah">${k.izin}</td>
+                <td class="tt-tengah">${k.alpa}</td>
+                <td class="tt-tengah">${k.belum_diisi}</td>
+                <td class="tt-tengah">${k.perlu_perhatian ? `<span class="font-bold text-rose-600">${k.perlu_perhatian}</span>` : '<span class="text-slate-300">0</span>'}</td>
+                <td class="tt-poin"><span class="font-black ${warna[0]}">${pct}%</span><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1"><div class="h-full ${warna[1]}" style="width:${pct}%"></div></div></td>
+            </tr>`;
+    }).join("");
+    const pctTotal = jml.total > 0 ? Math.round((jml.hadir / jml.total) * 100) : 0;
+    const tabelHtml = `
+        <div class="tt-tabel-wrap tt-tinggi">
+            <table class="tt-tabel">
+                <caption class="sr-only">Ringkasan presensi per kelas hari ini</caption>
+                <thead><tr>
+                    <th scope="col" class="tt-no">No</th>
+                    <th scope="col" class="tt-nama">Kelas</th>
+                    <th scope="col">Wali</th>
+                    <th scope="col" class="tt-tengah">Siswa</th>
+                    <th scope="col" class="tt-tengah">Hadir</th>
+                    <th scope="col" class="tt-tengah">Sakit</th>
+                    <th scope="col" class="tt-tengah">Izin</th>
+                    <th scope="col" class="tt-tengah">Alpa</th>
+                    <th scope="col" class="tt-tengah">Belum diisi</th>
+                    <th scope="col" class="tt-tengah">Perlu perhatian</th>
+                    <th scope="col">% Hadir</th>
+                </tr></thead>
+                <tbody>${barisHtml}</tbody>
+                <tfoot><tr>
+                    <td></td>
+                    <th scope="row" class="tt-nama">Total</th>
+                    <td></td>
+                    <td class="tt-tengah">${jml.total}</td>
+                    <td class="tt-tengah">${jml.hadir}</td>
+                    <td class="tt-tengah">${jml.sakit}</td>
+                    <td class="tt-tengah">${jml.izin}</td>
+                    <td class="tt-tengah">${jml.alpa}</td>
+                    <td class="tt-tengah">${jml.belum}</td>
+                    <td class="tt-tengah">${jml.perhatian}</td>
+                    <td class="tt-tengah">${pctTotal}%</td>
+                </tr></tfoot>
+            </table>
+        </div>`;
+    box.innerHTML = `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>` + tabelHtml;
 }

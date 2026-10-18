@@ -83,10 +83,16 @@ function renderPembinaanView() {
         return;
     }
 
-    container.innerHTML = groups.map(g => {
-        const aktif = g.records.filter(r => pbnSkor(r) > 0).length;
-        const top = pbnStatusTeratas(g.records);
-        const pantau = pbnJadwalTerdekat(g.records);
+    const info = new Map();
+    groups.forEach(g => {
+        info.set(g.siswaId, {
+            aktif: g.records.filter(r => pbnSkor(r) > 0).length,
+            top: pbnStatusTeratas(g.records),
+            pantau: pbnJadwalTerdekat(g.records)
+        });
+    });
+    const kartuHtml = groups.map(g => {
+        const { aktif, top, pantau } = info.get(g.siswaId);
         const ringkasan = `
             <div class="flex flex-wrap items-center gap-1.5 text-xs">
                 <span class="font-bold text-slate-600">${aktif} aktif</span>
@@ -95,6 +101,16 @@ function renderPembinaanView() {
             </div>`;
         return gsRenderCard(g, ringkasan, 'openDetailPembinaan');
     }).join("");
+    const tabelHtml = gsRenderTabel(groups, {
+        aksiDetail: 'openDetailPembinaan',
+        caption: 'Catatan pembinaan per siswa',
+        kolom: [
+            { label: 'Aktif', kelas: 'tt-angka', html: g => info.get(g.siswaId).aktif },
+            { label: 'Status', html: g => { const t = info.get(g.siswaId).top; return `<span class="inline-block font-bold px-2 py-0.5 rounded-md border text-[11px] ${getPembinaanStatusBadge(t.status)}">${escapeHtml(t.status)}</span>`; } },
+            { label: 'Jadwal Pantau', kelas: 'tt-tgl', html: g => { const p = info.get(g.siswaId).pantau; return p ? `<span class="text-amber-700 font-bold">${escapeHtml(p)}</span>` : '<span class="text-slate-300">-</span>'; } }
+        ]
+    });
+    container.innerHTML = `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>` + tabelHtml;
 
     pbnRefreshDetail();
 }

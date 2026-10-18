@@ -282,7 +282,8 @@ function renderKebiasaanSemua(container) {
         id: String(s.id),
         nama: s.nama || "",
         kelas: kelasMap[String(s.kelas_id)] || "",
-        n: sudahPerSiswa[String(s.id)] ? sudahPerSiswa[String(s.id)].size : 0
+        n: sudahPerSiswa[String(s.id)] ? sudahPerSiswa[String(s.id)].size : 0,
+        ids: sudahPerSiswa[String(s.id)] || new Set()
     })).sort((a, b) => (a.n - b.n) || a.nama.localeCompare(b.nama, "id"));
 
     const tuntas = daftar.filter(d => total > 0 && d.n >= total).length;
@@ -324,11 +325,49 @@ function renderKebiasaanSemua(container) {
             </button>`;
     }).join("");
 
+    const kolomHabit = MASTER_KEBIASAAN.map(k => `
+        <th scope="col" class="tt-tengah" title="${escapeHtml(k.nama)}">
+            <span class="inline-flex w-6 h-6 rounded-lg items-center justify-center ${escapeHtml(k.color)}"><i class="fas ${escapeHtml(k.icon)} text-[11px]"></i></span>
+            <span class="block text-[10px] font-bold leading-tight mt-0.5">${escapeHtml(k.nama_singkat || k.nama)}</span>
+        </th>`).join("");
+    const barisTabel = daftar.map((d, i) => {
+        const penuh = total > 0 && d.n >= total;
+        const gayaBadge = penuh ? "bg-emerald-100 text-emerald-700" : (d.n > 0 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-600");
+        const label = penuh ? "Tuntas" : (d.n > 0 ? "Sebagian" : "Belum isi");
+        const sel = MASTER_KEBIASAAN.map(k => d.ids.has(String(k.id))
+            ? `<td class="tt-tengah"><i class="fas fa-check-circle text-emerald-500" aria-hidden="true"></i><span class="sr-only">Sudah</span></td>`
+            : `<td class="tt-tengah"><i class="fas fa-minus text-slate-300" aria-hidden="true"></i><span class="sr-only">Belum</span></td>`).join("");
+        return `
+            <tr class="tt-baris" onclick="pilihSiswaKebiasaan('${escapeHtml(d.id)}')">
+                <td class="tt-no">${i + 1}</td>
+                <th scope="row" class="tt-nama">${escapeHtml(d.nama)}</th>
+                <td>${d.kelas ? escapeHtml(d.kelas) : "Tanpa kelas"}</td>
+                ${sel}
+                <td class="tt-tengah"><span class="inline-block text-[11px] px-2 py-0.5 rounded-full font-extrabold ${gayaBadge}">${d.n}/${total}</span></td>
+                <td><span class="text-[11px] font-bold ${penuh ? "text-emerald-700" : (d.n > 0 ? "text-amber-700" : "text-rose-600")}">${label}</span></td>
+            </tr>`;
+    }).join("");
+    const tabelHtml = `
+        <div class="tt-tabel-wrap tt-tinggi">
+            <table class="tt-tabel">
+                <caption class="sr-only">Kebiasaan semua siswa, ${labelTanggal}</caption>
+                <thead><tr>
+                    <th scope="col" class="tt-no">No</th>
+                    <th scope="col" class="tt-nama">Nama</th>
+                    <th scope="col">Kelas</th>
+                    ${kolomHabit}
+                    <th scope="col" class="tt-tengah">Total</th>
+                    <th scope="col">Status</th>
+                </tr></thead>
+                <tbody>${barisTabel}</tbody>
+            </table>
+        </div>`;
+
     container.innerHTML = `
         <div class="space-y-3">
             ${renderBacaSajaBanner("Ringkasan semua siswa. Pilih siswa untuk melihat detail.")}
             ${ringkasan}
-            ${baris || maskotKosong("Belum ada data siswa.", 96, "kebiasaan")}
+            ${baris ? `<div class="tt-kartu-wrap space-y-2">${baris}</div>${tabelHtml}` : maskotKosong("Belum ada data siswa.", 96, "kebiasaan")}
         </div>`;
 }
 

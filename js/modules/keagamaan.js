@@ -278,12 +278,16 @@ function renderKeagamaanView() {
         return;
     }
 
-    const cardsHtml = urut.map(g => {
-        const gTampil = Object.assign({}, g, { records: tampilMap.get(g.siswaId) });
-        return gsRenderCard(gTampil, kagRingkasanHtml(g.records, kat), 'openDetailKeagamaan');
-    }).join("");
+    const tampilGrup = urut.map(g => Object.assign({}, g, { records: tampilMap.get(g.siswaId) }));
+    const ringkasanMap = new Map(urut.map(g => [g.siswaId, kagRingkasanHtml(g.records, kat)]));
+    const cardsHtml = tampilGrup.map(g => gsRenderCard(g, ringkasanMap.get(g.siswaId), 'openDetailKeagamaan')).join("");
+    const tabelHtml = gsRenderTabel(tampilGrup, {
+        aksiDetail: 'openDetailKeagamaan',
+        caption: 'Catatan keagamaan per siswa',
+        kolom: [{ label: 'Ringkasan', kelas: 'tt-ket', html: g => ringkasanMap.get(g.siswaId) }]
+    });
 
-    container.innerHTML = progressHeaderHtml + cardsHtml;
+    container.innerHTML = progressHeaderHtml + `<div class="tt-kartu-wrap space-y-2">${cardsHtml}</div>` + tabelHtml;
     kagRefreshDetail();
 }
 

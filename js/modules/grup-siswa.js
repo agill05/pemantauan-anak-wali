@@ -93,6 +93,44 @@ function gsRenderCard(g, ringkasanHtml, aksiDetail) {
         </div>`;
 }
 
+function gsRenderTabel(groups, opsi) {
+    const o = opsi || {};
+    const kolom = o.kolom || [];
+    const baris = groups.map((g, i) => {
+        const terakhir = g.records[0] ? g.records[0].tanggal : "";
+        const sid = escapeHtml(g.siswaId);
+        const peran = g.siswa ? renderPeranChip(g.siswa) : "";
+        return `
+            <tr class="tt-baris" onclick="${o.aksiDetail}('${sid}')">
+                <td class="tt-no">${i + 1}</td>
+                <th scope="row" class="tt-nama">${escapeHtml(gsNamaSiswa(g))}${peran ? ` <span class="ml-1">${peran}</span>` : ""}</th>
+                <td>${escapeHtml(gsNamaKelas(g.siswa) || "-")}</td>
+                ${kolom.map(k => `<td class="${k.kelas || ""}">${k.html(g, i)}</td>`).join("")}
+                <td>${gsRenderKontributor(g.records) || '<span class="text-slate-300">-</span>'}</td>
+                <td class="tt-angka">${g.records.length}</td>
+                <td class="tt-tgl">${escapeHtml(terakhir || "-")}</td>
+                <td class="tt-aksi"><button type="button" onclick="event.stopPropagation(); ${o.aksiDetail}('${sid}')" class="text-xs font-bold text-blue-600">Detail <i class="fas fa-chevron-right text-[9px]"></i></button></td>
+            </tr>`;
+    }).join("");
+    return `
+        <div class="tt-tabel-wrap tt-tinggi">
+            <table class="tt-tabel">
+                <caption class="sr-only">${escapeHtml(o.caption || "Catatan per siswa")}</caption>
+                <thead><tr>
+                    <th scope="col" class="tt-no">No</th>
+                    <th scope="col" class="tt-nama">Nama</th>
+                    <th scope="col">Kelas</th>
+                    ${kolom.map(k => `<th scope="col" class="${k.kelas || ""}">${k.label}</th>`).join("")}
+                    <th scope="col">Pencatat</th>
+                    <th scope="col" class="tt-angka">Catatan</th>
+                    <th scope="col">Update</th>
+                    <th scope="col" class="tt-aksi"><span class="sr-only">Aksi</span></th>
+                </tr></thead>
+                <tbody>${baris}</tbody>
+            </table>
+        </div>`;
+}
+
 function gsOpenSheet(g, opsi) {
     const box = document.getElementById("modal-content-box");
     if (!box) return;
