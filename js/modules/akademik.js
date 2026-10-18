@@ -87,6 +87,7 @@ function renderAkademikNilai() {
         ? baseAkademik.filter(item => String(item.siswa_id) === String(filterSiswaId))
         : baseAkademik);
     const bannerBaca = renderReadOnlyBanner('akademik', 'nilai mapel') + akdFilterSemesterHtml();
+    akdPasangGaya();
 
     if (filteredAkademik.length === 0) {
         container.innerHTML = bannerBaca + maskotKosong("Belum ada data nilai mata pelajaran untuk siswa ini.", 96, "akademik");
@@ -113,11 +114,13 @@ function renderAkademikNilai() {
                     ${renderInfoRows([
                         {label:"Siswa",value:escapeHtml(s ? s.nama : 'Siswa') + (luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'),html:true},
                         {label:"Semester",value:item.semester || "-"},
-                        {label:"Tugas",value:akdDaftarNilai(item, "tugas") ? akdDaftarNilai(item, "tugas") + " (rata " + akdFmt(item.rata_tugas) + ")" : ""},
-                        {label:"UH",value:akdDaftarNilai(item, "uh") ? akdDaftarNilai(item, "uh") + " (rata " + akdFmt(item.rata_uh) + ")" : ""},
+                        {label:"Tugas",value:akdChipDaftar(item, "tugas"),html:true},
+                        {label:"Rata-Rata Tugas",value:akdChipDaftar(item, "tugas") ? '<b class="text-slate-900">' + escapeHtml(akdFmt(akdRataItem(item, "tugas"))) + '</b>' : "",html:true},
+                        {label:"UH",value:akdChipDaftar(item, "uh"),html:true},
+                        {label:"Rata-Rata UH",value:akdChipDaftar(item, "uh") ? '<b class="text-slate-900">' + escapeHtml(akdFmt(akdRataItem(item, "uh"))) + '</b>' : "",html:true},
                         {label:"STS",value:akdAngka(item.sts) !== null ? akdFmt(item.sts) : ""},
                         {label:"ASAS",value:akdAngka(item.asas) !== null ? akdFmt(item.asas) : ""},
-                        {label:"Nilai Akhir",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.nilai_akhir)) + '</b>',html:true},
+                        {label:"Nilai Akhir",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.nilai_akhir)) + '</b>' + (akdSementara(item) ? '<span class="akd-sementara">sementara</span>' : ''),html:true},
                         {label:"KKTP",value:'<b class="text-slate-900">' + escapeHtml(akdFmt(item.kktp)) + '</b>',html:true}
                     ])}
                 </div>
@@ -141,64 +144,7 @@ function renderAkademikNilai() {
         `;
     }).join("");
 
-    const kolCek = bulkAktif("akademik");
-    const sel = (item, prefix, rata) => {
-        const d = akdDaftarNilai(item, prefix);
-        return d ? `${escapeHtml(d)} <span class="text-slate-400">(rata ${escapeHtml(akdFmt(rata))})</span>` : '<span class="text-slate-300">-</span>';
-    };
-    const barisHtml = filteredAkademik.map((item, i) => {
-        const sDalam = appState.siswa.find(x => String(x.id) === String(item.siswa_id));
-        const luarPeran = !sDalam && !!item.siswa_nama;
-        const s = sDalam || (luarPeran
-            ? { nama: item.siswa_nama + (item.nama_kelas ? " (" + item.nama_kelas + ")" : "") }
-            : appState.user);
-        const dibawah = Number(item.nilai_akhir) < Number(item.kktp);
-        const badgeColor = dibawah ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200';
-        const bisaUbah = canEditRecord(item, 'akademik');
-        return `
-            <tr>
-                ${kolCek ? `<td class="tt-cek">${bisaUbah ? bulkCheckbox("akademik", item.id) : ""}</td>` : ""}
-                <td class="tt-no">${i + 1}</td>
-                <th scope="row" class="tt-nama">${escapeHtml(s ? s.nama : 'Siswa')}${luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'}</th>
-                <td class="tt-padat">${escapeHtml(item.mapel)}</td>
-                <td>${escapeHtml(item.semester || "-")}</td>
-                <td class="tt-padat">${sel(item, "tugas", item.rata_tugas)}</td>
-                <td class="tt-padat">${sel(item, "uh", item.rata_uh)}</td>
-                <td class="tt-tengah">${akdAngka(item.sts) !== null ? escapeHtml(akdFmt(item.sts)) : "-"}</td>
-                <td class="tt-tengah">${akdAngka(item.asas) !== null ? escapeHtml(akdFmt(item.asas)) : "-"}</td>
-                <td class="tt-tengah"><span class="inline-block text-xs font-black px-2 py-0.5 rounded-lg border ${badgeColor}">${escapeHtml(akdFmt(item.nilai_akhir))} ${dibawah ? '⚠️' : '✅'}</span></td>
-                <td class="tt-tengah">${escapeHtml(akdFmt(item.kktp))}</td>
-                <td class="tt-padat">${escapeHtml(item.dibuat_oleh_nama || "-")}</td>
-                <td class="tt-aksi">${bisaUbah ? `
-                    <span class="tt-aksi-grup">
-                        <button onclick="openModalAkademik('${escapeHtml(item.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit nilai"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteAkademik('${escapeHtml(item.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus nilai"><i class="fas fa-trash"></i></button>
-                    </span>` : ""}</td>
-            </tr>`;
-    }).join("");
-
-    const tabelHtml = `
-        <div class="tt-tabel-wrap tt-tinggi">
-            <table class="tt-tabel">
-                <caption class="sr-only">Nilai mata pelajaran</caption>
-                <thead><tr>
-                    ${kolCek ? '<th scope="col" class="tt-cek"><span class="sr-only">Pilih</span></th>' : ""}
-                    <th scope="col" class="tt-no">No</th>
-                    <th scope="col" class="tt-nama">Siswa</th>
-                    <th scope="col">Mapel</th>
-                    <th scope="col">Semester</th>
-                    <th scope="col">Tugas</th>
-                    <th scope="col">UH</th>
-                    <th scope="col" class="tt-tengah">STS</th>
-                    <th scope="col" class="tt-tengah">ASAS</th>
-                    <th scope="col" class="tt-tengah">Nilai Akhir</th>
-                    <th scope="col" class="tt-tengah">KKTP</th>
-                    <th scope="col">Diinput oleh</th>
-                    <th scope="col" class="tt-aksi">Aksi</th>
-                </tr></thead>
-                <tbody>${barisHtml}</tbody>
-            </table>
-        </div>`;
+    const tabelHtml = akdTabelLeger(filteredAkademik, bulkAktif("akademik"));
 
     container.innerHTML = bannerBaca + bulkToolbar("akademik", idsBisaHapusAkd)
         + `<div class="tt-kartu-wrap space-y-2.5">${kartuHtml}</div>` + tabelHtml;
@@ -293,6 +239,183 @@ function akdDaftarNilai(item, prefix) {
     return akdDaftar(item, prefix).filter(v => v !== null).map(akdFmt).join(", ");
 }
 
+// ===== Tampilan leger: Tugas dan UH dipisah per nomor, lalu Rata-Rata, lalu Nilai Akhir =====
+function akdPasangGaya() {
+    if (document.getElementById("akd-gaya")) return;
+    const st = document.createElement("style");
+    st.id = "akd-gaya";
+    st.textContent = `
+.akd-grup { display: none; margin-bottom: 1.25rem; }
+@media (min-width: 768px) { .akd-grup { display: block; } }
+.akd-grup-judul { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; margin: 0 0 0.5rem; font-size: 0.8125rem; font-weight: 800; color: #1e293b; }
+.akd-grup-judul span { font-size: 0.6875rem; font-weight: 600; color: #64748b; }
+.tt-tabel th.akd-n, .tt-tabel td.akd-n { min-width: 2.75rem; padding-left: 0.35rem; padding-right: 0.35rem; }
+.tt-tabel thead th.akd-band { background: #e2e8f0; }
+.tt-tabel td.akd-rata, .tt-tabel thead th.akd-rata { background: #f1f5f9; font-weight: 800; color: #0f172a; }
+.tt-tabel thead th.akd-rata { background: #e2e8f0; }
+.akd-sementara { display: block; margin-top: 2px; font-size: 0.625rem; font-weight: 700; color: #b45309; }
+.akd-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.akd-chip { display: inline-flex; gap: 0.25rem; padding: 0.125rem 0.375rem; border-radius: 0.5rem; background: #f1f5f9; border: 1px solid #e2e8f0; font-size: 0.6875rem; color: #334155; }
+.akd-chip b { color: #64748b; }
+body.dark .akd-grup-judul { color: #f1f5f9; }
+body.dark .akd-grup-judul span { color: #94a3b8; }
+body.dark .tt-tabel thead th.akd-band, body.dark .tt-tabel thead th.akd-rata { background: #1e293b; color: #e2e8f0; }
+body.dark .tt-tabel td.akd-rata { background: #273449; color: #f1f5f9; }
+body.dark .akd-sementara { color: #fbbf24; }
+body.dark .akd-chip { background: #273449; border-color: #334155; color: #e2e8f0; }
+body.dark .akd-chip b { color: #94a3b8; }
+`;
+    document.head.appendChild(st);
+}
+
+// Info siswa dari satu rekaman nilai (siswa dalam peran, atau di luar peran lewat siswa_nama).
+function akdInfoSiswa(item) {
+    const sDalam = (appState.siswa || []).find(x => String(x.id) === String(item.siswa_id));
+    const luarPeran = !sDalam && !!item.siswa_nama;
+    const s = sDalam || (luarPeran
+        ? { nama: item.siswa_nama + (item.nama_kelas ? " (" + item.nama_kelas + ")" : "") }
+        : appState.user);
+    return { s: s, luarPeran: luarPeran, nama: s ? s.nama : "Siswa" };
+}
+
+// Rata-rata dari daftar nilai rekaman. Cadangan: kolom rata_tugas / rata_uh dari server. null jika tidak ada.
+function akdRataItem(item, jenis) {
+    const h = akdHitungRapor({ tugas: akdDaftar(item, "tugas"), uh: akdDaftar(item, "uh"), sts: "", asas: "" });
+    const v = jenis === "uh" ? h.rata_uh : h.rata_tugas;
+    return v === null ? akdAngka(item["rata_" + jenis]) : v;
+}
+
+// Nilai Akhir sementara: ada nilai komponen tetapi ASAS belum terisi.
+function akdSementara(item) {
+    const ada = akdDaftar(item, "tugas").some(v => v !== null) || akdDaftar(item, "uh").some(v => v !== null)
+        || akdAngka(item.sts) !== null || akdAngka(item.asas) !== null;
+    return ada && akdAngka(item.asas) === null;
+}
+
+// Jumlah kolom nomor yang perlu ditampilkan = nomor terakhir yang terisi di antara semua baris. Minimal 1.
+function akdMaksKolom(rows, jenis) {
+    let m = 0;
+    rows.forEach(r => {
+        const d = akdDaftar(r, jenis);
+        let n = d.length;
+        while (n > 0 && d[n - 1] === null) n--;
+        m = Math.max(m, n);
+    });
+    return Math.max(m, 1);
+}
+
+// Chip nilai untuk kartu HP: T1 80, T2 85, T3 -. Kosong jika belum ada nilai.
+function akdChipDaftar(item, jenis) {
+    const d = akdDaftar(item, jenis);
+    while (d.length && d[d.length - 1] === null) d.pop();
+    if (!d.length) return "";
+    const kode = jenis === "uh" ? "UH" : "T";
+    return `<span class="akd-chips">${d.map((v, i) =>
+        `<span class="akd-chip"><b>${kode}${i + 1}</b> ${v === null ? "-" : escapeHtml(akdFmt(v))}</span>`).join("")}</span>`;
+}
+
+// Sel angka tabel leger. null = belum diisi ("-"). 0 tetap tampil "0".
+function akdSelAngka(v, kelas) {
+    return `<td class="tt-tengah ${kelas || ""}">${v === null || v === undefined ? '<span class="text-slate-300">-</span>' : escapeHtml(akdFmt(v))}</td>`;
+}
+
+// Tabel leger per kelompok. Satu siswa saja: kelompok per semester, baris = mapel.
+// Banyak siswa: kelompok per mapel + semester, baris = siswa. Jumlah kolom Tugas/UH mengikuti kelompoknya sendiri.
+function akdTabelLeger(list, kolCek) {
+    const modeSiswa = new Set(list.map(r => String(r.siswa_id))).size === 1;
+    const banding = (a, b) => String(a).localeCompare(String(b), "id", { sensitivity: "base", numeric: true });
+    const idxMapel = m => { const i = DAFTAR_MAPEL.indexOf(String(m || "").trim()); return i === -1 ? 999 : i; };
+
+    const grup = new Map();
+    list.forEach(r => {
+        const kunci = (modeSiswa ? "" : String(r.mapel || "").trim().toLowerCase()) + "|" + (r.semester || "");
+        if (!grup.has(kunci)) grup.set(kunci, []);
+        grup.get(kunci).push(r);
+    });
+    const daftarGrup = [...grup.values()].sort((a, b) => modeSiswa
+        ? banding(a[0].semester || "", b[0].semester || "")
+        : (idxMapel(a[0].mapel) - idxMapel(b[0].mapel)) || banding(a[0].mapel, b[0].mapel) || banding(a[0].semester || "", b[0].semester || ""));
+
+    return daftarGrup.map(g => {
+        const rows = [...g].sort((a, b) => modeSiswa
+            ? (idxMapel(a.mapel) - idxMapel(b.mapel)) || banding(a.mapel, b.mapel)
+            : banding(akdInfoSiswa(a).nama, akdInfoSiswa(b).nama));
+        const nT = akdMaksKolom(rows, "tugas");
+        const nU = akdMaksKolom(rows, "uh");
+        const smtLabel = rows[0].semester ? "Semester " + rows[0].semester : "Tanpa semester";
+        const judul = modeSiswa ? smtLabel : String(rows[0].mapel || "");
+        const sub = modeSiswa
+            ? akdInfoSiswa(rows[0]).nama + " \u00B7 " + rows.length + " mapel"
+            : smtLabel + " \u00B7 " + rows.length + " siswa";
+
+        const th2 = (t, kelas) => `<th scope="col" rowspan="2" class="${kelas || ""}">${t}</th>`;
+        const subHead = (kode, jenis, n) => Array.from({ length: n }, (_, i) =>
+            `<th scope="col" class="akd-n" title="${akdLabelKomponen(jenis, i + 1)}"><span aria-hidden="true">${kode}${i + 1}</span><span class="sr-only">${akdLabelKomponen(jenis, i + 1)}</span></th>`).join("");
+
+        const body = rows.map((item, i) => {
+            const inf = akdInfoSiswa(item);
+            const dibawah = Number(item.nilai_akhir) < Number(item.kktp);
+            const badgeColor = dibawah ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200';
+            const bisaUbah = canEditRecord(item, 'akademik');
+            const dT = akdDaftar(item, "tugas"), dU = akdDaftar(item, "uh");
+            const selT = Array.from({ length: nT }, (_, k) => akdSelAngka(k < dT.length ? dT[k] : null, "akd-n")).join("");
+            const selU = Array.from({ length: nU }, (_, k) => akdSelAngka(k < dU.length ? dU[k] : null, "akd-n")).join("");
+            const namaSel = modeSiswa
+                ? escapeHtml(item.mapel)
+                : escapeHtml(inf.nama) + (inf.luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(inf.s) + '</span>');
+            return `
+            <tr>
+                ${kolCek ? `<td class="tt-cek">${bisaUbah ? bulkCheckbox("akademik", item.id) : ""}</td>` : ""}
+                <td class="tt-no">${i + 1}</td>
+                <th scope="row" class="tt-nama">${namaSel}</th>
+                ${selT}
+                ${akdSelAngka(akdRataItem(item, "tugas"), "akd-rata")}
+                ${selU}
+                ${akdSelAngka(akdRataItem(item, "uh"), "akd-rata")}
+                ${akdSelAngka(akdAngka(item.sts))}
+                ${akdSelAngka(akdAngka(item.asas))}
+                <td class="tt-tengah"><span class="inline-block text-xs font-black px-2 py-0.5 rounded-lg border ${badgeColor}">${escapeHtml(akdFmt(item.nilai_akhir))} ${dibawah ? '\u26A0\uFE0F' : '\u2705'}</span>${akdSementara(item) ? '<span class="akd-sementara">sementara</span>' : ''}</td>
+                <td class="tt-tengah">${escapeHtml(akdFmt(item.kktp))}</td>
+                <td class="tt-padat">${escapeHtml(item.dibuat_oleh_nama || "-")}</td>
+                <td class="tt-aksi">${bisaUbah ? `
+                    <span class="tt-aksi-grup">
+                        <button onclick="openModalAkademik('${escapeHtml(item.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit nilai"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteAkademik('${escapeHtml(item.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus nilai"><i class="fas fa-trash"></i></button>
+                    </span>` : ""}</td>
+            </tr>`;
+        }).join("");
+
+        return `
+        <section class="akd-grup" aria-label="${escapeHtml(judul)}">
+            <h4 class="akd-grup-judul">${escapeHtml(judul)}<span>${escapeHtml(sub)}</span></h4>
+            <div class="tt-tabel-wrap tt-tinggi">
+                <table class="tt-tabel">
+                    <caption class="sr-only">Nilai ${escapeHtml(judul)}, ${escapeHtml(sub)}</caption>
+                    <thead>
+                        <tr>
+                            ${kolCek ? '<th scope="col" rowspan="2" class="tt-cek"><span class="sr-only">Pilih</span></th>' : ""}
+                            ${th2("No", "tt-no")}
+                            ${th2(modeSiswa ? "Mapel" : "Siswa", "tt-nama")}
+                            <th scope="colgroup" colspan="${nT}" class="akd-band">Tugas</th>
+                            ${th2("Rata-Rata Tugas", "akd-rata")}
+                            <th scope="colgroup" colspan="${nU}" class="akd-band">UH</th>
+                            ${th2("Rata-Rata UH", "akd-rata")}
+                            ${th2("STS", "tt-tengah")}
+                            ${th2("ASAS", "tt-tengah")}
+                            ${th2("Nilai Akhir", "tt-tengah")}
+                            ${th2("KKTP", "tt-tengah")}
+                            ${th2("Diinput oleh")}
+                            ${th2("Aksi", "tt-aksi")}
+                        </tr>
+                        <tr>${subHead("T", "tugas", nT)}${subHead("UH", "uh", nU)}</tr>
+                    </thead>
+                    <tbody>${body}</tbody>
+                </table>
+            </div>
+        </section>`;
+    }).join("");
+}
+
 // Kumpulkan nilai dari form: { tugas: [..], uh: [..], sts, asas }. Urutan = urutan kotak.
 function akdBacaForm() {
     const komp = { tugas: [], uh: [], sts: "", asas: "" };
@@ -314,7 +437,7 @@ function akdUpdatePreview() {
     el.className = "rounded-xl border px-3 py-2 text-xs " + (nilai === null ? "bg-slate-50 border-slate-200 text-slate-500" : (bawah ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"));
     el.innerHTML = nilai === null
         ? "Nilai rapor muncul setelah ada nilai terisi."
-        : `<b>Nilai Rapor: ${akdFmt(nilai)}</b> ${bawah ? "(di bawah KKTP)" : "(tuntas)"}<br><span class="opacity-80">Rata Tugas ${akdFmt(h.rata_tugas)} &bull; Rata UH ${akdFmt(h.rata_uh)} &bull; STS ${akdFmt(komp.sts)} &bull; ASAS ${akdFmt(komp.asas)}</span>`;
+        : `<b>Nilai Rapor: ${akdFmt(nilai)}</b> ${bawah ? "(di bawah KKTP)" : "(tuntas)"}<br><span class="opacity-80">Rata-Rata Tugas ${akdFmt(h.rata_tugas)} &bull; Rata-Rata UH ${akdFmt(h.rata_uh)} &bull; STS ${akdFmt(komp.sts)} &bull; ASAS ${akdFmt(komp.asas)}${h.nilai_akhir !== null && akdAngka(komp.asas) === null ? " (sementara, ASAS belum diisi)" : ""}</span>`;
 }
 
 function akdKotakDaftarHtml(jenis, idx, nilai) {
@@ -1081,17 +1204,24 @@ function cetakPDFAkademik() {
         return;
     }
 
+    const daftarPdf = (item, jenis) => {
+        const d = akdDaftar(item, jenis);
+        while (d.length && d[d.length - 1] === null) d.pop();
+        return d.length ? d.map(v => v === null ? "-" : akdFmt(v)).join(", ") : "-";
+    };
     const nilaiRowsHtml = filteredAkademik.length > 0 ? filteredAkademik.map((item, idx) => {
         const isBelowKKTP = Number(item.nilai_akhir) < Number(item.kktp);
-        const statusText = isBelowKKTP ? 'Belum Tuntas' : 'Tuntas';
+        const statusText = (isBelowKKTP ? 'Belum Tuntas' : 'Tuntas') + (akdSementara(item) ? ' (sementara)' : '');
         const td = (v, extra = '') => `<td style="padding: 6px 4px; text-align: center; ${extra}">${escapeHtml(String(v))}</td>`;
         return `
             <tr>
                 ${td(idx + 1)}
                 <td style="padding: 6px 8px; text-align: center; font-weight: bold;">${escapeHtml(item.mapel)}</td>
                 ${td(item.semester || '-')}
-                ${td(akdFmt(item.rata_tugas))}
-                ${td(akdFmt(item.rata_uh))}
+                ${td(daftarPdf(item, "tugas"))}
+                ${td(akdFmt(akdRataItem(item, "tugas")), 'font-weight: bold;')}
+                ${td(daftarPdf(item, "uh"))}
+                ${td(akdFmt(akdRataItem(item, "uh")), 'font-weight: bold;')}
                 ${td(akdFmt(item.sts))}
                 ${td(akdFmt(item.asas))}
                 ${td(akdFmt(item.nilai_akhir), 'font-weight: bold;')}
@@ -1099,7 +1229,7 @@ function cetakPDFAkademik() {
                 ${td(statusText, `font-weight: bold; color: ${isBelowKKTP ? '#dc2626' : '#16a34a'};`)}
             </tr>
         `;
-    }).join('') : `<tr><td colspan="10" style="padding: 10px; text-align: center; color: #64748b;">Belum ada data nilai mapel.</td></tr>`;
+    }).join('') : `<tr><td colspan="12" style="padding: 10px; text-align: center; color: #64748b;">Belum ada data nilai mapel.</td></tr>`;
 
     const prestasiRowsHtml = filteredPrestasi.length > 0 ? filteredPrestasi.map((item, idx) => `
         <tr>
@@ -1113,20 +1243,22 @@ function cetakPDFAkademik() {
     const contentHtml = `
         ${pdfInfoBlock([{label: "Nama Siswa", value: siswa ? siswa.nama : "-"}, {label: "Kelas", value: kls ? kls.nama_kelas : "-"}])}
 
-        <h4 style="font-size: 12px; margin: 0 0 6px 0; text-decoration: underline;">A. Transkrip Nilai Mapel (Tugas, UH, STS, ASAS, Nilai Rapor)</h4>
+        <h4 style="font-size: 12px; margin: 0 0 6px 0; text-decoration: underline;">A. Transkrip Nilai Mapel (Nilai Tugas, Nilai UH, STS, ASAS, Nilai Rapor)</h4>
         <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 16px;" border="1" borderColor="#94a3b8">
             <thead>
                 <tr style="background-color: #f1f5f9; text-align: center; font-weight: bold;">
                     <th style="padding: 8px 3px; width: 24px;">No</th>
                     <th style="padding: 8px 5px; text-align: center;">Mata Pelajaran</th>
                     <th style="padding: 8px 3px; width: 46px;">Smt</th>
-                    <th style="padding: 8px 3px; width: 44px;">Rata Tugas</th>
-                    <th style="padding: 8px 3px; width: 44px;">Rata UH</th>
+                    <th style="padding: 8px 5px; text-align: center;">Nilai Tugas</th>
+                    <th style="padding: 8px 3px; width: 50px;">Rata-Rata Tugas</th>
+                    <th style="padding: 8px 5px; text-align: center;">Nilai UH</th>
+                    <th style="padding: 8px 3px; width: 50px;">Rata-Rata UH</th>
                     <th style="padding: 8px 3px; width: 36px;">STS</th>
                     <th style="padding: 8px 3px; width: 36px;">ASAS</th>
                     <th style="padding: 8px 3px; width: 46px;">Nilai Rapor</th>
                     <th style="padding: 8px 3px; width: 36px;">KKTP</th>
-                    <th style="padding: 8px 3px; width: 70px;">Evaluasi</th>
+                    <th style="padding: 8px 3px; width: 80px;">Evaluasi</th>
                 </tr>
             </thead>
             <tbody>${nilaiRowsHtml}</tbody>
@@ -1149,6 +1281,7 @@ function cetakPDFAkademik() {
     exportFeaturePDF(
         "TRANSKRIP NILAI & CATATAN PRESTASI SISWA",
         contentHtml,
-        `Transkrip_Akademik_${siswa ? siswa.nama.replace(/\s+/g, '_') : filterSiswaId}_${getDateWITA()}.pdf`
+        `Transkrip_Akademik_${siswa ? siswa.nama.replace(/\s+/g, '_') : filterSiswaId}_${getDateWITA()}.pdf`,
+        { orientation: "landscape" }
     );
 }
