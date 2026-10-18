@@ -4227,7 +4227,7 @@ body.dark .swal2-popup table th { border-color: #475569 !important; }
     }
 
     .tt-tabel-wrap.tt-tinggi .tt-tabel thead th {
-        top: var(--tt-sticky-top, 4rem);
+        top: var(--tt-sticky-top, var(--header-h, 4rem));
     }
 }
 
