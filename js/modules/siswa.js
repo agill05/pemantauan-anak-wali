@@ -642,11 +642,39 @@ function renderSiswaView() {
     }
 
     const idsBisaHapus = isAdminUser() ? filtered.filter(s => canWrite('siswa', s)).map(s => String(s.id)) : [];
-    container.innerHTML = renderReadOnlyBanner('siswa', 'data siswa') + bulkToolbar("siswa", idsBisaHapus) + filtered.map(s => {
-        const kls = appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null;
-        const bisaUbahSiswa = canWrite('siswa', s);
+    const tampilMentor = isBacaSemuaUser();
+    const kolCek = isAdminUser() && bulkAktif("siswa");
+    const kolPeran = getPeranAktif() === "semua";
+    const namaMentor = s => {
+        const mid = String(s.mentor_id || "").trim();
+        if (!mid) return "-";
+        const g = (appState.guru || []).find(x => String(x.id) === mid);
+        return g ? g.nama : "-";
+    };
+    const data = filtered.map(s => ({
+        s,
+        kls: appState.kelas ? appState.kelas.find(k => String(k.id) === String(s.kelas_id)) : null,
+        bisaUbah: canWrite('siswa', s)
+    }));
+    const aksiHtml = (s, bisaUbahSiswa, kelasTombol) => `
+        <button onclick="event.stopPropagation(); openProfilSiswa('${escapeHtml(s.id)}')" aria-label="Lihat profil siswa" class="${kelasTombol} bg-blue-50 text-blue-600 rounded-lg text-xs">
+            <i class="fas fa-eye"></i>
+        </button>
+        <button onclick="event.stopPropagation(); hubungiOrtu('${escapeHtml(s.id)}')" aria-label="Hubungi orang tua lewat WhatsApp" class="${kelasTombol} bg-emerald-50 text-emerald-600 rounded-lg text-xs">
+            <i class="fab fa-whatsapp"></i>
+        </button>
+        ${bisaUbahSiswa ? `
+        <button onclick="event.stopPropagation(); openModalKartu('${escapeHtml(s.id)}')" aria-label="Cetak kartu akun siswa" class="${kelasTombol} bg-indigo-50 text-indigo-600 rounded-lg text-xs">
+            <i class="fas fa-id-card"></i>
+        </button>
+        <button onclick="event.stopPropagation(); openModalSiswa('${escapeHtml(s.id)}')" aria-label="Edit data siswa" class="${kelasTombol} bg-slate-100 text-slate-600 rounded-lg text-xs">
+            <i class="fas fa-edit"></i>
+        </button>
+        <button onclick="event.stopPropagation(); deleteSiswa('${escapeHtml(s.id)}')" aria-label="Hapus siswa" class="${kelasTombol} bg-rose-50 text-rose-600 rounded-lg text-xs">
+            <i class="fas fa-trash"></i>
+        </button>` : ''}`;
 
-        return `
+    const kartuHtml = data.map(({ s, kls, bisaUbah: bisaUbahSiswa }) => `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
                     ${bisaUbahSiswa && isAdminUser() ? bulkCheckbox("siswa", s.id) : ""}
@@ -656,27 +684,46 @@ function renderSiswaView() {
                         ${renderInfoRows([{label:"NISN",value:s.nisn || "-"},{label:"Kelas",value:kls ? kls.nama_kelas : "-"}])}
                     </div>
                 </div>
-                <div class="flex items-center gap-1.5">
-                    <button onclick="openProfilSiswa('${escapeHtml(s.id)}')" aria-label="Lihat profil siswa" class="touch-btn bg-blue-50 text-blue-600 rounded-lg text-xs">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button onclick="hubungiOrtu('${escapeHtml(s.id)}')" aria-label="Hubungi orang tua lewat WhatsApp" class="touch-btn bg-emerald-50 text-emerald-600 rounded-lg text-xs">
-                        <i class="fab fa-whatsapp"></i>
-                    </button>
-                    ${bisaUbahSiswa ? `
-                    <button onclick="openModalKartu('${escapeHtml(s.id)}')" aria-label="Cetak kartu akun siswa" class="touch-btn bg-indigo-50 text-indigo-600 rounded-lg text-xs">
-                        <i class="fas fa-id-card"></i>
-                    </button>
-                    <button onclick="openModalSiswa('${escapeHtml(s.id)}')" aria-label="Edit data siswa" class="touch-btn bg-slate-100 text-slate-600 rounded-lg text-xs">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteSiswa('${escapeHtml(s.id)}')" aria-label="Hapus siswa" class="touch-btn bg-rose-50 text-rose-600 rounded-lg text-xs">
-                        <i class="fas fa-trash"></i>
-                    </button>` : ''}
-                </div>
-            </div>
-        `;
-    }).join("");
+                <div class="flex items-center gap-1.5">${aksiHtml(s, bisaUbahSiswa, "touch-btn")}</div>
+            </div>`).join("");
+
+    const barisHtml = data.map(({ s, kls, bisaUbah: bisaUbahSiswa }, i) => `
+            <tr class="tt-baris" onclick="openProfilSiswa('${escapeHtml(s.id)}')">
+                ${kolCek ? `<td class="tt-cek" onclick="event.stopPropagation()">${bisaUbahSiswa ? bulkCheckbox("siswa", s.id) : ""}</td>` : ""}
+                <td class="tt-no">${i + 1}</td>
+                <th scope="row" class="tt-nama">
+                    <span class="tt-orang">
+                        <img src="${escapeHtml(s.foto || getInitialsAvatar(s.nama))}" alt="" class="tt-foto" loading="lazy">
+                        <span>${escapeHtml(s.nama)}</span>
+                    </span>
+                </th>
+                <td class="tt-tgl">${escapeHtml(s.nisn || "-")}</td>
+                <td>${escapeHtml(kls ? kls.nama_kelas : "-")}</td>
+                ${kolPeran ? `<td>${renderPeranChip(s) || '<span class="text-slate-300">-</span>'}</td>` : ""}
+                ${tampilMentor ? `<td>${escapeHtml(namaMentor(s))}</td>` : ""}
+                <td class="tt-aksi"><span class="tt-aksi-grup">${aksiHtml(s, bisaUbahSiswa, "p-2")}</span></td>
+            </tr>`).join("");
+
+    const tabelHtml = `
+        <div class="tt-tabel-wrap tt-tinggi">
+            <table class="tt-tabel">
+                <caption class="sr-only">Daftar siswa</caption>
+                <thead><tr>
+                    ${kolCek ? '<th scope="col" class="tt-cek"><span class="sr-only">Pilih</span></th>' : ""}
+                    <th scope="col" class="tt-no">No</th>
+                    <th scope="col" class="tt-nama">Nama</th>
+                    <th scope="col">NISN</th>
+                    <th scope="col">Kelas</th>
+                    ${kolPeran ? '<th scope="col">Peran</th>' : ""}
+                    ${tampilMentor ? '<th scope="col">Mentor</th>' : ""}
+                    <th scope="col" class="tt-aksi">Aksi</th>
+                </tr></thead>
+                <tbody>${barisHtml}</tbody>
+            </table>
+        </div>`;
+
+    container.innerHTML = renderReadOnlyBanner('siswa', 'data siswa') + bulkToolbar("siswa", idsBisaHapus)
+        + `<div class="tt-kartu-wrap space-y-2.5">${kartuHtml}</div>` + tabelHtml;
 }
 
 function openModalSiswa(id = null) {

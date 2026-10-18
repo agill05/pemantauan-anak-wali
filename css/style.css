@@ -4210,3 +4210,44 @@ body.dark .quick-tile-chevron { color: #64748b; }
 /* tabel di dalam popup (rekap presensi dll.) */
 body.dark .swal2-popup table td,
 body.dark .swal2-popup table th { border-color: #475569 !important; }
+
+/* Tabel data layar laptop (Siswa, Presensi, Akademik). Memakai dasar .tt-tabel di atas. */
+@media (min-width: 768px) {
+    .tt-tabel-wrap.tt-tinggi {
+        max-height: calc(100vh - 15rem);
+        overflow: auto;
+    }
+}
+
+.tt-tabel .tt-cek {
+    width: 2rem;
+    padding-right: 0;
+}
+
+.tt-tabel .tt-cek input {
+    margin: 0;
+}
+
+.tt-tabel .tt-orang {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tt-tabel .tt-foto {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    object-fit: cover;
+    border: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.tt-tabel .tt-aksi-grup {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+.tt-tabel td.tt-ket {
+    white-space: normal;
+}

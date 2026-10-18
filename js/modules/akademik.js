@@ -94,7 +94,7 @@ function renderAkademikNilai() {
     }
 
     const idsBisaHapusAkd = filteredAkademik.filter(item => canEditRecord(item, 'akademik')).map(item => String(item.id));
-    container.innerHTML = bannerBaca + bulkToolbar("akademik", idsBisaHapusAkd) + filteredAkademik.map(item => {
+    const kartuHtml = filteredAkademik.map(item => {
         const sDalam = appState.siswa.find(x => String(x.id) === String(item.siswa_id));
         const luarPeran = !sDalam && !!item.siswa_nama;
         const s = sDalam || (luarPeran
@@ -140,6 +140,68 @@ function renderAkademikNilai() {
         </div>
         `;
     }).join("");
+
+    const kolCek = bulkAktif("akademik");
+    const sel = (item, prefix, rata) => {
+        const d = akdDaftarNilai(item, prefix);
+        return d ? `${escapeHtml(d)} <span class="text-slate-400">(rata ${escapeHtml(akdFmt(rata))})</span>` : '<span class="text-slate-300">-</span>';
+    };
+    const barisHtml = filteredAkademik.map((item, i) => {
+        const sDalam = appState.siswa.find(x => String(x.id) === String(item.siswa_id));
+        const luarPeran = !sDalam && !!item.siswa_nama;
+        const s = sDalam || (luarPeran
+            ? { nama: item.siswa_nama + (item.nama_kelas ? " (" + item.nama_kelas + ")" : "") }
+            : appState.user);
+        const dibawah = Number(item.nilai_akhir) < Number(item.kktp);
+        const badgeColor = dibawah ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200';
+        const bisaUbah = canEditRecord(item, 'akademik');
+        return `
+            <tr>
+                ${kolCek ? `<td class="tt-cek">${bisaUbah ? bulkCheckbox("akademik", item.id) : ""}</td>` : ""}
+                <td class="tt-no">${i + 1}</td>
+                <th scope="row" class="tt-nama">${escapeHtml(s ? s.nama : 'Siswa')}${luarPeran ? '' : ' <span class="ml-1">' + renderPeranChip(s) + '</span>'}</th>
+                <td class="tt-butir">${escapeHtml(item.mapel)}</td>
+                <td>${escapeHtml(item.semester || "-")}</td>
+                <td class="tt-ket">${sel(item, "tugas", item.rata_tugas)}</td>
+                <td class="tt-ket">${sel(item, "uh", item.rata_uh)}</td>
+                <td class="tt-tengah">${akdAngka(item.sts) !== null ? escapeHtml(akdFmt(item.sts)) : "-"}</td>
+                <td class="tt-tengah">${akdAngka(item.asas) !== null ? escapeHtml(akdFmt(item.asas)) : "-"}</td>
+                <td class="tt-tengah"><span class="inline-block text-xs font-black px-2 py-0.5 rounded-lg border ${badgeColor}">${escapeHtml(akdFmt(item.nilai_akhir))} ${dibawah ? '⚠️' : '✅'}</span></td>
+                <td class="tt-tengah">${escapeHtml(akdFmt(item.kktp))}</td>
+                <td class="tt-ket">${escapeHtml(item.dibuat_oleh_nama || "-")}</td>
+                <td class="tt-aksi">${bisaUbah ? `
+                    <span class="tt-aksi-grup">
+                        <button onclick="openModalAkademik('${escapeHtml(item.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit nilai"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteAkademik('${escapeHtml(item.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus nilai"><i class="fas fa-trash"></i></button>
+                    </span>` : ""}</td>
+            </tr>`;
+    }).join("");
+
+    const tabelHtml = `
+        <div class="tt-tabel-wrap tt-tinggi">
+            <table class="tt-tabel">
+                <caption class="sr-only">Nilai mata pelajaran</caption>
+                <thead><tr>
+                    ${kolCek ? '<th scope="col" class="tt-cek"><span class="sr-only">Pilih</span></th>' : ""}
+                    <th scope="col" class="tt-no">No</th>
+                    <th scope="col" class="tt-nama">Siswa</th>
+                    <th scope="col">Mapel</th>
+                    <th scope="col">Semester</th>
+                    <th scope="col">Tugas</th>
+                    <th scope="col">UH</th>
+                    <th scope="col" class="tt-tengah">STS</th>
+                    <th scope="col" class="tt-tengah">ASAS</th>
+                    <th scope="col" class="tt-tengah">Nilai Akhir</th>
+                    <th scope="col" class="tt-tengah">KKTP</th>
+                    <th scope="col">Diinput oleh</th>
+                    <th scope="col" class="tt-aksi">Aksi</th>
+                </tr></thead>
+                <tbody>${barisHtml}</tbody>
+            </table>
+        </div>`;
+
+    container.innerHTML = bannerBaca + bulkToolbar("akademik", idsBisaHapusAkd)
+        + `<div class="tt-kartu-wrap space-y-2.5">${kartuHtml}</div>` + tabelHtml;
 }
 
 const AKD_MAKS_DAFTAR = 25;

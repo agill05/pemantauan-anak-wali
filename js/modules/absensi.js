@@ -144,6 +144,79 @@ function renderAbsensiTabs(info) {
     return `<div class="flex gap-1 bg-slate-100 p-1 rounded-xl">${btn('kelas', 'Presensi Kelas', 'fa-chalkboard-teacher')}${btn('binaan', 'Presensi Binaan', 'fa-user-friends')}</div>`;
 }
 
+const ABSENSI_MQ = (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(min-width: 768px)') : null;
+
+function absensiModeTabel() {
+    return !!(ABSENSI_MQ && ABSENSI_MQ.matches);
+}
+
+function absensiTabelHtml(o) {
+    const { list, tab, isBinaan, rowEditable, isEditable, editableCount } = o;
+    const admin = isBacaSemuaUser();
+    const kolKelas = isBinaan || admin;
+    const kolMentor = isBinaan && admin;
+    const opt = (rec, v, label) => `<option value="${v}" ${rec.status === v ? 'selected' : ''}>${label} (${v})</option>`;
+    const baris = list.map((s, i) => {
+        const rec = absensiRec(tab, s.id);
+        const editRow = rowEditable(s);
+        const peran = isBinaan ? '' : renderPeranChip(s);
+        return `
+            <tr>
+                <td class="tt-no">${i + 1}</td>
+                <th scope="row" class="tt-nama">${escapeHtml(s.nama)}${peran ? ` <span class="ml-1">${peran}</span>` : ''}</th>
+                ${kolKelas ? `<td>${escapeHtml(absensiNamaKelas(s.kelas_id))}</td>` : ''}
+                ${kolMentor ? `<td>${escapeHtml(absensiNamaMentor(s.mentor_id))}</td>` : ''}
+                <td class="tt-tgl"><i class="far fa-clock mr-1 text-slate-400"></i>${rec.waktu ? formatDisplayTime(rec.waktu) : 'Belum Absen'}</td>
+                <td>
+                    <select onchange="updateLiveAbsensiStats()" data-siswa-id="${s.id}" ${editRow ? '' : 'disabled'} aria-label="Status presensi ${escapeHtml(s.nama)}" class="absensi-select-item bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
+                        <option value="" ${rec.status === '' ? 'selected' : ''}>Belum diisi</option>${opt(rec, 'H', 'Hadir')}${opt(rec, 'I', 'Izin')}${opt(rec, 'S', 'Sakit')}${opt(rec, 'A', 'Alpa')}${opt(rec, 'T', 'Terlambat')}
+                    </select>
+                </td>
+            </tr>`;
+    }).join('');
+    const simpanAtas = isEditable ? `
+        <div class="flex justify-end mb-2">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition flex items-center gap-2">
+                <i class="fas fa-save"></i> Simpan Semua Presensi ${isBinaan ? 'Binaan ' : ''}(${editableCount} Siswa)
+            </button>
+        </div>` : '';
+    return `
+        ${simpanAtas}
+        <div class="tt-tabel-wrap">
+            <table class="tt-tabel">
+                <caption class="sr-only">Presensi ${isBinaan ? 'binaan' : 'kelas'}</caption>
+                <thead><tr>
+                    <th scope="col" class="tt-no">No</th>
+                    <th scope="col" class="tt-nama">Nama</th>
+                    ${kolKelas ? '<th scope="col">Kelas</th>' : ''}
+                    ${kolMentor ? '<th scope="col">Mentor</th>' : ''}
+                    <th scope="col">Waktu Absen</th>
+                    <th scope="col">Status</th>
+                </tr></thead>
+                <tbody>${baris}</tbody>
+            </table>
+        </div>`;
+}
+
+function absensiRerenderUkuran() {
+    const view = document.getElementById('view-absensi');
+    if (!view || !view.classList.contains('active')) return;
+    if (!document.getElementById('absensi-list-container')) return;
+    const nilai = {};
+    document.querySelectorAll('.absensi-select-item').forEach(sel => { nilai[sel.dataset.siswaId] = sel.value; });
+    renderAbsensiView();
+    document.querySelectorAll('.absensi-select-item:not([disabled])').forEach(sel => {
+        const v = nilai[sel.dataset.siswaId];
+        if (v !== undefined) sel.value = v;
+    });
+    updateLiveAbsensiStats();
+}
+
+if (ABSENSI_MQ) {
+    if (ABSENSI_MQ.addEventListener) ABSENSI_MQ.addEventListener('change', absensiRerenderUkuran);
+    else if (ABSENSI_MQ.addListener) ABSENSI_MQ.addListener(absensiRerenderUkuran);
+}
+
 function renderAbsensiView() {
     const container = document.getElementById("absensi-list-container");
     if (!container) return;
@@ -254,7 +327,8 @@ function renderAbsensiView() {
             </div>
         </div>` : '';
 
-    const rowsHtml = filteredSiswa.map(s => {
+    const modeTabel = absensiModeTabel();
+    const rowsHtml = modeTabel ? absensiTabelHtml({ list: filteredSiswa, tab, isBinaan, rowEditable, isEditable, editableCount }) : filteredSiswa.map(s => {
         const rec = absensiRec(tab, s.id);
         const editRow = rowEditable(s);
         const chip = isBinaan
