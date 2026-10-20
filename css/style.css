@@ -4389,3 +4389,59 @@ table th[scope="col"],
 #arsip-lihat-tabel thead th.tt-kiri {
     text-align: left;
 }
+
+/* ==========================================================================
+   FIX HEADER MOBILE (v152)
+   Masalah: pada HP dengan lebar efektif sempit / ukuran font-tampilan besar,
+   "overflow-wrap:anywhere" membuat min-content kolom teks header = 1 huruf,
+   sehingga flex (min-w-0 flex-1) menciutkan kolom nama sampai 1 huruf per baris.
+   Solusi: pakai break-word (hanya pecah kata bila tidak muat), beri lebar minimum
+   kolom teks, kecilkan tombol, sembunyikan tombol refresh di layar sempit,
+   dan batasi tinggi teks dengan line-clamp.
+   ========================================================================== */
+@media (max-width: 1023px) {
+    #header-greeting,
+    #header-title,
+    #header-subtitle {
+        overflow-wrap: break-word;
+        word-break: normal;
+        hyphens: none;
+    }
+
+    #header-title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+    }
+
+    #header-greeting,
+    #header-subtitle {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+    }
+
+    /* kolom teks tidak boleh lebih sempit dari ~7rem */
+    #header-default > div:first-child > div:last-child {
+        min-width: 7rem;
+    }
+
+    /* grup kiri (burger + avatar) hemat ruang */
+    #header-default { padding-left: 0.5rem; padding-right: 0.5rem; gap: 0.25rem; }
+    #header-default > div:first-child { gap: 0.375rem; }
+    #header-mobile-avatar { width: 2.25rem; height: 2.25rem; }
+
+    /* grup kanan: tombol lebih ramping */
+    #header-default > div:last-child { gap: 0; }
+    #main-header .touch-btn { min-width: 36px; min-height: 40px; }
+    #btn-notif-header { padding: 0.5rem 0.375rem; }
+}
+
+@media (max-width: 479px) {
+    /* tombol refresh dipindah ke pull/refresh lain; sembunyikan agar nama muat */
+    #btn-refresh-header { display: none !important; }
+}
