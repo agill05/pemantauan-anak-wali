@@ -18,7 +18,7 @@
 
 ## 📖 Tentang Proyek
 
-**Aplikasi Pemantauan Anak Wali** adalah aplikasi web (PWA) untuk membantu sekolah memantau perkembangan siswa dalam satu tempat. Guru wali dan mentor mencatat presensi, kebiasaan harian, hafalan, nilai, serta catatan pembinaan. Siswa mengisi kebiasaan dan jurnal hariannya sendiri. Orang tua dapat melihat perkembangan anak lewat tautan khusus tanpa perlu membuat akun.
+**Aplikasi Pemantauan Anak Wali** adalah aplikasi web (PWA) untuk membantu sekolah memantau perkembangan siswa dalam satu tempat. Guru wali dan mentor mencatat presensi, kebiasaan harian, hafalan, nilai, serta catatan pembinaan. Guru BK mencatat tata tertib dan presensi layanan BK. Siswa mengisi kebiasaan dan jurnal hariannya sendiri. Orang tua dapat melihat perkembangan anak lewat tautan khusus tanpa perlu membuat akun.
 
 > ⚠️ **Repositori ini hanya berisi frontend (UI/UX).**
 > Backend, database, dan logika server **sengaja tidak disertakan**. Anda perlu membangun backend sendiri sesuai kebutuhan sekolah Anda. Kontrak komunikasi antara frontend dan backend dijelaskan di bagian [Kontrak API Backend](#-kontrak-api-backend).
@@ -26,7 +26,7 @@
 ## ✨ Fitur Utama
 
 ### Pemantauan
-- **Presensi kehadiran** harian per kelas, termasuk presensi mentor. Presensi yang diisi saat offline disimpan lokal dan dikirim otomatis begitu koneksi kembali.
+- **Presensi kehadiran** harian per kelas dalam bentuk tabel, termasuk presensi mentor dan presensi layanan BK. Presensi yang diisi saat offline disimpan lokal dan dikirim otomatis begitu koneksi kembali.
 - **7 Kebiasaan Hebat**: Bangun Pagi, Beribadah, Berolahraga, Makan Sehat dan Bergizi, Gemar Belajar, Bermasyarakat, dan Tidur Cepat. Daftar kebiasaan dapat dikonfigurasi dari backend.
 - **Jurnal harian** siswa, lengkap dengan catatan dari guru.
 - **Keagamaan**: pencatatan hafalan Surah (114 surah beserta juz), bacaan Iqro 1–6, dan hafalan doa harian.
@@ -34,21 +34,22 @@
 
 ### Pembinaan dan Kedisiplinan
 - **Catatan pembinaan** dengan notifikasi dan penanda "sudah ditangani".
-- **Tata tertib**: pencatatan pelanggaran, master data aturan, pemanggilan orang tua, pratinjau, dan laporan rekap.
+- **Tata tertib**: pencatatan pelanggaran, master data aturan, pemanggilan orang tua, pratinjau, dan laporan rekap. Guru wali, mentor, admin, dan Guru BK dapat mencatat sesuai haknya.
+- **Layanan Guru BK**: presensi layanan BK lengkap dengan rekap per rentang tanggal, serta notifikasi Tata Tertib (batas poin dan panggilan orang tua).
 
 ### Laporan dan Arsip
 - **Dashboard** ringkasan per kelas, menu cepat, dan agenda pembinaan mendatang, dilengkapi grafik.
-- **Laporan** rekap yang dapat diekspor ke **PDF**.
+- **Laporan** rekap yang dapat diekspor ke **PDF**, termasuk surat panggilan orang tua yang ditandatangani penulisnya (wali kelas atau Guru BK).
 - **Arsip semester** untuk menyimpan dan membuka kembali data semester lama, dengan ekspor CSV.
 
 ### Manajemen (Admin)
-- Kelola **kelas, guru, siswa**, akun kepala sekolah, semester, dan pengaturan aplikasi.
-- **Impor massal** data siswa dan guru dari file CSV.
+- Kelola **kelas, guru, siswa**, akun **Guru BK**, akun kepala sekolah, semester, dan pengaturan aplikasi.
+- **Impor massal** data siswa, guru, dan Guru BK dari file CSV.
 - **Kartu akun** siswa dengan QR code.
 - **Reset password** dan penghapusan data massal dengan konfirmasi.
 
 ### Teknis
-- **Multi-peran**: `admin`, `guru` (dengan peran wali dan/atau mentor), `kepsek`, `siswa`, dan `ortu`. Menu menyesuaikan peran yang login.
+- **Multi-peran**: `admin`, `guru` (dengan peran wali dan/atau mentor), `bk`, `kepsek`, `siswa`, dan `ortu`. Menu menyesuaikan peran yang login.
 - **Magic link untuk orang tua**: tautan sementara berlaku 15 menit, tanpa kata sandi.
 - **PWA**: dapat dipasang ke layar utama, memakai *service worker*, dan menampilkan banner saat offline.
 - **Pembaruan senyap**: sesi diperbarui otomatis dan notifikasi dicek berkala.
@@ -62,6 +63,7 @@
 |---|---|
 | **Admin** | Seluruh fitur pemantauan, laporan, arsip, dan Master Data |
 | **Guru** | Presensi, kebiasaan, jurnal, keagamaan, akademik, pembinaan, tata tertib, data siswa, laporan |
+| **Guru BK** | Hanya Dasbor, Tata Tertib, dan Presensi BK. Dapat melihat semua siswa, tetapi hanya menulis catatan Tata Tertib dan presensi BK. Tidak mengajar, tidak menjadi wali, dan tidak menjadi mentor. Menerima notifikasi Tata Tertib saja |
 | **Kepala Sekolah** | Seperti guru, ditambah akun khusus kepala sekolah |
 | **Siswa** | Mengisi kebiasaan dan jurnal sendiri, melihat keagamaan, akademik, tata tertib, dan arsip semester |
 | **Orang Tua** | Melihat profil anak lewat magic link |
@@ -100,7 +102,8 @@
         ├── pembinaan.js     ├── tatib.js         ├── tatib-laporan.js
         ├── dashboard.js     ├── laporan.js       ├── siswa.js
         ├── grup-siswa.js    ├── kartu.js         ├── admin.js
-        ├── arsip.js         ├── bulk.js          └── magiclink.js
+        ├── arsip.js         ├── bulk.js          ├── magiclink.js
+        ├── absensi-bk.js    └── bk-admin.js
 ```
 
 ## 🚀 Memulai
@@ -182,7 +185,7 @@ Kode galat yang dikenali frontend: `DATE_LOCKED` dan `DATE_FUTURE` (presensi pad
 | `getBootstrapData` | Mengembalikan `data.initial` berisi `kelas`, `guru`, `siswa`, dan `pengaturan` |
 | `getVersi` | Penanda versi data agar frontend tahu kapan perlu memuat ulang |
 
-Objek `user` memakai bidang seperti `id`, `nama`, `username`, `role`, `foto`, `nip` atau `nisn`, serta penanda `is_wali` dan `is_mentor` untuk guru.
+Nilai `role` pada `login` adalah `admin`, `guru`, `bk`, `kepsek`, atau `siswa`. Objek `user` memakai bidang seperti `id`, `nama`, `username`, `role`, `foto`, `nip` atau `nisn`, serta penanda `is_wali` dan `is_mentor` untuk guru.
 
 **Daftar aksi yang dipanggil frontend**
 
@@ -190,14 +193,15 @@ Objek `user` memakai bidang seperti `id`, `nama`, `username`, `role`, `foto`, `n
 |---|---|
 | Sesi | `login`, `validateSession`, `refreshToken`, `changePassword`, `updateSelfProfile`, `hapusFotoProfil`, `getMagicLinkData`, `generateMagicLink` |
 | Data induk | `getBootstrapData`, `getVersi`, `getDashboardData`, `saveKelas`, `deleteKelas`, `saveGuru`, `deleteGuru`, `saveSiswa`, `deleteSiswa`, `importSiswaBatch`, `importGuruBatch`, `cariSiswaSekolah`, `ambilSiswa`, `setMentorBatch`, `getDetailSiswa`, `getKartuAkun` |
-| Presensi | `getAbsensi`, `saveAbsensi`, `getAbsensiMentor`, `saveAbsensiMentor` |
+| Presensi | `getAbsensi`, `saveAbsensi`, `getAbsensiMentor`, `saveAbsensiMentor`, `getAbsensiBK`, `saveAbsensiBK` |
 | Kebiasaan | `getKebiasaan`, `saveKebiasaan`, `getKebiasaanRentang`, `getRingkasanKebiasaan`, `getLaporanKebiasaan`, `getKonfigKebiasaan`, `saveKonfigKebiasaan` |
 | Jurnal dan keagamaan | `getJurnal`, `saveJurnal`, `saveCatatanJurnal`, `getKeagamaan`, `saveKeagamaan`, `deleteKeagamaan` |
 | Akademik | `getAkademik`, `getSiswaAkademik`, `saveAkademik`, `saveAkademikBulk`, `deleteAkademik`, `getPrestasi`, `savePrestasi`, `deletePrestasi` |
 | Pembinaan dan notifikasi | `getPembinaan`, `savePembinaan`, `deletePembinaan`, `getNotifikasi`, `setNotifDitangani`, `restoreNotifDitangani` |
 | Tata tertib | `getTatib`, `saveTatib`, `deleteTatib`, `getTatibMaster`, `saveTatibMaster`, `saveTatibKonfig`, `getTatibPanggilan`, `saveTatibPanggilan`, `deleteTatibPanggilan`, `getTatibPratinjau`, `getRekapTatib` |
-| Laporan dan arsip | `getLaporanRekap`, `getArsipData`, `getArsipList`, `getArsipSaya`, `hitungHapus`, `bulkDestroy` |
-| Admin | `savePengaturan`, `saveSemester`, `getAkunKepsek`, `resetPasswordSiswa`, `resetPasswordKepsek` |
+| Laporan dan arsip | `getLaporanRekap`, `getArsipData`, `getArsipList`, `getArsipSaya`, `archiveSemester`, `buildArsipLaporan`, `deleteArsip`, `hitungHapus`, `bulkDestroy` |
+| Guru BK (admin) | `getBK`, `saveBK`, `deleteBK`, `importBKBatch`, `resetPasswordBK` |
+| Admin | `savePengaturan`, `saveSemester`, `getAkunKepsek`, `resetPasswordSiswa`, `resetPasswordSiswaSatu`, `resetPasswordGuru`, `resetPasswordKepsek` |
 
 > Bentuk data rinci untuk setiap aksi bisa dilihat dari cara modul di `js/modules/` membaca respons, misalnya `absensi.js` untuk presensi dan `tatib.js` untuk tata tertib.
 
@@ -232,6 +236,7 @@ Berkas HTML, JS, dan CSS dikirim dengan `must-revalidate` agar pembaruan langsun
 Aplikasi ini menangani **data pribadi siswa**. Sebelum dipakai di sekolah:
 
 - Verifikasi token, peran, dan hak akses **harus dilakukan di backend**, bukan hanya di frontend.
+- Untuk peran `bk`, batasi aksi lewat daftar putih di backend (hanya Dasbor, Tata Tertib, presensi BK, dan notifikasi Tata Tertib). Jangan mengandalkan menu yang disembunyikan di frontend.
 - Simpan kata sandi dalam bentuk *hash*, jangan teks biasa.
 - Gunakan HTTPS dan batasi akses ke database Anda.
 - Pastikan penggunaan data siswa sesuai kebijakan sekolah dan peraturan perlindungan data yang berlaku.
