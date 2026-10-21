@@ -317,6 +317,37 @@
                 <p class="text-xs text-slate-300">Selamat datang, Anda dapat memantau seluruh kelas & anak wali sekolah.</p>
             </div>
 
+            <div id="dash-bk-banner" data-role-visible="bk"
+                class="hidden bg-slate-800 text-white p-3.5 rounded-2xl shadow-sm border border-slate-700">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-bold text-accent uppercase tracking-wider"><i
+                            class="fas fa-hands-helping mr-1"></i> Layanan Bimbingan Konseling </span>
+                </div>
+                <p class="text-xs text-slate-300">Anda dapat melihat seluruh siswa, mencatat Tata Tertib, dan mengisi presensi layanan BK.</p>
+            </div>
+
+            <div id="dash-bk-menu" data-role-visible="bk" class="hidden bg-surface p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-start gap-2 mb-3">
+                    <i class="fas fa-bolt text-primary mt-0.5"></i>
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-800">Menu Cepat</h2>
+                        <p class="text-xs text-slate-400">Fitur layanan BK</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button class="quick-tile quick-tile-amber" onclick="switchView('tatib')">
+                        <span class="quick-tile-icon"><i class="fas fa-gavel"></i></span>
+                        <span class="quick-tile-label">Tata<br>Tertib</span>
+                        <i class="fas fa-chevron-right quick-tile-chevron"></i>
+                    </button>
+                    <button class="quick-tile quick-tile-blue" onclick="switchView('absensi-bk')">
+                        <span class="quick-tile-icon"><i class="fas fa-calendar-check"></i></span>
+                        <span class="quick-tile-label">Presensi<br>BK</span>
+                        <i class="fas fa-chevron-right quick-tile-chevron"></i>
+                    </button>
+                </div>
+            </div>
+
             <div id="dash-stats-container" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
 
             <div id="dash-kelas-wrap" data-role-visible="kepsek"
@@ -396,6 +427,14 @@
                 </div>
                 <div id="dash-agenda-list" class="space-y-2"></div>
             </div>
+        </div>
+
+        <div id="view-absensi-bk" class="view-section p-4 space-y-4">
+            <div class="bg-surface p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <h2 class="text-sm font-bold text-slate-800"><i class="fas fa-calendar-check text-primary mr-2"></i>Presensi BK</h2>
+                <p class="text-xs text-slate-400">Kehadiran siswa pada layanan bimbingan konseling</p>
+            </div>
+            <div id="absensi-bk-container"></div>
         </div>
 
         <div id="view-absensi" class="view-section p-4 space-y-4">

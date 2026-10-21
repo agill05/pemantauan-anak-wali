@@ -204,6 +204,8 @@ function kandidatUcapanMaskot() {
         const pilih = daftar.slice().sort((a, b) => (b.bobot || 1) - (a.bobot || 1)).slice(0, 6);
         daftar.length = 0;
         pilih.forEach(x => daftar.push(x));
+    } else if (u.role === "bk") {
+        tambah({ kunci: "b-tatib", view: "tatib", bobot: 2, tingkat: "baik", teks: "Catat pelanggaran dan penghargaan siswa lewat menu Tata Tertib." });
     } else {
         const nama = u.role === "guru" ? getLabelSiswa().toLowerCase() : "siswa";
         const peran = isGuruUser() ? getPeranAktif() : "semua";
@@ -330,8 +332,28 @@ async function renderDashboard() {
         else adminBanner.classList.add("hidden");
     }
 
+    // BK: tanpa prioritas dan agenda pembinaan (data pembinaan, nilai, presensi kelas bukan layanan BK).
+    const isBK = roleAsli === "bk";
+    ["dash-section-bottom", "dash-section-agenda"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (isBK) { el.classList.add("hidden"); el.dataset.bkHidden = "1"; }
+        else if (el.dataset.bkHidden === "1") { el.classList.remove("hidden"); delete el.dataset.bkHidden; }
+    });
+
     const statsContainer = document.getElementById("dash-stats-container");
-    if (statsContainer) {
+    if (statsContainer && isBK) {
+        statsContainer.className = "grid grid-cols-1 sm:grid-cols-2 gap-3";
+        statsContainer.innerHTML = `
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                <span class="w-11 h-11 shrink-0 rounded-xl bg-blue-50 text-primary flex items-center justify-center text-base"><i class="fas fa-users"></i></span>
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold text-slate-500">Total Siswa</p>
+                    <p class="text-2xl font-black text-slate-800 leading-tight">${getSiswaPeran().length}</p>
+                    <p class="text-[11px] text-slate-400">Seluruh siswa yang dapat Anda layani</p>
+                </div>
+            </div>`;
+    } else if (statsContainer) {
         const totalSiswaCount = getSiswaPeran().length;
         const labelSiswa = role === 'admin' ? 'Siswa' : getLabelSiswa();
         const hadirHariIni = scopeBySiswaId(appState.absensi, a => a.siswa_id).filter(a => a.status === 'H').length;
@@ -382,6 +404,8 @@ async function renderDashboard() {
     }
 
     ucapanMaskotDashboard();
+
+    if (isBK) return;
 
     apiCall("getDashboardData", {}, false).then(res => {
         if (res && res.status === "success") {

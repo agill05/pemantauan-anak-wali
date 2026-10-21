@@ -178,7 +178,8 @@ const PERAN_STORAGE_PREFIX = "peran_aktif_";
 const WRITE_KATEGORI_CLIENT = {
     wali: new Set(["siswa", "ambil_siswa", "absensi", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan", "tatib"]),
     mentor: new Set(["ambil_siswa", "absensi_mentor", "akademik", "keagamaan", "prestasi", "pembinaan", "magiclink", "jurnal_catatan", "tatib"]),
-    self: new Set(["kebiasaan", "jurnal"])
+    self: new Set(["kebiasaan", "jurnal"]),
+    bk: new Set(["tatib", "absensi_bk"])
 };
 
 function isGuruUser() {
@@ -191,6 +192,10 @@ function isAdminUser() {
 
 function isKepsekUser() {
     return !!(appState.user && appState.user.role === 'kepsek');
+}
+
+function isBKUser() {
+    return !!(appState.user && appState.user.role === 'bk');
 }
 
 function isBacaSemuaUser() {
@@ -301,6 +306,7 @@ function getAccessTypeSiswa(siswa) {
     const role = appState.user.role;
     if (role === "admin") return "admin";
     if (role === "kepsek") return "readonly";
+    if (role === "bk") return "bk";
     if (role === "siswa") return String(siswa.id) === String(appState.user.id) ? "self" : null;
     if (role !== "guru") return null;
     const kw = getKelasWaliId();
@@ -370,6 +376,7 @@ function canWrite(kategori, siswaRef) {
     if (!u) return false;
     if (u.role === "admin") return true;
     if (u.role === "siswa") return WRITE_KATEGORI_CLIENT.self.has(kategori);
+    if (u.role === "bk") return WRITE_KATEGORI_CLIENT.bk.has(kategori);
     if (u.role !== "guru") return false;
 
     if (siswaRef !== undefined && siswaRef !== null && siswaRef !== "") {
@@ -390,6 +397,10 @@ function canEditRecord(rec, kategori) {
         if (!isGuruUser()) return false;
         const pemilik = String(rec.dibuat_oleh_id || "").trim();
         return pemilik !== "" && pemilik === String(appState.user.id).trim();
+    }
+    if (appState.user.role === "bk") {
+        // BK hanya boleh ubah/hapus catatan yang ditulis sesama BK.
+        return canWrite(kategori, rec.siswa_id) && String(rec.dibuat_sebagai || "").trim() === "bk";
     }
     if (!canWrite(kategori, rec.siswa_id)) return false;
     if (!isGuruUser()) return true;
@@ -454,6 +465,7 @@ function getPeranPenulis(siswaRef) {
     const u = appState.user;
     if (!u) return "";
     if (u.role === "admin") return "admin";
+    if (u.role === "bk") return "bk";
     if (u.role !== "guru") return "";
     const raw = getAccessTypeSiswa(_resolveSiswaRef(siswaRef));
     if (raw === "mentor") return "mentor";

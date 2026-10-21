@@ -582,7 +582,7 @@ async function continueSessionSetup() {
         const sbRole = document.getElementById("sidebar-role-badge");
         if (sbAvatar) sbAvatar.src = userAvatar ? userAvatar.src : "";
         if (sbNama) sbNama.innerText = appState.user.nama;
-        if (sbRole) sbRole.innerText = (appState.user.role === "kepsek" ? "KEPALA SEKOLAH" : appState.user.role.toUpperCase()) + (isGuruUser() && getGuruPeranText() ? " – " + getGuruPeranText().toUpperCase() : "");
+        if (sbRole) sbRole.innerText = (appState.user.role === "kepsek" ? "KEPALA SEKOLAH" : appState.user.role === "bk" ? "GURU BK" : appState.user.role.toUpperCase()) + (isGuruUser() && getGuruPeranText() ? " – " + getGuruPeranText().toUpperCase() : "");
         renderSidebarMenu(appState.user.role);
         renderPeranSwitcher();
 
@@ -775,6 +775,14 @@ function applyRoleUI(role) {
                 <i class="fas fa-home text-lg"></i>
                 <span class="text-[11px] font-bold">Beranda</span>
             </button>
+            <button onclick="switchView('tatib')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400" data-target="tatib">
+                <i class="fas fa-gavel text-lg"></i>
+                <span class="text-[11px] font-bold">Tata Tertib</span>
+            </button>
+            <button onclick="switchView('absensi-bk')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400" data-target="absensi-bk">
+                <i class="fas fa-calendar-check text-lg"></i>
+                <span class="text-[11px] font-bold">Presensi BK</span>
+            </button>
         `;
     } else if (role !== "ortu") {
         navContainer.innerHTML = `
@@ -827,7 +835,9 @@ function renderSidebarMenu(role) {
         html += item("tatib-baca", "fa-gavel", "Tata Tertib");
         html += item("arsip-saya", "fa-box-archive", "Arsip Semester");
     } else if (role === "bk") {
-        // Tahap 1: BK belum punya menu fitur. Menu Tata Tertib dan Presensi BK ditambah di Tahap 4 dan 5.
+        html += section("Layanan BK");
+        html += item("tatib", "fa-gavel", "Tata Tertib");
+        html += item("absensi-bk", "fa-calendar-check", "Presensi BK");
     } else if (role !== "ortu") {
         html += section("Pemantauan");
         html += item("absensi", "fa-calendar-check", "Presensi Kehadiran");
