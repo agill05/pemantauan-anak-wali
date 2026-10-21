@@ -5,6 +5,7 @@ let abkKelas = "";
 let abkCari = "";
 let abkPilih = new Map();      // siswa_id -> status yang dipilih (belum tentu tersimpan)
 let abkTersimpan = new Map();  // siswa_id -> status tersimpan di server
+let abkWaktu = new Map();      // siswa_id -> jam presensi tersimpan
 let abkMuat = false;
 
 const ABK_STATUS = ["H", "I", "S", "A", "T"];
@@ -46,6 +47,7 @@ async function abkMuatTanggal(paksa) {
         const res = await apiCall("getAbsensiBK", { tanggal: abkTanggal }, false);
         if (res && res.status === "success") {
             abkTersimpan = new Map((res.data || []).map(r => [String(r.siswa_id), String(r.status || "").toUpperCase()]));
+            abkWaktu = new Map((res.data || []).map(r => [String(r.siswa_id), String(r.waktu || "")]));
             abkPilih = new Map(abkTersimpan);
         } else if (res) {
             showToast(res.message || "Gagal memuat presensi BK.", "error");
@@ -72,15 +74,22 @@ function abkHtmlIsi(opsiKelas) {
     const daftar = abkSiswaTampil();
     const semuaKelas = abkSiswaKelas();
     const terisi = semuaKelas.filter(s => abkPilih.get(String(s.id))).length;
+    const opsi = (sel, v) => `<option value="${v}" ${sel === v ? "selected" : ""}>${escapeHtml(ABSENSI_LABEL[v])} (${v})</option>`;
     const baris = daftar.map((s, i) => {
         const sid = String(s.id);
         const sel = abkPilih.get(sid) || "";
-        const tombol = ABK_STATUS.map(st => `<button type="button" onclick="abkSetStatus('${escapeHtml(sid)}','${st}')" aria-pressed="${sel === st}" aria-label="${escapeHtml(ABSENSI_LABEL[st])}"
-            class="w-9 h-9 rounded-lg border text-xs font-extrabold ${sel === st ? ABK_WARNA[st] : "bg-white text-slate-500 border-slate-200"}">${st}</button>`).join("");
-        return `<div class="flex items-center justify-between gap-2 py-2 border-b border-slate-100 last:border-0">
-            <div class="min-w-0"><p class="text-xs font-bold text-slate-800 truncate">${i + 1}. ${escapeHtml(s.nama)}</p>
-            <p class="text-[10px] text-slate-400">${sel ? escapeHtml(ABSENSI_LABEL[sel]) : "Belum diisi"}</p></div>
-            <div class="flex gap-1 shrink-0">${tombol}</div></div>`;
+        const waktu = abkWaktu.get(sid);
+        return `<tr>
+            <td class="tt-no">${i + 1}</td>
+            <th scope="row" class="tt-nama">${escapeHtml(s.nama)}</th>
+            <td>${escapeHtml(absensiNamaKelas(s.kelas_id))}</td>
+            <td class="tt-tgl"><i class="far fa-clock mr-1 text-slate-400"></i>${waktu ? formatDisplayTime(waktu) : "Belum Absen"}</td>
+            <td>
+                <select onchange="abkPilihDropdown('${escapeHtml(sid)}', this.value)" aria-label="Status presensi ${escapeHtml(s.nama)}" class="bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
+                    <option value="" ${sel === "" ? "selected" : ""}>Belum diisi</option>${["H", "I", "S", "A", "T"].map(v => opsi(sel, v)).join("")}
+                </select>
+            </td>
+        </tr>`;
     }).join("");
     return `
         <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2">
@@ -90,11 +99,23 @@ function abkHtmlIsi(opsiKelas) {
             </div>
             <input type="search" id="abk-cari" value="${escapeHtml(abkCari)}" oninput="abkUbahCari(this.value)" placeholder="Cari nama siswa..." class="w-full bg-slate-50 border p-2 rounded-xl text-xs outline-none" aria-label="Cari siswa">
             <div class="flex items-center justify-between text-[11px] text-slate-500">
-                <span>Terisi ${terisi} / ${semuaKelas.length}</span>
+                <span id="abk-terisi">Terisi ${terisi} / ${semuaKelas.length}</span>
                 <button type="button" onclick="abkSemuaHadir()" class="font-bold text-emerald-700"><i class="fas fa-check-double"></i> Semua Hadir</button>
             </div>
         </div>
-        <div id="abk-daftar" class="bg-white px-3 mt-3 rounded-2xl border border-slate-100 shadow-sm">${baris || '<p class="text-xs text-slate-400 text-center py-6">Tidak ada siswa.</p>'}</div>
+        <div id="abk-daftar" class="mt-3 overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <table class="tt-tabel">
+                <caption class="sr-only">Presensi BK</caption>
+                <thead><tr>
+                    <th scope="col" class="tt-no">No</th>
+                    <th scope="col" class="tt-nama">Nama</th>
+                    <th scope="col">Kelas</th>
+                    <th scope="col">Waktu Absen</th>
+                    <th scope="col">Status</th>
+                </tr></thead>
+                <tbody>${baris || '<tr><td colspan="5" class="text-center text-slate-400 py-6">Tidak ada siswa.</td></tr>'}</tbody>
+            </table>
+        </div>
         <button type="button" onclick="abkSimpan()" class="w-full mt-3 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-sm"><i class="fas fa-save mr-1"></i> Simpan Presensi BK</button>`;
 }
 
@@ -128,6 +149,15 @@ async function abkUbahTanggal(v) {
 function abkSetStatus(sid, st) {
     abkPilih.set(String(sid), st);
     abkGambar();
+}
+
+function abkPilihDropdown(sid, st) {
+    if (st) abkPilih.set(String(sid), st); else abkPilih.delete(String(sid));
+    const el = document.getElementById("abk-terisi");
+    if (el) {
+        const semua = abkSiswaKelas();
+        el.textContent = `Terisi ${semua.filter(x => abkPilih.get(String(x.id))).length} / ${semua.length}`;
+    }
 }
 
 function abkSemuaHadir() {
@@ -193,11 +223,13 @@ async function abkRekapIsi() {
     const baris = abkSiswaKelas().map(s => {
         const r = peta.get(String(s.id)) || { H: 0, I: 0, S: 0, A: 0, T: 0, total: 0 };
         const persen = r.total > 0 ? Math.round(((r.H + r.T) / r.total) * 100) : 0;
-        return `<tr><td class="text-left font-bold">${escapeHtml(s.nama)}</td><td>${r.H}</td><td>${r.S}</td><td>${r.I}</td><td>${r.T}</td><td>${r.A}</td><td class="font-extrabold">${persen}%</td></tr>`;
+        const c = v => `<td style="text-align:center">${v}</td>`;
+        return `<tr><th scope="row" class="tt-nama" style="text-align:left">${escapeHtml(s.nama)}</th>${c(r.H)}${c(r.S)}${c(r.I)}${c(r.T)}${c(r.A)}<td class="font-extrabold" style="text-align:center">${persen}%</td></tr>`;
     }).join("");
-    sekarang.innerHTML = `<div class="tt-tabel-wrap"><table class="tt-tabel">
+    const th = t => `<th scope="col" style="text-align:center">${t}</th>`;
+    sekarang.innerHTML = `<div class="overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm"><table class="tt-tabel">
         <caption class="sr-only">Rekap presensi BK</caption>
-        <thead><tr><th scope="col">Nama</th><th scope="col">H</th><th scope="col">S</th><th scope="col">I</th><th scope="col">T</th><th scope="col">A</th><th scope="col">% Hadir</th></tr></thead>
+        <thead><tr><th scope="col" class="tt-nama" style="text-align:left">Nama</th>${th("H")}${th("S")}${th("I")}${th("T")}${th("A")}${th("% Hadir")}</tr></thead>
         <tbody>${baris || '<tr><td colspan="7">Tidak ada siswa.</td></tr>'}</tbody></table></div>
         <p class="text-[11px] text-slate-400 mt-2">% Hadir = (Hadir + Terlambat) / total pertemuan tercatat.</p>`;
 }
