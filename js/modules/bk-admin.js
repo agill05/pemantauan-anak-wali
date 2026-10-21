@@ -70,16 +70,16 @@ function openModalBK(id = null) {
         <form onsubmit="saveBKForm(event, '${id || ""}')" class="space-y-3">
             <div>
                 <label for="m-bk-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
-                <input type="text" id="m-bk-nama" placeholder="Masukkan nama lengkap" onblur="rapikanInputNama(this)" value="${escapeHtml(b?.nama || "")}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                <input type="text" id="m-bk-nama" onblur="rapikanInputNama(this)" value="${escapeHtml(b?.nama || "")}" placeholder="Masukkan nama lengkap" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label for="m-bk-user" class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
-                    <input type="text" id="m-bk-user" placeholder="Masukkan username" value="${escapeHtml(b?.username || "")}" autocapitalize="none" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                    <input type="text" id="m-bk-user" value="${escapeHtml(b?.username || "")}" placeholder="Masukkan username" autocapitalize="none" autocomplete="off" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
                     <label for="m-bk-nip" class="block text-xs font-bold text-slate-500 mb-1">NIP</label>
-                    <input type="text" id="m-bk-nip" placeholder="Masukkan NIP" value="${escapeHtml(b?.nip || "")}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                    <input type="text" id="m-bk-nip" value="${escapeHtml(b?.nip || "")}" placeholder="Masukkan NIP" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
             <div>
@@ -148,17 +148,7 @@ async function saveBKForm(e, id) {
 }
 
 async function deleteBK(id) {
-    const b = bkList.find(x => String(x.id) === String(id));
-    const konfirmasi = await Swal.fire({
-        title: "Hapus akun Guru BK?",
-        text: `Akun ${b ? b.nama : "ini"} akan dihapus permanen dan tidak bisa login lagi.`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#ef4444",
-        confirmButtonText: "Ya, Hapus",
-        cancelButtonText: "Batal"
-    });
-    if (!konfirmasi.isConfirmed) return;
+    if (!(await konfirmasiHapusBersih("bk", id))) return;
 
     const res = await apiCall("deleteBK", { id }, true);
     if (res && res.status === "success") {

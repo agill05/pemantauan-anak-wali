@@ -194,10 +194,15 @@ function admTabelHtml(caption, kolCek, kolom, baris) {
         </div>`;
 }
 
-function admTombolEdit(fnEdit, fnHapus, id, labelEdit, labelHapus) {
+function admTombolReset(fnReset, id, labelReset) {
+    return `<button onclick="${fnReset}('${escapeHtml(id)}')" class="p-2 bg-amber-50 text-amber-600 rounded-lg text-xs" aria-label="${labelReset}" title="${labelReset}"><i class="fas fa-key"></i></button>`;
+}
+
+function admTombolEdit(fnEdit, fnHapus, id, labelEdit, labelHapus, fnReset, labelReset) {
     const sid = escapeHtml(id);
     return `<span class="tt-aksi-grup">
         <button onclick="${fnEdit}('${sid}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="${labelEdit}"><i class="fas fa-edit"></i></button>
+        ${fnReset ? admTombolReset(fnReset, id, labelReset || "Reset password") : ""}
         <button onclick="${fnHapus}('${sid}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="${labelHapus}"><i class="fas fa-trash"></i></button>
     </span>`;
 }
@@ -225,6 +230,7 @@ function renderAdminGuru() {
             </div>
             <div class="adm-act flex gap-1">
                 <button onclick="openModalGuru('${escapeHtml(g.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data guru"><i class="fas fa-edit"></i></button>
+                ${admTombolReset("resetPasswordGuru", g.id, "Reset password guru")}
                 <button onclick="deleteGuru('${escapeHtml(g.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus data guru"><i class="fas fa-trash"></i></button>
             </div>
         </div>
@@ -237,7 +243,7 @@ function renderAdminGuru() {
             <td>${escapeHtml(g.username || "-")}</td>
             <td class="tt-tgl">${escapeHtml(g.nip || "-")}</td>
             <td>${renderPeranBadgesGuru(g) || '<span class="text-slate-300">-</span>'}</td>
-            <td class="tt-aksi">${admTombolEdit("openModalGuru", "deleteGuru", g.id, "Edit data guru", "Hapus data guru")}</td>
+            <td class="tt-aksi">${admTombolEdit("openModalGuru", "deleteGuru", g.id, "Edit data guru", "Hapus data guru", "resetPasswordGuru", "Reset password guru")}</td>
         </tr>`).join("");
     list.innerHTML = bulkToolbar("guru", filtered.map(g => String(g.id)))
         + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
@@ -347,6 +353,7 @@ function renderAdminSiswa() {
             </div>
             <div class="adm-act flex gap-1">
                 <button onclick="openModalSiswa('${escapeHtml(s.id)}')" class="p-2 bg-slate-100 text-slate-600 rounded-lg text-xs" aria-label="Edit data siswa"><i class="fas fa-edit"></i></button>
+                ${admTombolReset("resetPasswordSiswaSatu", s.id, "Reset password siswa")}
                 <button onclick="deleteSiswa('${escapeHtml(s.id)}')" class="p-2 bg-rose-50 text-rose-600 rounded-lg text-xs" aria-label="Hapus data siswa"><i class="fas fa-trash"></i></button>
             </div>
         </div>
@@ -361,7 +368,7 @@ function renderAdminSiswa() {
             <td class="tt-tgl">${escapeHtml(s.nisn || "-")}</td>
             <td>${sel(getNamaKelasSiswa(s), siswaTanpaKelas(s))}</td>
             <td class="tt-kiri">${sel(getNamaMentorSiswa(s), siswaTanpaMentor(s))}</td>
-            <td class="tt-aksi">${admTombolEdit("openModalSiswa", "deleteSiswa", s.id, "Edit data siswa", "Hapus data siswa")}</td>
+            <td class="tt-aksi">${admTombolEdit("openModalSiswa", "deleteSiswa", s.id, "Edit data siswa", "Hapus data siswa", "resetPasswordSiswaSatu", "Reset password siswa")}</td>
         </tr>`).join("");
     list.innerHTML = bulkToolbar("siswa", filtered.map(s => String(s.id)))
         + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
@@ -631,16 +638,16 @@ function openModalGuru(id = null) {
         <form onsubmit="saveGuruForm(event, '${id || ''}')" class="space-y-3">
             <div>
                 <label for="m-guru-nama" class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
-                <input type="text" id="m-guru-nama" placeholder="Masukkan nama lengkap" onblur="rapikanInputNama(this)" value="${escapeHtml(g?.nama || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                <input type="text" id="m-guru-nama" onblur="rapikanInputNama(this)" value="${escapeHtml(g?.nama || '')}" placeholder="Masukkan nama lengkap" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label for="m-guru-user" class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
-                    <input type="text" id="m-guru-user" placeholder="Masukkan username" value="${escapeHtml(g?.username || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
+                    <input type="text" id="m-guru-user" value="${escapeHtml(g?.username || '')}" placeholder="Masukkan username" autocapitalize="none" autocomplete="off" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none" required>
                 </div>
                 <div>
                     <label for="m-guru-nip" class="block text-xs font-bold text-slate-500 mb-1">NIP</label>
-                    <input type="text" id="m-guru-nip" placeholder="Masukkan NIP" value="${escapeHtml(g?.nip || '')}" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
+                    <input type="text" id="m-guru-nip" value="${escapeHtml(g?.nip || '')}" placeholder="Masukkan NIP" class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none">
                 </div>
             </div>
             <div>
@@ -721,6 +728,41 @@ async function deleteGuru(id) {
         } else {
             Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res?.message || 'Terjadi kesalahan saat menghapus data guru.', confirmButtonColor: '#2563eb' });
         }
+    }
+}
+
+async function konfirmasiResetPassword_(nama, passwordDefault) {
+    const k = await Swal.fire({
+        title: "Reset password?",
+        text: `Password ${nama || "akun ini"} akan dikembalikan ke ${passwordDefault} dan wajib diganti saat login berikutnya.`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#2563eb",
+        confirmButtonText: "Ya, Reset",
+        cancelButtonText: "Batal"
+    });
+    return !!k.isConfirmed;
+}
+
+async function resetPasswordGuru(id) {
+    const g = (appState.guru || []).find(x => String(x.id) === String(id));
+    if (!(await konfirmasiResetPassword_(g && g.nama, "guru123"))) return;
+    const res = await apiCall("resetPasswordGuru", { id }, true);
+    if (res && res.status === "success") {
+        Swal.fire({ icon: "success", title: "Password Direset", text: res.message, confirmButtonColor: "#2563eb" });
+    } else {
+        Swal.fire({ icon: "error", title: "Gagal Reset", text: res?.message || "Terjadi kesalahan saat reset password guru.", confirmButtonColor: "#2563eb" });
+    }
+}
+
+async function resetPasswordSiswaSatu(id) {
+    const s = (appState.siswa || []).find(x => String(x.id) === String(id));
+    if (!(await konfirmasiResetPassword_(s && s.nama, "siswa123"))) return;
+    const res = await apiCall("resetPasswordSiswaSatu", { id }, true);
+    if (res && res.status === "success") {
+        Swal.fire({ icon: "success", title: "Password Direset", text: res.message, confirmButtonColor: "#2563eb" });
+    } else {
+        Swal.fire({ icon: "error", title: "Gagal Reset", text: res?.message || "Terjadi kesalahan saat reset password siswa.", confirmButtonColor: "#2563eb" });
     }
 }
 

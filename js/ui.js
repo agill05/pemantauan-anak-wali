@@ -521,6 +521,13 @@ const LABEL_HAPUS_GURU = {
     hafalan: "Catatan hafalan (tetap ada)"
 };
 
+const LABEL_HAPUS_BK = {
+    tatib_catatan: "Catatan Tata Tertib (penulis jadi \"Guru dihapus\", catatan tetap ada)",
+    tatib_panggilan: "Catatan panggilan orang tua (penulis jadi \"Guru dihapus\", catatan tetap ada)",
+    kehadiran_bk: "Presensi layanan BK (nama BK dikosongkan, data tetap ada)",
+    notif: "Notifikasi yang ditangani"
+};
+
 async function konfirmasiHapusBersih(jenis, id) {
     const hitung = await apiCall("hitungHapus", { jenis: jenis, id: id }, true);
     if (!hitung || hitung.status !== "success") {
@@ -546,6 +553,11 @@ async function konfirmasiHapusBersih(jenis, id) {
         tombol = "Ya, Hapus Guru";
         intro = 'Akun guru <b>' + nama + '</b> dihapus. Catatan yang pernah ditulis <b>tetap ada</b>. Dampaknya:';
         daftar = Object.keys(LABEL_HAPUS_GURU).map(k => baris(LABEL_HAPUS_GURU[k], rincian[k])).join("");
+    } else if (jenis === "bk") {
+        judul = "Hapus Guru BK?";
+        tombol = "Ya, Hapus Akun BK";
+        intro = 'Akun Guru BK <b>' + nama + '</b> dihapus. Catatan yang pernah ditulis <b>tetap ada</b>. Dampaknya:';
+        daftar = Object.keys(LABEL_HAPUS_BK).map(k => baris(LABEL_HAPUS_BK[k], rincian[k])).join("");
     } else if (jenis === "kelas") {
         judul = "Hapus Kelas?";
         tombol = "Ya, Hapus Kelas";
