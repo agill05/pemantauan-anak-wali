@@ -589,6 +589,7 @@ async function continueSessionSetup() {
         document.documentElement.classList.add("has-session");
 
         const hasCachedData = loadAppStateFromLocal();
+        if (typeof setBKFromState === "function" && appState.user.role === "admin" && Array.isArray(appState.bk) && appState.bk.length) setBKFromState(appState.bk);
 
         const targetView = sessionStorage.getItem("app_last_view") || "dashboard";
         switchView(targetView);
@@ -616,6 +617,7 @@ async function continueSessionSetup() {
             appState.siswa = resBootstrap.data.initial.siswa || [];
             appState.myStudents = appState.siswa;
             appState.pengaturan = resBootstrap.data.initial.pengaturan || { nama_kepsek: "", nip_kepsek: "" };
+            if (appState.user.role === "admin" && typeof setBKFromState === "function") setBKFromState(resBootstrap.data.initial.bk);
             saveAppStateToLocal();
         }
 

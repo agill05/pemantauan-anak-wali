@@ -1,12 +1,19 @@
 let bkList = [];
 let bkLoaded = false;
 
+function setBKFromState(arr) {
+    if (!Array.isArray(arr)) return;
+    bkList = arr;
+    bkLoaded = true;
+    appState.bk = arr;
+}
+
 async function loadBKList(force) {
     if (bkLoaded && !force) return bkList;
-    const res = await apiCall("getBK", {}, false);
+    const res = await apiCall("getBK", {}, false, 3, true);
     if (res && res.status === "success") {
-        bkList = res.data || [];
-        bkLoaded = true;
+        setBKFromState(res.data || []);
+        saveAppStateToLocal();
     }
     return bkList;
 }
@@ -14,7 +21,7 @@ async function loadBKList(force) {
 async function renderAdminBK(force) {
     const list = document.getElementById("admin-bk-list");
     if (!list) return;
-    if (!bkLoaded || force) list.innerHTML = '<p class="text-xs text-slate-400 p-3"><i class="fas fa-spinner fa-spin"></i> Memuat data Guru BK...</p>';
+    if (!bkLoaded) list.innerHTML = '<p class="text-xs text-slate-400 p-3"><i class="fas fa-spinner fa-spin"></i> Memuat data Guru BK...</p>';
     await loadBKList(force);
 
     const query = (document.getElementById("search-bk-input")?.value || "").toLowerCase();

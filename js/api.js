@@ -122,6 +122,7 @@ async function fetchAllAppData(force = true) {
         appState.siswa = resBootstrap.data.initial.siswa || [];
         appState.myStudents = appState.siswa;
         if (resBootstrap.data.initial.pengaturan) appState.pengaturan = resBootstrap.data.initial.pengaturan;
+        if (appState.user && appState.user.role === "admin" && typeof setBKFromState === "function") setBKFromState(resBootstrap.data.initial.bk);
         saveAppStateToLocal();
     }
 }
