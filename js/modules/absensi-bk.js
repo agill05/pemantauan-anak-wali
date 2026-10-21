@@ -103,7 +103,10 @@ function abkHtmlIsi(opsiKelas) {
                 <span class="text-[11px] font-bold text-slate-400 w-6 shrink-0 pt-0.5">${i + 1}</span>
                 <div class="min-w-0 flex-1">
                     <p class="text-sm font-bold text-slate-800 leading-snug">${escapeHtml(s.nama)}</p>
-                    <p class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(absensiNamaKelas(s.kelas_id))} &middot; <i class="far fa-clock mr-0.5 text-slate-400"></i>${waktu ? formatDisplayTime(waktu) : "Belum Absen"}</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                        <span>${escapeHtml(absensiNamaKelas(s.kelas_id))}</span>
+                        <span class="inline-flex items-center gap-1.5"><i class="far fa-clock text-slate-400" aria-hidden="true"></i>${waktu ? formatDisplayTime(waktu) : "Belum Absen"}</span>
+                    </p>
                 </div>
             </div>
             <div class="grid grid-cols-5 gap-1.5 mt-2.5" role="group" aria-label="Status presensi ${escapeHtml(s.nama)}">${tombol}</div>

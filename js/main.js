@@ -284,7 +284,7 @@ function themeOptionButton(value, icon, label) {
 function syncThemeUI(pref, resolved) {
     const dark = resolved === "dark";
     const label = dark ? "Ganti ke mode terang" : "Ganti ke mode gelap";
-    ["btn-theme-header", "btn-theme-login"].forEach(id => {
+    ["btn-theme-login"].forEach(id => {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.setAttribute("aria-label", label);
