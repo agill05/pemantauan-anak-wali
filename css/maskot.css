@@ -1,7 +1,5 @@
-/* Maskot burung hantu (set pose baru). Semua kelas diawali mk-; pose khusus mk-<pose>-. */
 .mk{display:block;margin-inline:auto;overflow:visible;flex:none}
 .mk *{transform-box:fill-box}
-/* Atribut transform statis memakai sistem koordinat SVG, bukan kotak elemen */
 .mk [transform]{transform-box:view-box;transform-origin:0 0}
 
 .mk-hop,.mk-bob{transform-origin:50% 100%}
@@ -29,7 +27,6 @@
 .mk-bow{animation:mk-wig 3s ease-in-out infinite;transform-origin:50% 50%}
 @keyframes mk-wig{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
 
-/* Pose kebiasaan: sayap terangkat + tujuh bintang */
 .mk-keb-wing{animation:mk-keb-wave 1.8s ease-in-out infinite;transform-origin:95% 72%}
 @keyframes mk-keb-wave{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(7deg)}}
 .mk-keb-arm{animation:mk-keb-pump 2.4s ease-in-out infinite;transform-origin:30% 10%}
@@ -43,7 +40,6 @@
 .mk-keb-glint{animation:mk-keb-glint 2s ease-in-out infinite;transform-origin:50% 50%}
 @keyframes mk-keb-glint{0%,100%{transform:scale(.6);opacity:.6}50%{transform:scale(1.15);opacity:1}}
 
-/* Pose akademik: topi toga + sertifikat */
 .mk-aka-tail{animation:mk-keb-tail 2.6s ease-in-out infinite;transform-origin:0% 30%}
 .mk-aka-cap{animation:mk-aka-cap 3s ease-in-out infinite;transform-origin:50% 100%}
 @keyframes mk-aka-cap{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-2px)}}
@@ -57,7 +53,6 @@
 .mk-aka-arm-r{animation:mk-keb-pump 2.4s ease-in-out infinite;transform-origin:30% 10%}
 .mk-aka-fist{animation:mk-keb-squeeze 2.4s ease-in-out infinite;transform-origin:50% 50%}
 
-/* Pose jurnal: menulis di buku */
 .mk-jur-write{animation:mk-jur-write 1.6s ease-in-out infinite}
 @keyframes mk-jur-write{0%,100%{transform:translate(0,0)}20%{transform:translate(5px,2px)}40%{transform:translate(1px,4px)}60%{transform:translate(8px,1px)}80%{transform:translate(3px,5px)}}
 .mk-jur-ink{stroke-dasharray:60;animation:mk-jur-ink 3.2s ease-in-out infinite}
@@ -69,7 +64,6 @@
 .mk-jur-arm-r{animation:mk-keb-pump 3s ease-in-out infinite;transform-origin:50% 50%}
 .mk-jur-fist{animation:mk-keb-squeeze 3s ease-in-out infinite;transform-origin:50% 50%}
 
-/* Pose presensi: papan centang + pensil */
 .mk-pre-write{animation:mk-pre-write 2.4s ease-in-out infinite}
 @keyframes mk-pre-write{0%,40%,100%{transform:translate(0,0)}10%{transform:translate(5px,3.5px)}20%{transform:translate(0,0)}30%{transform:translate(5px,3.5px)}}
 .mk-pre-wing{animation:mk-pre-wing 2.4s ease-in-out infinite;transform-origin:95% 15%}
@@ -81,7 +75,6 @@
 .mk-pre-arm-r{animation:mk-keb-pump 3.4s ease-in-out infinite;transform-origin:50% 50%}
 .mk-pre-fist{animation:mk-keb-squeeze 3.4s ease-in-out infinite;transform-origin:50% 50%}
 
-/* Pose tatib: buku tata tertib berlogo perisai + peluit + jari menunjuk */
 .mk-tat-book{animation:mk-tat-book 3.2s ease-in-out infinite;transform-origin:50% 100%}
 @keyframes mk-tat-book{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-3px)}}
 .mk-tat-hand-l{animation:mk-keb-pump 3.2s ease-in-out infinite;transform-origin:50% 50%}
@@ -95,7 +88,6 @@
 @keyframes mk-tat-wag{0%,60%,100%{transform:rotate(0)}15%{transform:rotate(-8deg)}30%{transform:rotate(6deg)}45%{transform:rotate(-4deg)}}
 .mk-tat-tail{animation:mk-keb-tail 2.6s ease-in-out infinite;transform-origin:0% 30%}
 
-/* Pose lama (biasa, piala, pengingat, ceria): dipindah dari owl.css. SVG-nya memakai koordinat tetap (view-box) lewat class mk-vb. */
 .mk-vb *{transform-box:view-box}
 
 .mk-o-hop{transform-origin:210px 360px}
@@ -141,7 +133,6 @@
 .mk-o-spark:nth-child(3){animation-delay:.3s}
 @keyframes mk-o-spark{0%{opacity:0;transform:scale(.4)}25%{opacity:1;transform:scale(1.1)}55%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15) translateX(-4px)}}
 
-/* Versi juara (piala + medali) */
 .mk-t-hop{transform-origin:210px 380px}
 .mk-t-hop.go{animation:mk-o-hop .6s cubic-bezier(.3,.7,.4,1)}
 .mk-t-bob{animation:mk-o-bob 3s ease-in-out infinite;transform-origin:210px 380px}
@@ -162,12 +153,10 @@
 .mk-t-twinkle{animation:mk-t-twinkle 2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes mk-t-twinkle{0%,100%{transform:scale(.4) rotate(0);opacity:.35}50%{transform:scale(1.1) rotate(25deg);opacity:1}}
 
-/* Kepala yang dipakai ulang di pose lain (tanpa asal transform tetap) */
 .mk-x-tuft-l,.mk-x-tuft-r{transform-box:fill-box;transform-origin:50% 100%;animation:mk-o-twitch 5s ease-in-out infinite}
 .mk-x-tuft-r{animation-delay:1.3s}
 .mk-x-mouth{transform-box:fill-box;transform-origin:50% 0;animation:mk-o-chirp 2.4s ease-in-out infinite}
 
-/* Versi pengingat (papan centang + jam) */
 .mk-r-hop{transform-origin:166px 370px}
 .mk-r-hop.go{animation:mk-o-hop .6s cubic-bezier(.3,.7,.4,1)}
 .mk-r-bob{animation:mk-o-bob 3s ease-in-out infinite;transform-origin:166px 370px}
@@ -186,7 +175,6 @@
 .mk-r-hour{animation:mk-r-tick 108s linear infinite;transform-origin:330px 108px}
 @keyframes mk-r-tick{to{transform:rotate(360deg)}}
 
-/* Versi ceria (sayap terangkat) */
 .mk-c-hop{transform-origin:206px 390px}
 .mk-c-hop.go{animation:mk-o-hop .6s cubic-bezier(.3,.7,.4,1)}
 .mk-c-bob{animation:mk-c-jump 1.2s ease-in-out infinite;transform-origin:206px 380px}
@@ -205,26 +193,19 @@
 .mk-c-spark:nth-child(3){animation-delay:.24s}
 .mk-c-spark:nth-child(4){animation-delay:.36s}
 
-/* Hero login: burung hantu ceria (hanya layar lebar) */
 .mk-lg{display:block;margin-top:1.25rem;animation:mk-lg-rise .6s cubic-bezier(.2,.8,.2,1) 1.3s both}
 .mk-lg .mk{margin:0;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
 @media (max-width:899px){.mk-lg{display:none}}
 
-/* Kartu Misi Hari Ini: maskot di sisi kanan */
 .sd-mission .mk{margin:0 0 0 auto}
 
-/* Kartu Streak: maskot semangat di sisi kanan */
 .sd-card .mk{margin:0 0 0 auto}
 
-/* Empty state dengan maskot */
 .empty-state .mk{margin-bottom:.25rem}
 [data-maskot]>.mk{max-width:100%}
-/* Jaga dari aturan lama style.css (#loading-overlay>div:first-child memberi border spinner) */
 #loading-overlay>[data-maskot]{border:0!important;width:auto;height:auto}
-/* Latar gelap: halo tipis agar kontur cokelat tua tetap terbaca */
 html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 
-/* Pose admin: kunci inggris dan gir */
 .mk-adm-tail{animation:mk-keb-tail 2.6s ease-in-out infinite;transform-origin:0% 30%}
 .mk-adm-gear{animation:mk-adm-spin 9s linear infinite;transform-origin:50% 50%}
 .mk-adm-gear-s{animation:mk-adm-spin 5s linear infinite reverse;transform-origin:50% 50%}
@@ -235,7 +216,6 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-adm-spark{animation:mk-adm-spark 1.6s ease-out infinite;transform-origin:50% 50%}
 @keyframes mk-adm-spark{0%{opacity:0;transform:scale(.5)}30%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 
-/* Pose set kedua: rangka bersama (mk-sp percikan, mk-star bintang di mata) */
 .mk-sp{animation:mk-sp 1.8s ease-out infinite;transform-origin:50% 50%}
 .mk-sps>.mk-sp:nth-child(2){animation-delay:.18s}
 .mk-sps>.mk-sp:nth-child(3){animation-delay:.36s}
@@ -243,7 +223,6 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-star{animation:mk-star 2s ease-in-out infinite;transform-origin:50% 50%}
 @keyframes mk-star{0%,100%{transform:scale(.7) rotate(0);opacity:.7}50%{transform:scale(1.2) rotate(18deg);opacity:1}}
 
-/* Pose arsip: kotak map warna-warni */
 .mk-ars-map{animation:mk-ars-lift 2.8s ease-in-out infinite;transform-origin:80% 100%}
 @keyframes mk-ars-lift{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(-3deg) translateY(-6px)}}
 .mk-ars-wing-r{animation:mk-ars-hug 3s ease-in-out infinite;transform-origin:50% 0}
@@ -256,14 +235,12 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-ars-isi>.mk-ars-f:nth-child(4){animation-delay:.9s}
 @keyframes mk-ars-peek{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 
-/* Pose semangat: tangan terkepal terangkat */
 .mk-sem-arm{animation:mk-sem-pump 1.8s ease-in-out infinite;transform-origin:90% 90%}
 @keyframes mk-sem-pump{0%,100%{transform:rotate(-3deg)}45%{transform:rotate(4deg) translateY(-4px)}}
 .mk-sem-fist{animation:mk-sem-squeeze 1.8s ease-in-out infinite;transform-origin:50% 50%}
 @keyframes mk-sem-squeeze{0%,100%{transform:scale(1)}45%{transform:scale(1.1)}}
 .mk-sem-wing-r{animation:mk-ars-hug 3s ease-in-out infinite;transform-origin:50% 0}
 
-/* Pose kartu: kartu siswa + kunci emas */
 .mk-kar-card{animation:mk-kar-sway 3.2s ease-in-out infinite;transform-origin:50% 100%}
 @keyframes mk-kar-sway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg) translateY(-3px)}}
 .mk-kar-arm-l{animation:mk-ars-hug 3.2s ease-in-out infinite;transform-origin:100% 50%}
@@ -273,14 +250,12 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 @keyframes mk-kar-key{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(6deg) translateY(-4px)}}
 .mk-kar-fist{animation:mk-sem-squeeze 2.4s ease-in-out infinite;transform-origin:50% 50%}
 
-/* Pose keagamaan: tangan berdoa + Al-Qur'an di rehal */
 .mk-kag-arm{animation:mk-kag-rise 3s ease-in-out infinite;transform-origin:100% 90%}
 @keyframes mk-kag-rise{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(3deg) translateY(-5px)}}
 .mk-kag-book{animation:mk-ars-box 3.4s ease-in-out infinite;transform-origin:50% 100%}
 .mk-kag-star{animation:mk-kag-glow 2.6s ease-in-out infinite;transform-origin:50% 50%}
 @keyframes mk-kag-glow{0%,100%{opacity:.6;transform:scale(.94)}50%{opacity:1;transform:scale(1.08) rotate(8deg)}}
 
-/* Pose laporan: papan grafik + tongkat penunjuk */
 .mk-lap-board{animation:mk-kar-sway 3.4s ease-in-out infinite;transform-origin:50% 100%}
 .mk-lap-bar{animation:mk-lap-grow 3s ease-in-out infinite;transform-origin:50% 100%}
 .mk-lap-bar:nth-of-type(2){animation-delay:.15s}
@@ -294,14 +269,12 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-lap-arm-r{animation:mk-lap-tap 2.2s ease-in-out infinite;transform-origin:0% 0%}
 .mk-lap-arm-l{animation:mk-ars-hug 3.4s ease-in-out infinite;transform-origin:100% 50%}
 
-/* Pose notifikasi: lonceng emas berbunyi */
 .mk-not-bell{animation:mk-not-ring 1.2s ease-in-out infinite;transform-origin:50% 90%}
 @keyframes mk-not-ring{0%,100%{transform:rotate(0)}15%{transform:rotate(-12deg)}35%{transform:rotate(10deg)}55%{transform:rotate(-6deg)}75%{transform:rotate(3deg)}}
 .mk-not-arm{animation:mk-not-shake 1.2s ease-in-out infinite;transform-origin:100% 100%}
 @keyframes mk-not-shake{0%,100%{transform:rotate(0)}15%{transform:rotate(-2deg)}35%{transform:rotate(2deg)}55%{transform:rotate(-1deg)}}
 .mk-not-arm-r{animation:mk-sem-pump 2.4s ease-in-out infinite;transform-origin:0% 100%}
 
-/* Pose pembinaan: gelembung hati + tangan di dada */
 .mk-pbn-bubble{animation:mk-pbn-float 3s ease-in-out infinite;transform-origin:80% 100%}
 @keyframes mk-pbn-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.04)}}
 .mk-pbn-heart{animation:mk-pbn-beat 1.4s ease-in-out infinite;transform-origin:50% 50%}
@@ -311,7 +284,6 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-pbn-chest{animation:mk-pbn-pat 1.4s ease-in-out infinite;transform-origin:0% 0%}
 @keyframes mk-pbn-pat{0%,100%{transform:translate(0,0)}20%{transform:translate(-2px,1px)}40%{transform:translate(0,0)}}
 
-/* Pose profil: kaca pembesar menyisir + kartu profil siswa */
 .mk-pro-arm-l{animation:mk-pro-arm 3.2s ease-in-out infinite;transform-origin:83% 50%}
 @keyframes mk-pro-arm{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(2deg)}}
 .mk-pro-lens{animation:mk-pro-scan 3.2s ease-in-out infinite;transform-origin:2% 98%}
@@ -327,7 +299,6 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-pro-l3{animation-delay:.4s}
 @keyframes mk-pro-line{0%,8%{transform:scaleX(.15);opacity:.4}40%,85%{transform:scaleX(1);opacity:1}100%{transform:scaleX(.15);opacity:.4}}
 
-/* Reaksi klik (mk-rx-*), gerakan iseng (mk-id-*), mata mengikuti pointer (mk-track). Dipasang pada <svg class="mk"> oleh maskot.js. */
 .mk.mk-rx-spin,.mk.mk-rx-nod,.mk.mk-rx-flap,.mk.mk-rx-tilt,.mk.mk-rx-pusing,.mk.mk-id-menguap,.mk.mk-id-meregang{transform-origin:50% 100%}
 .mk-rx-spin{animation:mk-rx-spin .8s cubic-bezier(.3,.7,.4,1)}
 @keyframes mk-rx-spin{from{transform:perspective(500px) rotateY(0)}to{transform:perspective(500px) rotateY(360deg)}}
@@ -361,14 +332,12 @@ html.dark .mk,body.dark .mk{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7))}
 .mk-id-meregang{animation:mk-id-regang 1.5s ease-in-out}
 @keyframes mk-id-regang{0%,100%{transform:scale(1,1)}40%,65%{transform:scale(.94,1.09) translateY(-4px)}}
 
-/* Mata mengikuti pointer: hentikan gerak lirik bawaan, posisi diatur inline oleh maskot.js */
 .mk.mk-track .mk-look,.mk.mk-track .mk-o-look{animation:none;transition:transform .12s ease-out}
 
 @media (prefers-reduced-motion: reduce){
   .mk,.mk *{animation:none!important;transition:none!important}
 }
 
-/* Gelembung ucapan: maskot kecil + balon teks. Dipasang oleh maskotUcapPasang() di maskot.js. */
 .mk-ucap-host:empty{display:none}
 .mk-ucap-wrap{display:flex;align-items:center;gap:.5rem;animation:mk-ucap-masuk .45s cubic-bezier(.2,.9,.3,1.15) both}
 .mk-ucap-wrap.mk-ucap-keluar{animation:mk-ucap-keluar .2s ease-in forwards}
@@ -392,7 +361,6 @@ body.dark .mk-ucap-tutup:hover{background:#334155;color:#e2e8f0}
   .mk-ucap-wrap{animation:none!important}
 }
 
-/* Pose guru: dasi berayun, tongkat penunjuk mengetuk, papan jalan bergoyang, tanda pengenal berkilau, centang tergambar */
 .mk-gur-tie{animation:mk-gur-tie 3.6s ease-in-out infinite;transform-origin:50% 0}
 @keyframes mk-gur-tie{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
 .mk-gur-ptr{animation:mk-gur-tap 2.4s ease-in-out infinite;transform-origin:90% 100%}
@@ -404,7 +372,6 @@ body.dark .mk-ucap-tutup:hover{background:#334155;color:#e2e8f0}
 @keyframes mk-gur-kilau{0%,70%,100%{filter:brightness(1)}80%{filter:brightness(1.3)}}
 .mk-gur-check{stroke-dasharray:22;stroke-dashoffset:22;animation:mk-pre-check 4s ease-in-out infinite both}
 
-/* Pose siswa: sayap melambai, tangan bergoyang, tas dan dasi bergerak halus */
 .mk-sis-arm{animation:mk-sis-wave 1.5s ease-in-out infinite;transform-origin:5% 95%}
 @keyframes mk-sis-wave{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(9deg)}}
 .mk-sis-hand{animation:mk-sis-hand .75s ease-in-out infinite;transform-origin:50% 100%}
@@ -415,7 +382,6 @@ body.dark .mk-ucap-tutup:hover{background:#334155;color:#e2e8f0}
 .mk-sis-book{animation:mk-kar-sway 3.4s ease-in-out infinite;transform-origin:50% 100%}
 .mk-sis-arm-l{animation:mk-ars-hug 3s ease-in-out infinite;transform-origin:100% 0}
 
-/* Gelembung data: lencana angka dan warna menurut tingkat (kritis, sedang, rendah, baik) */
 .mk-ucap-angka{display:inline-flex;align-items:center;justify-content:center;min-width:1.5rem;height:1.5rem;padding:0 .4rem;margin-right:.45rem;border-radius:999px;background:#2563eb;color:#fff;font-size:.75rem;font-weight:800;line-height:1;vertical-align:middle}
 .mk-ucap[data-mk-ucap-profil],.mk-ucap[data-mk-ucap-notif]{cursor:pointer}
 .mk-ucap[data-mk-ucap-profil] .mk-ucap-teks::after,.mk-ucap[data-mk-ucap-notif] .mk-ucap-teks::after{content:" \203A";color:#2563eb;font-weight:800}

@@ -1,11 +1,10 @@
-// Presensi BK (Tahap 6). Hanya untuk role bk. Data: sheet KehadiranBK lewat getAbsensiBK / saveAbsensiBK.
 let abkTab = "isi";
 let abkTanggal = null;
 let abkKelas = "";
 let abkCari = "";
-let abkPilih = new Map();      // siswa_id -> status yang dipilih (belum tentu tersimpan)
-let abkTersimpan = new Map();  // siswa_id -> status tersimpan di server
-let abkWaktu = new Map();      // siswa_id -> jam presensi tersimpan
+let abkPilih = new Map();
+let abkTersimpan = new Map();
+let abkWaktu = new Map();
 let abkMuat = false;
 
 const ABK_STATUS = ["H", "I", "S", "A", "T"];
@@ -190,7 +189,6 @@ async function abkSimpan() {
     }
 }
 
-// ---- Rekap
 let abkRekapDari = "";
 let abkRekapSampai = "";
 

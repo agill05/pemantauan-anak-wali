@@ -1,4 +1,3 @@
-// Kelola akun Guru BK (khusus admin). Data dimuat langsung dari server lewat getBK.
 let bkList = [];
 let bkLoaded = false;
 

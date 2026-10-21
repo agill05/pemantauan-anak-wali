@@ -1,5 +1,3 @@
-/* Gelembung ucapan maskot di dashboard. Satu balon tiap dashboard dibuka (bukaUcapanMaskot dipanggil switchView),
- * render ulang karena polling tidak mengganti ucapan. Isi mengikuti peran dan kondisi data. */
 let ucapanMaskotPerluBaru = true;
 let ucapanMaskotKunci = "";
 let ucapanMaskotNomor = 0;
@@ -23,8 +21,6 @@ function wadahUcapanMaskot() {
 let ucapanMaskotCtl = null;
 const UCAP_LEVEL = { kritis: 3, sedang: 2, rendah: 1 };
 
-// Data yang sudah dimuat dashboard dan dipakai ulang oleh gelembung maskot pimpinan (admin dan kepsek).
-// Tidak ada panggilan API tambahan: bila belum termuat, ucapan terkait tidak ditampilkan.
 let ucapanAgenda = null;
 let ucapanPerKelas = null;
 let ucapanTatib = null;
@@ -40,7 +36,6 @@ function ucapanTatibRingkas(res) {
     return { perlu, batas };
 }
 
-// Ucapan untuk admin dan kepsek: tanpa presensi. Admin mendapat tambahan kerapian data master, kepsek ringkasan per kelas.
 function ucapanPimpinan(u, notifAktif, tambah) {
     const isAdmin = u.role === "admin";
     const semuaNotif = () => {
@@ -68,7 +63,6 @@ function ucapanPimpinan(u, notifAktif, tambah) {
             tambah({ kunci: "p-aman", bobot: 1, tingkat: "baik", teks: "Tidak ada siswa yang perlu perhatian saat ini." });
         }
 
-        // Rincian per kategori notifikasi: tiga kategori dengan catatan terbanyak.
         const perKategori = new Map();
         notifAktif.forEach(n => {
             const kat = String((n && n.category) || "").trim();
@@ -88,7 +82,6 @@ function ucapanPimpinan(u, notifAktif, tambah) {
             }));
     }
 
-    // Tata tertib: panggilan orang tua yang belum ditangani dan siswa yang mencapai batas.
     const tt = ucapanTatibRingkas(ucapanTatib);
     if (tt) {
         if (tt.batas) tambah({ kunci: "p-tatib-batas", view: "tatib", pose: "tatib", bobot: 5, tingkat: "kritis", angka: tt.batas, teks: "siswa mencapai batas tata tertib." });
@@ -96,7 +89,6 @@ function ucapanPimpinan(u, notifAktif, tambah) {
         if (!tt.batas && !tt.perlu) tambah({ kunci: "p-tatib-aman", pose: "tatib", bobot: 1, tingkat: "baik", teks: "Tidak ada panggilan orang tua yang tertunda." });
     }
 
-    // Agenda pembinaan yang akan datang.
     if (Array.isArray(ucapanAgenda) && ucapanAgenda.length) {
         const ag = ucapanAgenda[0];
         tambah({
@@ -106,7 +98,6 @@ function ucapanPimpinan(u, notifAktif, tambah) {
     }
 
     if (isAdmin) {
-        // Kerapian data master: hanya dihitung bila daftar siswa dan kelas sudah termuat.
         const siswaAll = appState.siswa || [];
         const kelasAll = appState.kelas || [];
         let adaMasalah = false;
@@ -124,7 +115,6 @@ function ucapanPimpinan(u, notifAktif, tambah) {
             tambah({ kunci: "a-data-rapi", bobot: 1, tingkat: "baik", teks: `Data master rapi: ${siswaAll.length} siswa, ${kelasAll.length} kelas, ${(appState.guru || []).length} guru.` });
         }
     } else if (Array.isArray(ucapanPerKelas) && ucapanPerKelas.length) {
-        // Kepsek: kelas dengan siswa perlu perhatian terbanyak.
         const urut = ucapanPerKelas.filter(k => Number(k.perlu_perhatian) > 0)
             .sort((a, b) => Number(b.perlu_perhatian) - Number(a.perlu_perhatian));
         if (urut.length) {
@@ -138,7 +128,6 @@ function ucapanPimpinan(u, notifAktif, tambah) {
         }
     }
 
-    // Hari besar: ucapan ringan berbobot rendah.
     const hari = typeof maskotKonteks === "function" ? maskotKonteks().hari : "";
     if (hari === "ramadan") tambah({ kunci: "h-ramadan", pose: "ceria", bobot: 1, tingkat: "baik", teks: "Selamat menjalankan ibadah Ramadan." });
     else if (hari === "agustus") tambah({ kunci: "h-agustus", pose: "ceria", bobot: 1, tingkat: "baik", teks: "Dirgahayu Republik Indonesia!" });
@@ -167,7 +156,6 @@ function kandidatUcapanMaskot() {
     const notifAktif = appState.notificationsReady ? (appState.currentNotifications || []) : [];
 
     if (isSiswa) {
-        // Hanya bila data hari ini sudah termuat sesi ini, supaya tidak salah menyebut "belum".
         if (misiTerakhirMuat > 0) {
             const total = (typeof MASTER_KEBIASAAN !== "undefined" && MASTER_KEBIASAAN.length) || 7;
             const sudah = sdMine(appState.kebiasaan).filter(k => sdTgl(k) === today && k.status === "Sudah").length;
@@ -200,7 +188,6 @@ function kandidatUcapanMaskot() {
         }
     } else if (isPimpinan) {
         ucapanPimpinan(u, notifAktif, tambah);
-        // Batasi enam ucapan berbobot terbesar supaya putaran balon tidak terlalu panjang.
         const pilih = daftar.slice().sort((a, b) => (b.bobot || 1) - (a.bobot || 1)).slice(0, 6);
         daftar.length = 0;
         pilih.forEach(x => daftar.push(x));
@@ -211,7 +198,6 @@ function kandidatUcapanMaskot() {
         const peran = isGuruUser() ? getPeranAktif() : "semua";
         const minggu = new Date(today + "T00:00:00Z").getUTCDay() === 0;
 
-        // Presensi: jumlah belum diisi, atau rekap bila sudah lengkap.
         const presensi = (tab, kunci, kata) => {
             const siswa = absensiSiswaTab(tab);
             if (!siswa.length) return;
@@ -251,7 +237,6 @@ function kandidatUcapanMaskot() {
             }
         }
 
-        // Siswa bermasalah: kelompokkan catatan notifikasi per siswa, tingkat tertinggi dulu.
         if (appState.notificationsReady) {
             const perSiswa = new Map();
             notifAktif.forEach(n => {
@@ -284,7 +269,6 @@ function kandidatUcapanMaskot() {
         }
     }
 
-    // Data belum termuat sama sekali: sapaan singkat sebagai pengisi sementara (bukan tips).
     if (!daftar.length) {
         const slot = jam < 4 ? "begadang" : jam < 11 ? "pagi" : jam < 15 ? "siang" : jam < 18 ? "sore" : "malam";
         const sapa = { begadang: "Masih terjaga?", pagi: "Selamat pagi!", siang: "Selamat siang!", sore: "Selamat sore!", malam: "Selamat malam!" };
@@ -309,14 +293,11 @@ function ucapanMaskotDashboard() {
         ucapanMaskotCtl = maskotUcapPutar(wadah, kandidatUcapanMaskot, 64, 7000);
     };
     if (u.role === "siswa" && typeof muatMisiHariIni === "function") {
-        // Tunggu data misi (maksimal 2,5 detik) agar ucapan sesuai kondisi hari ini.
         Promise.race([muatMisiHariIni(), new Promise(r => setTimeout(r, 2500))]).then(pasang, pasang);
     } else {
-        // Hanya guru yang memuat presensi hari ini agar angka "belum dipresensi" nyata. Admin dan kepsek tidak memakai data presensi.
-        // Giliran berikutnya otomatis memakai data baru.
         try {
             if (u.role === "guru" && typeof loadAbsensiData === "function" && absensiLoadedTanggal !== getDateWITA()) Promise.resolve(loadAbsensiData()).catch(() => { });
-        } catch (e) { /* abaikan */ }
+        } catch (e) {  }
         pasang();
     }
 }
@@ -332,7 +313,6 @@ async function renderDashboard() {
         else adminBanner.classList.add("hidden");
     }
 
-    // BK: tanpa prioritas dan agenda pembinaan (data pembinaan, nilai, presensi kelas bukan layanan BK).
     const isBK = roleAsli === "bk";
     ["dash-section-bottom", "dash-section-agenda"].forEach(id => {
         const el = document.getElementById(id);
@@ -357,7 +337,6 @@ async function renderDashboard() {
         const totalSiswaCount = getSiswaPeran().length;
         const labelSiswa = role === 'admin' ? 'Siswa' : getLabelSiswa();
         const hadirHariIni = scopeBySiswaId(appState.absensi, a => a.siswa_id).filter(a => a.status === 'H').length;
-        // Kartu "Hadir Hari Ini" hanya untuk guru. Admin dan kepsek tidak mengurus presensi harian.
         const tampilHadir = role === "guru";
         statsContainer.className = tampilHadir ? "grid grid-cols-1 sm:grid-cols-3 gap-3" : "grid grid-cols-1 sm:grid-cols-2 gap-3";
         if (role === "admin" || role === "guru") {
@@ -910,8 +889,6 @@ function renderHandledNote(n) {
     return `<p class="text-[11px] text-slate-500 italic">Catatan: ${escapeHtml(catatan)}</p>`;
 }
 
-/* Notifikasi dihitung di server (Notifikasi.gs: getNotifikasi).
- * Browser hanya: minta hasil, saring sesuai peran aktif, lalu tampilkan. */
 let notifSigTerakhir = null;
 let notifHasilServer = null;
 let notifIdDikenal = null;

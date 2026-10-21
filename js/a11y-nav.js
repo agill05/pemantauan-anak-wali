@@ -1,13 +1,3 @@
-/* PATCH 4 - Tombol Back HP/browser + aksesibilitas dialog.
- *
- * Bagian A: riwayat navigasi per tampilan (switchView) dan penutupan lapisan
- *           (popup SweetAlert, modal, sidebar) lewat tombol Back.
- * Bagian B: modal-container jadi dialog yang benar (role, aria-modal, label,
- *           fokus awal, jebakan fokus, Escape, kembalikan fokus).
- *
- * File ini tidak mengubah modul lain. Ia membungkus switchView dan mengamati
- * kelas "hidden" pada #modal-container.
- */
 (function () {
     "use strict";
 
@@ -23,9 +13,6 @@
         }
     }
 
-    /* ---------------------------------------------------------
-     * Bagian A - Riwayat navigasi
-     * --------------------------------------------------------- */
     var NAV = { ready: false, cur: null, skip: 0, silent: false, exitArmed: false, exitTimer: null };
 
     function viewAktif() {
@@ -75,7 +62,6 @@
         window.switchView = bungkus;
     }
 
-    /* Tutup lapisan teratas. Return true jika ada lapisan yang ditangani. */
     function tutupLapisanTeratas() {
         try {
             if (window.Swal && typeof Swal.isVisible === "function" && Swal.isVisible()) {
@@ -145,9 +131,6 @@
         }
     }
 
-    /* ---------------------------------------------------------
-     * Bagian B - Aksesibilitas modal
-     * --------------------------------------------------------- */
     var lastFocus = null;
     var modalTerbuka = false;
 
@@ -270,9 +253,6 @@
         }
     }
 
-    /* ---------------------------------------------------------
-     * Pasang
-     * --------------------------------------------------------- */
     function pasang() {
         bungkusSwitchView();
         window.addEventListener("popstate", onPopState);

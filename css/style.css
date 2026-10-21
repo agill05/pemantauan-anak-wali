@@ -3710,7 +3710,6 @@ body:not(.dark) #dash-kelas-list p.text-slate-500 {
     }
 }
 
-/* Tata tertib: tabel rekap & riwayat (layar >= 768px). Di bawah itu tetap kartu. */
 .tt-tabel-wrap {
     display: none;
 }
@@ -3891,14 +3890,6 @@ body.dark .tt-tabel tfoot .tt-nama {
     background: #0f172a;
 }
 
-/* ==========================================================
-   PATCH 1 - Perbaikan kontras mode gelap
-   1) Variabel teks/garis ikut gelap
-   2) Latar pastel (bg-*-50/100/200) jadi translusen gelap
-   3) Teks warna pekat (600-900) jadi terang
-   4) Hover/border/divide
-   5) Popup SweetAlert2
-   ========================================================== */
 body.dark {
     --text: #f1f5f9;
     --text-muted: #cbd5e1;
@@ -3907,7 +3898,6 @@ body.dark {
     --primary-light: rgba(37, 99, 235, 0.18);
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
-/* amber */
 body.dark .bg-amber-50{background-color:rgba(245,158,11,.14)!important}
 body.dark .bg-amber-100{background-color:rgba(245,158,11,.22)!important}
 body.dark .bg-amber-200{background-color:rgba(245,158,11,.30)!important}
@@ -3917,7 +3907,6 @@ body.dark .text-amber-600,body.dark .text-amber-700,body.dark .text-amber-800,bo
 body.dark .hover\:bg-amber-50:hover{background-color:rgba(245,158,11,.14)!important}
 body.dark .hover\:bg-amber-100:hover{background-color:rgba(245,158,11,.26)!important}
 body.dark .hover\:text-amber-600:hover{color:#fcd34d!important}
-/* blue */
 body.dark .bg-blue-50{background-color:rgba(59,130,246,.14)!important}
 body.dark .bg-blue-100{background-color:rgba(59,130,246,.22)!important}
 body.dark .bg-blue-200{background-color:rgba(59,130,246,.30)!important}
@@ -3927,7 +3916,6 @@ body.dark .text-blue-600,body.dark .text-blue-700,body.dark .text-blue-800,body.
 body.dark .hover\:bg-blue-50:hover{background-color:rgba(59,130,246,.14)!important}
 body.dark .hover\:bg-blue-100:hover{background-color:rgba(59,130,246,.26)!important}
 body.dark .hover\:text-blue-600:hover{color:#93c5fd!important}
-/* emerald */
 body.dark .bg-emerald-50{background-color:rgba(16,185,129,.14)!important}
 body.dark .bg-emerald-100{background-color:rgba(16,185,129,.22)!important}
 body.dark .bg-emerald-200{background-color:rgba(16,185,129,.30)!important}
@@ -3937,7 +3925,6 @@ body.dark .text-emerald-600,body.dark .text-emerald-700,body.dark .text-emerald-
 body.dark .hover\:bg-emerald-50:hover{background-color:rgba(16,185,129,.14)!important}
 body.dark .hover\:bg-emerald-100:hover{background-color:rgba(16,185,129,.26)!important}
 body.dark .hover\:text-emerald-600:hover{color:#6ee7b7!important}
-/* indigo */
 body.dark .bg-indigo-50{background-color:rgba(99,102,241,.14)!important}
 body.dark .bg-indigo-100{background-color:rgba(99,102,241,.22)!important}
 body.dark .bg-indigo-200{background-color:rgba(99,102,241,.30)!important}
@@ -3947,7 +3934,6 @@ body.dark .text-indigo-600,body.dark .text-indigo-700,body.dark .text-indigo-800
 body.dark .hover\:bg-indigo-50:hover{background-color:rgba(99,102,241,.14)!important}
 body.dark .hover\:bg-indigo-100:hover{background-color:rgba(99,102,241,.26)!important}
 body.dark .hover\:text-indigo-600:hover{color:#a5b4fc!important}
-/* orange */
 body.dark .bg-orange-50{background-color:rgba(249,115,22,.14)!important}
 body.dark .bg-orange-100{background-color:rgba(249,115,22,.22)!important}
 body.dark .bg-orange-200{background-color:rgba(249,115,22,.30)!important}
@@ -3957,7 +3943,6 @@ body.dark .text-orange-600,body.dark .text-orange-700,body.dark .text-orange-800
 body.dark .hover\:bg-orange-50:hover{background-color:rgba(249,115,22,.14)!important}
 body.dark .hover\:bg-orange-100:hover{background-color:rgba(249,115,22,.26)!important}
 body.dark .hover\:text-orange-600:hover{color:#fdba74!important}
-/* pink */
 body.dark .bg-pink-50{background-color:rgba(236,72,153,.14)!important}
 body.dark .bg-pink-100{background-color:rgba(236,72,153,.22)!important}
 body.dark .bg-pink-200{background-color:rgba(236,72,153,.30)!important}
@@ -3967,7 +3952,6 @@ body.dark .text-pink-600,body.dark .text-pink-700,body.dark .text-pink-800,body.
 body.dark .hover\:bg-pink-50:hover{background-color:rgba(236,72,153,.14)!important}
 body.dark .hover\:bg-pink-100:hover{background-color:rgba(236,72,153,.26)!important}
 body.dark .hover\:text-pink-600:hover{color:#f9a8d4!important}
-/* purple */
 body.dark .bg-purple-50{background-color:rgba(168,85,247,.14)!important}
 body.dark .bg-purple-100{background-color:rgba(168,85,247,.22)!important}
 body.dark .bg-purple-200{background-color:rgba(168,85,247,.30)!important}
@@ -3977,7 +3961,6 @@ body.dark .text-purple-600,body.dark .text-purple-700,body.dark .text-purple-800
 body.dark .hover\:bg-purple-50:hover{background-color:rgba(168,85,247,.14)!important}
 body.dark .hover\:bg-purple-100:hover{background-color:rgba(168,85,247,.26)!important}
 body.dark .hover\:text-purple-600:hover{color:#d8b4fe!important}
-/* rose */
 body.dark .bg-rose-50{background-color:rgba(244,63,94,.14)!important}
 body.dark .bg-rose-100{background-color:rgba(244,63,94,.22)!important}
 body.dark .bg-rose-200{background-color:rgba(244,63,94,.30)!important}
@@ -3987,7 +3970,6 @@ body.dark .text-rose-600,body.dark .text-rose-700,body.dark .text-rose-800,body.
 body.dark .hover\:bg-rose-50:hover{background-color:rgba(244,63,94,.14)!important}
 body.dark .hover\:bg-rose-100:hover{background-color:rgba(244,63,94,.26)!important}
 body.dark .hover\:text-rose-600:hover{color:#fda4af!important}
-/* sky */
 body.dark .bg-sky-50{background-color:rgba(14,165,233,.14)!important}
 body.dark .bg-sky-100{background-color:rgba(14,165,233,.22)!important}
 body.dark .bg-sky-200{background-color:rgba(14,165,233,.30)!important}
@@ -3997,7 +3979,6 @@ body.dark .text-sky-600,body.dark .text-sky-700,body.dark .text-sky-800,body.dar
 body.dark .hover\:bg-sky-50:hover{background-color:rgba(14,165,233,.14)!important}
 body.dark .hover\:bg-sky-100:hover{background-color:rgba(14,165,233,.26)!important}
 body.dark .hover\:text-sky-600:hover{color:#7dd3fc!important}
-/* teal */
 body.dark .bg-teal-50{background-color:rgba(20,184,166,.14)!important}
 body.dark .bg-teal-100{background-color:rgba(20,184,166,.22)!important}
 body.dark .bg-teal-200{background-color:rgba(20,184,166,.30)!important}
@@ -4007,7 +3988,6 @@ body.dark .text-teal-600,body.dark .text-teal-700,body.dark .text-teal-800,body.
 body.dark .hover\:bg-teal-50:hover{background-color:rgba(20,184,166,.14)!important}
 body.dark .hover\:bg-teal-100:hover{background-color:rgba(20,184,166,.26)!important}
 body.dark .hover\:text-teal-600:hover{color:#5eead4!important}
-/* violet */
 body.dark .bg-violet-50{background-color:rgba(139,92,246,.14)!important}
 body.dark .bg-violet-100{background-color:rgba(139,92,246,.22)!important}
 body.dark .bg-violet-200{background-color:rgba(139,92,246,.30)!important}
@@ -4017,7 +3997,6 @@ body.dark .text-violet-600,body.dark .text-violet-700,body.dark .text-violet-800
 body.dark .hover\:bg-violet-50:hover{background-color:rgba(139,92,246,.14)!important}
 body.dark .hover\:bg-violet-100:hover{background-color:rgba(139,92,246,.26)!important}
 body.dark .hover\:text-violet-600:hover{color:#c4b5fd!important}
-/* slate */
 body.dark .text-slate-900:not(.bg-amber-400){color:#f8fafc!important}
 body.dark .bg-slate-200{background-color:#334155!important}
 body.dark .border-slate-300{border-color:#475569!important}
@@ -4029,17 +4008,14 @@ body.dark .hover\:bg-slate-200:hover{background-color:#475569!important}
 body.dark .hover\:text-slate-600:hover,
 body.dark .hover\:text-slate-700:hover{color:#e2e8f0!important}
 body.dark .hover\:bg-emerald-50\/50:hover{background-color:rgba(16,185,129,.1)!important}
-/* chip emerald/amber solid: tetap terbaca */
 body.dark .bg-emerald-200.text-emerald-800{color:#a7f3d0!important}
 body.dark .bg-amber-400.text-slate-900{color:#0f172a!important}
 
-/* tautan dan tombol ringan */
 body.dark .dash-section-link{color:#93c5fd;background:var(--primary-light)}
 body.dark .dash-section-link:hover{background:rgba(37,99,235,.3)}
 body.dark .empty-state{background:#1e293b;color:#94a3b8}
 body.dark .skeleton{background:linear-gradient(90deg,#1e293b 25%,#334155 37%,#1e293b 63%);background-size:400% 100%}
 
-/* SweetAlert2 */
 body.dark .swal2-popup{background:#1e293b!important;color:#f1f5f9!important;border:1px solid #334155}
 body.dark .swal2-title{color:#f8fafc!important}
 body.dark .swal2-html-container,
@@ -4060,9 +4036,6 @@ body.dark .swal2-icon.swal2-success .swal2-success-fix{background:#1e293b!import
 body.dark .swal2-icon.swal2-success .swal2-success-ring{border-color:rgba(16,185,129,.3)!important}
 body.dark .swal2-popup .swal2-styled.swal2-cancel{background:#475569!important;color:#f8fafc!important}
 
-/* ==========================================================
-   PATCH 2 - Tombol tema, login gelap, anti-kedip
-   ========================================================== */
 html.dark {
     --background: #0b0f19;
     --surface: #1e293b;
@@ -4164,9 +4137,6 @@ body.dark .lg-hint {
     color: #fbbf24;
 }
 
-/* ==========================================================
-   PATCH 3 - Dashboard siswa, quick tile, info, tabel popup
-   ========================================================== */
 body.dark {
     --surface-2: #0f172a;
 }
@@ -4207,13 +4177,9 @@ body.dark .quick-tile-purple { background: rgba(124, 58, 237, 0.18); }
 body.dark .quick-tile-label { color: #e2e8f0; }
 body.dark .quick-tile-chevron { color: #64748b; }
 
-/* tabel di dalam popup (rekap presensi dll.) */
 body.dark .swal2-popup table td,
 body.dark .swal2-popup table th { border-color: #475569 !important; }
 
-/* Tabel data layar laptop (Siswa, Presensi, Akademik). Memakai dasar .tt-tabel di atas. */
-/* Tabel panjang ikut scroll halaman (tanpa kotak scroll vertikal sendiri). Lebar berlebih digeser mendatar,
-   tidak dipotong. Kolom Aksi menempel di kanan supaya selalu terlihat. */
 @media (min-width: 768px) {
     .tt-tabel-wrap.tt-tinggi {
         max-height: none;
@@ -4257,7 +4223,6 @@ body.dark .swal2-popup table th { border-color: #475569 !important; }
     }
 }
 
-/* Kolom teks padat: boleh turun baris, tanpa lebar minimum. */
 .tt-tabel .tt-padat {
     min-width: 0;
     white-space: normal;
@@ -4296,11 +4261,6 @@ body.dark .swal2-popup table th { border-color: #475569 !important; }
     white-space: normal;
 }
 
-/* ==========================================================
-   Tabel: semua header dan isi sel rata tengah, ada garis pemisah antar kolom.
-   Pengecualian: kolom teks panjang (.tt-ket, .tt-butir) tetap rata kiri
-   supaya paragraf tetap enak dibaca. Header tetap di tengah.
-   ========================================================== */
 .tt-tabel,
 .tabel-garis {
     text-align: center;
@@ -4325,7 +4285,6 @@ body.dark .swal2-popup table th { border-color: #475569 !important; }
     text-align: left;
 }
 
-/* Garis pemisah per kolom */
 .tt-tabel th,
 .tt-tabel td,
 .tabel-garis th,
@@ -4347,7 +4306,6 @@ body.dark .tabel-garis td {
     border-right-color: #334155;
 }
 
-/* Tabel arsip (kelas utilitas Tailwind): tambah garis bawah header dan tengahkan isi */
 .tabel-garis th,
 .tabel-garis td {
     vertical-align: middle;
@@ -4361,7 +4319,6 @@ body.dark .tabel-garis thead th {
     border-bottom-color: #334155;
 }
 
-/* Fallback header tabel lain */
 thead th,
 table th[scope="col"],
 #arsip-lihat-tabel thead th,
@@ -4369,7 +4326,6 @@ table th[scope="col"],
     text-align: center;
 }
 
-/* Kolom Nama / identitas: header dan isi rata kiri (menimpa rata tengah di atas) */
 .tt-tabel th.tt-nama,
 .tt-tabel td.tt-nama,
 .tt-tabel thead th.tt-nama,
@@ -4378,27 +4334,16 @@ table th[scope="col"],
     text-align: left;
 }
 
-/* Isi sel rata kiri, header kolom tetap tengah */
 .tt-tabel td.tt-kiri {
     text-align: left;
 }
 
-/* Tabel arsip: kolom nama (header dan isi) rata kiri */
 .tabel-garis th.tt-kiri,
 .tabel-garis td.tt-kiri,
 #arsip-lihat-tabel thead th.tt-kiri {
     text-align: left;
 }
 
-/* ==========================================================================
-   FIX HEADER MOBILE (v152)
-   Masalah: pada HP dengan lebar efektif sempit / ukuran font-tampilan besar,
-   "overflow-wrap:anywhere" membuat min-content kolom teks header = 1 huruf,
-   sehingga flex (min-w-0 flex-1) menciutkan kolom nama sampai 1 huruf per baris.
-   Solusi: pakai break-word (hanya pecah kata bila tidak muat), beri lebar minimum
-   kolom teks, kecilkan tombol, sembunyikan tombol refresh di layar sempit,
-   dan batasi tinggi teks dengan line-clamp.
-   ========================================================================== */
 @media (max-width: 1023px) {
     #header-greeting,
     #header-title,
@@ -4425,23 +4370,19 @@ table th[scope="col"],
         overflow: hidden;
     }
 
-    /* kolom teks tidak boleh lebih sempit dari ~7rem */
     #header-default > div:first-child > div:last-child {
         min-width: 7rem;
     }
 
-    /* grup kiri (burger + avatar) hemat ruang */
     #header-default { padding-left: 0.5rem; padding-right: 0.5rem; gap: 0.25rem; }
     #header-default > div:first-child { gap: 0.375rem; }
     #header-mobile-avatar { width: 2.25rem; height: 2.25rem; }
 
-    /* grup kanan: tombol lebih ramping */
     #header-default > div:last-child { gap: 0; }
     #main-header .touch-btn { min-width: 36px; min-height: 40px; }
     #btn-notif-header { padding: 0.5rem 0.375rem; }
 }
 
 @media (max-width: 479px) {
-    /* tombol refresh dipindah ke pull/refresh lain; sembunyikan agar nama muat */
     #btn-refresh-header { display: none !important; }
 }

@@ -674,8 +674,6 @@ function renderSiswaView() {
             <i class="fas fa-trash"></i>
         </button>` : ''}`;
 
-    // Kartu HP: identitas di baris atas (lebar penuh), tombol aksi di baris bawah.
-    // Sebelumnya 5 tombol berdampingan dengan teks sehingga NISN dan kelas terhimpit dan pecah per huruf.
     const kartuHtml = data.map(({ s, kls, bisaUbah: bisaUbahSiswa }) => `
             <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="flex items-center gap-3 min-w-0">

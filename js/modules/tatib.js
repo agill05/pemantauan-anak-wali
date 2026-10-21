@@ -699,7 +699,6 @@ async function openModalTatibInput(preSiswaId = null) {
     const adaKategori = Object.keys(TT_KAT_LABEL_BAWAAN).find(k => tatibMaster.master.some(m => m.aktif && m.kategori === k));
     if (adaKategori) ttForm.kat = adaKategori;
 
-    // Hanya kelas yang namanya dikenal. Siswa tanpa kelas (kelas_id kosong atau tidak terdaftar) dijadikan satu opsi "Tanpa kelas".
     const kelasIds = Array.from(new Set(writable.map(s => String(s.kelas_id)).filter(id => gsNamaKelas({ kelas_id: id }))))
         .sort((a, b) => bandingkanKelas(gsNamaKelas({ kelas_id: a }), gsNamaKelas({ kelas_id: b })));
     const adaTanpaKelas = writable.some(s => !gsNamaKelas(s));

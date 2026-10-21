@@ -393,13 +393,11 @@ function canEditRecord(rec, kategori) {
     if (!rec || !appState.user) return false;
     if (appState.user.role === "admin") return true;
     if (kategori === "akademik") {
-        // Nilai mapel: hanya guru pengisi (dan admin) yang boleh ubah/hapus.
         if (!isGuruUser()) return false;
         const pemilik = String(rec.dibuat_oleh_id || "").trim();
         return pemilik !== "" && pemilik === String(appState.user.id).trim();
     }
     if (appState.user.role === "bk") {
-        // BK hanya boleh ubah/hapus catatan yang ditulis sesama BK.
         return canWrite(kategori, rec.siswa_id) && String(rec.dibuat_sebagai || "").trim() === "bk";
     }
     if (!canWrite(kategori, rec.siswa_id)) return false;
@@ -504,8 +502,6 @@ function kelasKunciUrut(nama) {
     return { tingkat: m[1] ? kelasAngkaRomawi(m[1]) : Number(m[2]), sisa: m[3] || "" };
 }
 
-// Urut nama kelas menurut tingkat (VII, VIII, IX; juga 7, 8, 9), baru rombel (1, 2, A, B).
-// Nama yang tidak dikenali (kosong, "-") diletakkan paling akhir.
 function bandingkanKelas(a, b) {
     const ka = kelasKunciUrut(a);
     const kb = kelasKunciUrut(b);

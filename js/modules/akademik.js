@@ -76,7 +76,6 @@ function renderAkademikNilai() {
     }
 
     const dalamPeran = scopeBySiswaId(appState.akademik, item => item.siswa_id);
-    // Nilai yang diisi guru sendiri untuk siswa di luar wali/binaan tetap tampil agar bisa diubah/dihapus.
     const idSaya = String((appState.user && appState.user.id) || "").trim();
     const idDalam = new Set(dalamPeran.map(item => String(item.id)));
     const milikSaya = isGuruUser()
@@ -174,8 +173,6 @@ function akdFmt(v) {
     return n === null ? "-" : String(Math.round(n * 100) / 100).replace(".", ",");
 }
 
-// Daftar tugas/UH dari rekaman: JSON array di kolom "tugas"/"uh". Cadangan: kolom lama tugas_1..5 / uh_1..5.
-// null = belum diisi.
 function akdDaftar(item, prefix) {
     let arr = [];
     const m = item ? item[prefix] : "";
@@ -188,7 +185,6 @@ function akdDaftar(item, prefix) {
     return arr.map(v => akdAngka(v));
 }
 
-// komp: { tugas: [..], uh: [..], sts, asas }. Nilai kosong atau null tidak dihitung.
 function akdHitungRapor(komp) {
     const ada = l => (l || []).map(akdAngka).filter(n => n !== null);
     const rata = l => l.length ? Math.round(l.reduce((a, b) => a + b, 0) / l.length * 100) / 100 : null;
@@ -200,19 +196,16 @@ function akdHitungRapor(komp) {
     return { rata_tugas: rt, rata_uh: ru, nilai_akhir: bobot > 0 ? Math.round(total / bobot * 100) / 100 : null };
 }
 
-// Semester berjalan dari kalender semester (Pengaturan). Cadangan: Juli-Des = Ganjil.
 function akdSemesterDefault() {
     if (typeof kalenderSemester === "function") return kalenderSemester().semester;
     return Number(String(getDateWITA()).slice(5, 7)) >= 7 ? "Ganjil" : "Genap";
 }
 
-// Data lama tanpa semester selalu ikut. smt kosong = semester berjalan.
 function akdFilterSemester(list, smt) {
     const s = smt || akdSemesterDefault();
     return (list || []).filter(a => !a.semester || a.semester === s);
 }
 
-// Filter tampilan daftar: "aktif" | "Ganjil" | "Genap" | "semua"
 let _akdSemFilter = "aktif";
 
 function akdTerapkanFilterSemester(list) {
@@ -239,7 +232,6 @@ function akdDaftarNilai(item, prefix) {
     return akdDaftar(item, prefix).filter(v => v !== null).map(akdFmt).join(", ");
 }
 
-// ===== Tampilan leger: Tugas dan UH dipisah per nomor, lalu Rata-Rata, lalu Nilai Akhir =====
 function akdPasangGaya() {
     if (document.getElementById("akd-gaya")) return;
     const st = document.createElement("style");
@@ -268,7 +260,6 @@ body.dark .akd-chip b { color: #94a3b8; }
     document.head.appendChild(st);
 }
 
-// Info siswa dari satu rekaman nilai (siswa dalam peran, atau di luar peran lewat siswa_nama).
 function akdInfoSiswa(item) {
     const sDalam = (appState.siswa || []).find(x => String(x.id) === String(item.siswa_id));
     const luarPeran = !sDalam && !!item.siswa_nama;
@@ -278,21 +269,18 @@ function akdInfoSiswa(item) {
     return { s: s, luarPeran: luarPeran, nama: s ? s.nama : "Siswa" };
 }
 
-// Rata-rata dari daftar nilai rekaman. Cadangan: kolom rata_tugas / rata_uh dari server. null jika tidak ada.
 function akdRataItem(item, jenis) {
     const h = akdHitungRapor({ tugas: akdDaftar(item, "tugas"), uh: akdDaftar(item, "uh"), sts: "", asas: "" });
     const v = jenis === "uh" ? h.rata_uh : h.rata_tugas;
     return v === null ? akdAngka(item["rata_" + jenis]) : v;
 }
 
-// Nilai Akhir sementara: ada nilai komponen tetapi ASAS belum terisi.
 function akdSementara(item) {
     const ada = akdDaftar(item, "tugas").some(v => v !== null) || akdDaftar(item, "uh").some(v => v !== null)
         || akdAngka(item.sts) !== null || akdAngka(item.asas) !== null;
     return ada && akdAngka(item.asas) === null;
 }
 
-// Jumlah kolom nomor yang perlu ditampilkan = nomor terakhir yang terisi di antara semua baris. Minimal 1.
 function akdMaksKolom(rows, jenis) {
     let m = 0;
     rows.forEach(r => {
@@ -304,7 +292,6 @@ function akdMaksKolom(rows, jenis) {
     return Math.max(m, 1);
 }
 
-// Chip nilai untuk kartu HP: T1 80, T2 85, T3 -. Kosong jika belum ada nilai.
 function akdChipDaftar(item, jenis) {
     const d = akdDaftar(item, jenis);
     while (d.length && d[d.length - 1] === null) d.pop();
@@ -314,13 +301,10 @@ function akdChipDaftar(item, jenis) {
         `<span class="akd-chip"><b>${kode}${i + 1}</b> ${v === null ? "-" : escapeHtml(akdFmt(v))}</span>`).join("")}</span>`;
 }
 
-// Sel angka tabel leger. null = belum diisi ("-"). 0 tetap tampil "0".
 function akdSelAngka(v, kelas) {
     return `<td class="tt-tengah ${kelas || ""}">${v === null || v === undefined ? '<span class="text-slate-300">-</span>' : escapeHtml(akdFmt(v))}</td>`;
 }
 
-// Tabel leger per kelompok. Satu siswa saja: kelompok per semester, baris = mapel.
-// Banyak siswa: kelompok per mapel + semester, baris = siswa. Jumlah kolom Tugas/UH mengikuti kelompoknya sendiri.
 function akdTabelLeger(list, kolCek) {
     const modeSiswa = new Set(list.map(r => String(r.siswa_id))).size === 1;
     const banding = (a, b) => String(a).localeCompare(String(b), "id", { sensitivity: "base", numeric: true });
@@ -416,7 +400,6 @@ function akdTabelLeger(list, kolCek) {
     }).join("");
 }
 
-// Kumpulkan nilai dari form: { tugas: [..], uh: [..], sts, asas }. Urutan = urutan kotak.
 function akdBacaForm() {
     const komp = { tugas: [], uh: [], sts: "", asas: "" };
     document.querySelectorAll("[data-akd-list]").forEach(i => komp[i.dataset.akdList].push(i.value.trim()));
@@ -469,10 +452,9 @@ function akdHapusKotak(jenis) {
 
 function akdFormKomponenHtml(rec) {
     const semPilih = rec && rec.semester ? rec.semester : akdSemesterDefault();
-    const kunciSemester = !isAdminUser(); // admin boleh memilih (koreksi). Guru dikunci sesuai kalender.
+    const kunciSemester = !isAdminUser();
     const semOpts = AKD_SEMESTER.map(s => `<option value="${s}" ${s === semPilih ? 'selected' : ''}>${s}</option>`).join("");
 
-    // Awal: satu kotak. Rekaman lama: nilai yang ada + satu kotak kosong berikutnya (mulai Tugas 2, 3, dst).
     const daftarKotak = jenis => {
         let nilai = rec ? akdDaftar(rec, jenis) : [];
         while (nilai.length && nilai[nilai.length - 1] === null) nilai.pop();
@@ -531,7 +513,6 @@ const DAFTAR_MAPEL = ["Agama", "PKn", "Bahasa Indonesia", "Bahasa Inggris", "Mat
 
 let _siswaSemuaAkd = null;
 
-// Guru mapel boleh isi nilai siswa mana pun, jadi daftar diambil dari server (semua siswa).
 async function ambilSiswaSemuaAkademik() {
     if (_siswaSemuaAkd && Date.now() - _siswaSemuaAkd.t < 5 * 60 * 1000) return _siswaSemuaAkd.data;
     showLoading("Memuat daftar siswa...");
@@ -544,10 +525,8 @@ async function ambilSiswaSemuaAkademik() {
     return null;
 }
 
-// ===== Lanjut nilai: pilih siswa + mapel yang sudah punya baris di semester ini =====
 let _akdPenuhT = 0;
 
-// Data nilai di memori bisa sebagian (filter siswa). Muat semua sekali per menit supaya baris yang ada ketemu.
 async function akdPastikanDataPenuh() {
     if (Date.now() - _akdPenuhT < 60000) return;
     const segar = await apiCall("getAkademik", { siswa_id: null }, false);
@@ -580,7 +559,6 @@ async function akdCekLanjut() {
     let ada = akdCariBarisAda(siswaId, mapel, smt);
     if (!ada) {
         await akdPastikanDataPenuh();
-        // Pilihan bisa berubah selama menunggu. Batalkan jika sudah beda.
         if ((document.getElementById("m-akd-siswa") || {}).value !== siswaId
             || ((document.getElementById("m-akd-mapel") || {}).value || "").trim() !== mapel) return;
         ada = akdCariBarisAda(siswaId, mapel, smt);
@@ -652,7 +630,7 @@ async function openModalAkademik(id = null) {
 
     const mapelSaatIni = String(rec?.mapel || "").trim();
     const mapelList = DAFTAR_MAPEL.slice();
-    if (mapelSaatIni && !mapelList.includes(mapelSaatIni)) mapelList.push(mapelSaatIni); // data lama tetap terbaca
+    if (mapelSaatIni && !mapelList.includes(mapelSaatIni)) mapelList.push(mapelSaatIni);
     const mapelOpts = `<option value="" ${mapelSaatIni ? '' : 'selected'} disabled>Pilih mata pelajaran</option>` +
         mapelList.map(m => `<option value="${escapeHtml(m)}" ${m === mapelSaatIni ? 'selected' : ''}>${escapeHtml(m)}</option>`).join("");
 
@@ -680,7 +658,6 @@ async function openModalAkademik(id = null) {
 
 async function saveAkademikForm(e, id) {
     e.preventDefault();
-    // Mode lanjut: siswa + mapel + semester sudah punya baris, simpan sebagai ubah (bukan tambah).
     id = id || ((document.getElementById("akd-form") || {}).dataset || {}).lanjutId || "";
     const kktp = Number(document.getElementById("m-akd-kktp").value);
     if (!(kktp >= 0 && kktp <= 100)) {
@@ -690,7 +667,6 @@ async function saveAkademikForm(e, id) {
     const semester = document.getElementById("m-akd-semester").value;
     if (!semester) { showToast("Pilih semester.", "warning"); return; }
 
-    // Validasi tiap kotak. Kotak kosong = null (tidak dihitung).
     let salah = null;
     const cek = inp => {
         inp.classList.remove("border-rose-400");
@@ -766,7 +742,6 @@ async function saveAkademikForm(e, id) {
     }
 }
 
-// ===== Input nilai massal =====
 let _akdBulkSiswa = [];
 
 async function openModalAkademikBulk() {
@@ -841,7 +816,6 @@ async function openModalAkademikBulk() {
     akdBulkRefreshNomor();
 }
 
-// Isi pilihan nomor sesuai jenis. Opsi terakhir = nomor baru (jumlah tertinggi yang ada + 1).
 function akdBulkRefreshNomor() {
     const jenis = (document.getElementById("m-akdb-komponen") || {}).value || "tugas";
     const wrap = document.getElementById("akdb-nomor-wrap");
@@ -907,7 +881,6 @@ function renderAkdBulkList() {
     updateAkdBulkCounter();
 }
 
-// Enter pindah ke siswa berikutnya, bukan kirim form.
 function akdBulkEnter(e) {
     if (e.key !== "Enter") return;
     e.preventDefault();

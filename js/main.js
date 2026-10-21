@@ -254,7 +254,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-/* ===== Tema: terang / gelap / ikuti sistem (PATCH 2) ===== */
 const THEME_KEY = "app_theme";
 const THEME_COLOR_LIGHT = "#ffffff";
 const THEME_COLOR_DARK = "#0f172a";
