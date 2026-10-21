@@ -388,7 +388,7 @@ function tlHari(tgl) {
 
 function tlWali(siswa) {
     const u = appState.user;
-    if (isGuruUser()) return { nama: u.nama, nip: getGuruNip() };
+    if (isGuruUser() || isBKUser()) return { nama: u.nama, nip: getGuruNip() };
     const kl = (appState.kelas || []).find(k => String(k.id) === String(siswa && siswa.kelas_id));
     const g = kl && kl.guru_id ? (appState.guru || []).find(x => String(x.id) === String(kl.guru_id)) : null;
     return { nama: (g && g.nama) || "............................................", nip: (g && g.nip) || "........................................" };
