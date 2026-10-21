@@ -4387,7 +4387,6 @@ table th[scope="col"],
     #btn-refresh-header { display: none !important; }
 }
 
-/* Mobile: beri jarak antara tombol notifikasi dan tombol pengaturan di header */
 @media (max-width: 639px) {
     #header-default > div:last-child { gap: 0.5rem; }
     #btn-notif-header,
