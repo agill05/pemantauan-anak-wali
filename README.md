@@ -266,7 +266,7 @@ Seluruh antarmuka, kode, dan desain proyek ini dibuat sepenuhnya oleh:
 
 Hak Cipta © 2026 **Moh. Agil S. Abdul**.
 
-Kode sumber frontend dalam repositori ini dilisensikan di bawah **[Lisensi MIT](LICENSE)**. Anda bebas memakai, mengubah, dan membagikannya dengan tetap mencantumkan pemberitahuan hak cipta di atas.
+Kode sumber frontend dalam repositori ini dibuat dan dimiliki sepenuhnya oleh pemilik hak cipta. Anda bebas memakai, mengubah, dan membagikannya dengan tetap mencantumkan pemberitahuan hak cipta di atas.
 
 **Pengecualian:** logo sekolah, logo Tut Wuri Handayani, foto latar, dan ikon aplikasi di folder `assets/img/` adalah identitas milik sekolah atau pihak terkait dan **tidak termasuk** dalam lisensi ini. Ganti dengan aset milik sekolah Anda sebelum digunakan.
 
