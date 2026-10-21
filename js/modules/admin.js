@@ -1560,6 +1560,7 @@ const ARSIP_JENIS = [
     { id: "Jurnal", label: "Jurnal", ket: "Jurnal harian siswa", def: true },
     { id: "Presensi", label: "Presensi", ket: "Kehadiran siswa", def: true },
     { id: "PresensiMentor", label: "Presensi Mentor", ket: "Kehadiran mentoring", def: true },
+    { id: "PresensiBK", label: "Presensi BK", ket: "Kehadiran layanan BK", def: true },
     { id: "Keagamaan", label: "Keagamaan", ket: "Hafalan keagamaan", def: true },
     { id: "Prestasi", label: "Prestasi", ket: "Catatan prestasi", def: true },
     { id: "Pembinaan", label: "Pembinaan", ket: "Hanya kasus berstatus selesai. Sisanya tetap aktif.", def: true },
@@ -1567,7 +1568,7 @@ const ARSIP_JENIS = [
 ];
 const ARSIP_WARNA = {
     Kebiasaan: "bg-emerald-50 text-emerald-700", Jurnal: "bg-violet-50 text-violet-700",
-    Presensi: "bg-blue-50 text-blue-700", PresensiMentor: "bg-sky-50 text-sky-700",
+    Presensi: "bg-blue-50 text-blue-700", PresensiMentor: "bg-sky-50 text-sky-700", PresensiBK: "bg-teal-50 text-teal-700",
     Keagamaan: "bg-teal-50 text-teal-700", Prestasi: "bg-amber-50 text-amber-700",
     Pembinaan: "bg-orange-50 text-orange-700", Akademik: "bg-indigo-50 text-indigo-700",
     Laporan: "bg-slate-100 text-slate-700"

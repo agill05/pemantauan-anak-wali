@@ -55,19 +55,7 @@ function switchView(viewId) {
     if (viewId === "arsip") renderAdminArsip();
     if (viewId === "arsip-saya") renderArsipSaya();
     if (viewId === "tatib-baca") renderTatibBaca();
-    if (viewId === "absensi-bk") renderAbsensiBKTunda();
-}
-
-// Tahap 4: halaman Presensi BK masih kerangka. Isi dibuat di Tahap 6.
-function renderAbsensiBKTunda() {
-    const el = document.getElementById("absensi-bk-container");
-    if (!el) return;
-    el.innerHTML = `
-        <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center">
-            <i class="fas fa-hourglass-half text-slate-300 text-3xl mb-2"></i>
-            <p class="text-sm font-bold text-slate-700">Presensi BK</p>
-            <p class="text-xs text-slate-400 mt-1">Fitur ini sedang disiapkan.</p>
-        </div>`;
+    if (viewId === "absensi-bk") renderAbsensiBKView();
 }
 
 function renderPeranSwitcher() {

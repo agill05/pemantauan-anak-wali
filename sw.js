@@ -1,4 +1,4 @@
-const CACHE_NAME = "anak-wali-pwa-v156";
+const CACHE_NAME = "anak-wali-pwa-v157";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -16,6 +16,7 @@ const ASSETS_TO_CACHE = [
     "./js/install.js",
     "./js/modules/auth.js",
     "./js/modules/absensi.js",
+    "./js/modules/absensi-bk.js",
     "./js/modules/kebiasaan.js",
     "./js/modules/jurnal.js",
     "./js/modules/grup-siswa.js",

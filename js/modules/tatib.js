@@ -476,8 +476,8 @@ function openDetailTatib(siswaId, pertahankan = false) {
                 <td class="tt-tgl">${escapeHtml(gsFormatTanggal(rec))}</td>
                 <td><span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${warna}">${escapeHtml(rec.master_id || "")}</span></td>
                 <td>${escapeHtml(ttNamaKategori(rec.kategori))}</td>
-                <td class="tt-butir">${escapeHtml(rec.nama)}${pengali > 1 ? `<span class="block text-[11px] font-bold text-amber-700">Berulang: ${Number(rec.skor_dasar) || 0} \\u00d7 ${pengali}</span>` : ""}</td>
-                <td class="tt-angka font-extrabold ${penghargaan ? "text-emerald-600" : "text-rose-600"}">${penghargaan ? "\\u2212" : "+"}${Number(rec.skor_akhir) || 0}</td>
+                <td class="tt-butir">${escapeHtml(rec.nama)}${pengali > 1 ? `<span class="block text-[11px] font-bold text-amber-700">Berulang: ${Number(rec.skor_dasar) || 0} \u00d7 ${pengali}</span>` : ""}</td>
+                <td class="tt-angka font-extrabold ${penghargaan ? "text-emerald-600" : "text-rose-600"}">${penghargaan ? "\u2212" : "+"}${Number(rec.skor_akhir) || 0}</td>
                 <td class="tt-ket">${escapeHtml(rec.keterangan || "-")}</td>
                 <td>${renderPenulisBadge(rec)}</td>
                 ${adaAksi ? `<td class="tt-aksi">${ubah ? `
@@ -699,7 +699,8 @@ async function openModalTatibInput(preSiswaId = null) {
     const adaKategori = Object.keys(TT_KAT_LABEL_BAWAAN).find(k => tatibMaster.master.some(m => m.aktif && m.kategori === k));
     if (adaKategori) ttForm.kat = adaKategori;
 
-    const kelasIds = Array.from(new Set(writable.map(s => String(s.kelas_id))));
+    const kelasIds = Array.from(new Set(writable.map(s => String(s.kelas_id))))
+        .sort((a, b) => bandingkanKelas(gsNamaKelas({ kelas_id: a }), gsNamaKelas({ kelas_id: b })));
     const kelasOpt = kelasIds.length > 1
         ? `<select id="tt-kelas" onchange="ttUbahKelas(this.value)" class="w-full bg-slate-50 border p-2 rounded-xl text-xs outline-none" aria-label="Filter kelas">
               <option value="">Semua kelas</option>
