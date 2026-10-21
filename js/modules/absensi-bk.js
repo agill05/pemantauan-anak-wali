@@ -16,6 +16,9 @@ const ABK_WARNA = {
     T: "bg-orange-500 text-white border-orange-500"
 };
 
+const ABK_NETRAL = "bg-slate-50 text-slate-600 border-slate-200";
+const ABK_TOMBOL = "py-2.5 rounded-xl border text-xs font-extrabold transition active:scale-95 ";
+
 function abkDaftarKelas() {
     const ada = new Set((appState.siswa || []).map(s => String(s.kelas_id)));
     return (appState.kelas || [])
@@ -84,12 +87,29 @@ function abkHtmlIsi(opsiKelas) {
             <td>${escapeHtml(absensiNamaKelas(s.kelas_id))}</td>
             <td class="tt-tgl"><i class="far fa-clock mr-1 text-slate-400"></i>${waktu ? formatDisplayTime(waktu) : "Belum Absen"}</td>
             <td>
-                <select onchange="abkPilihDropdown('${escapeHtml(sid)}', this.value)" aria-label="Status presensi ${escapeHtml(s.nama)}" class="bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
-                    <option value="" ${sel === "" ? "selected" : ""}>Belum diisi</option>${["H", "I", "S", "A", "T"].map(v => opsi(sel, v)).join("")}
+                <select data-abk-sid="${escapeHtml(sid)}" onchange="abkPilihDropdown('${escapeHtml(sid)}', this.value)" aria-label="Status presensi ${escapeHtml(s.nama)}" class="bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs font-bold outline-none text-slate-700">
+                    <option value="" ${sel === "" ? "selected" : ""}>Belum diisi</option>${ABK_STATUS.map(v => opsi(sel, v)).join("")}
                 </select>
             </td>
         </tr>`;
     }).join("");
+    const kartu = daftar.map((s, i) => {
+        const sid = String(s.id);
+        const sel = abkPilih.get(sid) || "";
+        const waktu = abkWaktu.get(sid);
+        const tombol = ABK_STATUS.map(v => `<button type="button" data-abk-sid="${escapeHtml(sid)}" data-abk-st="${v}" onclick="abkTapStatus('${escapeHtml(sid)}', '${v}')" aria-pressed="${sel === v}" aria-label="${escapeHtml(ABSENSI_LABEL[v])} untuk ${escapeHtml(s.nama)}" class="${ABK_TOMBOL}${sel === v ? ABK_WARNA[v] : ABK_NETRAL}">${v}</button>`).join("");
+        return `<div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+            <div class="flex items-start gap-2">
+                <span class="text-[11px] font-bold text-slate-400 w-6 shrink-0 pt-0.5">${i + 1}</span>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-bold text-slate-800 leading-snug">${escapeHtml(s.nama)}</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(absensiNamaKelas(s.kelas_id))} &middot; <i class="far fa-clock mr-0.5 text-slate-400"></i>${waktu ? formatDisplayTime(waktu) : "Belum Absen"}</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-5 gap-1.5 mt-2.5" role="group" aria-label="Status presensi ${escapeHtml(s.nama)}">${tombol}</div>
+        </div>`;
+    }).join("");
+    const legenda = `<p class="text-[11px] text-slate-500 px-1">${ABK_STATUS.map(v => `<span class="font-bold">${v}</span> ${escapeHtml(ABSENSI_LABEL[v])}`).join(" &middot; ")}</p>`;
     return `
         <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2">
             <div class="grid grid-cols-2 gap-2">
@@ -102,18 +122,23 @@ function abkHtmlIsi(opsiKelas) {
                 <button type="button" onclick="abkSemuaHadir()" class="font-bold text-emerald-700"><i class="fas fa-check-double"></i> Semua Hadir</button>
             </div>
         </div>
-        <div id="abk-daftar" class="mt-3 overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <table class="tt-tabel">
-                <caption class="sr-only">Presensi BK</caption>
-                <thead><tr>
-                    <th scope="col" class="tt-no">No</th>
-                    <th scope="col" class="tt-nama">Nama</th>
-                    <th scope="col">Kelas</th>
-                    <th scope="col">Waktu Absen</th>
-                    <th scope="col">Status</th>
-                </tr></thead>
-                <tbody>${baris || '<tr><td colspan="5" class="text-center text-slate-400 py-6">Tidak ada siswa.</td></tr>'}</tbody>
-            </table>
+        <div id="abk-daftar" class="mt-3">
+            <div class="tt-kartu-wrap space-y-2">
+                ${kartu ? legenda + kartu : '<p class="text-xs text-slate-400 text-center py-6">Tidak ada siswa.</p>'}
+            </div>
+            <div class="tt-tabel-wrap">
+                <table class="tt-tabel">
+                    <caption class="sr-only">Presensi BK</caption>
+                    <thead><tr>
+                        <th scope="col" class="tt-no">No</th>
+                        <th scope="col" class="tt-nama">Nama</th>
+                        <th scope="col">Kelas</th>
+                        <th scope="col">Waktu Absen</th>
+                        <th scope="col">Status</th>
+                    </tr></thead>
+                    <tbody>${baris || '<tr><td colspan="5" class="text-center text-slate-400 py-6">Tidak ada siswa.</td></tr>'}</tbody>
+                </table>
+            </div>
         </div>
         <button type="button" onclick="abkSimpan()" class="w-full mt-3 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-sm"><i class="fas fa-save mr-1"></i> Simpan Presensi BK</button>`;
 }
@@ -145,18 +170,39 @@ async function abkUbahTanggal(v) {
     abkGambar();
 }
 
-function abkSetStatus(sid, st) {
-    abkPilih.set(String(sid), st);
-    abkGambar();
+function abkSinkron(sid) {
+    const st = abkPilih.get(sid) || "";
+    document.querySelectorAll("[data-abk-sid]").forEach(el => {
+        if (el.dataset.abkSid !== sid) return;
+        if (el.tagName === "SELECT") {
+            el.value = st;
+        } else {
+            const aktif = el.dataset.abkSt === st;
+            el.className = ABK_TOMBOL + (aktif ? ABK_WARNA[el.dataset.abkSt] : ABK_NETRAL);
+            el.setAttribute("aria-pressed", String(aktif));
+        }
+    });
+}
+
+function abkUpdateTerisi() {
+    const el = document.getElementById("abk-terisi");
+    if (!el) return;
+    const semua = abkSiswaKelas();
+    el.textContent = `Terisi ${semua.filter(x => abkPilih.get(String(x.id))).length} / ${semua.length}`;
+}
+
+function abkTapStatus(sid, st) {
+    sid = String(sid);
+    if (abkPilih.get(sid) === st) abkPilih.delete(sid); else abkPilih.set(sid, st);
+    abkSinkron(sid);
+    abkUpdateTerisi();
 }
 
 function abkPilihDropdown(sid, st) {
-    if (st) abkPilih.set(String(sid), st); else abkPilih.delete(String(sid));
-    const el = document.getElementById("abk-terisi");
-    if (el) {
-        const semua = abkSiswaKelas();
-        el.textContent = `Terisi ${semua.filter(x => abkPilih.get(String(x.id))).length} / ${semua.length}`;
-    }
+    sid = String(sid);
+    if (st) abkPilih.set(sid, st); else abkPilih.delete(sid);
+    abkSinkron(sid);
+    abkUpdateTerisi();
 }
 
 function abkSemuaHadir() {
