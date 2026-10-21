@@ -699,12 +699,15 @@ async function openModalTatibInput(preSiswaId = null) {
     const adaKategori = Object.keys(TT_KAT_LABEL_BAWAAN).find(k => tatibMaster.master.some(m => m.aktif && m.kategori === k));
     if (adaKategori) ttForm.kat = adaKategori;
 
-    const kelasIds = Array.from(new Set(writable.map(s => String(s.kelas_id))))
+    // Hanya kelas yang namanya dikenal. Siswa tanpa kelas (kelas_id kosong atau tidak terdaftar) dijadikan satu opsi "Tanpa kelas".
+    const kelasIds = Array.from(new Set(writable.map(s => String(s.kelas_id)).filter(id => gsNamaKelas({ kelas_id: id }))))
         .sort((a, b) => bandingkanKelas(gsNamaKelas({ kelas_id: a }), gsNamaKelas({ kelas_id: b })));
-    const kelasOpt = kelasIds.length > 1
+    const adaTanpaKelas = writable.some(s => !gsNamaKelas(s));
+    const kelasOpt = (kelasIds.length + (adaTanpaKelas ? 1 : 0)) > 1
         ? `<select id="tt-kelas" onchange="ttUbahKelas(this.value)" class="w-full bg-slate-50 border p-2 rounded-xl text-xs outline-none" aria-label="Filter kelas">
               <option value="">Semua kelas</option>
-              ${kelasIds.map(id => `<option value="${escapeHtml(id)}">${escapeHtml(gsNamaKelas({ kelas_id: id }) || id)}</option>`).join("")}
+              ${kelasIds.map(id => `<option value="${escapeHtml(id)}">${escapeHtml(gsNamaKelas({ kelas_id: id }))}</option>`).join("")}
+              ${adaTanpaKelas ? `<option value="__tanpa_kelas__">Tanpa kelas</option>` : ""}
            </select>` : "";
     const inp = "w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none";
     const lbl = "block text-xs font-bold text-slate-500 mb-1";
@@ -766,7 +769,8 @@ async function openModalTatibInput(preSiswaId = null) {
 function ttSiswaTersaring() {
     const cari = ttForm.cariSiswa;
     return ttForm.writable.filter(s => {
-        if (ttForm.kelas && String(s.kelas_id) !== String(ttForm.kelas)) return false;
+        if (ttForm.kelas === "__tanpa_kelas__") { if (gsNamaKelas(s)) return false; }
+        else if (ttForm.kelas && String(s.kelas_id) !== String(ttForm.kelas)) return false;
         return !cari || String(s.nama || "").toLowerCase().includes(cari);
     });
 }
