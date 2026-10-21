@@ -1,5 +1,5 @@
 const LOGIN_ROLE_KEY = "login_last_role";
-const LOGIN_ROLE_LABEL = { siswa: "Siswa", guru: "Guru", kepsek: "Kepala Sekolah", admin: "Admin" };
+const LOGIN_ROLE_LABEL = { siswa: "Siswa", guru: "Guru", bk: "Guru BK", kepsek: "Kepala Sekolah", admin: "Admin" };
 const LOGIN_FIELD_IDS = ["login-role", "login-username", "login-password"];
 const LOGIN_LOCK_KEY = "login_lock_until";
 let loginInFlight = false;
@@ -348,7 +348,7 @@ async function handleAppLogin(e) {
     clearLoginError();
 
     if (!role) {
-        showLoginError("Pilih jenis pengguna: Siswa, Guru, Kepala Sekolah, atau Admin.", ["login-role"]);
+        showLoginError("Pilih jenis pengguna: Siswa, Guru, Guru BK, Kepala Sekolah, atau Admin.", ["login-role"]);
         roleEl?.focus();
         return;
     }
@@ -769,6 +769,13 @@ function applyRoleUI(role) {
                 <span class="text-[11px] font-bold">Profil</span>
             </button>
         `;
+    } else if (role === "bk") {
+        navContainer.innerHTML = `
+            <button onclick="switchView('dashboard')" class="nav-item flex-1 flex flex-col items-center gap-1 text-slate-400 active" data-target="dashboard">
+                <i class="fas fa-home text-lg"></i>
+                <span class="text-[11px] font-bold">Beranda</span>
+            </button>
+        `;
     } else if (role !== "ortu") {
         navContainer.innerHTML = `
             <button onclick="switchView('dashboard')" class="nav-item flex flex-col items-center gap-1 text-slate-400 active" data-target="dashboard">
@@ -819,6 +826,8 @@ function renderSidebarMenu(role) {
         html += item("akademik", "fa-graduation-cap", "Akademik & Prestasi");
         html += item("tatib-baca", "fa-gavel", "Tata Tertib");
         html += item("arsip-saya", "fa-box-archive", "Arsip Semester");
+    } else if (role === "bk") {
+        // Tahap 1: BK belum punya menu fitur. Menu Tata Tertib dan Presensi BK ditambah di Tahap 4 dan 5.
     } else if (role !== "ortu") {
         html += section("Pemantauan");
         html += item("absensi", "fa-calendar-check", "Presensi Kehadiran");
@@ -981,7 +990,7 @@ function openEditProfilModal() {
     const user = appState.user || {};
     const role = (user.role || "").toLowerCase();
 
-    const isEditingLocked = role === "siswa" || role === "guru" || role === "kepsek";
+    const isEditingLocked = role === "siswa" || role === "guru" || role === "kepsek" || role === "bk";
 
     box.innerHTML = `
         <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
@@ -1029,7 +1038,7 @@ function openEditProfilModal() {
                 </div>
 
                 <div>
-                    <label for="self-nip-nisn" class="block text-xs font-bold text-slate-500 uppercase mb-1">${role === 'guru' || role === 'kepsek' ? 'NIP' : (role === 'siswa' ? 'NISN' : 'ID Identifier')}</label>
+                    <label for="self-nip-nisn" class="block text-xs font-bold text-slate-500 uppercase mb-1">${role === 'guru' || role === 'kepsek' || role === 'bk' ? 'NIP' : (role === 'siswa' ? 'NISN' : 'ID Identifier')}</label>
                     <input type="text" id="self-nip-nisn" value="${escapeHtml(user.nip || user.nisn || '')}"
                            class="w-full bg-slate-50 border p-2.5 rounded-xl text-xs outline-none ${isEditingLocked ? 'cursor-not-allowed opacity-75 bg-slate-100' : ''}"
                            ${isEditingLocked ? 'readonly' : ''}>

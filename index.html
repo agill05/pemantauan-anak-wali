@@ -140,6 +140,7 @@
                                 <option value="admin">Admin</option>
                                 <option value="kepsek">Kepala Sekolah</option>
                                 <option value="guru">Guru</option>
+                                <option value="bk">Guru BK</option>
                                 <option value="siswa">Siswa</option>
                             </select>
                         </div>
@@ -228,7 +229,7 @@
                     aria-label="Segarkan data">
                     <i class="fas fa-rotate text-base"></i>
                 </button>
-                <button id="btn-notif-header" data-role-visible="admin,guru,siswa,kepsek"
+                <button id="btn-notif-header" data-role-visible="admin,guru,siswa,kepsek,bk"
                     class="p-2 relative hover:bg-white/10 rounded-xl transition hidden"
                     onclick="openNotificationModal()" aria-label="Buka notifikasi">
                     <i class="fas fa-bell text-lg"></i>
@@ -240,7 +241,7 @@
                     title="Ganti mode tampilan" aria-label="Ganti mode tampilan">
                     <i class="fas fa-moon text-lg" aria-hidden="true"></i>
                 </button>
-                <button id="btn-settings-header" data-role-visible="admin,guru,siswa,kepsek"
+                <button id="btn-settings-header" data-role-visible="admin,guru,siswa,kepsek,bk"
                     class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="openUserSettingsModal()"
                     aria-label="Buka pengaturan akun">
                     <i class="fas fa-cog text-lg"></i>
@@ -745,6 +746,8 @@
             <div class="flex bg-slate-200/70 p-1 rounded-xl gap-2 overflow-x-auto">
                 <button onclick="switchAdminTab('guru')" id="btn-admin-tab-guru"
                     class="admin-tab-btn flex-1 px-3 whitespace-nowrap py-2 text-xs font-bold rounded-lg transition-all bg-surface text-primary shadow-sm">Guru</button>
+                <button onclick="switchAdminTab('bk')" id="btn-admin-tab-bk"
+                    class="admin-tab-btn flex-1 px-3 whitespace-nowrap py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Guru BK</button>
                 <button onclick="switchAdminTab('siswa')" id="btn-admin-tab-siswa"
                     class="admin-tab-btn flex-1 px-3 whitespace-nowrap py-2 text-xs font-bold rounded-lg transition-all text-slate-600">Siswa</button>
                 <button onclick="switchAdminTab('kelas')" id="btn-admin-tab-kelas"
@@ -780,6 +783,29 @@
                     <input type="file" id="import-guru-file" accept=".csv" class="hidden" onchange="handleImportGuruFile(event)">
                 </div>
                 <div id="admin-guru-list" class="space-y-2"></div>
+            </div>
+
+            <div id="admin-tab-bk" class="admin-tab-content space-y-3 hidden">
+                <div class="flex justify-between items-center gap-2">
+                    <input type="text" id="search-bk-input" oninput="renderAdminBK()" placeholder="Cari Guru BK..."
+                        class="flex-1 bg-surface border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                    <button onclick="openModalBK()"
+                        class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i
+                            class="fas fa-plus mr-1"></i> Guru BK</button>
+                </div>
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+                    <button onclick="downloadTemplateBKCSV()"
+                        class="whitespace-nowrap bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-download"></i> Template CSV</button>
+                    <button onclick="triggerImportBK()"
+                        class="whitespace-nowrap bg-blue-50 text-blue-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-import"></i> Import CSV</button>
+                    <button onclick="exportBKCSV()"
+                        class="whitespace-nowrap bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i
+                            class="fas fa-file-export"></i> Ekspor CSV/Excel</button>
+                    <input type="file" id="import-bk-file" accept=".csv" class="hidden" onchange="handleImportBKFile(event)">
+                </div>
+                <div id="admin-bk-list" class="space-y-2"></div>
             </div>
 
             <div id="admin-tab-siswa" class="admin-tab-content space-y-3 hidden">
@@ -1110,6 +1136,7 @@
     <script src="js/modules/laporan.js"></script>
     <script src="js/modules/tatib-laporan.js"></script>
     <script src="js/modules/admin.js"></script>
+    <script src="js/modules/bk-admin.js"></script>
     <script src="js/modules/arsip.js"></script>
     <script src="js/modules/magiclink.js"></script>
     <script src="js/main.js"></script>

@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbziVv2jhKkP7mJoe2Q6b6_h4OItdyRmdw0LB6CAwB21go_6pTJ2j_mxEtUQe-_5JYk-/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycby0auK0IV0a50R47Tbp3DdJSiXNnD0IKW6RD7EX_b_83N-E4ZXzCYvzaHx_Lkyg2x5t/exec";
 
 const PASSWORD_MIN_LENGTH = 8;
 const CACHE_TTL = 5 * 60 * 1000;

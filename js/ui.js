@@ -280,7 +280,7 @@ function sendWebPushNotification(title, body) {
 }
 
 function getRoleLabel(role) {
-    const map = { admin: "Admin", guru: "Guru", kepsek: "Kepala Sekolah", siswa: "Siswa", ortu: "Orang Tua" };
+    const map = { admin: "Admin", guru: "Guru", bk: "Guru BK", kepsek: "Kepala Sekolah", siswa: "Siswa", ortu: "Orang Tua" };
     return map[role] || (role ? role.charAt(0).toUpperCase() + role.slice(1) : "");
 }
 
