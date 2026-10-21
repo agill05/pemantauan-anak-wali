@@ -4386,3 +4386,15 @@ table th[scope="col"],
 @media (max-width: 479px) {
     #btn-refresh-header { display: none !important; }
 }
+
+/* Mobile: beri jarak antara tombol notifikasi dan tombol pengaturan di header */
+@media (max-width: 639px) {
+    #header-default > div:last-child { gap: 0.5rem; }
+    #btn-notif-header,
+    #btn-settings-header {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0.5rem;
+    }
+    #btn-settings-header { margin-right: 0.125rem; }
+}
