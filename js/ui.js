@@ -437,11 +437,12 @@ function showDateLockedAlert(state) {
     }
 }
 
-const PENULIS_LABEL = { wali: "Wali", mentor: "Mentor", admin: "Admin" };
+const PENULIS_LABEL = { wali: "Wali", mentor: "Mentor", admin: "Admin", bk: "BK" };
 const PENULIS_STYLE = {
     wali: "bg-blue-50 text-blue-700 border-blue-100",
     mentor: "bg-violet-50 text-violet-700 border-violet-100",
-    admin: "bg-slate-100 text-slate-700 border-slate-200"
+    admin: "bg-slate-100 text-slate-700 border-slate-200",
+    bk: "bg-teal-50 text-teal-700 border-teal-100"
 };
 
 function renderPeranChip(siswa) {
@@ -459,7 +460,7 @@ function renderPeranChip(siswa) {
 
 function renderPenulisBadge(rec) {
     const u = appState.user;
-    if (!rec || !u || !["admin", "guru", "kepsek", "siswa"].includes(u.role)) return "";
+    if (!rec || !u || !["admin", "guru", "kepsek", "siswa", "bk"].includes(u.role)) return "";
     const sebagai = String(rec.dibuat_sebagai || "").toLowerCase().trim();
     const peran = PENULIS_LABEL[sebagai] ? sebagai : "wali";
     const ownerId = String(rec.dibuat_oleh_id || "").trim();

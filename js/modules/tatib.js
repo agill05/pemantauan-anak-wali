@@ -202,7 +202,7 @@ let ttSortArah = "desc";
 
 function ttModeTabel() {
     const u = appState.user;
-    return !!u && ["admin", "guru", "kepsek"].includes(u.role);
+    return !!u && ["admin", "guru", "kepsek", "bk"].includes(u.role);
 }
 
 function ttNilaiUrut(g, kol) {
@@ -346,7 +346,7 @@ function ttPanggilanSiswa(siswaId) {
 function tatibBisaCatatPanggilan(siswaId) {
     const u = appState.user;
     if (!u || isKepsekUser()) return false;
-    if (u.role === "admin") return true;
+    if (u.role === "admin" || u.role === "bk") return true;
     if (u.role !== "guru") return false;
     const siswa = ttCariSiswa(siswaId);
     if (!siswa) return false;
@@ -355,8 +355,9 @@ function tatibBisaCatatPanggilan(siswaId) {
 }
 
 function ttBisaUbahPanggilan(p) {
-    if (tatibBisaCatatPanggilan(p.siswa_id)) return true;
     const u = appState.user;
+    if (u && u.role === "bk") return String(p.dibuat_sebagai || "").trim() === "bk";
+    if (tatibBisaCatatPanggilan(p.siswa_id)) return true;
     return !!u && u.role === "guru" && String(p.dibuat_oleh_id || "").trim() === String(u.id).trim();
 }
 
@@ -546,7 +547,7 @@ async function openModalTatibPanggilan(siswaId, tahap = "", id = null) {
     const p = id ? (tatibPanggilan || []).find(x => String(x.id) === String(id)) : null;
     if (id && !p) return;
     if (!id && !tatibBisaCatatPanggilan(siswaId)) {
-        maskotAlert("Akses Ditolak", "Hanya wali kelas siswa atau admin yang dapat mencatat panggilan orang tua.", "tatib");
+        maskotAlert("Akses Ditolak", "Hanya wali kelas siswa, Guru BK, atau admin yang dapat mencatat panggilan orang tua.", "tatib");
         return;
     }
     const sudah = new Set(ttPanggilanSiswa(siswaId).map(x => String(x.tahap)));
