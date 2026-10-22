@@ -2,9 +2,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbz8l4i0FEgXw7EGwYWH1mXK
 
 const PASSWORD_MIN_LENGTH = 8;
 
-// Nomor WhatsApp admin untuk permintaan reset kata sandi (halaman masuk).
-// Format 08xx atau 62xx. Kosongkan jika tidak ingin menampilkan tombol WhatsApp.
-const KONTAK_ADMIN_WA = "";
 const CACHE_TTL = 5 * 60 * 1000;
 const NOTIF_POLL_MS = 3 * 60 * 1000;
 

@@ -1,21 +1,5 @@
-/*
- * Panduan & Bantuan
- *
- * Tiga bagian:
- *  1. Tur pengenalan per peran. Tampil otomatis sekali saat login pertama,
- *     bisa diulang kapan saja dari menu Bantuan.
- *  2. Bantuan per halaman. Tombol "?" di header membuka bantuan untuk
- *     halaman yang sedang dibuka.
- *  3. Tanya jawab (FAQ) per peran.
- *
- * Semua teks ada di data di bawah. Ubah teks di sini tanpa menyentuh logika.
- * Naikkan BANTUAN_VERSI jika isi tur berubah banyak dan ingin tampil lagi.
- */
-
 const BANTUAN_VERSI = 1;
 const BANTUAN_KEY_TUR = "bantuan_tur_v" + BANTUAN_VERSI + "_";
-
-/* ---------- Data: tur pengenalan ---------- */
 
 const BANTUAN_TUR = {
     siswa: [
@@ -59,8 +43,6 @@ const BANTUAN_TUR = {
         { ikon: "fa-circle-question", judul: "Butuh bantuan?", teks: "Ketuk tanda tanya di bagian atas layar. Bantuannya menyesuaikan halaman yang sedang dibuka." }
     ]
 };
-
-/* ---------- Data: bantuan per halaman ---------- */
 
 const BANTUAN_HALAMAN = {
     dashboard: {
@@ -283,12 +265,10 @@ const BANTUAN_HALAMAN = {
     }
 };
 
-/* ---------- Data: tanya jawab ---------- */
-
 const BANTUAN_FAQ = [
     {
         q: "Saya lupa kata sandi. Apa yang harus dilakukan?",
-        a: "Di halaman masuk, ketuk Lupa kata sandi? lalu ikuti petunjuknya. Admin akan mereset dan memberi kata sandi sementara. Setelah masuk, aplikasi meminta Anda membuat kata sandi baru.",
+        a: "Hubungi admin sekolah untuk meminta reset. Admin memberi kata sandi sementara. Setelah masuk, aplikasi meminta Anda membuat kata sandi baru.",
         roles: ["siswa", "guru", "kepsek", "bk", "admin"]
     },
     {
@@ -353,8 +333,6 @@ const BANTUAN_FAQ = [
     }
 ];
 
-/* ---------- Status dan pembantu ---------- */
-
 const BANTUAN_STATE = { tab: "halaman", view: null, langkah: [], i: 0 };
 
 function bantuanMinSandi() {
@@ -417,8 +395,6 @@ function bantuanSwalTerbuka() {
 function bantuanTombolTutup() {
     return `<button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600" aria-label="Tutup"><i class="fas fa-times"></i></button>`;
 }
-
-/* ---------- Bantuan: halaman dan FAQ ---------- */
 
 function bukaBantuan(opsi) {
     const role = bantuanRole();
@@ -496,8 +472,6 @@ function renderBantuan() {
         </button>`);
 }
 
-/* ---------- Tur pengenalan ---------- */
-
 function mulaiTur(opsi) {
     const role = bantuanRole();
     if (!role) return;
@@ -544,8 +518,6 @@ function renderTur() {
         ${akhir ? `<button type="button" onclick="bukaBantuan({tab:'faq'})" class="w-full mt-2 text-xs font-bold text-blue-600 py-2">Lihat tanya jawab</button>` : ""}`);
 }
 
-/* ---------- Tur otomatis saat login pertama ---------- */
-
 function bantuanSiapTampil() {
     const root = document.documentElement;
     return !!bantuanRole() && root.classList.contains("has-session") &&
@@ -567,83 +539,4 @@ function jadwalkanTurOtomatis() {
         bantuanTandaiTur();
         mulaiTur({ otomatis: true });
     }, 1500);
-}
-
-/* ---------- Lupa kata sandi (halaman masuk) ---------- */
-
-const LUPA_SANDI_ROLE = {
-    siswa: { label: "Siswa", kepada: "wali kelas atau admin sekolah" },
-    guru: { label: "Guru", kepada: "admin sekolah" },
-    bk: { label: "Guru BK", kepada: "admin sekolah" },
-    kepsek: { label: "Kepala Sekolah", kepada: "admin sekolah" },
-    admin: { label: "Admin", kepada: "admin lain atau pengelola aplikasi" }
-};
-
-function lupaSandiRoleDipilih() {
-    const el = document.getElementById("login-role");
-    const v = el ? String(el.value || "").toLowerCase() : "";
-    return LUPA_SANDI_ROLE[v] ? v : "siswa";
-}
-
-function lupaSandiPesan(role) {
-    const info = LUPA_SANDI_ROLE[role];
-    const userEl = document.getElementById("login-username");
-    const username = userEl ? String(userEl.value || "").trim() : "";
-    const baris = [
-        "Assalamu'alaikum.",
-        "",
-        "Saya lupa kata sandi aplikasi Pemantauan Anak Wali. Mohon bantuan reset.",
-        "",
-        "Jenis pengguna: " + info.label,
-        "Username: " + (username || "-"),
-        "Nama lengkap: "
-    ];
-    if (role === "siswa") baris.push("Kelas: ");
-    baris.push("", "Terima kasih.");
-    return baris.join("\n");
-}
-
-function lupaSandiTautanWa(role) {
-    const nomor = typeof KONTAK_ADMIN_WA !== "undefined" && typeof toWhatsAppNumber === "function"
-        ? toWhatsAppNumber(KONTAK_ADMIN_WA) : "";
-    if (!nomor) return "";
-    return "https://api.whatsapp.com/send?phone=" + nomor + "&text=" + encodeURIComponent(lupaSandiPesan(role));
-}
-
-function renderLupaSandi() {
-    const panel = document.getElementById("lupa-sandi-panel");
-    if (!panel) return;
-    const role = lupaSandiRoleDipilih();
-    const info = LUPA_SANDI_ROLE[role];
-    const wa = lupaSandiTautanWa(role);
-    panel.innerHTML = `
-        <p class="lg-help-title">Reset kata sandi dibantu oleh ${escapeHtml(info.kepada)}.</p>
-        <ol>
-            <li>${wa ? "Ketuk tombol WhatsApp di bawah." : "Hubungi " + escapeHtml(info.kepada) + "."} Sebutkan nama lengkap dan username Anda.</li>
-            <li>Mereka memeriksa identitas Anda, lalu mereset kata sandi.</li>
-            <li>Masuk dengan kata sandi sementara dari mereka. Aplikasi lalu meminta Anda membuat kata sandi baru.</li>
-        </ol>
-        <p class="lg-help-note">Jangan mengirim kata sandi Anda lewat pesan.</p>
-        ${wa ? `<a class="lg-wa" href="${escapeHtml(wa)}" target="_blank" rel="noopener">
-            <i class="fab fa-whatsapp" aria-hidden="true"></i> Minta reset lewat WhatsApp</a>` : ""}`;
-}
-
-function bukaLupaSandi() {
-    const panel = document.getElementById("lupa-sandi-panel");
-    const btn = document.getElementById("btn-lupa-sandi");
-    if (!panel || !btn) return;
-    const buka = panel.hidden;
-    panel.hidden = !buka;
-    btn.setAttribute("aria-expanded", String(buka));
-    if (!buka) return;
-    renderLupaSandi();
-    if (!panel.dataset.ready) {
-        panel.dataset.ready = "1";
-        ["login-role", "login-username"].forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.addEventListener("change", () => { if (!panel.hidden) renderLupaSandi(); });
-            el.addEventListener("input", () => { if (!panel.hidden) renderLupaSandi(); });
-        });
-    }
 }

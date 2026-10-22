@@ -344,7 +344,6 @@ function initTheme() {
 
 try { initTheme(); } catch (e) { }
 
-/* FONT-SCALE START */
 const FONT_SCALE_KEY = "app_font_scale";
 const FONT_SCALE_OPSI = { normal: "", besar: "112.5%", "sangat-besar": "125%" };
 
@@ -389,7 +388,6 @@ function setFontScalePref(pref) {
 }
 
 try { applyFontScale(); } catch (e) { }
-/* FONT-SCALE END */
 
 let pollBerjalan = false;
 let pollVisibilitasTerpasang = false;
