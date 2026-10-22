@@ -470,7 +470,8 @@ function renderPenulisBadge(rec) {
         else if (ownerId === "guru-dihapus") nama = "Guru dihapus";
         else {
             const g = (appState.guru || []).find(x => String(x.id) === ownerId);
-            nama = g ? g.nama : "";
+            const b = (g || peran !== "bk") ? null : (appState.bk || []).find(x => String(x.id) === ownerId);
+            nama = (g && g.nama) || (b && b.nama) || (peran === "bk" ? String(rec.dibuat_oleh_nama || "").trim() : "");
         }
     }
     const teks = nama ? `${nama} (${PENULIS_LABEL[peran]})` : PENULIS_LABEL[peran];
