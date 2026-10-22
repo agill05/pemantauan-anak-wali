@@ -927,6 +927,23 @@ function openUserSettingsModal() {
                 </div>
             </div>
 
+            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2.5 w-full">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0">
+                        <i class="fas fa-text-height" aria-hidden="true"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <h4 class="font-bold text-xs text-slate-800">Ukuran Huruf</h4>
+                        <p class="text-xs text-slate-400">Perbesar teks di seluruh aplikasi</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl" role="group" aria-label="Pilih ukuran huruf">
+                    ${fontScaleOptionButton('normal', 'Normal')}
+                    ${fontScaleOptionButton('besar', 'Besar')}
+                    ${fontScaleOptionButton('sangat-besar', 'Sangat Besar')}
+                </div>
+            </div>
+
             ${user.role !== 'ortu' ? `
             <button type="button" onclick="bukaBantuan()" class="w-full flex items-center gap-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-left">
                 <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0"><i class="fas fa-circle-question" aria-hidden="true"></i></span>

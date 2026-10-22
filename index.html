@@ -92,6 +92,11 @@
                     const meta = document.querySelector('meta[name="theme-color"]');
                     if (meta) meta.setAttribute("content", "#0f172a");
                 }
+                const fs = localStorage.getItem("app_font_scale");
+                if (fs === "besar" || fs === "sangat-besar") {
+                    document.documentElement.style.fontSize = fs === "besar" ? "112.5%" : "125%";
+                    document.documentElement.setAttribute("data-font-scale", fs);
+                }
             } catch(e){}
         })();
     </script>
@@ -176,6 +181,12 @@
                             </div>
                             <p class="lg-hint" id="login-caps" hidden>Caps Lock aktif.</p>
                         </div>
+
+                        <div class="lg-forgot">
+                            <button type="button" id="btn-lupa-sandi" class="lg-link" onclick="bukaLupaSandi()"
+                                aria-expanded="false" aria-controls="lupa-sandi-panel">Lupa kata sandi?</button>
+                        </div>
+                        <div class="lg-help" id="lupa-sandi-panel" hidden></div>
 
                         <div class="lg-error" id="login-error" role="alert"></div>
 

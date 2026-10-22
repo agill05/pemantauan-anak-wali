@@ -4397,3 +4397,119 @@ table th[scope="col"],
     }
     #btn-settings-header { margin-right: 0.125rem; }
 }
+/* ===== Ukuran huruf: teks terkecil minimal 12px dan ikut skala pengguna ===== */
+.text-\[9px\],
+.text-\[10px\] {
+    font-size: 0.75rem !important;
+}
+
+.text-\[11px\] {
+    font-size: 0.8125rem !important;
+}
+
+/* Navigasi bawah paling sempit: label tidak boleh melebar */
+#bottom-nav-items .nav-item {
+    min-width: 0;
+}
+
+#bottom-nav-items .nav-item > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html[data-font-scale="sangat-besar"] #bottom-nav-items .nav-item > span {
+    font-size: 0.6875rem !important;
+}
+
+/* ===== Lupa kata sandi (halaman masuk) ===== */
+.lg-forgot {
+    display: flex;
+    justify-content: flex-end;
+    margin: -0.25rem 0 0.5rem;
+}
+
+.lg-link {
+    min-height: 44px;
+    padding: 0.5rem 0.25rem;
+    border: 0;
+    background: none;
+    color: var(--lg-primary);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.lg-link:focus-visible {
+    outline: 2px solid var(--lg-primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.lg-help {
+    margin: 0 0 1rem;
+    padding: 0.9rem;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.lg-help[hidden] {
+    display: none;
+}
+
+.lg-help-title {
+    margin: 0;
+    font-weight: 700;
+}
+
+.lg-help ol {
+    margin: 0.5rem 0 0 1.25rem;
+    padding: 0;
+    list-style: decimal;
+}
+
+.lg-help li + li {
+    margin-top: 0.25rem;
+}
+
+.lg-help-note {
+    margin: 0.6rem 0 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.lg-wa {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 46px;
+    margin-top: 0.75rem;
+    border-radius: 12px;
+    background: #047857;
+    color: #ffffff;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.lg-wa:hover {
+    background: #065f46;
+}
+
+body.dark .lg-link {
+    color: #93c5fd;
+}
+
+body.dark .lg-help {
+    background: #172554;
+    border-color: #1d4ed8;
+    color: #dbeafe;
+}

@@ -344,6 +344,53 @@ function initTheme() {
 
 try { initTheme(); } catch (e) { }
 
+/* FONT-SCALE START */
+const FONT_SCALE_KEY = "app_font_scale";
+const FONT_SCALE_OPSI = { normal: "", besar: "112.5%", "sangat-besar": "125%" };
+
+function getFontScalePref() {
+    try {
+        const v = localStorage.getItem(FONT_SCALE_KEY);
+        return Object.prototype.hasOwnProperty.call(FONT_SCALE_OPSI, v) ? v : "normal";
+    } catch (e) {
+        return "normal";
+    }
+}
+
+function fontScaleOptionButton(value, label) {
+    const aktif = getFontScalePref() === value;
+    const cls = aktif ? "bg-blue-600 text-white shadow-sm" : "text-slate-600";
+    return `<button type="button" data-fontscale-opt="${value}" onclick="setFontScalePref('${value}')" aria-pressed="${aktif}" class="${cls} flex items-center justify-center py-2 rounded-lg text-xs font-bold transition text-center">${label}</button>`;
+}
+
+function applyFontScale(pref) {
+    pref = Object.prototype.hasOwnProperty.call(FONT_SCALE_OPSI, pref) ? pref : getFontScalePref();
+    const root = document.documentElement;
+    root.style.fontSize = FONT_SCALE_OPSI[pref];
+    if (pref === "normal") root.removeAttribute("data-font-scale");
+    else root.setAttribute("data-font-scale", pref);
+    document.querySelectorAll("[data-fontscale-opt]").forEach(btn => {
+        const aktif = btn.getAttribute("data-fontscale-opt") === pref;
+        btn.setAttribute("aria-pressed", String(aktif));
+        btn.classList.toggle("bg-blue-600", aktif);
+        btn.classList.toggle("text-white", aktif);
+        btn.classList.toggle("shadow-sm", aktif);
+        btn.classList.toggle("text-slate-600", !aktif);
+    });
+}
+
+function setFontScalePref(pref) {
+    if (!Object.prototype.hasOwnProperty.call(FONT_SCALE_OPSI, pref)) pref = "normal";
+    try {
+        if (pref === "normal") localStorage.removeItem(FONT_SCALE_KEY);
+        else localStorage.setItem(FONT_SCALE_KEY, pref);
+    } catch (e) { }
+    applyFontScale(pref);
+}
+
+try { applyFontScale(); } catch (e) { }
+/* FONT-SCALE END */
+
 let pollBerjalan = false;
 let pollVisibilitasTerpasang = false;
 

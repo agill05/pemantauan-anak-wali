@@ -288,7 +288,7 @@ const BANTUAN_HALAMAN = {
 const BANTUAN_FAQ = [
     {
         q: "Saya lupa kata sandi. Apa yang harus dilakukan?",
-        a: "Hubungi admin sekolah atau wali kelas Anda untuk meminta reset kata sandi. Setelah masuk dengan kata sandi baru, ganti lagi lewat tombol roda gigi di header.",
+        a: "Di halaman masuk, ketuk Lupa kata sandi? lalu ikuti petunjuknya. Admin akan mereset dan memberi kata sandi sementara. Setelah masuk, aplikasi meminta Anda membuat kata sandi baru.",
         roles: ["siswa", "guru", "kepsek", "bk", "admin"]
     },
     {
@@ -567,4 +567,83 @@ function jadwalkanTurOtomatis() {
         bantuanTandaiTur();
         mulaiTur({ otomatis: true });
     }, 1500);
+}
+
+/* ---------- Lupa kata sandi (halaman masuk) ---------- */
+
+const LUPA_SANDI_ROLE = {
+    siswa: { label: "Siswa", kepada: "wali kelas atau admin sekolah" },
+    guru: { label: "Guru", kepada: "admin sekolah" },
+    bk: { label: "Guru BK", kepada: "admin sekolah" },
+    kepsek: { label: "Kepala Sekolah", kepada: "admin sekolah" },
+    admin: { label: "Admin", kepada: "admin lain atau pengelola aplikasi" }
+};
+
+function lupaSandiRoleDipilih() {
+    const el = document.getElementById("login-role");
+    const v = el ? String(el.value || "").toLowerCase() : "";
+    return LUPA_SANDI_ROLE[v] ? v : "siswa";
+}
+
+function lupaSandiPesan(role) {
+    const info = LUPA_SANDI_ROLE[role];
+    const userEl = document.getElementById("login-username");
+    const username = userEl ? String(userEl.value || "").trim() : "";
+    const baris = [
+        "Assalamu'alaikum.",
+        "",
+        "Saya lupa kata sandi aplikasi Pemantauan Anak Wali. Mohon bantuan reset.",
+        "",
+        "Jenis pengguna: " + info.label,
+        "Username: " + (username || "-"),
+        "Nama lengkap: "
+    ];
+    if (role === "siswa") baris.push("Kelas: ");
+    baris.push("", "Terima kasih.");
+    return baris.join("\n");
+}
+
+function lupaSandiTautanWa(role) {
+    const nomor = typeof KONTAK_ADMIN_WA !== "undefined" && typeof toWhatsAppNumber === "function"
+        ? toWhatsAppNumber(KONTAK_ADMIN_WA) : "";
+    if (!nomor) return "";
+    return "https://api.whatsapp.com/send?phone=" + nomor + "&text=" + encodeURIComponent(lupaSandiPesan(role));
+}
+
+function renderLupaSandi() {
+    const panel = document.getElementById("lupa-sandi-panel");
+    if (!panel) return;
+    const role = lupaSandiRoleDipilih();
+    const info = LUPA_SANDI_ROLE[role];
+    const wa = lupaSandiTautanWa(role);
+    panel.innerHTML = `
+        <p class="lg-help-title">Reset kata sandi dibantu oleh ${escapeHtml(info.kepada)}.</p>
+        <ol>
+            <li>${wa ? "Ketuk tombol WhatsApp di bawah." : "Hubungi " + escapeHtml(info.kepada) + "."} Sebutkan nama lengkap dan username Anda.</li>
+            <li>Mereka memeriksa identitas Anda, lalu mereset kata sandi.</li>
+            <li>Masuk dengan kata sandi sementara dari mereka. Aplikasi lalu meminta Anda membuat kata sandi baru.</li>
+        </ol>
+        <p class="lg-help-note">Jangan mengirim kata sandi Anda lewat pesan.</p>
+        ${wa ? `<a class="lg-wa" href="${escapeHtml(wa)}" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp" aria-hidden="true"></i> Minta reset lewat WhatsApp</a>` : ""}`;
+}
+
+function bukaLupaSandi() {
+    const panel = document.getElementById("lupa-sandi-panel");
+    const btn = document.getElementById("btn-lupa-sandi");
+    if (!panel || !btn) return;
+    const buka = panel.hidden;
+    panel.hidden = !buka;
+    btn.setAttribute("aria-expanded", String(buka));
+    if (!buka) return;
+    renderLupaSandi();
+    if (!panel.dataset.ready) {
+        panel.dataset.ready = "1";
+        ["login-role", "login-username"].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener("change", () => { if (!panel.hidden) renderLupaSandi(); });
+            el.addEventListener("input", () => { if (!panel.hidden) renderLupaSandi(); });
+        });
+    }
 }

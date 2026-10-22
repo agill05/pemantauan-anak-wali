@@ -54,6 +54,8 @@
 - **PWA**: dapat dipasang ke layar utama, memakai *service worker*, dan menampilkan banner saat offline.
 - **Pembaruan senyap**: sesi diperbarui otomatis dan notifikasi dicek berkala.
 - **Aksesibilitas**: dukungan navigasi keyboard (`a11y-nav.js`).
+- **Ukuran huruf**: pengguna memilih Normal, Besar, atau Sangat Besar di Pengaturan Akun. Teks terkecil dinaikkan ke 12 piksel agar mudah dibaca.
+- **Lupa kata sandi**: tautan di halaman masuk menjelaskan siapa yang dihubungi dan menyiapkan pesan WhatsApp untuk admin tanpa mengirim kata sandi.
 - **Panduan dan bantuan** (`bantuan.js`): tur pengenalan per peran yang tampil sekali saat login pertama, tombol "?" di header untuk bantuan sesuai halaman yang dibuka, dan tanya jawab per peran. Semua teks ada di bagian data pada awal berkas, jadi mudah diubah tanpa menyentuh logika.
 - **Maskot interaktif** untuk membuat tampilan lebih ramah bagi siswa.
 - **Responsif**: tampil nyaman di ponsel, tablet, dan desktop.
@@ -215,6 +217,7 @@ Nilai `role` pada `login` adalah `admin`, `guru`, `bk`, `kepsek`, atau `siswa`. 
 |---|---|
 | Alamat backend | `API_URL` di `js/config.js` |
 | Panjang minimal kata sandi | `PASSWORD_MIN_LENGTH` di `js/config.js` |
+| Nomor WhatsApp admin untuk reset kata sandi | `KONTAK_ADMIN_WA` di `js/config.js` (kosongkan untuk menyembunyikan tombol WhatsApp) |
 | Lama cache data dan interval cek notifikasi | `CACHE_TTL` dan `NOTIF_POLL_MS` di `js/config.js` |
 | Daftar kebiasaan bawaan | `MASTER_KEBIASAAN` di `js/config.js` (atau atur dari backend lewat `getKonfigKebiasaan`) |
 | Daftar surah, iqro, dan doa | `MASTER_SURAHS`, `MASTER_IQRO`, `MASTER_DOA` di `js/config.js` |
