@@ -229,6 +229,11 @@
                     aria-label="Segarkan data">
                     <i class="fas fa-rotate text-base"></i>
                 </button>
+                <button id="btn-help-header" data-role-visible="admin,guru,siswa,kepsek,bk"
+                    class="touch-btn hover:bg-white/10 rounded-xl transition" onclick="bukaBantuan()"
+                    title="Bantuan untuk halaman ini" aria-label="Buka bantuan untuk halaman ini">
+                    <i class="fas fa-circle-question text-lg" aria-hidden="true"></i>
+                </button>
                 <button id="btn-notif-header" data-role-visible="admin,guru,siswa,kepsek,bk"
                     class="p-2 relative hover:bg-white/10 rounded-xl transition hidden"
                     onclick="openNotificationModal()" aria-label="Buka notifikasi">
@@ -284,6 +289,11 @@
         <nav id="sidebar-menu-items" class="flex-1 overflow-y-auto py-2 px-2 space-y-1"></nav>
 
         <div class="p-3 border-t border-slate-100">
+            <button type="button" id="btn-help-sidebar" data-role-visible="admin,guru,siswa,kepsek,bk"
+                onclick="bukaBantuan(); toggleSidebar(false);"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition mb-1">
+                <i class="fas fa-circle-question w-5 text-center"></i> Bantuan &amp; Panduan
+            </button>
             <button type="button" id="btn-refresh-sidebar"
                 onclick="manualRefreshAll(); toggleSidebar(false);"
                 class="sidebar-refresh w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition mb-1">
@@ -391,7 +401,7 @@
                     <p>Dengan pembinaan yang tepat, kita bisa membantu siswa menjadi pribadi yang berakhlak,
                         berprestasi, dan siap menghadapi masa depan.</p>
                     <button type="button" class="dash-banner-btn"
-                        onclick="Swal.fire({icon:'info', title:'Panduan Aplikasi', text:'Gunakan menu di samping untuk mengakses seluruh fitur pemantauan anak wali.', confirmButtonColor:'#2563eb'})">
+                        onclick="bukaBantuan()">
                         <i class="fas fa-book-open"></i> Lihat Panduan
                     </button>
                 </div>
@@ -1174,6 +1184,7 @@
     <script src="js/modules/bk-admin.js"></script>
     <script src="js/modules/arsip.js"></script>
     <script src="js/modules/magiclink.js"></script>
+    <script src="js/bantuan.js"></script>
     <script src="js/main.js"></script>
     <script src="js/a11y-nav.js"></script>
 </body>

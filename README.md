@@ -54,6 +54,7 @@
 - **PWA**: dapat dipasang ke layar utama, memakai *service worker*, dan menampilkan banner saat offline.
 - **Pembaruan senyap**: sesi diperbarui otomatis dan notifikasi dicek berkala.
 - **Aksesibilitas**: dukungan navigasi keyboard (`a11y-nav.js`).
+- **Panduan dan bantuan** (`bantuan.js`): tur pengenalan per peran yang tampil sekali saat login pertama, tombol "?" di header untuk bantuan sesuai halaman yang dibuka, dan tanya jawab per peran. Semua teks ada di bagian data pada awal berkas, jadi mudah diubah tanpa menyentuh logika.
 - **Maskot interaktif** untuk membuat tampilan lebih ramah bagi siswa.
 - **Responsif**: tampil nyaman di ponsel, tablet, dan desktop.
 
@@ -95,6 +96,7 @@
     ├── install.js           # Ajakan pasang PWA
     ├── maskot.js            # Logika maskot
     ├── a11y-nav.js          # Aksesibilitas navigasi
+    ├── bantuan.js           # Tur pengenalan, bantuan per halaman, tanya jawab
     ├── main.js              # Titik masuk aplikasi
     └── modules/
         ├── auth.js          ├── absensi.js       ├── kebiasaan.js

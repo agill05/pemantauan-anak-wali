@@ -634,6 +634,7 @@ async function continueSessionSetup() {
         startRealtimeNotificationPolling();
         startDataPolling();
         checkStudentNotifications();
+        if (typeof jadwalkanTurOtomatis === "function") jadwalkanTurOtomatis();
 
     } catch (error) {
         console.error("Kesalahan saat setup sesi:", error);
@@ -927,6 +928,14 @@ function openUserSettingsModal() {
             </div>
 
             ${user.role !== 'ortu' ? `
+            <button type="button" onclick="bukaBantuan()" class="w-full flex items-center gap-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-left">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0"><i class="fas fa-circle-question" aria-hidden="true"></i></span>
+                <span class="min-w-0 flex-1">
+                    <span class="block font-bold text-xs text-slate-800">Bantuan &amp; Panduan</span>
+                    <span class="block text-xs text-slate-400 truncate">Tur pengenalan, bantuan halaman, tanya jawab</span>
+                </span>
+                <i class="fas fa-chevron-right text-xs text-slate-400" aria-hidden="true"></i>
+            </button>
             <form onsubmit="changePasswordForm(event)" class="space-y-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100 w-full">
                 <h4 class="text-xs font-bold text-slate-700 uppercase">Ganti Kata Sandi</h4>
                 <div class="relative">
