@@ -6,6 +6,22 @@ let abkPilih = new Map();
 let abkTersimpan = new Map();
 let abkWaktu = new Map();
 let abkMuat = false;
+let abkMemuatData = false;
+
+function abkSkeleton(jumlah = 6) {
+    const tombol = '<div class="h-9 skeleton rounded-xl"></div>'.repeat(5);
+    return `<div class="space-y-2" aria-busy="true" aria-label="Memuat data">${Array(jumlah).fill(0).map(() => `
+        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-3 skeleton rounded shrink-0"></div>
+                <div class="space-y-2 flex-1">
+                    <div class="h-3 bg-slate-200 skeleton rounded w-1/2"></div>
+                    <div class="h-2 bg-slate-200 skeleton rounded w-1/3"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-5 gap-1.5">${tombol}</div>
+        </div>`).join("")}</div>`;
+}
 
 const ABK_STATUS = ["H", "I", "S", "A", "T"];
 const ABK_WARNA = {
@@ -38,7 +54,11 @@ async function renderAbsensiBKView() {
         const k = abkDaftarKelas();
         abkKelas = k.length ? String(k[0].id) : "";
     }
-    if (abkTab === "isi") await abkMuatTanggal(false);
+    if (abkTab === "isi") {
+        abkMemuatData = true;
+        abkGambar();
+        try { await abkMuatTanggal(false); } finally { abkMemuatData = false; }
+    }
     abkGambar();
 }
 
@@ -121,11 +141,12 @@ function abkHtmlIsi(opsiKelas) {
             </div>
             <input type="search" id="abk-cari" value="${escapeHtml(abkCari)}" oninput="abkUbahCari(this.value)" placeholder="Cari nama siswa..." class="w-full bg-slate-50 border p-2 rounded-xl text-xs outline-none" aria-label="Cari siswa">
             <div class="flex items-center justify-between text-[11px] text-slate-500">
-                <span id="abk-terisi">Terisi ${terisi} / ${semuaKelas.length}</span>
-                <button type="button" onclick="abkSemuaHadir()" class="font-bold text-emerald-700"><i class="fas fa-check-double"></i> Semua Hadir</button>
+                <span id="abk-terisi">${abkMemuatData ? '<span class="inline-block h-3 w-24 skeleton rounded align-middle"></span>' : `Terisi ${terisi} / ${semuaKelas.length}`}</span>
+                <button type="button" onclick="abkSemuaHadir()" ${abkMemuatData ? "disabled" : ""} class="font-bold text-emerald-700 disabled:opacity-40"><i class="fas fa-check-double"></i> Semua Hadir</button>
             </div>
         </div>
         <div id="abk-daftar" class="mt-3">
+            ${abkMemuatData ? abkSkeleton(6) : `
             <div class="tt-kartu-wrap space-y-2">
                 ${kartu ? legenda + kartu : '<p class="text-xs text-slate-400 text-center py-6">Tidak ada siswa.</p>'}
             </div>
@@ -141,9 +162,9 @@ function abkHtmlIsi(opsiKelas) {
                     </tr></thead>
                     <tbody>${baris || '<tr><td colspan="5" class="text-center text-slate-400 py-6">Tidak ada siswa.</td></tr>'}</tbody>
                 </table>
-            </div>
+            </div>`}
         </div>
-        <button type="button" onclick="abkSimpan()" class="w-full mt-3 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-sm"><i class="fas fa-save mr-1"></i> Simpan Presensi BK</button>`;
+        ${abkMemuatData ? "" : `<button type="button" onclick="abkSimpan()" class="w-full mt-3 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold shadow-sm"><i class="fas fa-save mr-1"></i> Simpan Presensi BK</button>`}`;
 }
 
 function abkSiswaKelas() {
@@ -169,7 +190,9 @@ function abkUbahCari(v) {
 async function abkUbahTanggal(v) {
     if (!v) return;
     abkTanggal = v;
-    await abkMuatTanggal(true);
+    abkMemuatData = true;
+    abkGambar();
+    try { await abkMuatTanggal(true); } finally { abkMemuatData = false; }
     abkGambar();
 }
 
@@ -258,7 +281,7 @@ function abkUbahKelasRekap(v) { abkKelas = v; abkRekapIsi(); }
 async function abkRekapIsi() {
     const el = document.getElementById("abk-rekap");
     if (!el) return;
-    el.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Memuat rekap...</p>`;
+    el.innerHTML = abkSkeleton(6);
     const res = await apiCall("getAbsensiBK", { rekap: true, dari: abkRekapDari, sampai: abkRekapSampai }, false);
     const sekarang = document.getElementById("abk-rekap");
     if (!sekarang) return;
