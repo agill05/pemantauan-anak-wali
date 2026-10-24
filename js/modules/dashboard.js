@@ -393,6 +393,7 @@ async function renderDashboard() {
             ucapanPerKelas = Array.isArray(res.data.per_kelas) ? res.data.per_kelas : null;
             renderAgendaSection(res.data.agenda_list);
             if (roleAsli === "kepsek") renderRingkasanKelas(res.data.per_kelas);
+            if (roleAsli === "admin" && typeof renderBackupBannerDashboard === "function") renderBackupBannerDashboard(res.data.backup);
             checkStudentNotifications();
         }
     });
