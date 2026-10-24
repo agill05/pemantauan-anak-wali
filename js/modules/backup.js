@@ -14,6 +14,7 @@ function backupLabelTipe(tipe) {
     const t = String(tipe || "");
     if (t === "otomatis") return "Otomatis";
     if (t === "manual") return "Manual";
+    if (t === "pra-restore") return "Pengaman sebelum pulihkan";
     if (t.indexOf("pra-") === 0) return "Sebelum " + t.substring(4);
     return t || "-";
 }
@@ -274,7 +275,7 @@ async function backupPulihBuka(id) {
             <p class="text-sm font-bold text-slate-800">Pulihkan dari ${escapeHtml(backupLabelWaktu(b.waktu))}</p>
             <button type="button" onclick="backupPulihTutup()" class="text-xs font-bold text-slate-500">Batal</button>
         </div>
-        ${backupBarisPeringatan("Sheet terpilih diganti total dengan isi backup. Data yang dibuat setelah backup ini hilang dari sheet itu. Sistem membuat backup baru dulu sebelum menimpa. Maksimal 15 sheet.")}
+        ${backupBarisPeringatan("Sheet terpilih diganti total dengan isi backup. Data yang dibuat setelah backup ini hilang dari sheet itu. Secara bawaan sistem membuat salinan pengaman dulu sebelum menimpa. Maksimal 15 sheet.")}
         <div class="space-y-2">${baris}</div>
         <button type="button" onclick="backupPulihJalan()" class="w-full bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-clock-rotate-left mr-1" aria-hidden="true"></i> Pulihkan sheet terpilih</button>`;
 }
@@ -288,7 +289,11 @@ async function backupPulihJalan() {
     const hasil = await Swal.fire({
         icon: "warning",
         title: "Pulihkan " + nama.length + " Sheet?",
-        html: "Sheet berikut ditimpa:<br><b>" + nama.map(escapeHtml).join(", ") + "</b><br><br>Ketik PULIHKAN untuk melanjutkan.",
+        html: "Sheet berikut ditimpa:<br><b>" + nama.map(escapeHtml).join(", ") + "</b><br><br>" +
+            '<label style="display:flex;gap:8px;align-items:flex-start;text-align:left;font-size:13px;margin-bottom:8px">' +
+            '<input type="checkbox" id="backup-pulih-pengaman" checked style="margin-top:3px">' +
+            "<span>Buat salinan pengaman dulu (disarankan). Tanpa ini, data sheet sekarang yang berbeda dari backup tidak bisa dikembalikan.</span></label>" +
+            "Ketik PULIHKAN untuk melanjutkan.",
         input: "text",
         inputPlaceholder: "PULIHKAN",
         showCancelButton: true,
@@ -300,14 +305,16 @@ async function backupPulihJalan() {
                 Swal.showValidationMessage("Ketik PULIHKAN dengan huruf besar.");
                 return false;
             }
-            return "PULIHKAN";
+            const cek = document.getElementById("backup-pulih-pengaman");
+            return { pengaman: !cek || cek.checked };
         }
     });
     if (!hasil.isConfirmed) return;
+    const pengaman = !hasil.value || hasil.value.pengaman !== false;
 
     backupSibuk = true;
     showLoading("Memulihkan data. Jangan tutup halaman ini...");
-    const res = await apiCall("restoreBackup", { id: backupPulihId, sheets: nama, konfirmasi: "PULIHKAN" }, false, 1, true, 180000);
+    const res = await apiCall("restoreBackup", { id: backupPulihId, sheets: nama, konfirmasi: "PULIHKAN", pengaman: pengaman }, false, 1, true, 180000);
     hideLoading();
     backupSibuk = false;
 
