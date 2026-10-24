@@ -858,6 +858,7 @@ function renderSidebarMenu(role) {
         html += item("laporan", "fa-file-invoice", "Laporan");
         if (role === "admin") {
             html += item("arsip", "fa-box-archive", "Arsip");
+            html += item("backup", "fa-database", "Backup");
             html += item("admin-manage", "fa-user-cog", "Master Data");
         } else {
             html += item("arsip-saya", "fa-box-archive", "Arsip Semester");

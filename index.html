@@ -1060,6 +1060,22 @@
             </div>
         </div>
 
+        <div id="view-backup" class="view-section p-4 space-y-4">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-database text-primary" aria-hidden="true"></i>
+                <h2 class="text-sm font-bold text-slate-800">Backup Data</h2>
+            </div>
+            <div class="space-y-3">
+                <p class="text-xs text-slate-500">Salinan lengkap spreadsheet database disimpan di folder privat pada Drive pemilik spreadsheet. Backup berjalan otomatis setiap hari dan bisa dibuat manual kapan saja. Folder backup berisi data pribadi siswa dan guru, jangan dibagikan.</p>
+                <div id="backup-status" class="space-y-2"></div>
+                <div class="flex items-center justify-between">
+                    <button type="button" onclick="backupBuatSekarang()" class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-database mr-1" aria-hidden="true"></i> Backup sekarang</button>
+                    <button type="button" onclick="backupMuatUlang()" class="text-xs font-bold text-blue-600"><i class="fas fa-rotate mr-1" aria-hidden="true"></i> Muat ulang</button>
+                </div>
+                <div id="backup-list" class="space-y-2"></div>
+            </div>
+        </div>
+
         <div id="view-arsip-saya" class="view-section p-4 space-y-4">
             <div class="flex items-center gap-2">
                 <i class="fas fa-box-archive text-primary" aria-hidden="true"></i>
@@ -1188,6 +1204,7 @@
     <script src="js/modules/admin.js"></script>
     <script src="js/modules/bk-admin.js"></script>
     <script src="js/modules/arsip.js"></script>
+    <script src="js/modules/backup.js"></script>
     <script src="js/modules/magiclink.js"></script>
     <script src="js/bantuan.js"></script>
     <script src="js/main.js"></script>

@@ -2,7 +2,7 @@ function canAccessView(role, viewId) {
     if (role === "bk") return ["dashboard", "tatib", "absensi-bk"].includes(viewId);
     if (viewId === "absensi-bk") return false;
     const staffOnly = ["siswa", "laporan", "tatib"];
-    if (viewId === "admin-manage" || viewId === "arsip") return role === "admin";
+    if (viewId === "admin-manage" || viewId === "arsip" || viewId === "backup") return role === "admin";
     if (viewId === "arsip-saya") return role === "siswa" || role === "guru" || role === "kepsek";
     if (viewId === "tatib-baca") return role === "siswa";
     if (viewId === "jurnal") return true;
@@ -53,6 +53,7 @@ function switchView(viewId) {
     if (viewId === "siswa") renderSiswaView();
     if (viewId === "admin-manage") renderAdminManage();
     if (viewId === "arsip") renderAdminArsip();
+    if (viewId === "backup") renderAdminBackup();
     if (viewId === "arsip-saya") renderArsipSaya();
     if (viewId === "tatib-baca") renderTatibBaca();
     if (viewId === "absensi-bk") renderAbsensiBKView();
