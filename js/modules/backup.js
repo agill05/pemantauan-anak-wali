@@ -62,8 +62,11 @@ function backupGambarStatus() {
         }
     }
 
-    if (!backupInfo.trigger_aktif) {
-        html += backupBarisPeringatan("Jadwal otomatis belum aktif. Jalankan fungsi setupTriggerBackup satu kali di editor Apps Script.");
+    if (r.aktif && !backupInfo.trigger_aktif) {
+        html += backupBarisPeringatan("Jadwal otomatis belum terpasang. Tekan Simpan pengaturan di bawah untuk memasangnya.");
+    }
+    if (r.aktif === false) {
+        html += backupBarisPeringatan("Backup otomatis dinonaktifkan. Data hanya terlindungi oleh backup manual.");
     }
 
     html += `<p class="text-xs text-slate-500">Jadwal otomatis: setiap hari sekitar pukul ${String(Number(r.jam) || 0).padStart(2, "0")}:00 WITA. Disimpan ${Number(r.harian) || 0} backup harian, ${Number(r.mingguan) || 0} mingguan, dan ${Number(r.bulanan) || 0} bulanan. Sisanya masuk tempat sampah Drive.</p>`;
@@ -116,6 +119,7 @@ function backupGambarDaftar() {
 
 function backupGambar() {
     backupGambarStatus();
+    backupGambarConfig();
     backupGambarDaftar();
 }
 
@@ -324,4 +328,100 @@ async function backupPulihJalan() {
     backupPulihTutup();
     if (typeof fetchAllAppData === "function") await fetchAllAppData(true);
     backupMuatUlang();
+}
+
+
+const BACKUP_BATAS = {
+    jam: { min: 0, max: 23, label: "Jam backup (WITA, 0-23)" },
+    harian: { min: 1, max: 30, label: "Simpan backup harian" },
+    mingguan: { min: 0, max: 12, label: "Simpan backup mingguan" },
+    bulanan: { min: 0, max: 24, label: "Simpan backup bulanan" }
+};
+
+function backupGambarConfig() {
+    const el = document.getElementById("backup-config");
+    if (!el || !backupInfo || !backupInfo.config) return;
+    const c = backupInfo.config;
+
+    const angka = Object.keys(BACKUP_BATAS).map(k => {
+        const b = BACKUP_BATAS[k];
+        return `
+            <label class="block text-xs text-slate-600">
+                <span class="font-bold">${escapeHtml(b.label)}</span>
+                <input type="number" id="backup-cfg-${k}" min="${b.min}" max="${b.max}" step="1" value="${Number(c[k])}"
+                    class="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+            </label>`;
+    }).join("");
+
+    el.innerHTML = `
+        <details class="bg-white p-3.5 rounded-2xl border border-slate-100">
+            <summary class="text-xs font-bold text-slate-700 cursor-pointer"><i class="fas fa-gear mr-1" aria-hidden="true"></i> Pengaturan jadwal</summary>
+            <div class="space-y-3 mt-3">
+                <label class="flex items-center gap-2 text-xs text-slate-700">
+                    <input type="checkbox" id="backup-cfg-aktif" ${c.aktif ? "checked" : ""}>
+                    <span class="font-bold">Backup otomatis harian</span>
+                </label>
+                <label class="flex items-start gap-2 text-xs text-slate-700">
+                    <input type="checkbox" id="backup-cfg-pra_aksi" class="mt-0.5" ${c.pra_aksi ? "checked" : ""}>
+                    <span><span class="font-bold">Backup otomatis sebelum aksi berisiko</span><br>
+                    <span class="text-slate-500">Arsip semester, hapus massal, impor batch, hapus siswa/guru/kelas. Dibuat paling cepat 1 jam sekali.</span></span>
+                </label>
+                <div class="grid grid-cols-2 gap-3">${angka}</div>
+                <p class="text-xs text-slate-500">Backup yang dibuat dalam 48 jam terakhir selalu disimpan. Backup yang melewati batas dipindahkan ke tempat sampah Drive.</p>
+                <button type="button" onclick="backupSimpanConfig()" class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-floppy-disk mr-1" aria-hidden="true"></i> Simpan pengaturan</button>
+            </div>
+        </details>`;
+}
+
+async function backupSimpanConfig() {
+    if (backupSibuk) return;
+
+    const payload = {
+        aktif: !!document.getElementById("backup-cfg-aktif")?.checked,
+        pra_aksi: !!document.getElementById("backup-cfg-pra_aksi")?.checked
+    };
+    for (const k of Object.keys(BACKUP_BATAS)) {
+        const b = BACKUP_BATAS[k];
+        const mentah = String(document.getElementById("backup-cfg-" + k)?.value ?? "").trim();
+        const n = Number(mentah);
+        if (mentah === "" || !Number.isInteger(n) || n < b.min || n > b.max) {
+            showToast(`${b.label} harus bilangan bulat ${b.min} sampai ${b.max}.`, "warning");
+            return;
+        }
+        payload[k] = n;
+    }
+
+    backupSibuk = true;
+    showLoading("Menyimpan pengaturan backup...");
+    const res = await apiCall("saveBackupConfig", payload, false, 1, true, 60000);
+    hideLoading();
+    backupSibuk = false;
+
+    if (res && res.status === "success") {
+        if (res.peringatan) {
+            Swal.fire({ icon: "warning", title: "Tersimpan, Jadwal Belum Terpasang", text: res.peringatan, confirmButtonColor: "#2563eb" });
+        } else {
+            showToast("Pengaturan backup disimpan.");
+        }
+        backupMuatUlang();
+    } else {
+        Swal.fire({ icon: "error", title: "Gagal Menyimpan", text: res?.message || "Server tidak merespons.", confirmButtonColor: "#2563eb" });
+    }
+}
+
+function renderBackupBannerDashboard(ringkas) {
+    const el = document.getElementById("dash-backup-banner");
+    if (!el) return;
+    if (!ringkas || ringkas.tingkat === "ok" || !ringkas.pesan) {
+        el.classList.add("hidden");
+        el.innerHTML = "";
+        return;
+    }
+    const bahaya = ringkas.tingkat === "bahaya";
+    const warna = bahaya ? "bg-rose-50 border-rose-100 text-rose-700" : "bg-amber-50 border-amber-100 text-amber-700";
+    el.className = `flex items-start gap-2 ${warna} border p-3 rounded-2xl text-xs`;
+    el.innerHTML = `
+        <i class="fas fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
+        <span class="flex-1">${escapeHtml(ringkas.pesan)}</span>
+        <button type="button" onclick="switchView('backup')" class="font-bold underline shrink-0">Buka Backup</button>`;
 }
