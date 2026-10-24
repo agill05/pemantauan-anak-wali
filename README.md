@@ -127,8 +127,8 @@
 1. *Clone* repositori dan pasang dependensi.
 
    ```bash
-   git clone https://github.com/gemorca/<nama-repo>.git
-   cd <nama-repo>
+   git clone https://github.com/gemorca/pemantauan-anak-wali.git
+   cd pemantauan-anak-wali
    npm install
    ```
 
