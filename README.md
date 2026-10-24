@@ -46,7 +46,14 @@
 - Kelola **kelas, guru, siswa**, akun **Guru BK**, akun kepala sekolah, semester, dan pengaturan aplikasi.
 - **Impor massal** data siswa, guru, dan Guru BK dari file CSV.
 - **Kartu akun** siswa dengan QR code.
-- **Reset password** dan penghapusan data massal dengan konfirmasi.
+- **Reset password** dan **hapus banyak sekaligus**. Aktifkan mode **Pilih** pada daftar siswa, guru, Guru BK, atau kelas, centang datanya, lalu hapus. Sebelum menghapus, aplikasi menampilkan rincian dampak dan meminta konfirmasi.
+- **Backup dan pemulihan** (menu Backup, khusus admin):
+  - Buat backup manual kapan saja, lengkap dengan catatan.
+  - Atur jadwal otomatis: aktif atau tidak, jam, dan jumlah backup harian, mingguan, serta bulanan yang disimpan.
+  - Backup otomatis sebelum aksi berisiko (arsip semester, hapus massal, impor batch) bisa dinyalakan.
+  - Pulihkan sheet tertentu dari backup mana pun. Aplikasi menampilkan jumlah baris di backup dan di data sekarang, lalu meminta ketik `PULIHKAN`. Pemulihan **mengganti seluruh isi sheet terpilih**, bukan menggabungkan. Salinan pengaman sebelum pemulihan aktif secara bawaan dan bisa dimatikan.
+  - Backup yang dipakai memulihkan menerima catatan "Dipulihkan" beserta waktunya.
+  - Dasbor admin menampilkan banner jika backup belum ada, gagal, lebih dari 2 hari, atau jadwal otomatis mati.
 
 ### Teknis
 - **Multi-peran**: `admin`, `guru` (dengan peran wali dan/atau mentor), `bk`, `kepsek`, `siswa`, dan `ortu`. Menu menyesuaikan peran yang login.
@@ -63,7 +70,7 @@
 
 | Peran | Akses |
 |---|---|
-| **Admin** | Seluruh fitur pemantauan, laporan, arsip, dan Master Data |
+| **Admin** | Seluruh fitur pemantauan, laporan, arsip, Master Data, serta Backup dan pemulihan |
 | **Guru** | Presensi, kebiasaan, jurnal, keagamaan, akademik, pembinaan, tata tertib, data siswa, laporan |
 | **Guru BK** | Hanya Dasbor, Tata Tertib, dan Presensi BK. Dapat melihat semua siswa, tetapi hanya menulis catatan Tata Tertib dan presensi BK. Tidak mengajar, tidak menjadi wali, dan tidak menjadi mentor. Menerima notifikasi Tata Tertib saja |
 | **Kepala Sekolah** | Seperti guru, ditambah akun khusus kepala sekolah |
@@ -106,7 +113,7 @@
         ├── dashboard.js     ├── laporan.js       ├── siswa.js
         ├── grup-siswa.js    ├── kartu.js         ├── admin.js
         ├── arsip.js         ├── bulk.js          ├── magiclink.js
-        ├── absensi-bk.js    └── bk-admin.js
+        ├── absensi-bk.js    ├── bk-admin.js      └── backup.js
 ```
 
 ## 🚀 Memulai
@@ -203,10 +210,40 @@ Nilai `role` pada `login` adalah `admin`, `guru`, `bk`, `kepsek`, atau `siswa`. 
 | Pembinaan dan notifikasi | `getPembinaan`, `savePembinaan`, `deletePembinaan`, `getNotifikasi`, `setNotifDitangani`, `restoreNotifDitangani` |
 | Tata tertib | `getTatib`, `saveTatib`, `deleteTatib`, `getTatibMaster`, `saveTatibMaster`, `saveTatibKonfig`, `getTatibPanggilan`, `saveTatibPanggilan`, `deleteTatibPanggilan`, `getTatibPratinjau`, `getRekapTatib` |
 | Laporan dan arsip | `getLaporanRekap`, `getArsipData`, `getArsipList`, `getArsipSaya`, `archiveSemester`, `buildArsipLaporan`, `deleteArsip`, `hitungHapus`, `bulkDestroy` |
-| Guru BK (admin) | `getBK`, `saveBK`, `deleteBK`, `importBKBatch`, `resetPasswordBK` |
+| Guru BK (admin) | `getBK`, `saveBK`, `deleteBK`, `importBKBatch`, `resetPasswordBK` (hapus banyak lewat `hitungHapus` dan `bulkDestroy` dengan `jenis: "bk"`) |
+| Backup (admin) | `getBackupList`, `createBackup`, `deleteBackup`, `saveBackupConfig`, `getBackupSheets`, `restoreBackup` |
 | Admin | `savePengaturan`, `saveSemester`, `getAkunKepsek`, `resetPasswordSiswa`, `resetPasswordSiswaSatu`, `resetPasswordGuru`, `resetPasswordKepsek` |
 
 > Bentuk data rinci untuk setiap aksi bisa dilihat dari cara modul di `js/modules/` membaca respons, misalnya `absensi.js` untuk presensi dan `tatib.js` untuk tata tertib.
+
+**Hapus banyak (`hitungHapus` dan `bulkDestroy`)**
+
+Keduanya menerima `{ jenis, ids: [...] }`. `hitungHapus` mengembalikan `{ jumlah, nama_daftar, rincian, total, foto }` untuk dialog konfirmasi. `bulkDestroy` mengembalikan `{ ids_dihapus, ditolak, tidak_ditemukan, message }`. Batas data per permintaan ditentukan backend. Nilai bawaan yang dipakai backend contoh:
+
+| `jenis` | Batas | Keterangan |
+|---|---|---|
+| `siswa` | 100 | Riwayat siswa ikut dihapus |
+| `guru` | 30 | Catatan yang pernah ditulis tetap ada, penulis menjadi "Guru dihapus" |
+| `bk` | 30 | Catatan Tata Tertib dan panggilan tetap ada, penulis menjadi "Guru dihapus" |
+| `kelas` | 50 | Siswa dilepas dari kelas, tidak ikut terhapus |
+| `keagamaan`, `akademik`, `prestasi`, `pembinaan`, `tatib` | 200 | Catatan, hanya yang boleh dihapus pengguna |
+
+**Backup dan pemulihan**
+
+Seluruh aksi ini khusus `admin`. Frontend hanya mengirim perintah. Penyalinan spreadsheet, jadwal, dan penghapusan backup lama dilakukan backend.
+
+| Aksi | Payload | Respons `data` |
+|---|---|---|
+| `getBackupList` | tidak ada | `daftar`, `terakhir`, `trigger_aktif`, `folder_url`, `config` |
+| `createBackup` | `{ catatan }` | satu item backup |
+| `deleteBackup` | `{ id, konfirmasi: "HAPUS" }` | pesan sukses |
+| `saveBackupConfig` | `{ aktif, pra_aksi, jam, harian, mingguan, bulanan }` | `config`. Bisa disertai `peringatan` jika jadwal gagal dipasang |
+| `getBackupSheets` | `{ id }` | `backup` dan `sheets: [{ nama, baris_backup, baris_sekarang }]` |
+| `restoreBackup` | `{ id, sheets: [...], konfirmasi: "PULIHKAN", pengaman }` | `dipulihkan`, `gagal`, `backup_sebelum` |
+
+Batas nilai `saveBackupConfig`: `jam` 0 sampai 23, `harian` 1 sampai 30, `mingguan` 0 sampai 12, `bulanan` 0 sampai 24. `pengaman` bersifat opsional dan bernilai `true` jika tidak dikirim. Backend contoh membatasi pemulihan sampai 15 sheet per permintaan.
+
+Untuk admin, `getDashboardData` mengembalikan `data.backup` berisi `{ tingkat, kode, pesan, waktu }`. `tingkat` bernilai `ok`, `peringatan`, atau `bahaya`. Banner di dasbor hanya tampil jika `tingkat` bukan `ok`.
 
 **Saran backend:** Google Apps Script dengan Google Sheets sebagai database adalah cara termudah untuk memulai. Anda juga bebas memakai Node.js, PHP, atau layanan lain selama kontrak di atas dipenuhi.
 
@@ -241,6 +278,8 @@ Aplikasi ini menangani **data pribadi siswa**. Sebelum dipakai di sekolah:
 - Verifikasi token, peran, dan hak akses **harus dilakukan di backend**, bukan hanya di frontend.
 - Untuk peran `bk`, batasi aksi lewat daftar putih di backend (hanya Dasbor, Tata Tertib, presensi BK, dan notifikasi Tata Tertib). Jangan mengandalkan menu yang disembunyikan di frontend.
 - Simpan kata sandi dalam bentuk *hash*, jangan teks biasa.
+- Folder backup berisi salinan lengkap data pribadi siswa dan guru. Simpan di Drive pemilik spreadsheet, jangan dibagikan, dan batasi aksi backup, hapus massal, serta pemulihan hanya untuk `admin` di backend.
+- Pemulihan mengganti seluruh isi sheet yang dipilih. Biarkan salinan pengaman tetap aktif kecuali Anda yakin data sekarang tidak diperlukan.
 - Gunakan HTTPS dan batasi akses ke database Anda.
 - Pastikan penggunaan data siswa sesuai kebijakan sekolah dan peraturan perlindungan data yang berlaku.
 
