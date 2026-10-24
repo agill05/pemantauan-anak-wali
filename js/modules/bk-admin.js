@@ -41,8 +41,10 @@ async function renderAdminBK(force) {
         </span>`;
     };
 
+    const kolCek = bulkAktif("bk");
     const kartuHtml = filtered.map(b => `
         <div class="adm-card bg-white p-3 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
+            ${bulkCheckbox("bk", b.id)}
             <div class="adm-main flex-1 min-w-0">
                 <h4 class="font-bold text-xs text-slate-800">${escapeHtml(b.nama)}</h4>
                 <p class="adm-sub text-xs text-slate-400">Username: ${escapeHtml(b.username)} | NIP: ${escapeHtml(b.nip || "-")}</p>
@@ -52,6 +54,7 @@ async function renderAdminBK(force) {
 
     const barisHtml = filtered.map((b, i) => `
         <tr>
+            ${kolCek ? `<td class="tt-cek">${bulkCheckbox("bk", b.id)}</td>` : ""}
             <td class="tt-no">${i + 1}</td>
             <th scope="row" class="tt-nama">${escapeHtml(b.nama)}</th>
             <td>${escapeHtml(b.username || "-")}</td>
@@ -59,8 +62,9 @@ async function renderAdminBK(force) {
             <td class="tt-aksi">${aksi(b.id)}</td>
         </tr>`).join("");
 
-    list.innerHTML = `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
-        + admTabelHtml("Daftar Guru BK", false, [["Nama", "tt-nama"], ["Username"], ["NIP"], ["Aksi", "tt-aksi"]], barisHtml);
+    list.innerHTML = bulkToolbar("bk", filtered.map(b => String(b.id)))
+        + `<div class="tt-kartu-wrap space-y-2">${kartuHtml}</div>`
+        + admTabelHtml("Daftar Guru BK", kolCek, [["Nama", "tt-nama"], ["Username"], ["NIP"], ["Aksi", "tt-aksi"]], barisHtml);
 }
 
 function openModalBK(id = null) {

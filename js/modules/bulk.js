@@ -16,6 +16,11 @@ const BULK_CFG = {
         },
         render: function () { renderAdminGuru(); }
     },
+    bk: {
+        label: "akun Guru BK", server: true,
+        sesudah: async function () { await renderAdminBK(true); },
+        render: function () { renderAdminBK(); }
+    },
     siswa: {
         label: "siswa", server: true,
         sesudah: async function (ids) {
@@ -180,6 +185,9 @@ async function _bulkKonfirmasi(kind, ids) {
     } else if (kind === "guru") {
         intro = `<b>${jumlah} akun guru</b> (${daftarNama}) dihapus. Catatan yang pernah ditulis <b>tetap ada</b>. Dampaknya:`;
         daftar = Object.keys(LABEL_HAPUS_GURU).map(k => baris(LABEL_HAPUS_GURU[k], rincian[k])).join("");
+    } else if (kind === "bk") {
+        intro = `<b>${jumlah} akun Guru BK</b> (${daftarNama}) dihapus. Catatan yang pernah ditulis <b>tetap ada</b>. Dampaknya:`;
+        daftar = Object.keys(LABEL_HAPUS_BK).map(k => baris(LABEL_HAPUS_BK[k], rincian[k])).join("");
     } else {
         intro = `<b>${jumlah} kelas</b> (${daftarNama}) dihapus. Data siswa <b>tidak ikut terhapus</b>.`;
         daftar = baris("Siswa dilepas dari kelas (bisa diambil wali baru)", rincian.siswa_dilepas);
