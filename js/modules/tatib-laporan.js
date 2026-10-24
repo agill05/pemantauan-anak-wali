@@ -403,7 +403,7 @@ function tlHtmlSurat(o) {
     const total = ringkasan ? ringkasan.total : row.total;
     const pel = catatan.filter(c => String(c.jenis) !== "penghargaan").sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)));
     const c = v => `<td style="text-align: center;">${v}</td>`;
-    const baris = pel.map((x, i) => `<tr>${c(i + 1)}${c(e(tanggalPendek(x.tanggal)))}<td style="text-align: left;">${t(x.nama)}${Number(x.pengali) > 1 ? ` (x${Number(x.pengali)})` : ""}</td>${c(Number(x.skor_akhir) || 0)}</tr>`).join("");
+    const baris = pel.map((x, i) => `<tr>${c(i + 1)}${c(e(tanggalPendek(x.tanggal)))}<td style="text-align: center;">${t(x.nama)}${Number(x.pengali) > 1 ? ` (x${Number(x.pengali)})` : ""}</td>${c(Number(x.skor_akhir) || 0)}</tr>`).join("");
     const tahap3 = form.tahap === 3
         ? ` Panggilan ini merupakan panggilan terakhir sebelum akumulasi mencapai batas ${konfig.batas_keluar} poin.` : "";
     const hariTgl = [tlHari(form.tanggal), formatTanggalLabel(form.tanggal)].filter(Boolean).join(", ");
